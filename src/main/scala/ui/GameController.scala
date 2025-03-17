@@ -5,8 +5,8 @@ import scalafx.scene.input.KeyCode
 import ui.App.framesPerSecond
 
 
-case class CoreState(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
-  def update(keyCode: KeyCode, currentTime: Long): CoreState = {
+case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
+  def update(keyCode: KeyCode, currentTime: Long): GameController = {
     if (currentTime - lastUpdateTime > 1000000000 / framesPerSecond) {
       val (newUIState, optAction) = uiState match
         case UIState.Move =>
@@ -30,7 +30,7 @@ case class CoreState(uiState: UIState, gameState: GameState, lastUpdateTime: Lon
       val newGameState = gameState.update(optAction)
 
       if (newGameState != gameState || newUIState != uiState) {
-        CoreState(newUIState, newGameState, currentTime)
+        GameController(newUIState, newGameState, currentTime)
       } else this
     }
     else {

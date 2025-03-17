@@ -6,7 +6,7 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
   def update(playerAction: Option[Action]): GameState = {
-    val newPlayerEntity = playerAction match {
+    playerAction match {
       case Some(Action.Move(direction)) =>
         val newPlayerEntity = playerEntity.move(direction)
         if (
@@ -19,14 +19,30 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
                 entity.entityType == EntityType.Wall
           )
         ) {
-          playerEntity
-        } else newPlayerEntity
-      case None => playerEntity
+          this
+        } else update(playerEntity, newPlayerEntity)
+      case Some(game.Action.Attack(cursorX, cursorY)) =>
+        getEntity(cursorX, cursorY) match {
+          case Some(enemy) if enemy.entityType == EntityType.Enemy =>
+            enemy.copy(health = enemy.health - 1) match {
+              case newEnemy if newEnemy.health <= 0 => remove(enemy)
+              case newEnemy => update(enemy, newEnemy)
+            }
+          case _ => this
+        }
+      case None => this
     }
+  }
 
-    //update gamestate with new player entity
-    if (newPlayerEntity != playerEntity) {
-      copy(entities = entities - playerEntity + newPlayerEntity)
-    } else this
+  def update(entity: Entity, newEntity: Entity): GameState = {
+    copy(entities = entities - entity + newEntity)
+  }
+
+  def getEntity(x: Int, y: Int): Option[Entity] = {
+    entities.find(entity => entity.xPosition == x && entity.yPosition == y)
+  }
+
+  def remove(entity: Entity): GameState = {
+    copy(entities = entities - entity)
   }
 }

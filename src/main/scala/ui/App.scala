@@ -17,7 +17,7 @@ import scala.language.postfixOps
 
 
 object App extends JFXApp3 {
-  val scale = 3
+  val scale = 1
   val spriteScale = 16
   val framesPerSecond = 8
 
@@ -29,15 +29,15 @@ object App extends JFXApp3 {
     var keyCodes: Set[KeyCode] = Set.empty
 
     val walls = MapGenerator.generate(20, 15).tiles.collect {
-      case (game.Point(x, y), TileType.Wall) => Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall)
+      case (game.Point(x, y), TileType.Wall) => Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall, health = 0)
     }
 
-    val player = Entity(xPosition = 5, yPosition = 5, entityType = EntityType.Player)
+    val player = Entity(xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 2)
 
-    val enemy = Entity(xPosition = 9, yPosition = 9, entityType = EntityType.Enemy)
+    val enemy = Entity(xPosition = 9, yPosition = 9, entityType = EntityType.Enemy, health = 2)
 
     val startingGameState = GameState(player.id, Set(player) ++ walls + enemy)
-    var state = CoreState(UIState.Move, startingGameState)
+    var controller = GameController(UIState.Move, startingGameState)
 
 
     stage = new PrimaryStage {
@@ -60,14 +60,14 @@ object App extends JFXApp3 {
     AnimationTimer { (currentTime: Long) =>
 
       keyCodes.headOption.foreach { keyCode =>
-        state = state.update(keyCode, currentTime)
+        controller = controller.update(keyCode, currentTime)
       }
-      updateCanvas(state, canvas, spriteSheet)
+      updateCanvas(controller, canvas, spriteSheet)
     }
   }.start()
 
 
-  private def updateCanvas(state: CoreState, canvas: Canvas, spriteSheet: Image): Unit = {
+  private def updateCanvas(state: GameController, canvas: Canvas, spriteSheet: Image): Unit = {
     canvas.graphicsContext2D.clearRect(0, 0, canvas.width.value, canvas.height.value)
     canvas.graphicsContext2D.setImageSmoothing(false)
 
