@@ -28,7 +28,8 @@ object App extends JFXApp3 {
 
     var keyCodes: Set[KeyCode] = Set.empty
 
-    val walls = MapGenerator.generate(20, 15).tiles.collect {
+//    val walls = MapGenerator.generate(20, 15).tiles.collect {
+    val walls = MapGenerator.generateRoomTree().tiles.collect {
       case (game.Point(x, y), TileType.Wall) => Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall, health = 0)
     }
 
