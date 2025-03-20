@@ -1,6 +1,6 @@
 package map
 
-import game.{Direction, Point}
+import game.Point
 
 case class GameMap(tiles: Seq[(Point, TileType)]) {
   def addRoom(room: Room): GameMap = {

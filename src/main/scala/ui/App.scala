@@ -1,6 +1,7 @@
 package ui
 
 import data.Sprites
+import game.EntityType.Wall
 import game.{Entity, EntityType, GameState}
 import map.{MapGenerator, TileType}
 import scalafx.Includes.*
@@ -28,9 +29,14 @@ object App extends JFXApp3 {
 
     var keyCodes: Set[KeyCode] = Set.empty
 
-//    val walls = MapGenerator.generate(20, 15).tiles.collect {
-    val walls = MapGenerator.generateRoomTree().tiles.collect {
-      case (game.Point(x, y), TileType.Wall) => Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall, health = 0)
+    val walls = MapGenerator.generateRoomTree().tiles.map {
+      case (game.Point(x, y), tileType) =>
+        val entityType: EntityType = tileType match {
+          case TileType.Floor => EntityType.Floor
+          case TileType.Wall => EntityType.Wall
+        }
+
+        Entity(xPosition = x, yPosition = y, entityType = entityType, health = 0, lineOfSightBlocking = entityType == Wall)
     }
 
     val player = Entity(xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 2)
@@ -38,8 +44,7 @@ object App extends JFXApp3 {
     val enemy = Entity(xPosition = 9, yPosition = 9, entityType = EntityType.Enemy, health = 2)
 
     val startingGameState = GameState(player.id, Set(player) ++ walls + enemy)
-    var controller = GameController(UIState.Move, startingGameState)
-
+    var controller = GameController(UIState.Move, startingGameState).init()
 
     stage = new PrimaryStage {
       title = "scala-roguelike"
@@ -82,17 +87,33 @@ object App extends JFXApp3 {
       case UIState.Attack(cursorX, cursorY) => (cursorX - 7, cursorY - 4)
     }
 
-    state.gameState.entities.foreach { entity =>
-      drawEntity(entity, canvas, spriteSheet, xOffset, yOffset)
-    }
+    state.gameState.entities.toSeq
+      .filter {
+        entity =>
+          player.sightMemory.contains(entity) || entity == player
+      }.sortBy {
+        entity =>
+          Sprites.sprites(entity.entityType).layer
+      }.foreach {
+        entity =>
+          val visible = state.gameState.getLineOfSight(player).contains(entity)
+          drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
+      }
 
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset)
   }
 
-  private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {
+  private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
     val x = (entity.xPosition - xOffset) * spriteScale * scale
     val y = (entity.yPosition - yOffset) * spriteScale * scale
     val entitySprite = Sprites.sprites(entity.entityType)
+
+    if (!visible) {
+      canvas.graphicsContext2D.setGlobalAlpha(0.5)
+    } else {
+      canvas.graphicsContext2D.setGlobalAlpha(1)
+    }
+
     canvas.graphicsContext2D.drawImage(spriteSheet, entitySprite.x, entitySprite.y, spriteScale, spriteScale, x, y, spriteScale * scale, spriteScale * scale)
   }
 

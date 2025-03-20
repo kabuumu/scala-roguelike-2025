@@ -30,12 +30,14 @@ case class Room(x: Int, y: Int, height: Int, width: Int, doors: Set[Direction]) 
 case class TreeRoom(x: Int, y: Int, linkedRoom: Map[Direction, String] = Map.empty) {
   val asRoom: Room = Room(x, y, 9, 9, linkedRoom.keys.toSet)
 }
+
 case class RoomTree(rooms: Map[String, TreeRoom]) {
   def addInitialRoom(roomId: String, room: TreeRoom): RoomTree = copy(rooms = rooms + (roomId -> room))
+
   def addRoom(roomId: String, direction: Direction, newRoomId: String): RoomTree = {
     val existingRoom = rooms(roomId)
 
-    val(x, y) = direction match {
+    val (x, y) = direction match {
       case Direction.Up => (existingRoom.x, existingRoom.y - 8)
       case Direction.Down => (existingRoom.x, existingRoom.y + existingRoom.asRoom.height - 1)
       case Direction.Left => (existingRoom.x - 8, existingRoom.y)

@@ -6,6 +6,17 @@ import ui.App.framesPerSecond
 
 
 case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
+  def init(): GameController = {
+    copy(gameState =
+      gameState.update(
+        gameState.playerEntity,
+        gameState.playerEntity.copy(
+          sightMemory = gameState.playerEntity.sightMemory ++ gameState.getLineOfSight(gameState.playerEntity)
+        )
+      )
+    )
+  }
+
   def update(keyCode: KeyCode, currentTime: Long): GameController = {
     if (currentTime - lastUpdateTime > 1000000000 / framesPerSecond) {
       val (newUIState, optAction) = uiState match

@@ -7,9 +7,14 @@ case class Entity(
                    xPosition: Int,
                    yPosition: Int,
                    entityType: EntityType,
-                   health: Int
+                   health: Int,
+                   lineOfSightBlocking: Boolean = false,
+                   sightMemory: Set[Entity] = Set.empty
                  ) {
   def move(direction: Direction): Entity = {
-    copy(xPosition = xPosition + direction.x, yPosition = yPosition + direction.y)
+    copy(
+      xPosition = xPosition + direction.x,
+      yPosition = yPosition + direction.y
+    )
   }
 }

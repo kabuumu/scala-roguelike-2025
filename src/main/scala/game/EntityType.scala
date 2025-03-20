@@ -1,4 +1,4 @@
 package game
 
 enum EntityType:
-  case Player, Enemy, Wall
+  case Player, Enemy, Wall, Floor
