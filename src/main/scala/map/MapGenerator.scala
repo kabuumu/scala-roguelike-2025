@@ -21,8 +21,6 @@ object MapGenerator {
       .addRoom("room3", Left, "room4")
       .addRoom("room2", Up, "room5")
 
-    println(roomTree.rooms)
-
     roomTree
   }
 

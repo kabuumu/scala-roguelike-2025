@@ -9,10 +9,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
   def init(): GameController = {
     copy(gameState =
       gameState.update(
-        gameState.playerEntity,
-        gameState.playerEntity.copy(
-          sightMemory = gameState.playerEntity.sightMemory ++ gameState.getLineOfSight(gameState.playerEntity)
-        )
+        gameState.playerEntity.id,
+        gameState.playerEntity.updateSightMemory(gameState)
       )
     )
   }

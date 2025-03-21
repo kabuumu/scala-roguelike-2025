@@ -21,16 +21,15 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
         ) {
           this
         } else update(
-          playerEntity,
-          newPlayerEntity
-            .copy(sightMemory = newPlayerEntity.sightMemory ++ getLineOfSight(newPlayerEntity))
+          playerEntity.id,
+          newPlayerEntity.updateSightMemory(this)
         )
       case Some(game.Action.Attack(cursorX, cursorY)) =>
         getEntity(cursorX, cursorY) match {
           case Some(enemy) if enemy.entityType == EntityType.Enemy =>
             enemy.copy(health = enemy.health - 1) match {
               case newEnemy if newEnemy.health <= 0 => remove(enemy)
-              case newEnemy => update(enemy, newEnemy)
+              case newEnemy => update(enemy.id, newEnemy)
             }
           case _ => this
         }
@@ -38,8 +37,11 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
     }
   }
 
-  def update(entity: Entity, newEntity: Entity): GameState = {
-    copy(entities = entities - entity + newEntity)
+  def update(entityId: String, newEntity: Entity): GameState = {
+    copy(entities = entities.map {
+      case entity if entity.id == entityId => newEntity
+      case other => other
+    })
   }
 
   def getEntity(x: Int, y: Int): Option[Entity] = {
@@ -50,64 +52,17 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
     copy(entities = entities - entity)
   }
 
-  def getLineOfSight(entity: Entity): Set[Entity] = {
-    val sightRange = 5
-    val entitiesInSight = scala.collection.mutable.Set[Entity]()
-    val blockingPositions = entities.collect {
-      case e if e.lineOfSightBlocking || e.entityType == EntityType.Wall => (e.xPosition, e.yPosition)
-    }.toSet
+  def getVisibleEntitiesFor(entity: Entity): Set[Entity] = {
+    val visiblePoints = entity.getLineOfSight(this)
 
-    def isBlocking(x: Int, y: Int): Boolean = {
-      blockingPositions.contains((x, y))
+    entities.filter{
+      visibleEntity =>
+        visiblePoints.exists(
+          visiblePoint =>
+            visibleEntity.xPosition == visiblePoint.x && visibleEntity.yPosition == visiblePoint.y
+        )
+
     }
 
-    def bresenhamLine(x0: Int, y0: Int, x1: Int, y1: Int): Seq[(Int, Int)] = {
-      val dx = Math.abs(x1 - x0)
-      val dy = Math.abs(y1 - y0)
-      val sx = if (x0 < x1) 1 else -1
-      val sy = if (y0 < y1) 1 else -1
-      var err = dx - dy
-
-      var x = x0
-      var y = y0
-      val line = scala.collection.mutable.Buffer[(Int, Int)]()
-
-      while (x != x1 || y != y1) {
-        line.append((x, y))
-        val e2 = 2 * err
-        if (e2 > -dy) {
-          err -= dy
-          x += sx
-        }
-        if (e2 < dx) {
-          err += dx
-          y += sy
-        }
-      }
-      line.append((x1, y1))
-      line.toSeq
-    }
-
-    entitiesInSight.add(entity)
-
-    for (dx <- -sightRange to sightRange; dy <- -sightRange to sightRange) {
-      val x = entity.xPosition + dx
-      val y = entity.yPosition + dy
-      val distance = Math.sqrt(dx * dx + dy * dy)
-      if (distance <= sightRange) {
-        val line = bresenhamLine(entity.xPosition, entity.yPosition, x, y)
-        var blocked = false
-        for ((lx, ly) <- line if !blocked) {
-          if (isBlocking(lx, ly)) {
-            entities.find(e => e.xPosition == lx && e.yPosition == ly).foreach(entitiesInSight.add)
-            blocked = true
-          } else if ((lx, ly) == (x, y)) {
-            entities.find(e => e.xPosition == lx && e.yPosition == ly).foreach(entitiesInSight.add)
-          }
-        }
-      }
-    }
-
-    entitiesInSight.toSet
   }
 }

@@ -2,7 +2,7 @@ package ui
 
 import data.Sprites
 import game.EntityType.Wall
-import game.{Entity, EntityType, GameState}
+import game.{Entity, EntityType, GameState, Point}
 import map.{MapGenerator, TileType}
 import scalafx.Includes.*
 import scalafx.animation.AnimationTimer
@@ -18,7 +18,7 @@ import scala.language.postfixOps
 
 
 object App extends JFXApp3 {
-  val scale = 1
+  val scale = 3
   val spriteScale = 16
   val framesPerSecond = 8
 
@@ -39,7 +39,7 @@ object App extends JFXApp3 {
         Entity(xPosition = x, yPosition = y, entityType = entityType, health = 0, lineOfSightBlocking = entityType == Wall)
     }
 
-    val player = Entity(xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 2)
+    val player = Entity(id = "Player ID", xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 2)
 
     val enemy = Entity(xPosition = 9, yPosition = 9, entityType = EntityType.Enemy, health = 2)
 
@@ -90,13 +90,13 @@ object App extends JFXApp3 {
     state.gameState.entities.toSeq
       .filter {
         entity =>
-          player.sightMemory.contains(entity) || entity == player
+          player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y)
       }.sortBy {
         entity =>
           Sprites.sprites(entity.entityType).layer
       }.foreach {
         entity =>
-          val visible = state.gameState.getLineOfSight(player).contains(entity)
+          val visible = state.gameState.getVisibleEntitiesFor(player).contains(entity)
           drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
       }
 

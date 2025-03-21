@@ -9,12 +9,28 @@ case class Entity(
                    entityType: EntityType,
                    health: Int,
                    lineOfSightBlocking: Boolean = false,
-                   sightMemory: Set[Entity] = Set.empty
+                   sightMemory: Set[Point] = Set.empty
                  ) {
   def move(direction: Direction): Entity = {
     copy(
       xPosition = xPosition + direction.x,
       yPosition = yPosition + direction.y
+    )
+  }
+
+  def updateSightMemory(gameState: GameState): Entity = copy(
+    //TODO - this will cause problems for entities that move - possibly need different rules for those
+    sightMemory = sightMemory ++ getLineOfSight(gameState)
+  )
+
+  def getLineOfSight(gameState: GameState): Set[Point] = {
+    LineOfSight.getVisiblePoints(
+      Point(xPosition, yPosition),
+      gameState.entities.collect {
+        case entity if entity.lineOfSightBlocking =>
+          Point(entity.xPosition, entity.yPosition)
+      },
+      sightRange = 10
     )
   }
 }
