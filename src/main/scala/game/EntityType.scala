@@ -1,4 +1,7 @@
 package game
 
-enum EntityType:
-  case Player, Enemy, Wall, Floor
+enum EntityType(val isStatic: Boolean):
+  case Player extends EntityType(false)
+  case Enemy extends EntityType(false)
+  case Wall extends EntityType(true)
+  case Floor extends EntityType(true)

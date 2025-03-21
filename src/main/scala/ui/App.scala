@@ -87,6 +87,8 @@ object App extends JFXApp3 {
       case UIState.Attack(cursorX, cursorY) => (cursorX - 7, cursorY - 4)
     }
 
+    val playerVisibleEntities = state.gameState.getVisibleEntitiesFor(player)
+
     state.gameState.entities.toSeq
       .filter {
         entity =>
@@ -96,8 +98,12 @@ object App extends JFXApp3 {
           Sprites.sprites(entity.entityType).layer
       }.foreach {
         entity =>
-          val visible = state.gameState.getVisibleEntitiesFor(player).contains(entity)
-          drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
+          val visible = playerVisibleEntities.contains(entity)
+
+          //Do not draw dynamic entities that are not visible
+          if(entity.entityType.isStatic || visible) {
+            drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
+          }
       }
 
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset)
@@ -123,6 +129,8 @@ object App extends JFXApp3 {
         val cursorSprite = Sprites.cursorSprite
         val offsetCursorX = (cursorX - xOffset) * spriteScale * scale
         val offsetCursorY = (cursorY - yOffset) * spriteScale * scale
+        canvas.graphicsContext2D.setGlobalAlpha(1)
+
         canvas.graphicsContext2D.drawImage(
           spriteSheet,
           cursorSprite.x,

@@ -51,8 +51,6 @@ case class RoomTree(rooms: Map[String, TreeRoom]) {
   }
 
   val tiles: Seq[(Point, TileType)] = {
-    rooms.values.foreach(room => println(room.asRoom.gameMap))
-
     rooms.values.flatMap(_.asRoom.gameMap.tiles).toSeq
   }
 }
