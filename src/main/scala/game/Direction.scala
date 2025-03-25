@@ -13,4 +13,15 @@ object Direction {
     case Direction.Left => Direction.Right
     case Direction.Right => Direction.Left
   }
+  
+  def fromPoints(start: Point, end: Point): Direction = {
+    val xDiff = end.x - start.x
+    val yDiff = end.y - start.y
+
+    if (Math.abs(xDiff) > Math.abs(yDiff)) {
+      if (xDiff > 0) Direction.Right else Direction.Left
+    } else {
+      if (yDiff > 0) Direction.Down else Direction.Up
+    }
+  }
 }

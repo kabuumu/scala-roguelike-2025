@@ -9,12 +9,16 @@ case class Entity(
                    entityType: EntityType,
                    health: Int,
                    lineOfSightBlocking: Boolean = false,
-                   sightMemory: Set[Point] = Set.empty
+                   sightMemory: Set[Point] = Set.empty,
+                   initiative: Int = 0
                  ) {
+  val INITIATIVE_MAX = 10
+
   def move(direction: Direction): Entity = {
     copy(
       xPosition = xPosition + direction.x,
-      yPosition = yPosition + direction.y
+      yPosition = yPosition + direction.y,
+      initiative = INITIATIVE_MAX
     )
   }
 

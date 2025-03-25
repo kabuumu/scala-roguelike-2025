@@ -20,7 +20,7 @@ import scala.language.postfixOps
 object App extends JFXApp3 {
   val scale = 3
   val spriteScale = 16
-  val framesPerSecond = 8
+  val framesPerSecond = 60
 
   override def start(): Unit = {
     val spriteSheet = Image("file:src/resources/sprites/sprites.png")
@@ -65,9 +65,8 @@ object App extends JFXApp3 {
 
     AnimationTimer { (currentTime: Long) =>
 
-      keyCodes.headOption.foreach { keyCode =>
-        controller = controller.update(keyCode, currentTime)
-      }
+      controller = controller.update(keyCodes.headOption, currentTime)
+
       updateCanvas(controller, canvas, spriteSheet)
     }
   }.start()
@@ -101,7 +100,7 @@ object App extends JFXApp3 {
           val visible = playerVisibleEntities.contains(entity)
 
           //Do not draw dynamic entities that are not visible
-          if(entity.entityType.isStatic || visible) {
+          if (entity.entityType.isStatic || visible) {
             drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
           }
       }
