@@ -25,8 +25,11 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
           newPlayerEntity.updateSightMemory(this)
         )
       case Some(game.Action.Attack(cursorX, cursorY)) if playerEntity.initiative == 0 =>
-        getEntity(cursorX, cursorY) match {
-          case Some(enemy) if enemy.entityType == EntityType.Enemy =>
+        println("processed action is: " + playerAction)
+
+        getEnemy(cursorX, cursorY) match {
+          case Some(enemy) =>
+            println(s"Player attacks enemy: $enemy")
             enemy.copy(health = enemy.health - 1) match {
               case newEnemy if newEnemy.health <= 0 => remove(enemy)
               case newEnemy => updateEntity(enemy.id, newEnemy)
@@ -91,6 +94,10 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
 
   def getEntity(x: Int, y: Int): Option[Entity] = {
     entities.find(entity => entity.xPosition == x && entity.yPosition == y)
+  }
+
+  def getEnemy(x: Int, y: Int): Option[Entity] = {
+    entities.find(entity => entity.xPosition == x && entity.yPosition == y && entity.entityType == EntityType.Enemy)
   }
 
   def remove(entity: Entity): GameState = {

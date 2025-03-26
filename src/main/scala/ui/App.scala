@@ -2,7 +2,7 @@ package ui
 
 import data.Sprites
 import game.EntityType.Wall
-import game.{Entity, EntityType, GameState, Point}
+import game.{Entity, EntityType, GameState, Point, Sprite}
 import map.{MapGenerator, TileType}
 import scalafx.Includes.*
 import scalafx.animation.AnimationTimer
@@ -20,7 +20,8 @@ import scala.language.postfixOps
 object App extends JFXApp3 {
   val scale = 3
   val spriteScale = 16
-  val framesPerSecond = 60
+  val framesPerSecond = 10
+  val allowedActionsPerSecond = 8
 
   override def start(): Unit = {
     val spriteSheet = Image("file:src/resources/sprites/sprites.png")

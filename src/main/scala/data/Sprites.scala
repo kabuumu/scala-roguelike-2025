@@ -8,11 +8,12 @@ object Sprites {
   private val wallSprite = Sprite(16 * 10, 16 * 17, 1)
   private val enemySprite = Sprite(16 * 26, 0, 1)
   private val floorSprite = Sprite(16 * 2, 16 * 0, 0)
+  private val ratSprite = Sprite(16 * 31, 16 * 8, 1)
 
   val sprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,
     Wall -> wallSprite,
-    Enemy -> enemySprite,
+    Enemy -> ratSprite,
     Floor -> floorSprite
   )
 

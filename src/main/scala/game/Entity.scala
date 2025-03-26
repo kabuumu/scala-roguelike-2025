@@ -12,7 +12,11 @@ case class Entity(
                    sightMemory: Set[Point] = Set.empty,
                    initiative: Int = 0
                  ) {
-  val INITIATIVE_MAX = 10
+  val INITIATIVE_MAX = entityType match {
+    case EntityType.Player => 10
+    case EntityType.Enemy => 11
+    case _ => 0
+  }
 
   def move(direction: Direction): Entity = {
     copy(
