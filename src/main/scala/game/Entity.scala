@@ -18,6 +18,8 @@ case class Entity(
     case _ => 0
   }
 
+  val position: Point = Point(xPosition, yPosition)
+
   def move(direction: Direction): Entity = {
     copy(
       xPosition = xPosition + direction.x,

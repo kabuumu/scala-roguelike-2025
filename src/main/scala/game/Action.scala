@@ -4,10 +4,10 @@ trait Action {
   def apply(entity: Entity, gameState: GameState): GameState
 }
 
-case class Move(direction: Direction) extends Action {
-  def apply(entity: Entity, gameState: GameState): GameState = {
-    val movedEntity = entity.move(direction)
-    gameState.copy(entities = gameState.entities - entity + movedEntity)
+case class MoveAction(direction: Direction) extends Action {
+  def apply(movingEntity: Entity, gameState: GameState): GameState = {
+    val movedEntity = movingEntity.move(direction)
+    gameState.copy(entities = gameState.entities - movingEntity + movedEntity)
 
     if (
       gameState.entities.exists(
@@ -21,24 +21,34 @@ case class Move(direction: Direction) extends Action {
     ) {
       gameState
     } else gameState.updateEntity(
-      entity.id,
+      movingEntity.id,
       movedEntity.updateSightMemory(gameState)
     )
   }
 }
 
-case class Attack (cursorX: Int, cursorY: Int) extends Action {
-  def apply(entity: Entity, gameState: GameState): GameState = {
-    val enemy = gameState.getEnemy(cursorX, cursorY)
-    enemy match {
+case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
+  def apply(attackingEntity: Entity, gameState: GameState): GameState = {
+    gameState.getActor(cursorX, cursorY) match {
       case Some(enemy) =>
         val newEnemy = enemy.copy(health = enemy.health - 1)
         if (newEnemy.health <= 0) {
-          gameState.remove(enemy)
+          gameState
+            .remove(enemy)
+            .updateEntity(
+              attackingEntity.id,
+              attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
+            )
         } else {
-          gameState.updateEntity(enemy.id, newEnemy)
+          gameState
+            .updateEntity(enemy.id, newEnemy)
+            .updateEntity(
+              attackingEntity.id,
+              attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
+            )
         }
-      case _ => gameState
+      case _ =>
+        throw new Exception(s"No target found at $cursorX, $cursorY")
     }
   }
 }

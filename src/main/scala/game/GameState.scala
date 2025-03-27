@@ -5,6 +5,11 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
 
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
+  val walls: Set[Point] = entities.collect {
+    case entity if entity.entityType == EntityType.Wall =>
+      Point(entity.xPosition, entity.yPosition)
+  }
+
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
       case Some(action) if playerEntity.initiative == 0 =>
@@ -39,8 +44,8 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
     entities.find(entity => entity.xPosition == x && entity.yPosition == y)
   }
 
-  def getEnemy(x: Int, y: Int): Option[Entity] = {
-    entities.find(entity => entity.xPosition == x && entity.yPosition == y && entity.entityType == EntityType.Enemy)
+  def getActor(x: Int, y: Int): Option[Entity] = {
+    entities.find(entity => entity.xPosition == x && entity.yPosition == y && (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player))
   }
 
   def remove(entity: Entity): GameState = {

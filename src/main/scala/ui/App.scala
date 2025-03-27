@@ -65,6 +65,10 @@ object App extends JFXApp3 {
     }
 
     AnimationTimer { (currentTime: Long) =>
+      if(controller.gameState.playerEntity.health <= 0) {
+        println("Game Over")
+        System.exit(0)
+      }
 
       controller = controller.update(keyCodes.headOption, currentTime)
 
