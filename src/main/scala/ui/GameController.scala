@@ -26,8 +26,6 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Some(keycode) if delta > ticksPerSecond / allowedActionsPerSecond =>
           val (newUiState, optAction) = handleInput(keycode, currentTime)
           val newGameState = gameState.update(optAction)
-          println("uiState = " + newUiState)
-          println("action = " + optAction)
 
           (newUiState, newGameState)
         case _ => (uiState, gameState)

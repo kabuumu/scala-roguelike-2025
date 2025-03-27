@@ -7,35 +7,8 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
 
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
-      case Some(Move(direction)) if playerEntity.initiative == 0 =>
-        val newPlayerEntity = playerEntity.move(direction)
-        if (
-          entities.exists(
-            entity =>
-              entity.xPosition == newPlayerEntity.xPosition
-                &&
-                entity.yPosition == newPlayerEntity.yPosition
-                &&
-                entity.entityType == EntityType.Wall
-          )
-        ) {
-          this
-        } else updateEntity(
-          playerEntity.id,
-          newPlayerEntity.updateSightMemory(this)
-        )
-      case Some(Attack(cursorX, cursorY)) if playerEntity.initiative == 0 =>
-        println("processed action is: " + playerAction)
-
-        getEnemy(cursorX, cursorY) match {
-          case Some(enemy) =>
-            println(s"Player attacks enemy: $enemy")
-            enemy.copy(health = enemy.health - 1) match {
-              case newEnemy if newEnemy.health <= 0 => remove(enemy)
-              case newEnemy => updateEntity(enemy.id, newEnemy)
-            }
-          case _ => this
-        }
+      case Some(action) if playerEntity.initiative == 0 =>
+        action.apply(playerEntity, this)
       case _ => this
     }
   }
