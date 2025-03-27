@@ -18,7 +18,7 @@ import scala.language.postfixOps
 
 
 object App extends JFXApp3 {
-  val scale = 3
+  val scale = 1
   val spriteScale = 16
   val framesPerSecond = 10
   val allowedActionsPerSecond = 8

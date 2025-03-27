@@ -14,7 +14,7 @@ case class Entity(
                  ) {
   val INITIATIVE_MAX = entityType match {
     case EntityType.Player => 10
-    case EntityType.Enemy => 11
+    case EntityType.Enemy => 12
     case _ => 0
   }
 

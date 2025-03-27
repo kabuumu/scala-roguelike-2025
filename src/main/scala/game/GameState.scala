@@ -7,7 +7,7 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
 
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
-      case Some(Action.Move(direction)) if playerEntity.initiative == 0 =>
+      case Some(Move(direction)) if playerEntity.initiative == 0 =>
         val newPlayerEntity = playerEntity.move(direction)
         if (
           entities.exists(
@@ -24,7 +24,7 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
           playerEntity.id,
           newPlayerEntity.updateSightMemory(this)
         )
-      case Some(game.Action.Attack(cursorX, cursorY)) if playerEntity.initiative == 0 =>
+      case Some(Attack(cursorX, cursorY)) if playerEntity.initiative == 0 =>
         println("processed action is: " + playerAction)
 
         getEnemy(cursorX, cursorY) match {
@@ -43,46 +43,16 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
   def update(): GameState = {
     if (playerEntity.initiative == 0) {
       this // wait for player to act
-    } else copy(
-      entities = entities
-        .map(entity => entity.copy(initiative = entity.initiative - 1))
-        .map {
-          case entity if entity.initiative <= 0 && entity.entityType == EntityType.Enemy =>
-            val path = Pathfinder.findPath(
-              Point(entity.xPosition, entity.yPosition),
-              Point(playerEntity.xPosition, playerEntity.yPosition),
-              entities.collect {
-                case entity if entity.entityType == EntityType.Wall =>
-                  Point(entity.xPosition, entity.yPosition)
-              }
-            )
+    } else {
+      entities.foldLeft(this) {
+        case (gameState, entity) if entity.initiative <= 0 && entity.entityType == EntityType.Enemy =>
+          val nextAction = EnemyAI.getNextAction(entity, gameState)
+          nextAction.apply(entity, gameState)
 
-
-            path.drop(1).headOption match {
-              case Some(nextStep) =>
-                val direction = Direction.fromPoints(
-                  Point(entity.xPosition, entity.yPosition),
-                  nextStep
-                )
-
-                val newEnemy = entity.move(direction)
-                if (
-                  entities.exists(
-                    entity =>
-                      entity.xPosition == newEnemy.xPosition
-                        &&
-                        entity.yPosition == newEnemy.yPosition
-                        &&
-                        entity.entityType == EntityType.Wall
-                  )
-                ) {
-                  entity
-                } else newEnemy
-              case None => entity
-            }
-          case entity => entity
-        }
-    )
+        case (gameState, entity) =>
+          gameState.updateEntity(entity.id, entity.copy(initiative = entity.initiative - 1))
+      }
+    }
   }
 
   def updateEntity(entityId: String, newEntity: Entity): GameState = {
