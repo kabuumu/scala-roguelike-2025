@@ -30,22 +30,24 @@ case class MoveAction(direction: Direction) extends Action {
 case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): GameState = {
     gameState.getActor(cursorX, cursorY) match {
-      case Some(enemy) =>
-        val newEnemy = enemy.copy(health = enemy.health - 1)
+      case Some(target) =>
+        val newEnemy = target.copy(health = target.health - 1)
         if (newEnemy.health <= 0) {
           gameState
-            .updateEntity(enemy.id, newEnemy.copy(isDead = true))
+            .updateEntity(target.id, newEnemy.copy(isDead = true))
             .updateEntity(
               attackingEntity.id,
               attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
             )
+            .addMessage(s"${attackingEntity.name} killed ${target.name}")
         } else {
           gameState
-            .updateEntity(enemy.id, newEnemy)
+            .updateEntity(target.id, newEnemy)
             .updateEntity(
               attackingEntity.id,
               attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
             )
+            .addMessage(s"${attackingEntity.name} attacked ${target.name}")
         }
       case _ =>
         throw new Exception(s"No target found at $cursorX, $cursorY")

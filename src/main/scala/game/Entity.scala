@@ -44,4 +44,6 @@ case class Entity(
       sightRange = 10
     )
   }
+
+  val name: String = EntityType.toString
 }

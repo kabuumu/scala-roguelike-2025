@@ -1,6 +1,6 @@
 package game
 
-case class GameState(playerEntityId: String, entities: Set[Entity]) {
+case class GameState(playerEntityId: String, entities: Set[Entity], messages: Seq[String] = Nil) {
   private val framesPerSecond = 8
 
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
@@ -63,5 +63,9 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
         )
 
     }
+  }
+
+  def addMessage(message: String): GameState = {
+    copy(messages = message +: messages)
   }
 }

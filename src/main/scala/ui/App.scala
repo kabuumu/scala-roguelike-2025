@@ -2,7 +2,7 @@ package ui
 
 import data.Sprites
 import game.EntityType.Wall
-import game.{Entity, EntityType, GameState, Point, Sprite}
+import game.{Entity, EntityType, GameState, Point}
 import map.{MapGenerator, TileType}
 import scalafx.Includes.*
 import scalafx.animation.AnimationTimer
@@ -10,23 +10,33 @@ import scalafx.application.JFXApp3
 import scalafx.application.JFXApp3.PrimaryStage
 import scalafx.scene.Scene
 import scalafx.scene.canvas.Canvas
+import scalafx.scene.control.TextArea
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCode
+import scalafx.scene.layout.VBox
+import scalafx.scene.text.Font
 import ui.UIState.Attack
 
 import scala.language.postfixOps
-
 
 object App extends JFXApp3 {
   val scale = 1
   val spriteScale = 16
   val framesPerSecond = 16
-  val allowedActionsPerSecond = 12
+  val allowedActionsPerSecond = 10
 
   override def start(): Unit = {
     val spriteSheet = Image("file:src/resources/sprites/sprites.png")
+    val pixelFont = Font.loadFont("file:src/resources/fonts/Kenney Pixel.ttf", 16 * scale)
 
     val canvas = new Canvas(spriteScale * scale * 16, spriteScale * scale * 10)
+    val messageArea = new TextArea {
+      editable = false
+      prefHeight = 64 * scale
+      font = pixelFont
+      style = "-fx-control-inner-background: black; -fx-text-fill: white;"
+      focusTraversable = false
+    }
 
     var keyCodes: Set[KeyCode] = Set.empty
 
@@ -47,25 +57,31 @@ object App extends JFXApp3 {
     val startingGameState = GameState(player.id, Set(player) ++ walls + enemy)
     var controller = GameController(UIState.Move, startingGameState).init()
 
+    val vbox = new VBox {
+      children = Seq(canvas, messageArea)
+    }
+
     stage = new PrimaryStage {
       title = "scala-roguelike"
       scene = new Scene {
-        content = canvas
+        content = vbox
         //set background to black
         fill = "black"
 
-        onKeyPressed = {
-          key => keyCodes += key.code
+        onKeyPressed = { key =>
+          keyCodes += key.code
         }
 
-        onKeyReleased = {
-          key => keyCodes -= key.code
+        onKeyReleased = { key =>
+          keyCodes -= key.code
         }
       }
     }
 
+    vbox.requestFocus()
+
     AnimationTimer { (currentTime: Long) =>
-      if(controller.gameState.playerEntity.health <= 0) {
+      if (controller.gameState.playerEntity.health <= 0) {
         println("Game Over")
         System.exit(0)
       }
@@ -73,9 +89,9 @@ object App extends JFXApp3 {
       controller = controller.update(keyCodes.headOption, currentTime)
 
       updateCanvas(controller, canvas, spriteSheet)
-    }
-  }.start()
-
+      updateMessageArea(controller, messageArea)
+    }.start()
+  }
 
   private def updateCanvas(state: GameController, canvas: Canvas, spriteSheet: Image): Unit = {
     canvas.graphicsContext2D.clearRect(0, 0, canvas.width.value, canvas.height.value)
@@ -113,10 +129,16 @@ object App extends JFXApp3 {
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset)
   }
 
+  private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
+    val messages = state.gameState.messages.mkString("\n")
+
+    messageArea.text = messages
+  }
+
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
     val x = (entity.xPosition - xOffset) * spriteScale * scale
     val y = (entity.yPosition - yOffset) * spriteScale * scale
-    val entitySprite = if(entity.isDead) Sprites.deadSprite
+    val entitySprite = if (entity.isDead) Sprites.deadSprite
     else Sprites.sprites(entity.entityType)
 
     if (!visible) {
