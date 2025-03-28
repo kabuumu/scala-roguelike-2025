@@ -34,7 +34,7 @@ case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
         val newEnemy = enemy.copy(health = enemy.health - 1)
         if (newEnemy.health <= 0) {
           gameState
-            .remove(enemy)
+            .updateEntity(enemy.id, newEnemy.copy(isDead = true))
             .updateEntity(
               attackingEntity.id,
               attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)

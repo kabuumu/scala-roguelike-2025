@@ -23,7 +23,7 @@ case class GameState(playerEntityId: String, entities: Set[Entity]) {
       this // wait for player to act
     } else {
       entities.foldLeft(this) {
-        case (gameState, entity) if entity.initiative <= 0 && entity.entityType == EntityType.Enemy =>
+        case (gameState, entity) if entity.initiative <= 0 && entity.entityType == EntityType.Enemy  && !entity.isDead =>
           val nextAction = EnemyAI.getNextAction(entity, gameState)
           nextAction.apply(entity, gameState)
 
