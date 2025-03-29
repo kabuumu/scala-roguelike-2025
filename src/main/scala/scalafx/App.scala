@@ -1,4 +1,4 @@
-package ui
+package scalafx
 
 import data.Sprites
 import game.EntityType.Wall
@@ -16,14 +16,15 @@ import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
 import scalafx.scene.text.Font
 import ui.UIState.Attack
+import ui.{GameController, UIState}
 
 import scala.language.postfixOps
 
 object App extends JFXApp3 {
-  val scale = 1
+  val scale = 3
   val spriteScale = 16
   val framesPerSecond = 16
-  val allowedActionsPerSecond = 10
+  val allowedActionsPerSecond = 8
 
   override def start(): Unit = {
     val spriteSheet = Image("file:src/resources/sprites/sprites.png")

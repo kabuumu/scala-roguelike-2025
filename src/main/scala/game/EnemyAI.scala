@@ -4,7 +4,7 @@ object EnemyAI {
   def getNextAction(enemy: Entity, gameState: GameState): Action = {
     val target = gameState.playerEntity
 
-    if (enemy.position.getDistance(target.position) <= 1) {
+    if (enemy.position.isWithinRangeOf(target.position, 1)) {
       AttackAction(target.xPosition, target.yPosition)
     }
     else {

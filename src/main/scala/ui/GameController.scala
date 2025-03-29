@@ -2,7 +2,7 @@ package ui
 
 import game._
 import scalafx.scene.input.KeyCode
-import ui.App.{allowedActionsPerSecond, framesPerSecond}
+import scalafx.App.{allowedActionsPerSecond, framesPerSecond}
 
 
 case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
@@ -24,7 +24,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       (keyCode match {
         //To ensure inputs only happen at a certain rate
         case Some(keycode) if delta > ticksPerSecond / allowedActionsPerSecond =>
-          val (newUiState, optAction) = handleInput(keycode, currentTime)
+          val (newUiState, optAction) = handleInput(keycode)
           val newGameState = gameState.update(optAction)
 
           (newUiState, newGameState)
@@ -40,8 +40,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     } else this
   }
 
-  private def handleInput(keyCode: KeyCode, currentTime: Long): (UIState, Option[Action]) = {
-    (uiState, keyCode) match {
+  private def handleInput(keyCode: KeyCode): (UIState, Option[Action]) = (uiState, keyCode) match {
       case (UIState.Move, KeyCode.W) => (UIState.Move, Some(MoveAction(Direction.Up)))
       case (UIState.Move, KeyCode.A) => (UIState.Move, Some(MoveAction(Direction.Left)))
       case (UIState.Move, KeyCode.S) => (UIState.Move, Some(MoveAction(Direction.Down)))
@@ -56,6 +55,9 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       case _ => (uiState, None)
     }
 
-
+  private val enemiesWithinRange: Seq[Entity] = gameState.entities.filter { enemyEntity =>
+    enemyEntity.entityType == EntityType.Enemy
+      &&
+      gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, 1)
   }
 }

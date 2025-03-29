@@ -45,5 +45,5 @@ case class Entity(
     )
   }
 
-  val name: String = EntityType.toString
+  val name: String = entityType.toString
 }

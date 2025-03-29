@@ -8,7 +8,7 @@ object LineOfSight {
       y <- start.y - sightRange to start.y + sightRange;
       end = Point(x, y);
       line = getBresenhamLine(start, end)
-      if start.getDistance(end) <= sightRange
+      if start.isWithinRangeOf(end, sightRange)
       if line.drop(1).forall(!blockedPoints.contains(_))
     ) yield end
   }.toSet
