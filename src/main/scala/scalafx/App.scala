@@ -15,7 +15,7 @@ import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
 import scalafx.scene.text.Font
-import ui.UIState.Attack
+import ui.UIState.{Attack, UIState}
 import ui.{GameController, UIState}
 
 import scala.language.postfixOps
@@ -54,8 +54,9 @@ object App extends JFXApp3 {
     val player = Entity(id = "Player ID", xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 2)
 
     val enemy = Entity(xPosition = 9, yPosition = 9, entityType = EntityType.Enemy, health = 2)
+    val enemy2 = Entity(xPosition = 10, yPosition = 9, entityType = EntityType.Enemy, health = 2)
 
-    val startingGameState = GameState(player.id, Set(player) ++ walls + enemy)
+    val startingGameState = GameState(player.id, Set(player) ++ walls + enemy + enemy2)
     var controller = GameController(UIState.Move, startingGameState).init()
 
     val vbox = new VBox {
@@ -106,6 +107,7 @@ object App extends JFXApp3 {
     val (xOffset, yOffset) = state.uiState match {
       case UIState.Move => (playerX - 7, playerY - 4)
       case UIState.Attack(cursorX, cursorY) => (cursorX - 7, cursorY - 4)
+      case UIState.AttackList(enemies, position) => (enemies(position).xPosition - 7, enemies(position).yPosition - 4)
     }
 
     val playerVisibleEntities = state.gameState.getVisibleEntitiesFor(player)
@@ -157,6 +159,23 @@ object App extends JFXApp3 {
         val cursorSprite = Sprites.cursorSprite
         val offsetCursorX = (cursorX - xOffset) * spriteScale * scale
         val offsetCursorY = (cursorY - yOffset) * spriteScale * scale
+        canvas.graphicsContext2D.setGlobalAlpha(1)
+
+        canvas.graphicsContext2D.drawImage(
+          spriteSheet,
+          cursorSprite.x,
+          cursorSprite.y,
+          spriteScale,
+          spriteScale,
+          offsetCursorX,
+          offsetCursorY,
+          spriteScale * scale,
+          spriteScale * scale
+        )
+      case UIState.AttackList(enemies, position) =>
+        val cursorSprite = Sprites.cursorSprite
+        val offsetCursorX = (enemies(position).xPosition - xOffset) * spriteScale * scale
+        val offsetCursorY = (enemies(position).yPosition - yOffset) * spriteScale * scale
         canvas.graphicsContext2D.setGlobalAlpha(1)
 
         canvas.graphicsContext2D.drawImage(

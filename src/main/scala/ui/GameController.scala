@@ -1,8 +1,9 @@
 package ui
 
-import game._
+import game.*
 import scalafx.scene.input.KeyCode
 import scalafx.App.{allowedActionsPerSecond, framesPerSecond}
+import ui.UIState.UIState
 
 
 case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
@@ -45,17 +46,21 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       case (UIState.Move, KeyCode.A) => (UIState.Move, Some(MoveAction(Direction.Left)))
       case (UIState.Move, KeyCode.S) => (UIState.Move, Some(MoveAction(Direction.Down)))
       case (UIState.Move, KeyCode.D) => (UIState.Move, Some(MoveAction(Direction.Right)))
-      case (UIState.Move, KeyCode.Space) => (UIState.Attack(gameState.playerEntity.xPosition, gameState.playerEntity.yPosition), None)
-      case (UIState.Attack(cursorX, cursorY), KeyCode.W) => (UIState.Attack(cursorX, cursorY - 1), None)
-      case (UIState.Attack(cursorX, cursorY), KeyCode.A) => (UIState.Attack(cursorX - 1, cursorY), None)
-      case (UIState.Attack(cursorX, cursorY), KeyCode.S) => (UIState.Attack(cursorX, cursorY + 1), None)
-      case (UIState.Attack(cursorX, cursorY), KeyCode.D) => (UIState.Attack(cursorX + 1, cursorY), None)
-      case (UIState.Attack(cursorX, cursorY), KeyCode.Space) => (UIState.Move, Some(AttackAction(cursorX, cursorY)))
-      case (UIState.Attack(cursorX, cursorY), KeyCode.Escape) => (UIState.Move, None)
+      case (UIState.Move, KeyCode.Space) => 
+        if (enemiesWithinRange.isEmpty) (UIState.Move, None)
+        else (UIState.AttackList(enemiesWithinRange.toSeq, 0), None)
+      case (attack: UIState.AttackList, KeyCode.W) => (attack.iterate, None)
+      case (attack: UIState.AttackList, KeyCode.A) => (attack.iterate, None)
+      case (attack: UIState.AttackList, KeyCode.S) => (attack.iterate, None)
+      case (attack: UIState.AttackList, KeyCode.D) => (attack.iterate, None)
+      case (UIState.AttackList(enemies, position), KeyCode.Space) =>
+        val Point(targetX, targetY) = enemies(position).position
+        (UIState.Move, Some(AttackAction(targetX, targetY)))
+      case (_: UIState.AttackList, KeyCode.Escape) => (UIState.Move, None)
       case _ => (uiState, None)
     }
 
-  private val enemiesWithinRange: Seq[Entity] = gameState.entities.filter { enemyEntity =>
+  private val enemiesWithinRange: Set[Entity] = gameState.entities.filter { enemyEntity =>
     enemyEntity.entityType == EntityType.Enemy
       &&
       gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, 1)
