@@ -10,7 +10,8 @@ import scalafx.application.JFXApp3
 import scalafx.application.JFXApp3.PrimaryStage
 import scalafx.scene.Scene
 import scalafx.scene.canvas.Canvas
-import scalafx.scene.control.TextArea
+import scalafx.scene.control.ScrollPane.ScrollBarPolicy
+import scalafx.scene.control.{ScrollPane, TextArea}
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
@@ -39,6 +40,12 @@ object App extends JFXApp3 {
       focusTraversable = false
     }
 
+    val scrollPane = new ScrollPane {
+      content = messageArea
+      vbarPolicy = ScrollBarPolicy.Never
+      hbarPolicy = ScrollBarPolicy.Never
+    }
+
     var keyCodes: Set[KeyCode] = Set.empty
 
     val walls = MapGenerator.generateRoomTree().tiles.map {
@@ -51,7 +58,7 @@ object App extends JFXApp3 {
         Entity(xPosition = x, yPosition = y, entityType = entityType, health = 0, lineOfSightBlocking = entityType == Wall)
     }
 
-    val player = Entity(id = "Player ID", xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 2)
+    val player = Entity(id = "Player ID", xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 10)
 
     val enemy = Entity(xPosition = 9, yPosition = 9, entityType = EntityType.Enemy, health = 2)
     val enemy2 = Entity(xPosition = 10, yPosition = 9, entityType = EntityType.Enemy, health = 2)
@@ -60,7 +67,7 @@ object App extends JFXApp3 {
     var controller = GameController(UIState.Move, startingGameState).init()
 
     val vbox = new VBox {
-      children = Seq(canvas, messageArea)
+      children = Seq(canvas, scrollPane)
     }
 
     stage = new PrimaryStage {
@@ -133,7 +140,7 @@ object App extends JFXApp3 {
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
-    val messages = state.gameState.messages.mkString("\n")
+    val messages = state.gameState.messages.take(4).mkString("\n")
 
     messageArea.text = messages
   }

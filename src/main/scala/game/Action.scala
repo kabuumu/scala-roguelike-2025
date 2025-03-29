@@ -39,7 +39,7 @@ case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
               attackingEntity.id,
               attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
             )
-            .addMessage(s"${attackingEntity.name} killed ${target.name}")
+            .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} killed ${target.name}")
         } else {
           gameState
             .updateEntity(target.id, newEnemy)
@@ -47,7 +47,7 @@ case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
               attackingEntity.id,
               attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
             )
-            .addMessage(s"${attackingEntity.name} attacked ${target.name}")
+            .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} attacked ${target.name}")
         }
       case _ =>
         throw new Exception(s"No target found at $cursorX, $cursorY")
