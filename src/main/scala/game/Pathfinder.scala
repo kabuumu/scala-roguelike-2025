@@ -1,7 +1,8 @@
 package game
 
-import scala.collection.immutable.{HashSet}
-import scala.collection.mutable.PriorityQueue
+import scala.annotation.tailrec
+import scala.collection.immutable.HashSet
+import scala.collection.mutable
 
 object Pathfinder {
   def findPath(start: Point, end: Point, blockers: Set[Point]): Seq[Point] = {
@@ -11,10 +12,11 @@ object Pathfinder {
 
     implicit val nodeOrdering: Ordering[Node] = Ordering.by(-_.f)
 
-    val openSet = PriorityQueue(Node(start, 0, heuristic(start, end), None))
+    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, end), None))
     val closedSet = HashSet.empty[Point]
 
     def reconstructPath(node: Node): Seq[Point] = {
+      @tailrec
       def loop(n: Node, acc: Seq[Point]): Seq[Point] = n.parent match {
         case Some(parent) => loop(parent, n.point +: acc)
         case None => n.point +: acc
@@ -22,7 +24,8 @@ object Pathfinder {
       loop(node, Seq.empty)
     }
 
-    def search(openSet: PriorityQueue[Node], closedSet: HashSet[Point]): Seq[Point] = {
+    @tailrec
+    def search(openSet: mutable.PriorityQueue[Node], closedSet: HashSet[Point]): Seq[Point] = {
       if (openSet.isEmpty) return Seq.empty
 
       val current = openSet.dequeue()

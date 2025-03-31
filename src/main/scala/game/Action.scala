@@ -1,5 +1,6 @@
 package game
 
+//TODO - Add separate initiative costs for different actions
 trait Action {
   def apply(entity: Entity, gameState: GameState): GameState
 }
@@ -52,5 +53,11 @@ case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
       case _ =>
         throw new Exception(s"No target found at $cursorX, $cursorY")
     }
+  }
+}
+
+case object WaitAction extends Action {
+  def apply(entity: Entity, gameState: GameState): GameState = {
+    gameState.updateEntity(entity.id, entity.copy(initiative = entity.INITIATIVE_MAX))
   }
 }

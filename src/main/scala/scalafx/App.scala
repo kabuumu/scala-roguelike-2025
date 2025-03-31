@@ -12,6 +12,7 @@ import scalafx.scene.Scene
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.control.ScrollPane.ScrollBarPolicy
 import scalafx.scene.control.{ScrollPane, TextArea}
+import scalafx.scene.effect.ColorAdjust
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
@@ -148,8 +149,9 @@ object App extends JFXApp3 {
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
     val x = (entity.xPosition - xOffset) * spriteScale * scale
     val y = (entity.yPosition - yOffset) * spriteScale * scale
-    val entitySprite = if (entity.isDead) Sprites.deadSprite
-    else Sprites.sprites(entity.entityType)
+    val entitySprite = if (entity.isDead) Sprites.deadSprite else Sprites.sprites(entity.entityType)
+
+    canvas.graphicsContext2D.save() // Save the current state
 
     if (!visible) {
       canvas.graphicsContext2D.setGlobalAlpha(0.5)
@@ -157,7 +159,22 @@ object App extends JFXApp3 {
       canvas.graphicsContext2D.setGlobalAlpha(1)
     }
 
+    // Apply ColorAdjust effect if the entity is dead
+    if (entity.isDead) {
+      val colorAdjust = new ColorAdjust {
+        hue = -0.5 // Adjust the hue (range: -1.0 to 1.0)
+        saturation = -0.5 // Adjust the saturation (range: -1.0 to 1.0)
+        brightness = -0.5 // Adjust the brightness (range: -1.0 to 1.0)
+        contrast = 0.5 // Adjust the contrast (range: -1.0 to 1.0)
+      }
+      canvas.graphicsContext2D.setEffect(colorAdjust)
+    } else {
+      canvas.graphicsContext2D.setEffect(null)
+    }
+
     canvas.graphicsContext2D.drawImage(spriteSheet, entitySprite.x, entitySprite.y, spriteScale, spriteScale, x, y, spriteScale * scale, spriteScale * scale)
+
+    canvas.graphicsContext2D.restore() // Restore the saved state
   }
 
   private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {

@@ -68,4 +68,6 @@ case class GameState(playerEntityId: String, entities: Set[Entity], messages: Se
   def addMessage(message: String): GameState = {
     copy(messages = message +: messages)
   }
+
+  val movementBlockingEntities: Set[Entity] = entities.filter(_.entityType.blocksMovement)
 }
