@@ -1,15 +1,16 @@
 package game
 
-import game.EntityType.Wall
-
 object EnemyAI {
   def getNextAction(enemy: Entity, gameState: GameState): Action = {
+    //TODO - Make target persistent
     val target = gameState.playerEntity
 
     if (enemy.position.isWithinRangeOf(target.position, 1)) {
       AttackAction(target.xPosition, target.yPosition)
-    } else {
+    } else if(enemy.canSee(gameState, target)) {
       getMoveAction(enemy, target, gameState)
+    } else {
+      WaitAction
     }
   }
 

@@ -19,6 +19,7 @@ import scalafx.scene.layout.VBox
 import scalafx.scene.text.Font
 import ui.UIState.{Attack, UIState}
 import ui.{GameController, UIState}
+import Resources._
 
 import scala.language.postfixOps
 
@@ -29,10 +30,7 @@ object App extends JFXApp3 {
   val allowedActionsPerSecond = 8
 
   override def start(): Unit = {
-    val spriteSheet = Image("file:src/resources/sprites/sprites.png")
-    val pixelFont = Font.loadFont("file:src/resources/fonts/Kenney Pixel.ttf", 16 * scale)
-
-    val canvas = new Canvas(spriteScale * scale * 16, spriteScale * scale * 10)
+    val canvas = new Canvas(spriteScale * scale * 16, spriteScale * scale * 14)
     val messageArea = new TextArea {
       editable = false
       prefHeight = 64 * scale
@@ -59,10 +57,10 @@ object App extends JFXApp3 {
         Entity(xPosition = x, yPosition = y, entityType = entityType, health = 0, lineOfSightBlocking = entityType == Wall)
     }
 
-    val player = Entity(id = "Player ID", xPosition = 5, yPosition = 5, entityType = EntityType.Player, health = 10)
+    val player = Entity(id = "Player ID", xPosition = 4, yPosition = 4, entityType = EntityType.Player, health = 10)
 
-    val enemy = Entity(xPosition = 9, yPosition = 9, entityType = EntityType.Enemy, health = 2)
-    val enemy2 = Entity(xPosition = 10, yPosition = 9, entityType = EntityType.Enemy, health = 2)
+    val enemy = Entity(xPosition = 12, yPosition = 12, entityType = EntityType.Enemy, health = 2)
+    val enemy2 = Entity(xPosition = 14, yPosition = 12, entityType = EntityType.Enemy, health = 2)
 
     val startingGameState = GameState(player.id, Set(player) ++ walls + enemy + enemy2)
     var controller = GameController(UIState.Move, startingGameState).init()

@@ -45,5 +45,9 @@ case class Entity(
     )
   }
 
+  def canSee(gameState: GameState, otherEntity: Entity): Boolean = {
+    getLineOfSight(gameState).contains(otherEntity.position)
+  }
+
   val name: String = entityType.toString
 }
