@@ -11,14 +11,7 @@ case class MoveAction(direction: Direction) extends Action {
     gameState.copy(entities = gameState.entities - movingEntity + movedEntity)
 
     if (
-      gameState.entities.exists(
-        entity =>
-          entity.xPosition == movedEntity.xPosition
-            &&
-            entity.yPosition == movedEntity.yPosition
-            &&
-            entity.entityType == EntityType.Wall
-      )
+      gameState.movementBlockingEntities.exists(_.position == movedEntity.position)
     ) {
       gameState
     } else gameState.updateEntity(

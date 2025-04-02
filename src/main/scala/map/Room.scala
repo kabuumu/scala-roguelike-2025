@@ -13,17 +13,13 @@ case class Room(x: Int, y: Int, height: Int, width: Int, doors: Set[Direction]) 
   private def isWall(tileLocation: Point): Boolean =
     tileLocation.x == x || tileLocation.x == x + width - 1 || tileLocation.y == y || tileLocation.y == y + height - 1
 
-  val gameMap: GameMap = {
-    val tiles = for {
-      x <- x until x + width
-      y <- y until y + height
-    } yield Point(x, y) match {
-      case point if isDoor(point) => (point, TileType.Floor)
-      case point if isWall(point) => (point, TileType.Wall)
-      case point => (point, TileType.Floor)
-    }
-
-    GameMap(tiles)
+  val tiles: Seq[(Point, TileType)] = for {
+    x <- x until x + width
+    y <- y until y + height
+  } yield Point(x, y) match {
+    case point if isDoor(point) => (point, TileType.Floor)
+    case point if isWall(point) => (point, TileType.Wall)
+    case point => (point, TileType.Floor)
   }
 }
 
@@ -50,7 +46,7 @@ case class RoomTree(rooms: Map[String, TreeRoom]) {
     copy(rooms = rooms + (roomId -> updatedRoom) + (newRoomId -> newRoom))
   }
 
-  val tiles: Seq[(Point, TileType)] = {
-    rooms.values.flatMap(_.asRoom.gameMap.tiles).toSeq
-  }
+  val height, width = 9
+
+  val tiles: Seq[(Point, TileType)] = rooms.values.flatMap(_.asRoom.tiles).toSeq
 }

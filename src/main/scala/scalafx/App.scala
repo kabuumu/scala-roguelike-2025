@@ -47,7 +47,9 @@ object App extends JFXApp3 {
 
     var keyCodes: Set[KeyCode] = Set.empty
 
-    val walls = MapGenerator.generateRoomTree().tiles.map {
+    val mapTiles = MapGenerator.generateDungeon(5).tiles
+
+    val walls = mapTiles.map {
       case (game.Point(x, y), tileType) =>
         val entityType: EntityType = tileType match {
           case TileType.Floor => EntityType.Floor

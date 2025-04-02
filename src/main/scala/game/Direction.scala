@@ -13,7 +13,9 @@ object Direction {
     case Direction.Left => Direction.Right
     case Direction.Right => Direction.Left
   }
-  
+
+  def asPoint(direction: Direction): Point = Point(direction.x, direction.y)
+
   def fromPoints(start: Point, end: Point): Direction = {
     val xDiff = end.x - start.x
     val yDiff = end.y - start.y

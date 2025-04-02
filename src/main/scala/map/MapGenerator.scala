@@ -3,16 +3,9 @@ package map
 import game.Direction.*
 import game.{Direction, Point}
 
+import scala.annotation.tailrec
+
 object MapGenerator {
-
-  def generate(mapWidth: Int, mapHeight: Int): GameMap = {
-    GameMap(Seq.empty)
-      .addRoom(Room(0, 0, 11, 8, Set(Right)))
-      .addRoom(Room(10, 0, 11, 8, Set(Left, Down)))
-      .addRoom(Room(0, 7, 11, 8, Set(Right)))
-      .addRoom(Room(10, 7, 11, 8, Set(Left, Up)))
-  }
-
   def generateRoomTree(): RoomTree = {
     val roomTree = RoomTree(Map.empty)
       .addInitialRoom("room1", TreeRoom(0, 0))
@@ -22,6 +15,20 @@ object MapGenerator {
       .addRoom("room2", Up, "room5")
 
     roomTree
+  }
+
+  def generateDungeon(dungeonSize: Int): Dungeon = {
+    @tailrec
+    def addRoom(dungeon: Dungeon): Dungeon = {
+      val availableRooms = dungeon.availableRooms
+      val (room, direction) = availableRooms.head
+      val newDungeon = dungeon.addRoom(room, direction)
+
+      if(newDungeon.roomGrid.size < dungeonSize) addRoom(newDungeon)
+      else newDungeon
+    }
+    
+    addRoom(Dungeon())
   }
 
 

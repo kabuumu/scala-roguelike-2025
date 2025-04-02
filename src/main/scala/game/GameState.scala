@@ -69,5 +69,5 @@ case class GameState(playerEntityId: String, entities: Set[Entity], messages: Se
     copy(messages = message +: messages)
   }
 
-  val movementBlockingEntities: Set[Entity] = entities.filter(_.entityType.blocksMovement)
+  val movementBlockingEntities: Set[Entity] = entities.filter(entity => entity.entityType.blocksMovement && !entity.isDead)
 }

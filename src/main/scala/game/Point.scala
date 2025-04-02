@@ -26,4 +26,6 @@ case class Point(x: Int, y: Int) {
     Point(x, y + 1),
     Point(x, y - 1)
   )
+  
+  def +(direction: Direction): Point = Point(x + direction.x, y + direction.y)
 }
