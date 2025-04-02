@@ -43,9 +43,6 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
       }
   }
 
-
-  println(doorPoints)
-
   val tiles: Map[Point, TileType] = roomGrid.flatMap {
     room =>
       val roomX = room.x * Dungeon.roomSize
@@ -77,5 +74,5 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
 case class RoomConnection(originRoom: Point, direction: Direction, destinationRoom: Point)
 
 object Dungeon {
-  val roomSize = 9
+  val roomSize = 11
 }

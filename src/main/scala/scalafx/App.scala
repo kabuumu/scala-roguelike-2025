@@ -3,7 +3,7 @@ package scalafx
 import data.Sprites
 import game.EntityType.Wall
 import game.{Entity, EntityType, GameState, Point}
-import map.{MapGenerator, TileType}
+import map.{Dungeon, MapGenerator, TileType}
 import scalafx.Includes.*
 import scalafx.Resources.*
 import scalafx.animation.AnimationTimer
@@ -51,9 +51,9 @@ object App extends JFXApp3 {
 
     var keyCodes: Set[KeyCode] = Set.empty
 
-    val mapTiles = MapGenerator.generateDungeon(10, 182).tiles
+    val dungeon = MapGenerator.generateDungeon(10, 182)
 
-    val walls = mapTiles.map {
+    val mapTiles = dungeon.tiles.map {
       case (game.Point(x, y), tileType) =>
         val entityType: EntityType = tileType match {
           case TileType.Floor => EntityType.Floor
@@ -63,12 +63,17 @@ object App extends JFXApp3 {
         Entity(xPosition = x, yPosition = y, entityType = entityType, health = 0, lineOfSightBlocking = entityType == Wall)
     }
 
-    val player = Entity(id = "Player ID", xPosition = 4, yPosition = 4, entityType = EntityType.Player, health = 10)
+    val enemies = dungeon.roomGrid.tail.map{
+      case game.Point(x, y) =>
+        Entity(xPosition = x * Dungeon.roomSize + 5, yPosition = y * Dungeon.roomSize + 5, entityType = EntityType.Enemy, health = 2)
+    }
 
-    val enemy = Entity(xPosition = 12, yPosition = 12, entityType = EntityType.Enemy, health = 2)
-    val enemy2 = Entity(xPosition = 14, yPosition = 12, entityType = EntityType.Enemy, health = 2)
+    val player = dungeon.roomGrid.head match {
+      case startingRoom =>
+        Entity(id = "Player ID", xPosition = startingRoom.x * Dungeon.roomSize + 5, yPosition = startingRoom.y * Dungeon.roomSize + 5, entityType = EntityType.Player, health = 10)
+    }
 
-    val startingGameState = GameState(player.id, Set(player) ++ walls + enemy + enemy2)
+    val startingGameState = GameState(player.id, Set(player) ++ mapTiles ++ enemies)
     var controller = GameController(UIState.Move, startingGameState).init()
 
     val vbox = new VBox {
@@ -182,41 +187,35 @@ object App extends JFXApp3 {
   }
 
   private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {
+    def drawCursor(x: Int, y: Int): Unit = {
+      val cursorSprite = Sprites.cursorSprite
+
+      canvas.graphicsContext2D.setGlobalAlpha(1)
+
+      canvas.graphicsContext2D.drawImage(
+        spriteSheet,
+        cursorSprite.x,
+        cursorSprite.y,
+        spriteScale,
+        spriteScale,
+        x,
+        y,
+        spriteScale * scale,
+        spriteScale * scale
+      )
+    }
+
     uiState match {
       case Attack(cursorX, cursorY) =>
-        val cursorSprite = Sprites.cursorSprite
         val offsetCursorX = (cursorX - xOffset) * spriteScale * scale
         val offsetCursorY = (cursorY - yOffset) * spriteScale * scale
-        canvas.graphicsContext2D.setGlobalAlpha(1)
 
-        canvas.graphicsContext2D.drawImage(
-          spriteSheet,
-          cursorSprite.x,
-          cursorSprite.y,
-          spriteScale,
-          spriteScale,
-          offsetCursorX,
-          offsetCursorY,
-          spriteScale * scale,
-          spriteScale * scale
-        )
+        drawCursor(offsetCursorX, offsetCursorY)
       case UIState.AttackList(enemies, position) =>
-        val cursorSprite = Sprites.cursorSprite
         val offsetCursorX = (enemies(position).xPosition - xOffset) * spriteScale * scale
         val offsetCursorY = (enemies(position).yPosition - yOffset) * spriteScale * scale
-        canvas.graphicsContext2D.setGlobalAlpha(1)
 
-        canvas.graphicsContext2D.drawImage(
-          spriteSheet,
-          cursorSprite.x,
-          cursorSprite.y,
-          spriteScale,
-          spriteScale,
-          offsetCursorX,
-          offsetCursorY,
-          spriteScale * scale,
-          spriteScale * scale
-        )
+        drawCursor(offsetCursorX, offsetCursorY)
       case _ =>
     }
   }
