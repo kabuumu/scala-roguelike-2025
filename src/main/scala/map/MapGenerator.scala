@@ -2,6 +2,7 @@ package map
 
 import game.Direction.*
 import game.{Direction, Point}
+import scala.util.Random
 
 import scala.annotation.tailrec
 
@@ -17,17 +18,21 @@ object MapGenerator {
     roomTree
   }
 
-  def generateDungeon(dungeonSize: Int): Dungeon = {
+  def generateDungeon(dungeonSize: Int, seed: Long): Dungeon = {
+    val random = new Random(seed)
+
     @tailrec
     def addRoom(dungeon: Dungeon): Dungeon = {
-      val availableRooms = dungeon.availableRooms
-      val (room, direction) = availableRooms.head
+      val availableRooms = dungeon.availableRooms.toSeq
+      val randomRoomIndex = random.nextInt(availableRooms.size)
+
+      val (room, direction) = availableRooms(randomRoomIndex)
       val newDungeon = dungeon.addRoom(room, direction)
 
       if(newDungeon.roomGrid.size < dungeonSize) addRoom(newDungeon)
       else newDungeon
     }
-    
+
     addRoom(Dungeon())
   }
 

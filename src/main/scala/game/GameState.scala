@@ -27,8 +27,10 @@ case class GameState(playerEntityId: String, entities: Set[Entity], messages: Se
           val nextAction = EnemyAI.getNextAction(entity, gameState)
           nextAction.apply(entity, gameState)
 
-        case (gameState, entity) =>
+        case (gameState, entity) if entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player=>
           gameState.updateEntity(entity.id, entity.copy(initiative = entity.initiative - 1))
+        case (gameState, _) =>
+          gameState
       }
     }
   }

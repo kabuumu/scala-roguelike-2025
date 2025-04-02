@@ -5,6 +5,7 @@ import game.EntityType.Wall
 import game.{Entity, EntityType, GameState, Point}
 import map.{MapGenerator, TileType}
 import scalafx.Includes.*
+import scalafx.Resources.*
 import scalafx.animation.AnimationTimer
 import scalafx.application.JFXApp3
 import scalafx.application.JFXApp3.PrimaryStage
@@ -19,21 +20,24 @@ import scalafx.scene.layout.VBox
 import scalafx.scene.text.Font
 import ui.UIState.{Attack, UIState}
 import ui.{GameController, UIState}
-import Resources._
 
 import scala.language.postfixOps
 
 object App extends JFXApp3 {
-  val scale = 3
+  val scale = 1
   val spriteScale = 16
   val framesPerSecond = 16
   val allowedActionsPerSecond = 8
+  val canvasX: Int = 60
+  val canvasY: Int = 40
+  val omniscience: Boolean = false
 
   override def start(): Unit = {
-    val canvas = new Canvas(spriteScale * scale * 16, spriteScale * scale * 14)
+    val canvas = new Canvas(spriteScale * scale * canvasX, spriteScale * scale * canvasY)
     val messageArea = new TextArea {
       editable = false
-      prefHeight = 64 * scale
+      prefWidth = spriteScale * scale * canvasX
+      prefHeight = spriteScale * scale * 4
       font = pixelFont
       style = "-fx-control-inner-background: black; -fx-text-fill: white;"
       focusTraversable = false
@@ -47,7 +51,7 @@ object App extends JFXApp3 {
 
     var keyCodes: Set[KeyCode] = Set.empty
 
-    val mapTiles = MapGenerator.generateDungeon(5).tiles
+    val mapTiles = MapGenerator.generateDungeon(10, 182).tiles
 
     val walls = mapTiles.map {
       case (game.Point(x, y), tileType) =>
@@ -113,9 +117,9 @@ object App extends JFXApp3 {
     val playerY = player.yPosition
 
     val (xOffset, yOffset) = state.uiState match {
-      case UIState.Move => (playerX - 7, playerY - 4)
-      case UIState.Attack(cursorX, cursorY) => (cursorX - 7, cursorY - 4)
-      case UIState.AttackList(enemies, position) => (enemies(position).xPosition - 7, enemies(position).yPosition - 4)
+      case UIState.Move => (playerX - (canvasX / 2), playerY - (canvasY / 2))
+      case UIState.Attack(cursorX, cursorY) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
+      case UIState.AttackList(enemies, position) => (enemies(position).xPosition - (canvasX / 2), enemies(position).yPosition - (canvasY / 2))
     }
 
     val playerVisibleEntities = state.gameState.getVisibleEntitiesFor(player)
@@ -123,7 +127,7 @@ object App extends JFXApp3 {
     state.gameState.entities.toSeq
       .filter {
         entity =>
-          player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y)
+          player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y) || omniscience
       }.sortBy {
         entity =>
           Sprites.sprites(entity.entityType).layer
