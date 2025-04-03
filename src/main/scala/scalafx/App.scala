@@ -1,8 +1,8 @@
 package scalafx
 
 import data.Sprites
-import game.EntityType.Wall
 import game.*
+import game.EntityType.Wall
 import map.{Dungeon, MapGenerator, TileType}
 import scalafx.Includes.*
 import scalafx.Resources.*
@@ -234,7 +234,6 @@ object App extends JFXApp3 {
   def drawPlayerHearts(canvas: Canvas, player: Entity): Unit = {
     val heartWidth = spriteScale * scale
     val heartHeight = spriteScale * scale
-
     val maxHearts = player.health.max / 2
     val fullHearts = player.health.current / 2
     val hasHalfHeart = player.health.current % 2 != 0
@@ -242,47 +241,21 @@ object App extends JFXApp3 {
     for (i <- 0 until maxHearts) {
       val heartX = i * heartWidth
       val heartY = 0
+      val sprite = if (i < fullHearts) Sprites.fullHeartSprite
+      else if (i == fullHearts && hasHalfHeart) Sprites.halfHeartSprite
+      else Sprites.emptyHeartSprite
 
-      if (i < fullHearts) {
-        // Draw full heart
-        canvas.graphicsContext2D.drawImage(
-          spriteSheet,
-          Sprites.fullHeartSprite.x * spriteScale,
-          Sprites.fullHeartSprite.y * spriteScale,
-          spriteScale,
-          spriteScale,
-          heartX,
-          heartY,
-          heartWidth,
-          heartHeight
-        )
-      } else if (i == fullHearts && hasHalfHeart) {
-        // Draw half heart
-        canvas.graphicsContext2D.drawImage(
-          spriteSheet,
-          Sprites.halfHeartSprite.x * spriteScale,
-          Sprites.halfHeartSprite.y * spriteScale,
-          spriteScale,
-          spriteScale,
-          heartX,
-          heartY,
-          heartWidth,
-          heartHeight
-        )
-      } else {
-        // Draw empty heart
-        canvas.graphicsContext2D.drawImage(
-          spriteSheet,
-          Sprites.emptyHeartSprite.x * spriteScale,
-          Sprites.emptyHeartSprite.y * spriteScale,
-          spriteScale,
-          spriteScale,
-          heartX,
-          heartY,
-          heartWidth,
-          heartHeight
-        )
-      }
+      canvas.graphicsContext2D.drawImage(
+        spriteSheet,
+        sprite.x * spriteScale,
+        sprite.y * spriteScale,
+        spriteScale,
+        spriteScale,
+        heartX,
+        heartY,
+        heartWidth,
+        heartHeight
+      )
     }
   }
 }
