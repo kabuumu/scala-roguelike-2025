@@ -4,12 +4,20 @@ import game.{EntityType, Sprite}
 import game.EntityType._
 
 object Sprites {
-  val playerSprite: Sprite = Sprite(16 * 25, 0, 2)
-  val wallSprite: Sprite = Sprite(16 * 10, 16 * 17, 2)
-  val enemySprite: Sprite = Sprite(16 * 26, 0, 2)
-  val floorSprite: Sprite = Sprite(16 * 2, 16 * 0, 0)
-  val ratSprite: Sprite = Sprite(16 * 31, 16 * 8, 2)
-  val deadSprite: Sprite = Sprite (0, 16 * 15, 1)
+  val floorLayer = 0
+  val backgroundLayer = 1
+  val entityLayer = 2
+  val uiLayer = 3
+
+  val playerSprite: Sprite = Sprite(25, 0, entityLayer)
+  val wallSprite: Sprite = Sprite(10, 17, entityLayer)
+  val enemySprite: Sprite = Sprite(26, 0, entityLayer)
+  val floorSprite: Sprite = Sprite(2, 0, floorLayer)
+  val ratSprite: Sprite = Sprite(31, 8, entityLayer)
+  val deadSprite: Sprite = Sprite (0, 15, backgroundLayer)
+  val fullHeartSprite: Sprite = Sprite(16, 16, uiLayer)
+  val halfHeartSprite: Sprite = Sprite(16, 16, uiLayer)
+  val emptyHeartSprite: Sprite = Sprite(16, 16, uiLayer)
 
   val sprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,
@@ -18,5 +26,5 @@ object Sprites {
     Floor -> floorSprite
   )
 
-  val cursorSprite: Sprite = Sprite(16 * 29, 16 * 14, 2)
+  val cursorSprite: Sprite = Sprite(16 * 29, 16 * 14, uiLayer)
 }

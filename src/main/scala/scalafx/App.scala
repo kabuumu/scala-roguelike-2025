@@ -181,7 +181,17 @@ object App extends JFXApp3 {
       canvas.graphicsContext2D.setEffect(null)
     }
 
-    canvas.graphicsContext2D.drawImage(spriteSheet, entitySprite.x, entitySprite.y, spriteScale, spriteScale, x, y, spriteScale * scale, spriteScale * scale)
+    canvas.graphicsContext2D.drawImage(
+      spriteSheet,
+      entitySprite.x * spriteScale,
+      entitySprite.y * spriteScale,
+      spriteScale,
+      spriteScale,
+      x,
+      y,
+      spriteScale * scale,
+      spriteScale * scale
+    )
 
     canvas.graphicsContext2D.restore() // Restore the saved state
   }
@@ -194,8 +204,8 @@ object App extends JFXApp3 {
 
       canvas.graphicsContext2D.drawImage(
         spriteSheet,
-        cursorSprite.x,
-        cursorSprite.y,
+        cursorSprite.x * spriteScale,
+        cursorSprite.y * spriteScale,
         spriteScale,
         spriteScale,
         x,
