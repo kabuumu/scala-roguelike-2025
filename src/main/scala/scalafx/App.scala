@@ -2,7 +2,7 @@ package scalafx
 
 import data.Sprites
 import game.EntityType.Wall
-import game.{Entity, EntityType, GameState, Point}
+import game.*
 import map.{Dungeon, MapGenerator, TileType}
 import scalafx.Includes.*
 import scalafx.Resources.*
@@ -24,13 +24,13 @@ import ui.{GameController, UIState}
 import scala.language.postfixOps
 
 object App extends JFXApp3 {
-  val scale = 1
+  val scale = 2
   val spriteScale = 16
   val framesPerSecond = 16
   val allowedActionsPerSecond = 8
-  val canvasX: Int = 60
-  val canvasY: Int = 40
-  val omniscience: Boolean = false
+  val canvasX: Int = 40
+  val canvasY: Int = 25
+  val debugOmniscience: Boolean = false
 
   override def start(): Unit = {
     val canvas = new Canvas(spriteScale * scale * canvasX, spriteScale * scale * canvasY)
@@ -60,17 +60,17 @@ object App extends JFXApp3 {
           case TileType.Wall => EntityType.Wall
         }
 
-        Entity(xPosition = x, yPosition = y, entityType = entityType, health = 0, lineOfSightBlocking = entityType == Wall)
+        Entity(xPosition = x, yPosition = y, entityType = entityType, health = Health(0), lineOfSightBlocking = entityType == Wall)
     }
 
-    val enemies = dungeon.roomGrid.tail.map{
+    val enemies = dungeon.roomGrid.tail.map {
       case game.Point(x, y) =>
-        Entity(xPosition = x * Dungeon.roomSize + 5, yPosition = y * Dungeon.roomSize + 5, entityType = EntityType.Enemy, health = 2)
+        Entity(xPosition = x * Dungeon.roomSize + 5, yPosition = y * Dungeon.roomSize + 5, entityType = EntityType.Enemy, health = Health(2))
     }
 
     val player = dungeon.roomGrid.head match {
       case startingRoom =>
-        Entity(id = "Player ID", xPosition = startingRoom.x * Dungeon.roomSize + 5, yPosition = startingRoom.y * Dungeon.roomSize + 5, entityType = EntityType.Player, health = 10)
+        Entity(id = "Player ID", xPosition = startingRoom.x * Dungeon.roomSize + 5, yPosition = startingRoom.y * Dungeon.roomSize + 5, entityType = EntityType.Player, health = Health(10))
     }
 
     val startingGameState = GameState(player.id, Set(player) ++ mapTiles ++ enemies)
@@ -100,7 +100,7 @@ object App extends JFXApp3 {
     vbox.requestFocus()
 
     AnimationTimer { (currentTime: Long) =>
-      if (controller.gameState.playerEntity.health <= 0) {
+      if (controller.gameState.playerEntity.health.current <= 0) {
         println("Game Over")
         System.exit(0)
       }
@@ -132,7 +132,7 @@ object App extends JFXApp3 {
     state.gameState.entities.toSeq
       .filter {
         entity =>
-          player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y) || omniscience
+          player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y) || debugOmniscience
       }.sortBy {
         entity =>
           Sprites.sprites(entity.entityType).layer
@@ -147,6 +147,7 @@ object App extends JFXApp3 {
       }
 
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset)
+    drawPlayerHearts(canvas, player)
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
@@ -227,6 +228,61 @@ object App extends JFXApp3 {
 
         drawCursor(offsetCursorX, offsetCursorY)
       case _ =>
+    }
+  }
+
+  def drawPlayerHearts(canvas: Canvas, player: Entity): Unit = {
+    val heartWidth = spriteScale * scale
+    val heartHeight = spriteScale * scale
+
+    val maxHearts = player.health.max / 2
+    val fullHearts = player.health.current / 2
+    val hasHalfHeart = player.health.current % 2 != 0
+
+    for (i <- 0 until maxHearts) {
+      val heartX = i * heartWidth
+      val heartY = 0
+
+      if (i < fullHearts) {
+        // Draw full heart
+        canvas.graphicsContext2D.drawImage(
+          spriteSheet,
+          Sprites.fullHeartSprite.x * spriteScale,
+          Sprites.fullHeartSprite.y * spriteScale,
+          spriteScale,
+          spriteScale,
+          heartX,
+          heartY,
+          heartWidth,
+          heartHeight
+        )
+      } else if (i == fullHearts && hasHalfHeart) {
+        // Draw half heart
+        canvas.graphicsContext2D.drawImage(
+          spriteSheet,
+          Sprites.halfHeartSprite.x * spriteScale,
+          Sprites.halfHeartSprite.y * spriteScale,
+          spriteScale,
+          spriteScale,
+          heartX,
+          heartY,
+          heartWidth,
+          heartHeight
+        )
+      } else {
+        // Draw empty heart
+        canvas.graphicsContext2D.drawImage(
+          spriteSheet,
+          Sprites.emptyHeartSprite.x * spriteScale,
+          Sprites.emptyHeartSprite.y * spriteScale,
+          spriteScale,
+          spriteScale,
+          heartX,
+          heartY,
+          heartWidth,
+          heartHeight
+        )
+      }
     }
   }
 }

@@ -26,7 +26,7 @@ case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
     gameState.getActor(cursorX, cursorY) match {
       case Some(target) =>
         val newEnemy = target.copy(health = target.health - 1)
-        if (newEnemy.health <= 0) {
+        if (newEnemy.health.current <= 0) {
           gameState
             .updateEntity(target.id, newEnemy.copy(isDead = true))
             .updateEntity(

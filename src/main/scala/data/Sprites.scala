@@ -1,7 +1,7 @@
 package data
 
+import game.EntityType.*
 import game.{EntityType, Sprite}
-import game.EntityType._
 
 object Sprites {
   val floorLayer = 0
@@ -14,10 +14,10 @@ object Sprites {
   val enemySprite: Sprite = Sprite(26, 0, entityLayer)
   val floorSprite: Sprite = Sprite(2, 0, floorLayer)
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
-  val deadSprite: Sprite = Sprite (0, 15, backgroundLayer)
-  val fullHeartSprite: Sprite = Sprite(16, 16, uiLayer)
-  val halfHeartSprite: Sprite = Sprite(16, 16, uiLayer)
-  val emptyHeartSprite: Sprite = Sprite(16, 16, uiLayer)
+  val deadSprite: Sprite = Sprite(0, 15, backgroundLayer)
+  val fullHeartSprite: Sprite = Sprite(42, 10, uiLayer)
+  val halfHeartSprite: Sprite = Sprite(41, 10, uiLayer)
+  val emptyHeartSprite: Sprite = Sprite(40, 10, uiLayer)
 
   val sprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,

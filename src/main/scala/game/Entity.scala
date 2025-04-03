@@ -7,7 +7,7 @@ case class Entity(
                    xPosition: Int,
                    yPosition: Int,
                    entityType: EntityType,
-                   health: Int,
+                   health: Health,
                    lineOfSightBlocking: Boolean = false,
                    sightMemory: Set[Point] = Set.empty,
                    initiative: Int = 0,
