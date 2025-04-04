@@ -24,12 +24,12 @@ import ui.{GameController, UIState}
 import scala.language.postfixOps
 
 object App extends JFXApp3 {
-  val scale = 2
+  val scale = 3
   val spriteScale = 16
   val framesPerSecond = 16
   val allowedActionsPerSecond = 8
-  val canvasX: Int = 40
-  val canvasY: Int = 25
+  val canvasX: Int = 30
+  val canvasY: Int = 15
   val debugOmniscience: Boolean = false
 
   override def start(): Unit = {
@@ -70,7 +70,14 @@ object App extends JFXApp3 {
 
     val player = dungeon.roomGrid.head match {
       case startingRoom =>
-        Entity(id = "Player ID", xPosition = startingRoom.x * Dungeon.roomSize + 5, yPosition = startingRoom.y * Dungeon.roomSize + 5, entityType = EntityType.Player, health = Health(10))
+        Entity(
+          id = "Player ID",
+          xPosition = startingRoom.x * Dungeon.roomSize + 5,
+          yPosition = startingRoom.y * Dungeon.roomSize + 5,
+          entityType = EntityType.Player,
+          health = Health(10),
+          inventory = Seq(Item("Potion"))
+        )
     }
 
     val startingGameState = GameState(player.id, Set(player) ++ mapTiles ++ enemies)
@@ -148,6 +155,7 @@ object App extends JFXApp3 {
 
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset)
     drawPlayerHearts(canvas, player)
+    drawInventory(canvas, player)
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
@@ -255,6 +263,29 @@ object App extends JFXApp3 {
         heartY,
         heartWidth,
         heartHeight
+      )
+    }
+  }
+
+  def drawInventory(canvas: Canvas, player: Entity): Unit = {
+    val itemWidth = spriteScale * scale
+    val itemHeight = spriteScale * scale
+
+    for (i <- player.inventory.indices) {
+      val itemX = i * itemWidth
+      val itemY = spriteScale * scale
+      val sprite = Sprites.potionSprite // Hardcoded initially
+
+      canvas.graphicsContext2D.drawImage(
+        spriteSheet,
+        sprite.x * spriteScale,
+        sprite.y * spriteScale,
+        spriteScale,
+        spriteScale,
+        itemX,
+        itemY,
+        itemWidth,
+        itemHeight
       )
     }
   }

@@ -11,7 +11,8 @@ case class Entity(
                    lineOfSightBlocking: Boolean = false,
                    sightMemory: Set[Point] = Set.empty,
                    initiative: Int = 0,
-                   isDead: Boolean = false
+                   isDead: Boolean = false,
+                   inventory: Seq[Item] = Nil
                  ) {
   val INITIATIVE_MAX = entityType match {
     case EntityType.Player => 10

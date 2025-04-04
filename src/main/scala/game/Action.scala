@@ -54,3 +54,29 @@ case object WaitAction extends Action {
     gameState.updateEntity(entity.id, entity.copy(initiative = entity.INITIATIVE_MAX))
   }
 }
+
+//TODO make it for more items, not just potions
+case class UseItemAction(item: Item) extends Action {
+  def apply(entity: Entity, gameState: GameState): GameState = {
+
+    if (entity.health.isFull) {
+      gameState
+        .addMessage(s"${System.nanoTime()}: ${entity.name} is already at full health")
+    } else if (entity.inventory.isEmpty) {
+      gameState
+        .addMessage(s"${System.nanoTime()}: ${entity.name} has no items to use")
+    } else if (!entity.inventory.headOption.contains(item)) {
+      gameState
+        .addMessage(s"${System.nanoTime()}: ${entity.name} does not have a ${item.name}")
+    } else {
+      val newEntity = entity.copy(
+        inventory = entity.inventory.drop(1)
+      ).copy(
+        health = entity.health + Item.potionValue
+      )
+      gameState
+        .updateEntity(entity.id, newEntity)
+        .addMessage(s"${System.nanoTime()}: ${entity.name} used a ${item.name}")
+    }
+  }
+}

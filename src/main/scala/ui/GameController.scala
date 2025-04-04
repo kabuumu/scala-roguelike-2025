@@ -46,6 +46,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     case (UIState.Move, KeyCode.A) => (UIState.Move, Some(MoveAction(Direction.Left)))
     case (UIState.Move, KeyCode.S) => (UIState.Move, Some(MoveAction(Direction.Down)))
     case (UIState.Move, KeyCode.D) => (UIState.Move, Some(MoveAction(Direction.Right)))
+    //TODO - Stop being hardcoded to potions
+    case (UIState.Move, KeyCode.Q) => (UIState.Move, Some(UseItemAction(Item("Potion"))))
     case (UIState.Move, KeyCode.Space) =>
       if (enemiesWithinRange.isEmpty) (UIState.Move, None)
       else (UIState.AttackList(enemiesWithinRange.toSeq, 0), None)

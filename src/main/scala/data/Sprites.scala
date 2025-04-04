@@ -18,6 +18,8 @@ object Sprites {
   val fullHeartSprite: Sprite = Sprite(42, 10, uiLayer)
   val halfHeartSprite: Sprite = Sprite(41, 10, uiLayer)
   val emptyHeartSprite: Sprite = Sprite(40, 10, uiLayer)
+  val cursorSprite: Sprite = Sprite(29, 14, uiLayer)
+  val potionSprite: Sprite = Sprite(33, 13, uiLayer)
 
   val sprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,
@@ -25,6 +27,4 @@ object Sprites {
     Enemy -> ratSprite,
     Floor -> floorSprite
   )
-
-  val cursorSprite: Sprite = Sprite(16 * 29, 16 * 14, uiLayer)
 }
