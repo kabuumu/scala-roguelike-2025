@@ -1,9 +1,11 @@
 package scalafx
 
 import data.Sprites
+import dungeongenerator.generator
+import dungeongenerator.generator.{DefaultDungeonGeneratorConfig, DungeonGenerator}
+import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 import game.*
 import game.EntityType.Wall
-import map.{Dungeon, MapGenerator, TileType}
 import scalafx.Includes.*
 import scalafx.Resources.*
 import scalafx.animation.AnimationTimer
@@ -49,29 +51,34 @@ object App extends JFXApp3 {
 
     var keyCodes: Set[KeyCode] = Set.empty
 
-    val dungeon = MapGenerator.generateDungeon(10, 182)
+    val dungeon: generator.Dungeon = DungeonGenerator.generatePossibleDungeonsLinear(config = DefaultDungeonGeneratorConfig).head
 
-    val mapTiles = dungeon.tiles.map {
-      case (game.Point(x, y), tileType) =>
-        val entityType: EntityType = tileType match {
-          case TileType.Floor => EntityType.Floor
-          case TileType.Wall => EntityType.Wall
+    val mapTiles = dungeon.entities.collect {
+      case (generator.Point(x, y), generatorEntity@(generator.Entity.Wall | generator.Entity.Floor)) =>
+        val entityType = generatorEntity match {
+          case generator.Entity.Wall => EntityType.Wall
+          case generator.Entity.Floor => EntityType.Floor
         }
 
         Entity(xPosition = x, yPosition = y, entityType = entityType, health = Health(0), lineOfSightBlocking = entityType == Wall)
     }
 
-    val enemies = dungeon.roomGrid.tail.map {
-      case game.Point(x, y) =>
-        Entity(xPosition = x * Dungeon.roomSize + 5, yPosition = y * Dungeon.roomSize + 5, entityType = EntityType.Enemy, health = Health(2))
+    val enemies = dungeon.longestRoomPath.tail.map {
+      case Node(DungeonCrawler(point, _, _), _) =>
+        Entity(
+          xPosition = point.x,
+          yPosition = point.y,
+          entityType = EntityType.Enemy,
+          health = Health(2)
+        )
     }
 
-    val player = dungeon.roomGrid.head match {
-      case startingRoom =>
+    val player = dungeon.longestRoomPath.head match {
+      case Node(DungeonCrawler(point, _, _), _) =>
         Entity(
           id = "Player ID",
-          xPosition = startingRoom.x * Dungeon.roomSize + 5,
-          yPosition = startingRoom.y * Dungeon.roomSize + 5,
+          xPosition = point.x,
+          yPosition = point.y,
           entityType = EntityType.Player,
           health = Health(10),
           inventory = Seq(Item("Potion"))

@@ -20,21 +20,21 @@ object DefaultDungeonGeneratorConfig extends DungeonGeneratorConfig(
   mutators = Set(
 //    CreateBossRoomMutator,
     CreateRoomMutator,
-    DoorKeyLockMutator,
+//    DoorKeyLockMutator,
 //    DoorSwitchLockMutator,
 //    TeleporterMutator,
   ),
   nodeFinders = Set(
     AdjacentRoomNodeFinder,
-    RoomKeyFinder,
+//    RoomKeyFinder,
 //    RoomSwitchFinder,
 //    TeleporterRoomNodeFinder,
 //    RoomBossKeyFinder
   ),
   predicates = Set(
-    KeyCountPredicate(1),
+//    KeyCountPredicate(1),
 //    SwitchCountPredicate(2),
-//    RoomCountPredicate(1),
+    RoomCountPredicate(5),
 //    new EntityCount[BossRoom.type](1)
   )
 )
