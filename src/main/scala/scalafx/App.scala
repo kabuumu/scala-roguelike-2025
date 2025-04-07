@@ -26,8 +26,6 @@ import scala.language.postfixOps
 object App extends JFXApp3 {
   val scale = 3
   val spriteScale = 16
-  val framesPerSecond = 16
-  val allowedActionsPerSecond = 8
   val canvasX: Int = 30
   val canvasY: Int = 15
   val debugOmniscience: Boolean = false
@@ -112,7 +110,7 @@ object App extends JFXApp3 {
         System.exit(0)
       }
 
-      controller = controller.update(keyCodes.headOption, currentTime)
+      controller = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
 
       updateCanvas(controller, canvas, spriteSheet)
       updateMessageArea(controller, messageArea)

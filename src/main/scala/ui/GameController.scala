@@ -1,10 +1,14 @@
 package ui
 
 import game.*
-import scalafx.App.{allowedActionsPerSecond, framesPerSecond}
-import scalafx.scene.input.KeyCode
+import game.Input.*
+import ui.GameController.*
 import ui.UIState.UIState
 
+object GameController {
+  val framesPerSecond = 16
+  val allowedActionsPerSecond = 8
+}
 
 case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
   def init(): GameController = {
@@ -16,16 +20,16 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     )
   }
 
-  def update(keyCode: Option[KeyCode], currentTime: Long): GameController = {
+  def update(optInput: Option[Input], currentTime: Long): GameController = {
     val ticksPerSecond = 1000000000
     val delta = currentTime - lastUpdateTime
 
     //To ensure updates only happen at a certain rate
     if (delta > ticksPerSecond / framesPerSecond) {
-      (keyCode match {
+      (optInput match {
         //To ensure inputs only happen at a certain rate
-        case Some(keycode) if delta > ticksPerSecond / allowedActionsPerSecond =>
-          val (newUiState, optAction) = handleInput(keycode)
+        case Some(input) if delta > ticksPerSecond / allowedActionsPerSecond =>
+          val (newUiState, optAction) = handleInput(input)
           val newGameState = gameState.update(optAction)
 
           (newUiState, newGameState)
@@ -41,24 +45,24 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     } else this
   }
 
-  private def handleInput(keyCode: KeyCode): (UIState, Option[Action]) = (uiState, keyCode) match {
-    case (UIState.Move, KeyCode.W) => (UIState.Move, Some(MoveAction(Direction.Up)))
-    case (UIState.Move, KeyCode.A) => (UIState.Move, Some(MoveAction(Direction.Left)))
-    case (UIState.Move, KeyCode.S) => (UIState.Move, Some(MoveAction(Direction.Down)))
-    case (UIState.Move, KeyCode.D) => (UIState.Move, Some(MoveAction(Direction.Right)))
-    //TODO - Stop being hardcoded to potions
-    case (UIState.Move, KeyCode.Q) => (UIState.Move, Some(UseItemAction(Item("Potion"))))
-    case (UIState.Move, KeyCode.Space) =>
-      if (enemiesWithinRange.isEmpty) (UIState.Move, None)
-      else (UIState.AttackList(enemiesWithinRange.toSeq, 0), None)
-    case (attack: UIState.AttackList, KeyCode.W) => (attack.iterate, None)
-    case (attack: UIState.AttackList, KeyCode.A) => (attack.iterate, None)
-    case (attack: UIState.AttackList, KeyCode.S) => (attack.iterate, None)
-    case (attack: UIState.AttackList, KeyCode.D) => (attack.iterate, None)
-    case (UIState.AttackList(enemies, position), KeyCode.Space) =>
-      val Point(targetX, targetY) = enemies(position).position
-      (UIState.Move, Some(AttackAction(targetX, targetY)))
-    case (_: UIState.AttackList, KeyCode.Escape) => (UIState.Move, None)
+  private def handleInput(input: Input): (UIState, Option[Action]) = uiState match {
+    case UIState.Move =>
+      input match {
+        case Input.Move(direction) => (UIState.Move, Some(MoveAction(direction)))
+        case Input.Attack if enemiesWithinRange.nonEmpty => (UIState.AttackList(enemiesWithinRange.toSeq, 0), None)
+        case Input.UseItem => (UIState.Move, Some(UseItemAction(Item("Potion"))))
+        case Input.Wait => (UIState.Move, Some(WaitAction))
+        case _ => (uiState, None)
+      }
+    case attack: UIState.AttackList =>
+      input match {
+        case Input.Move(direction) => (attack.iterate, None)
+        case Input.Attack =>
+          val Point(targetX, targetY) = attack.enemies(attack.index).position
+          (UIState.Move, Some(AttackAction(targetX, targetY)))
+        case Input.Cancel => (UIState.Move, None)
+        case _ => (uiState, None)
+      }
     case _ => (uiState, None)
   }
 

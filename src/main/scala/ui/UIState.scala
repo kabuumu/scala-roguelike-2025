@@ -9,7 +9,7 @@ object UIState {
 
   case class Attack(cursorX: Int, cursorY: Int) extends UIState
 
-  case class AttackList(enemies: Seq[Entity], position: Int) extends UIState {
-    def iterate: AttackList = AttackList(enemies, (position + 1) % enemies.length)
+  case class AttackList(enemies: Seq[Entity], index: Int) extends UIState {
+    def iterate: AttackList = AttackList(enemies, (index + 1) % enemies.length)
   }
 }
