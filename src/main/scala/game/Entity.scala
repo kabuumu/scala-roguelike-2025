@@ -1,5 +1,7 @@
 package game
 
+import game.Item.Item
+
 import java.util.UUID
 
 case class Entity(

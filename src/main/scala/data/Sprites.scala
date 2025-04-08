@@ -20,11 +20,15 @@ object Sprites {
   val emptyHeartSprite: Sprite = Sprite(40, 10, uiLayer)
   val cursorSprite: Sprite = Sprite(29, 14, uiLayer)
   val potionSprite: Sprite = Sprite(33, 13, uiLayer)
+  val keySprite: Sprite = Sprite(32, 11, uiLayer)
+  val doorSprite: Sprite = Sprite(0, 9, entityLayer)
 
   val sprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,
     Wall -> wallSprite,
     Enemy -> ratSprite,
-    Floor -> floorSprite
+    Floor -> floorSprite,
+    Door -> doorSprite,
+    Key -> keySprite
   )
 }

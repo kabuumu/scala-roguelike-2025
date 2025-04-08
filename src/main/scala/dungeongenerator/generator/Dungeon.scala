@@ -22,15 +22,20 @@ case class Dungeon(entities: Set[(Point, Entity)]) {
     case None => Point(0, 0)
   }
 
+  val roomLocations: Set[Point] = entities.collect{
+    case (point, room: Room) => point
+  }
+
+  val optStartPoint: Option[Point] = entities.collectFirst {
+    case (point, StartPoint) => point
+  }
+
   val roomCount: Int = entities.count { case (_, entity) => entity.isInstanceOf[Room] }
   val lockedDoorCount: Int = entities.collect { case (_, Door(Some(_))) => () }.size
 
   def count[T <: Entity](implicit tag: ClassTag[T]) = entities.count { case (_, entity) => tag.runtimeClass.isInstance(entity) }
 
   lazy val longestRoomPath: Seq[Node] = {
-    val optStartPoint = entities.collectFirst {
-      case (point, StartPoint) => point
-    }
     val bossRoom = entities.collectFirst {
       case (point, BossRoom) => point
     } match {

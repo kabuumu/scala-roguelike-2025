@@ -2,6 +2,7 @@ package ui
 
 import game.*
 import game.Input.*
+import game.Item.Potion
 import ui.GameController.*
 import ui.UIState.UIState
 
@@ -50,7 +51,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(direction) => (UIState.Move, Some(MoveAction(direction)))
         case Input.Attack if enemiesWithinRange.nonEmpty => (UIState.AttackList(enemiesWithinRange.toSeq, 0), None)
-        case Input.UseItem => (UIState.Move, Some(UseItemAction(Item("Potion"))))
+        case Input.UseItem => (UIState.Move, Some(UseItemAction(Potion)))
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
       }

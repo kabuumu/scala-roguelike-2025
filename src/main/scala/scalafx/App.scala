@@ -2,10 +2,10 @@ package scalafx
 
 import data.Sprites
 import dungeongenerator.generator
+import dungeongenerator.generator.Entity.KeyLock
 import dungeongenerator.generator.{DefaultDungeonGeneratorConfig, DungeonGenerator}
-import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 import game.*
-import game.EntityType.Wall
+import game.Item.{Key, Potion}
 import scalafx.Includes.*
 import scalafx.Resources.*
 import scalafx.animation.AnimationTimer
@@ -54,17 +54,18 @@ object App extends JFXApp3 {
     val dungeon: generator.Dungeon = DungeonGenerator.generatePossibleDungeonsLinear(config = DefaultDungeonGeneratorConfig).head
 
     val mapTiles = dungeon.entities.collect {
-      case (generator.Point(x, y), generatorEntity@(generator.Entity.Wall | generator.Entity.Floor)) =>
-        val entityType = generatorEntity match {
-          case generator.Entity.Wall => EntityType.Wall
-          case generator.Entity.Floor => EntityType.Floor
-        }
-
-        Entity(xPosition = x, yPosition = y, entityType = entityType, health = Health(0), lineOfSightBlocking = entityType == Wall)
+      case (generator.Point(x, y),generator.Entity.Wall) =>
+        Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall, health = Health(0), lineOfSightBlocking = true)
+      case (generator.Point(x, y),generator.Entity.Floor | generator.Entity.Door(None)) =>
+        Entity(xPosition = x, yPosition = y, entityType = EntityType.Floor, health = Health(0), lineOfSightBlocking = false)
+      case (generator.Point(x, y),generator.Entity.Door(Some(KeyLock))) =>
+        Entity(xPosition = x, yPosition = y, entityType = EntityType.Door, health = Health(0), lineOfSightBlocking = true)
+      case (generator.Point(x, y),generator.Entity.Key) =>
+        Entity(xPosition = x, yPosition = y, entityType = EntityType.Key, health = Health(0), lineOfSightBlocking = false)
     }
 
-    val enemies = dungeon.longestRoomPath.tail.map {
-      case Node(DungeonCrawler(point, _, _), _) =>
+    val enemies = (dungeon.roomLocations -- dungeon.optStartPoint).map {
+      case point =>
         Entity(
           xPosition = point.x,
           yPosition = point.y,
@@ -73,16 +74,18 @@ object App extends JFXApp3 {
         )
     }
 
-    val player = dungeon.longestRoomPath.head match {
-      case Node(DungeonCrawler(point, _, _), _) =>
+    val player = dungeon.optStartPoint match {
+      case Some(point) =>
         Entity(
           id = "Player ID",
           xPosition = point.x,
           yPosition = point.y,
           entityType = EntityType.Player,
           health = Health(10),
-          inventory = Seq(Item("Potion"))
+          inventory = Seq(Potion)
         )
+      case None =>
+        throw new Exception("Player start point not found")
     }
 
     val startingGameState = GameState(player.id, Set(player) ++ mapTiles ++ enemies)
@@ -279,7 +282,11 @@ object App extends JFXApp3 {
     for (i <- player.inventory.indices) {
       val itemX = i * itemWidth
       val itemY = spriteScale * scale
-      val sprite = Sprites.potionSprite // Hardcoded initially
+      val item = player.inventory(i)
+      val sprite = item match {
+        case Potion => Sprites.potionSprite
+        case Key => Sprites.keySprite
+      }
 
       canvas.graphicsContext2D.drawImage(
         spriteSheet,

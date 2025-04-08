@@ -1,5 +1,7 @@
 package game
 
+import game.Item.{Item, Key}
+
 //TODO - Add separate initiative costs for different actions
 trait Action {
   def apply(entity: Entity, gameState: GameState): GameState
@@ -8,16 +10,41 @@ trait Action {
 case class MoveAction(direction: Direction) extends Action {
   def apply(movingEntity: Entity, gameState: GameState): GameState = {
     val movedEntity = movingEntity.move(direction)
-    gameState.copy(entities = gameState.entities - movingEntity + movedEntity)
 
-    if (
-      gameState.movementBlockingEntities.exists(_.position == movedEntity.position)
-    ) {
-      gameState
-    } else gameState.updateEntity(
-      movingEntity.id,
-      movedEntity.updateSightMemory(gameState)
-    )
+    val optItem = gameState.entities.collectFirst {
+      case itemEntity if itemEntity.position == movedEntity.position && itemEntity.entityType == EntityType.Key => (itemEntity, Item.Key)
+    }
+
+    gameState.movementBlockingEntities.find(_.position == movedEntity.position) match {
+      case Some(lockedDoor) if lockedDoor.entityType == EntityType.Door && movedEntity.inventory.contains(Key) =>
+        val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key), Nil, 1)
+
+        gameState
+          .updateEntity(movingEntity.id, movedEntity.copy(inventory = newInventory))
+          .remove(lockedDoor)
+          .addMessage(s"${System.nanoTime()}: ${movingEntity.name} opened the door")
+      case Some(blockingEntity) =>
+        gameState
+          .addMessage(s"${System.nanoTime()}: ${movingEntity.name} cannot move to ${blockingEntity.position} because it is blocked by ${blockingEntity.entityType}")
+      case None => optItem match {
+        case Some((entity, item)) =>
+          println(s"Found item at ${entity.position}")
+
+          gameState
+            .updateEntity(
+              movingEntity.id,
+              movedEntity.copy(inventory = movedEntity.inventory :+ item)
+                .updateSightMemory(gameState))
+            .remove(entity)
+            .addMessage(s"${System.nanoTime()}: ${movingEntity.name} picked up a $item")
+
+        case None =>
+          gameState.updateEntity(
+            movingEntity.id,
+            movedEntity.updateSightMemory(gameState)
+          )
+      }
+    }
   }
 }
 
@@ -67,7 +94,7 @@ case class UseItemAction(item: Item) extends Action {
         .addMessage(s"${System.nanoTime()}: ${entity.name} has no items to use")
     } else if (!entity.inventory.headOption.contains(item)) {
       gameState
-        .addMessage(s"${System.nanoTime()}: ${entity.name} does not have a ${item.name}")
+        .addMessage(s"${System.nanoTime()}: ${entity.name} does not have a $item")
     } else {
       val newEntity = entity.copy(
         inventory = entity.inventory.drop(1)
@@ -76,7 +103,7 @@ case class UseItemAction(item: Item) extends Action {
       )
       gameState
         .updateEntity(entity.id, newEntity)
-        .addMessage(s"${System.nanoTime()}: ${entity.name} used a ${item.name}")
+        .addMessage(s"${System.nanoTime()}: ${entity.name} used a $item")
     }
   }
 }
