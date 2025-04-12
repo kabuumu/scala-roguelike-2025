@@ -20,9 +20,15 @@ case class MoveAction(direction: Direction) extends Action {
         val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key), Nil, 1)
 
         gameState
-          .updateEntity(movingEntity.id, movedEntity.copy(inventory = newInventory))
           .remove(lockedDoor)
+          .updateEntity(
+            movingEntity.id,
+            movedEntity
+              .copy(inventory = newInventory)
+              .updateSightMemory(gameState.remove(lockedDoor)) //TODO - move updating sight memory to a central point - should be done after every action
+          )
           .addMessage(s"${System.nanoTime()}: ${movingEntity.name} opened the door")
+
       case Some(blockingEntity) =>
         gameState
           .addMessage(s"${System.nanoTime()}: ${movingEntity.name} cannot move to ${blockingEntity.position} because it is blocked by ${blockingEntity.entityType}")
