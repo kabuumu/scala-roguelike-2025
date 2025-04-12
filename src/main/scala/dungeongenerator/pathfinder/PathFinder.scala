@@ -1,9 +1,9 @@
 package dungeongenerator.pathfinder
 
-import dungeongenerator.generator.Entity._
+import dungeongenerator.generator.Entity.*
 import dungeongenerator.generator.{DefaultDungeonGeneratorConfig, Point}
+import dungeongenerator.pathfinder.DungeonCrawlerAction.*
 import dungeongenerator.pathfinder.nodefinders.NodeFinder
-import dungeongenerator.pathfinder.DungeonCrawlerAction._
 
 import scala.annotation.tailrec
 
@@ -16,11 +16,7 @@ object PathFinder {
                targetNodePredicate: TargetNodePredicate,
                pathFailureTriggers: Set[PathFailurePredicate],
                nodeFinders: Iterable[NodeFinder]): Path = {
-    //    val currentTime = System.currentTimeMillis()
-    val path = findPath(Set(Seq(startingNode)), Set.empty, targetNodePredicate, pathFailureTriggers, nodeFinders)
-    //    val endTime = System.currentTimeMillis()
-    //    println(s"Pathfinding took ${endTime - currentTime} milliseconds and produced a path of ${path.size} length using $nodeFinders.")
-    path
+    findPath(Set(Seq(startingNode)), Set.empty, targetNodePredicate, pathFailureTriggers, nodeFinders)
   }
 
   @tailrec
@@ -45,17 +41,13 @@ object PathFinder {
         if !(openPaths ++ successfulPaths).exists(_.contains(newNode))
       } yield openPath :+ newNode
 
-      val curatedUpdatedPaths = updatedPaths.groupBy(_.last).map(_._2.head)
-      findPath(curatedUpdatedPaths, successfulPaths ++ newSuccessfulPaths, targetNodePredicate, pathFailureTriggers, nodeFinders, iteration + 1)
+      //      val curatedUpdatedPaths = updatedPaths.groupBy(_.last).map(_._2.head)
+      findPath(updatedPaths, successfulPaths ++ newSuccessfulPaths, targetNodePredicate, pathFailureTriggers, nodeFinders, iteration + 1)
 
     }
   }
 
   def locationPredicate(point: Point): Node => Boolean = _.currentCrawler.location == point
-
-  val keysUsedPredicate: Node => Boolean = _.currentCrawler.inventory.count(_ == Key) == 0
-
-  val allDoorsUnlockedPredicate: Node => Boolean = _.dungeonState.entities.collectFirst { case (_, Door(Some(_))) => }.isEmpty
 
   val hasKeysFailureCase: PathFailurePredicate = _.last.currentCrawler.inventory.contains(Key)
 
@@ -133,5 +125,4 @@ object PathFinder {
     }
     !visitedEachRoom
   }
-
 }

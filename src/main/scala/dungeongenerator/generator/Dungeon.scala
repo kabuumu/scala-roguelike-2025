@@ -6,7 +6,6 @@ import dungeongenerator.pathfinder.PathFinder.*
 
 import scala.reflect.ClassTag
 
-//TODO - Update entities to use shapeless HList
 case class Dungeon(entities: Set[(Point, Entity)]) {
   val minPoint: Point = entities.minByOption {
     case (Point(x, y), _) => x + y

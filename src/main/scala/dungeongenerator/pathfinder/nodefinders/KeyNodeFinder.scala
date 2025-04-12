@@ -10,13 +10,11 @@ object KeyNodeFinder extends NodeFinder {
 
     currentDungeon.entities.collectFirst {
       case keyEntity@(point, Key) if point == currentPoint =>
-        currentNode.copy(
-          currentCrawler =
-            currentNode.currentCrawler.copy(
-              inventory = inventory :+ Key,
-              lastAction = PickedUpKey
-            ),
-          currentDungeon.copy(
+        currentNode.updateCrawler(
+          _.addItem(Key)
+            .addAction(PickedUpKey)
+          ).updateDungeon(
+          _.copy(
             entities = currentDungeon.entities - keyEntity
           )
         )

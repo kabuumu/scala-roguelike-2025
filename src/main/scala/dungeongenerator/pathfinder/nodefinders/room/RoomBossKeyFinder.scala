@@ -3,8 +3,8 @@ package dungeongenerator.pathfinder.nodefinders.room
 import dungeongenerator.generator.Dungeon
 import dungeongenerator.generator.Entity.{BossKey, Room}
 import dungeongenerator.pathfinder.DungeonCrawlerAction.PickedUpBossKey
-import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 import dungeongenerator.pathfinder.nodefinders.NodeFinder
+import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 
 //TODO refactor into standard inventory action
 object RoomBossKeyFinder extends NodeFinder {
@@ -14,15 +14,13 @@ object RoomBossKeyFinder extends NodeFinder {
     for {
       currentRoomPoint <- dungeonEntities.collectFirst {
         case (roomPoint, _: Room) if roomPoint == currentPoint => roomPoint
-      }.toIterable
+      }.toSeq
       keyEntity <- dungeonEntities.collect { case (keyPoint, BossKey) if keyPoint == currentRoomPoint => keyPoint -> BossKey }
-    } yield currentNode.copy(
-      currentCrawler =
-        currentNode.currentCrawler.copy(
-          inventory = currentInventory :+ BossKey,
-          lastAction = PickedUpBossKey
-        ),
-      currentDungeon.copy(
+    } yield currentNode.updateCrawler(
+      _.addItem(BossKey)
+        .addAction(PickedUpBossKey)
+    ).updateDungeon(
+      _.copy(
         entities = currentDungeon.entities - keyEntity
       )
     )

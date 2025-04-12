@@ -2,18 +2,18 @@ package dungeongenerator.pathfinder.nodefinders.room
 
 import dungeongenerator.generator.Dungeon
 import dungeongenerator.generator.Entity.*
-import dungeongenerator.pathfinder.DungeonCrawlerAction._
-import dungeongenerator.pathfinder.{DungeonCrawler, Node}
+import dungeongenerator.pathfinder.DungeonCrawlerAction.*
 import dungeongenerator.pathfinder.nodefinders.NodeFinder
+import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 
 object AdjacentRoomNodeFinder extends NodeFinder {
   override def getPossibleNodes(currentNode: Node): Iterable[Node] = {
     val Node(DungeonCrawler(currentPoint, currentInventory, _), currentDungeon@Dungeon(dungeonEntities)) = currentNode
 
-    for {
+    val adjacentRooms = for {
       (currentRoomLocation, currentRoom) <- dungeonEntities.collectFirst {
         case (roomPoint, room: Room) if roomPoint == currentPoint => roomPoint -> room
-      }.toIterable
+      }.toSeq
 
       (currentRoomDoorLocation, currentRoomDoor) <- dungeonEntities.collect {
         case (location, door: Door) if currentRoom.entities.exists(_._1 == location) => location -> door
@@ -23,37 +23,38 @@ object AdjacentRoomNodeFinder extends NodeFinder {
           && adjacentRoomLocation != currentRoomLocation =>
           (adjacentRoomLocation, adjacentRoom)
       }
-      newNode <-
-        if (currentRoomDoor.optLock.contains(KeyLock) && currentInventory.contains(Key)) {
-          Some(
-            Node(
-              DungeonCrawler(adjacentRoomLocation, currentInventory.diff(Seq(Key)), UnlockedDoor),
-              currentDungeon.copy(
-                entities = (dungeonEntities
-                  - (currentRoomDoorLocation -> currentRoomDoor)
-                  + (currentRoomDoorLocation -> Door(None))
-                  )
-              )
-            ))
-        } else if (currentRoomDoor.optLock.contains(BossKeyLock) && currentInventory.contains(BossKey)) {
-        Some(
-          Node(
-            DungeonCrawler(adjacentRoomLocation, currentInventory.diff(Seq(BossKey)), UnlockedDoor),
-            currentDungeon.copy(
-              entities = (dungeonEntities
-                - (currentRoomDoorLocation -> currentRoomDoor)
+    } yield (currentRoomDoorLocation, currentRoomDoor, adjacentRoomLocation)
+
+    adjacentRooms.collect {
+      case (currentRoomDoorLocation, Door(Some(KeyLock)), adjacentRoomLocation) if currentInventory.contains(Key) =>
+        currentNode.updateCrawler(
+            _.removeItem(Key)
+              .addAction(UnlockedDoor)
+          )
+          .updateDungeon(
+            _.copy(
+              entities = dungeonEntities
+                - (currentRoomDoorLocation -> Door(Some(KeyLock)))
                 + (currentRoomDoorLocation -> Door(None))
-                )
-            )
-          ))
-      } else if (currentRoomDoor.isOpen) {
-          Some(
-            Node(
-              DungeonCrawler(adjacentRoomLocation, currentInventory, Moved),
-              currentDungeon
             )
           )
-        } else None
-    } yield newNode
+      case (currentRoomDoorLocation, Door(Some(BossKeyLock)), adjacentRoomLocation) if currentInventory.contains(BossKey) =>
+        currentNode.updateCrawler(
+            _.removeItem(BossKey)
+              .addAction(UnlockedDoor)
+          )
+          .updateDungeon(
+            _.copy(
+              entities = dungeonEntities
+                - (currentRoomDoorLocation -> Door(Some(BossKeyLock)))
+                + (currentRoomDoorLocation -> Door(None))
+            )
+          )
+      case (_, Door(None), adjacentRoomLocation) =>
+        currentNode.updateCrawler(
+            _.setLocation(adjacentRoomLocation)
+              .addAction(Moved)
+          )
+    }
   }
 }

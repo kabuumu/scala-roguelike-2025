@@ -1,8 +1,8 @@
 package dungeongenerator.pathfinder.nodefinders
 
-import dungeongenerator.generator.Entity._
+import dungeongenerator.generator.Entity.*
+import dungeongenerator.pathfinder.DungeonCrawlerAction.*
 import dungeongenerator.pathfinder.{DungeonCrawler, Node}
-import dungeongenerator.pathfinder.DungeonCrawlerAction._
 
 object DoorNodeFinder extends NodeFinder {
   override def getPossibleNodes(currentNode: Node): Iterable[Node] = {
@@ -15,36 +15,33 @@ object DoorNodeFinder extends NodeFinder {
 
     adjacentPoints.collect {
       case lockedDoor@(newPoint, Door(Some(KeyLock))) if inventory.contains(Key) =>
-        currentNode.copy(
-          currentCrawler = currentNode.currentCrawler
-            .removeFromInventory(Key)
-            .copy(lastAction = UnlockedDoor),
-          dungeonState = currentDungeon.copy(
-            entities = currentDungeon.entities
-              - lockedDoor
-              + (newPoint -> Door(None))
+        currentNode.updateCrawler(
+            _.removeItem(Key)
+              .addAction(UnlockedDoor)
           )
-        )
+          .updateDungeon(
+            _.copy(
+              entities = currentDungeon.entities
+                - lockedDoor
+                + (newPoint -> Door(None))
+            )
+          )
       case lockedDoor@(newPoint, Door(Some(BossKeyLock))) if inventory.contains(BossKey) =>
-        currentNode.copy(
-          currentCrawler = currentNode.currentCrawler
-            .removeFromInventory(BossKey)
-            .copy(lastAction = UnlockedDoor),
-          dungeonState = currentDungeon.copy(
+        currentNode.updateCrawler(
+          _.removeItem(BossKey)
+            .addAction(UnlockedDoor)
+        ).updateDungeon(
+          _.copy(
             entities = currentDungeon.entities
               - lockedDoor
               + (newPoint -> Door(None))
           )
         )
       case (newPoint, Door(None)) =>
-        currentNode.copy(
-          currentCrawler = currentNode.currentCrawler.copy(
-            location = newPoint,
-            lastAction = Moved
-          )
+        currentNode.updateCrawler(
+          _.setLocation(newPoint)
+            .addAction(Moved)
         )
     }
-
-
   }
 }

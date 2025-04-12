@@ -14,7 +14,9 @@ abstract class DungeonPredicate(dungeonScorePredicate: Dungeon => Either[String,
 
 case class RoomCountPredicate(targetRoomCount: Int)
   extends DungeonPredicate(dungeon =>
-    Right(dungeon.roomCount / targetRoomCount.toDouble)
+    if (dungeon.roomCount == targetRoomCount) Right(1.0)
+    else if (dungeon.roomCount < targetRoomCount) Right(dungeon.roomCount / targetRoomCount.toDouble)
+    else Left(s"Too many rooms - wanted $targetRoomCount but got ${dungeon.roomCount}")
   )
 
 case class LongestRoomPathPredicate(targetPathLength: Int)
@@ -29,6 +31,7 @@ class EntityCount[T <: Entity](targetKeyAmount: Int)(implicit m: ClassTag[T]) ex
     else Right(entityCount / targetKeyAmount.toDouble)
   }
 )
+
 case class KeyCountPredicate(targetAmount: Int) extends EntityCount[Key.type](targetAmount)
 case class SwitchCountPredicate(targetAmount: Int) extends EntityCount[Switch](targetAmount)
 case class TeleporterCountPredicate(targetAmount: Int) extends EntityCount[Teleporter](targetAmount)

@@ -4,9 +4,9 @@ import dungeongenerator.generator.Entity._
 import dungeongenerator.generator.{Dungeon, DungeonGeneratorConfig, Entity, Point}
 
 case object CreateRoomMutator extends DungeonMutator {
-  val defaultMinRoomSize = 8
-  val defaultMaxRoomSize = 16
   val interval = 8
+  val defaultMinRoomSize = interval * 1
+  val defaultMaxRoomSize = interval * 2
 
   override def getPossibleMutations(dungeon: Dungeon, config: DungeonGeneratorConfig): Iterable[Dungeon] = {
     if (dungeon.entities.isEmpty) {

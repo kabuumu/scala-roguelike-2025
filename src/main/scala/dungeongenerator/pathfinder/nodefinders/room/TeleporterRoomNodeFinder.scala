@@ -3,8 +3,8 @@ package dungeongenerator.pathfinder.nodefinders.room
 import dungeongenerator.generator.Dungeon
 import dungeongenerator.generator.Entity.{Room, Teleporter}
 import dungeongenerator.pathfinder.DungeonCrawlerAction.Teleported
-import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 import dungeongenerator.pathfinder.nodefinders.NodeFinder
+import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 
 object TeleporterRoomNodeFinder extends NodeFinder {
   override def getPossibleNodes(currentNode: Node): Iterable[Node] = {
@@ -18,11 +18,9 @@ object TeleporterRoomNodeFinder extends NodeFinder {
         case (teleporterPoint, teleporter: Teleporter) if teleporterPoint == currentRoomPoint => teleporterPoint -> teleporter
       }
     } yield
-      currentNode.copy(
-        currentCrawler = currentCrawler.copy(
-          location = teleporterLocation,
-          lastAction = Teleported
-        )
+      currentNode.updateCrawler(
+        _.setLocation(teleporterLocation)
+          .addAction(Teleported)
       )
   }
 }
