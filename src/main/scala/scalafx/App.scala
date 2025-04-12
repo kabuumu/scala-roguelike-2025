@@ -1,9 +1,6 @@
 package scalafx
 
 import data.Sprites
-import dungeongenerator.generator
-import dungeongenerator.generator.Entity.KeyLock
-import dungeongenerator.generator.{DefaultDungeonGeneratorConfig, DungeonGenerator}
 import game.*
 import game.Item.{Key, Potion}
 import scalafx.Includes.*
@@ -26,18 +23,18 @@ import ui.{GameController, UIState}
 import scala.language.postfixOps
 
 object App extends JFXApp3 {
-  val scale = 3
+  val uiScale = 3
   val spriteScale = 16
   val canvasX: Int = 30
   val canvasY: Int = 15
   val debugOmniscience: Boolean = false
 
   override def start(): Unit = {
-    val canvas = new Canvas(spriteScale * scale * canvasX, spriteScale * scale * canvasY)
+    val canvas = new Canvas(spriteScale * uiScale * canvasX, spriteScale * uiScale * canvasY)
     val messageArea = new TextArea {
       editable = false
-      prefWidth = spriteScale * scale * canvasX
-      prefHeight = spriteScale * scale * 4
+      prefWidth = spriteScale * uiScale * canvasX
+      prefHeight = spriteScale * uiScale * 4
       font = pixelFont
       style = "-fx-control-inner-background: black; -fx-text-fill: white;"
       focusTraversable = false
@@ -51,44 +48,7 @@ object App extends JFXApp3 {
 
     var keyCodes: Set[KeyCode] = Set.empty
 
-    val dungeon: generator.Dungeon = DungeonGenerator.generatePossibleDungeonsLinear(config = DefaultDungeonGeneratorConfig).head
-
-    val mapTiles = dungeon.entities.collect {
-      case (generator.Point(x, y),generator.Entity.Wall) =>
-        Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall, health = Health(0), lineOfSightBlocking = true)
-      case (generator.Point(x, y),generator.Entity.Floor | generator.Entity.Door(None)) =>
-        Entity(xPosition = x, yPosition = y, entityType = EntityType.Floor, health = Health(0), lineOfSightBlocking = false)
-      case (generator.Point(x, y),generator.Entity.Door(Some(KeyLock))) =>
-        Entity(xPosition = x, yPosition = y, entityType = EntityType.Door, health = Health(0), lineOfSightBlocking = true)
-      case (generator.Point(x, y),generator.Entity.Key) =>
-        Entity(xPosition = x, yPosition = y, entityType = EntityType.Key, health = Health(0), lineOfSightBlocking = false)
-    }
-
-    val enemies = (dungeon.roomLocations -- dungeon.optStartPoint).map {
-      case point =>
-        Entity(
-          xPosition = point.x,
-          yPosition = point.y,
-          entityType = EntityType.Enemy,
-          health = Health(2)
-        )
-    }
-
-    val player = dungeon.optStartPoint match {
-      case Some(point) =>
-        Entity(
-          id = "Player ID",
-          xPosition = point.x,
-          yPosition = point.y,
-          entityType = EntityType.Player,
-          health = Health(10),
-          inventory = Seq(Potion)
-        )
-      case None =>
-        throw new Exception("Player start point not found")
-    }
-
-    val startingGameState = GameState(player.id, Set(player) ++ mapTiles ++ enemies)
+    val startingGameState = StartingState.startingGameState
     var controller = GameController(UIState.Move, startingGameState).init()
 
     val vbox = new VBox {
@@ -173,8 +133,8 @@ object App extends JFXApp3 {
   }
 
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
-    val x = (entity.xPosition - xOffset) * spriteScale * scale
-    val y = (entity.yPosition - yOffset) * spriteScale * scale
+    val x = (entity.xPosition - xOffset) * spriteScale * uiScale
+    val y = (entity.yPosition - yOffset) * spriteScale * uiScale
     val entitySprite = if (entity.isDead) Sprites.deadSprite else Sprites.sprites(entity.entityType)
 
     canvas.graphicsContext2D.save() // Save the current state
@@ -206,8 +166,8 @@ object App extends JFXApp3 {
       spriteScale,
       x,
       y,
-      spriteScale * scale,
-      spriteScale * scale
+      spriteScale * uiScale,
+      spriteScale * uiScale
     )
 
     canvas.graphicsContext2D.restore() // Restore the saved state
@@ -227,20 +187,20 @@ object App extends JFXApp3 {
         spriteScale,
         x,
         y,
-        spriteScale * scale,
-        spriteScale * scale
+        spriteScale * uiScale,
+        spriteScale * uiScale
       )
     }
 
     uiState match {
       case Attack(cursorX, cursorY) =>
-        val offsetCursorX = (cursorX - xOffset) * spriteScale * scale
-        val offsetCursorY = (cursorY - yOffset) * spriteScale * scale
+        val offsetCursorX = (cursorX - xOffset) * spriteScale * uiScale
+        val offsetCursorY = (cursorY - yOffset) * spriteScale * uiScale
 
         drawCursor(offsetCursorX, offsetCursorY)
       case UIState.AttackList(enemies, position) =>
-        val offsetCursorX = (enemies(position).xPosition - xOffset) * spriteScale * scale
-        val offsetCursorY = (enemies(position).yPosition - yOffset) * spriteScale * scale
+        val offsetCursorX = (enemies(position).xPosition - xOffset) * spriteScale * uiScale
+        val offsetCursorY = (enemies(position).yPosition - yOffset) * spriteScale * uiScale
 
         drawCursor(offsetCursorX, offsetCursorY)
       case _ =>
@@ -248,8 +208,8 @@ object App extends JFXApp3 {
   }
 
   def drawPlayerHearts(canvas: Canvas, player: Entity): Unit = {
-    val heartWidth = spriteScale * scale
-    val heartHeight = spriteScale * scale
+    val heartWidth = spriteScale * uiScale
+    val heartHeight = spriteScale * uiScale
     val maxHearts = player.health.max / 2
     val fullHearts = player.health.current / 2
     val hasHalfHeart = player.health.current % 2 != 0
@@ -276,12 +236,12 @@ object App extends JFXApp3 {
   }
 
   def drawInventory(canvas: Canvas, player: Entity): Unit = {
-    val itemWidth = spriteScale * scale
-    val itemHeight = spriteScale * scale
+    val itemWidth = spriteScale * uiScale
+    val itemHeight = spriteScale * uiScale
 
     for (i <- player.inventory.indices) {
       val itemX = i * itemWidth
-      val itemY = spriteScale * scale
+      val itemY = spriteScale * uiScale
       val item = player.inventory(i)
       val sprite = item match {
         case Potion => Sprites.potionSprite
