@@ -12,6 +12,7 @@ object StartingState {
     val endTime = System.currentTimeMillis()
     println(s"Dungeon generation took ${endTime - startTime} milliseconds")
     println(s"Generated ${dungeon.roomCount} rooms with a longest path of ${dungeon.longestRoomPath.size}")
+    println(s"Dungeon has ${dungeon.nonPathRooms.size} non-path rooms")
 
     dungeon
   }
@@ -37,6 +38,16 @@ object StartingState {
       )
   }
 
+  val items: Set[Entity] = dungeon.nonPathRooms.map{
+    point =>
+      Entity(
+        xPosition = point.x,
+        yPosition = point.y,
+        entityType = EntityType.ItemEntity(Potion),
+        health = Health(0),
+      )
+  }
+
   val player: Entity = dungeon.optStartPoint match {
     case Some(point) =>
       Entity(
@@ -51,5 +62,5 @@ object StartingState {
       throw new Exception("Player start point not found")
   }
 
-  val startingGameState: GameState = GameState(player.id, Set(player) ++ mapTiles ++ enemies)
+  val startingGameState: GameState = GameState(player.id, Set(player) ++ mapTiles ++ enemies ++ items)
 }

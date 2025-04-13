@@ -39,5 +39,6 @@ object Sprites {
     Key(Yellow) -> yellowKeySprite,
     Key(Blue) -> blueKeySprite,
     Key(Red) -> redKeySprite,
+    ItemEntity(game.Item.Potion) -> potionSprite,
   )
 }

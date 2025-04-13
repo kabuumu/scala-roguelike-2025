@@ -87,6 +87,10 @@ case class Dungeon(entities: Set[(Point, Entity)]) {
         .filterNot { case (point, _) => point == newRoom.intersectPoint } + (newRoom.intersectPoint -> Door(None))
     )
   }
+
+  val nonPathRooms: Set[Point] = roomLocations.filterNot { roomLocation =>
+    longestRoomPath.exists(_.currentCrawler.location == roomLocation)
+  }
 }
 
 object Dungeon {

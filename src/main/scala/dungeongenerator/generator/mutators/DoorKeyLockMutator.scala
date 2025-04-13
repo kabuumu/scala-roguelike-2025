@@ -24,7 +24,7 @@ case object DoorKeyLockMutator extends DungeonMutator {
         pathFailureTriggers = Set.empty,
         nodeFinders = config.nodeFinders
       )
-      if directPath.size > 2 // Ensure that the path is not empty
+      if directPath.size > 3 // Ensure that the path is not empty
     } yield {
       val lockedDoor = doorToLock -> Door(Some(ItemLock(Key(keyColour))))
 

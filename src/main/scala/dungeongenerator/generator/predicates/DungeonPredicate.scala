@@ -37,3 +37,7 @@ case class KeyCountPredicate(targetAmount: Int) extends EntityCount[Key](targetA
 case class SwitchCountPredicate(targetAmount: Int) extends EntityCount[Switch](targetAmount)
 
 case class TeleporterCountPredicate(targetAmount: Int) extends EntityCount[Teleporter](targetAmount)
+
+case class NonPathRoomPredicate(targetAmount: Int) extends DungeonPredicate(dungeon =>
+  Right(dungeon.roomLocations.filterNot(roomLocation => dungeon.longestRoomPath.exists(_._1.location == roomLocation)).size / targetAmount)
+)

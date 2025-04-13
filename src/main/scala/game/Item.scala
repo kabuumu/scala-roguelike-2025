@@ -5,7 +5,7 @@ import dungeongenerator.generator.Entity.KeyColour
 object Item {
   val potionValue = 5
 
-  trait Item
+  sealed trait Item
 
   case object Potion extends Item
 

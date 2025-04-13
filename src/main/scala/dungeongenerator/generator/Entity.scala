@@ -41,6 +41,8 @@ object Entity {
 
   case object BossRoom extends Entity
 
+  case object TreasureRoom extends Entity
+
   //Wrapper class idea
   case class Locked(lockedEntity: Entity) //remove lock on unlock/switch activation? Need to define type of lock
   case class Unpowered(unpoweredEntity: Entity) // Remove unpowered state on power - what if entity needs to be re-powered?
