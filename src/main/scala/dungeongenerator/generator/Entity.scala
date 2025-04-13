@@ -15,13 +15,17 @@ object Entity {
 
   sealed trait Lock
 
-  case object KeyLock extends Lock
+  case class ItemLock(item: Entity) extends Lock
 
   case object BossKeyLock extends Lock
 
   case object SwitchLock extends Lock
 
-  case object Key extends Entity
+  case class Key(colour: KeyColour) extends Entity
+
+  enum KeyColour {
+    case Yellow, Red, Blue
+  }
 
   case object BossKey extends Entity
 

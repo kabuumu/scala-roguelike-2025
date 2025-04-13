@@ -34,8 +34,6 @@ case class MoveAction(direction: Direction) extends Action {
           .addMessage(s"${System.nanoTime()}: ${movingEntity.name} cannot move to ${blockingEntity.position} because it is blocked by ${blockingEntity.entityType}")
       case None => optItem match {
         case Some((entity, item)) =>
-          println(s"Found item at ${entity.position}")
-
           gameState
             .updateEntity(
               movingEntity.id,

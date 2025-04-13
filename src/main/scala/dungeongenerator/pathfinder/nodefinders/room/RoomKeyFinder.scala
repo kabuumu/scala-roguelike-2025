@@ -14,10 +14,10 @@ object RoomKeyFinder extends NodeFinder {
       currentRoomPoint <- dungeonEntities.collectFirst {
         case (roomPoint, _: Room) if roomPoint == currentPoint => roomPoint
       }.toSeq
-      keyEntity <- dungeonEntities.collect { case (keyPoint, Key) if keyPoint == currentRoomPoint => keyPoint -> Key }
+      keyEntity <- dungeonEntities.collect { case (keyPoint, key @ Key(_)) if keyPoint == currentRoomPoint => keyPoint -> key }
     } yield currentNode
       .updateCrawler(
-        _.addItem(Key)
+        _.addItem(keyEntity._2)
           .addAction(PickedUpKey)
       ).updateDungeon(
         _ - keyEntity

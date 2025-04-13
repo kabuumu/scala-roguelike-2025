@@ -25,8 +25,8 @@ case object DoorKeyLockMutator extends DungeonMutator {
       )
       if directPath.nonEmpty // Ensure that the path is not empty
     } yield {
-      val lockedDoor = doorToLock -> Door(Some(KeyLock))
+      val lockedDoor = doorToLock -> Door(Some(ItemLock(Key(KeyColour.Yellow))))
 
-      dungeon + keyRoom + (keyRoom.center -> Key) - (doorToLock -> Door(None)) + lockedDoor
+      dungeon + keyRoom + (keyRoom.center -> Key(KeyColour.Yellow)) - (doorToLock -> Door(None)) + lockedDoor
     }
 }

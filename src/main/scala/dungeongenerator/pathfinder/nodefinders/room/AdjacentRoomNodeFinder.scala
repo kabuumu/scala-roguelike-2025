@@ -24,15 +24,15 @@ object AdjacentRoomNodeFinder extends NodeFinder {
           (adjacentRoomLocation, adjacentRoom)
       }
       newNode <- currentRoomDoor match {
-        case Door(Some(KeyLock)) if currentInventory.contains(Key) =>
+        case lockedDoor @ Door(Some(ItemLock(keyItem))) if currentInventory.contains(keyItem) =>
           Some(currentNode.updateCrawler(
-              _.removeItem(Key)
+              _.removeItem(keyItem)
                 .addAction(UnlockedDoor)
             )
             .updateDungeon(
               _.copy(
                 entities = dungeonEntities
-                  - (currentRoomDoorLocation -> Door(Some(KeyLock)))
+                  - (currentRoomDoorLocation -> lockedDoor)
                   + (currentRoomDoorLocation -> Door(None))
               )
             )

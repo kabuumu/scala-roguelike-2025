@@ -1,6 +1,7 @@
 package dungeongenerator.pathfinder
 
 import dungeongenerator.generator.Entity.*
+import dungeongenerator.generator.Entity.KeyColour.Yellow
 import dungeongenerator.generator.{DefaultDungeonGeneratorConfig, Point}
 import dungeongenerator.pathfinder.DungeonCrawlerAction.*
 import dungeongenerator.pathfinder.nodefinders.NodeFinder
@@ -49,7 +50,7 @@ object PathFinder {
 
   def locationPredicate(point: Point): Node => Boolean = _.currentCrawler.location == point
 
-  val hasKeysFailureCase: PathFailurePredicate = _.last.currentCrawler.inventory.contains(Key)
+  val hasKeysFailureCase: PathFailurePredicate = _.last.currentCrawler.inventory.contains(Key(Yellow))
 
   val skippedDoorFailureCase: PathFailurePredicate = _.last.dungeonState.entities.collectFirst { case (_, Door(Some(_))) => }.isDefined
 
@@ -86,7 +87,6 @@ object PathFinder {
               case Some(roomPoint) =>
                 path.indexWhere(_.currentCrawler.location == roomPoint) < switchNodeIndex
               case None =>
-                println("This shouldn't happen")
                 false
             }
           }
@@ -101,8 +101,8 @@ object PathFinder {
     val currentCrawler = path.last.currentCrawler
 
     if (currentCrawler.lastAction == PickedUpKey) {
-      val keyCount = currentCrawler.inventory.count(_ == Key)
-      val lockedDoors = path.last.dungeonState.entities.filter(_._2 == Door(Some(KeyLock)))
+      val keyCount = currentCrawler.inventory.count(_ == Key(Yellow))
+      val lockedDoors = path.last.dungeonState.entities.filter(_._2 == Door(Some(ItemLock(Key(Yellow)))))
 
       val lockedDoorRoomLocations: Set[Point] = lockedDoors.flatMap {
         case (lockedDoorLocation, _) => path.last.dungeonState.entities.collect {

@@ -10,12 +10,8 @@ object DungeonGenerator {
                                      config: DungeonGeneratorConfig): Iterable[Dungeon] = {
     def getPredicateScore(dungeon: Dungeon): Double = {
       val score = config.predicates.foldLeft(0.0) { (score, predicate) =>
-        println(s"Predicate: ${predicate.getClass.getSimpleName}, Score: ${predicate.dungeonScore(dungeon)}")
-
         predicate.dungeonScore(dungeon).getOrElse(0.0) + score
       }
-
-      println(s"Total Score: ${score/config.predicates.size}")
       score
     }
 

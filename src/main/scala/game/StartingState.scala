@@ -13,9 +13,9 @@ object StartingState {
       Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall, health = Health(0), lineOfSightBlocking = true)
     case (generator.Point(x, y), generator.Entity.Floor | generator.Entity.Door(None)) =>
       Entity(xPosition = x, yPosition = y, entityType = EntityType.Floor, health = Health(0), lineOfSightBlocking = false)
-    case (generator.Point(x, y), generator.Entity.Door(Some(KeyLock))) =>
+    case (generator.Point(x, y), generator.Entity.Door(Some(ItemLock(Key(KeyColour.Yellow))))) =>
       Entity(xPosition = x, yPosition = y, entityType = EntityType.Door, health = Health(0), lineOfSightBlocking = true)
-    case (generator.Point(x, y), generator.Entity.Key) =>
+    case (generator.Point(x, y), generator.Entity.Key(KeyColour.Yellow)) =>
       Entity(xPosition = x, yPosition = y, entityType = EntityType.Key, health = Health(0), lineOfSightBlocking = false)
   }
 
