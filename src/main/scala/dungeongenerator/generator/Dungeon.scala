@@ -1,6 +1,7 @@
 package dungeongenerator.generator
 
-import dungeongenerator.generator.Entity._
+import dungeongenerator.generator.Entity.*
+import dungeongenerator.generator.mutators.CreateRoomMutator.PotentialRoom
 import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 import dungeongenerator.pathfinder.PathFinder.*
 
@@ -78,6 +79,13 @@ case class Dungeon(entities: Set[(Point, Entity)]) {
   def +(entity: (Point, Entity)): Dungeon = copy(entities = entities + entity)
 
   def ++(newEntities: Iterable[(Point, Entity)]): Dungeon = copy(entities = entities ++ newEntities)
+
+  def +(newRoom: PotentialRoom): Dungeon = {
+    copy(entities =
+      (entities ++ newRoom.entities)
+        .filterNot { case (point, _) => point == newRoom.intersectPoint } + (newRoom.intersectPoint -> Door(None))
+    )
+  }
 }
 
 object Dungeon {

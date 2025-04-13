@@ -22,12 +22,12 @@ object Main extends JFXApp3 {
 
   override def start(): Unit = {
     val nodeFinders: Set[NodeFinder] = Set(
-      AdjacentFloorNodeFinder,
-      DoorNodeFinder,
-      KeyNodeFinder,
-      SwitchNodeFinder,
-      TeleporterNodeFinder,
-      BossKeyNodeFinder
+//      AdjacentFloorNodeFinder,
+//      DoorNodeFinder,
+//      KeyNodeFinder,
+//      SwitchNodeFinder,
+//      TeleporterNodeFinder,
+//      BossKeyNodeFinder
     )
 
     val startTime = System.currentTimeMillis()

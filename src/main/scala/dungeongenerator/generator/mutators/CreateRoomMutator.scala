@@ -13,11 +13,7 @@ case object CreateRoomMutator extends DungeonMutator {
       Some(dungeon ++ initialRoomEntities)
     } else {
       createAdditionalRooms(dungeon, defaultMinRoomSize, defaultMaxRoomSize).iterator.toSet.map {
-        (newRoom: PotentialRoom) =>
-          dungeon.copy(entities =
-            (dungeon.entities ++ newRoom.entities)
-              .filterNot { case (point, _) => point == newRoom.intersectPoint } + (newRoom.intersectPoint -> Door(None))
-          )
+        newRoom => dungeon + newRoom
       }
     }
   }
