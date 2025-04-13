@@ -38,7 +38,9 @@ object StartingState {
       )
   }
 
-  val items: Set[Entity] = dungeon.nonPathRooms.map{
+  val items: Set[Entity] = dungeon.entities.collect {
+    case (point, Treasure) => point
+  }.map {
     point =>
       Entity(
         xPosition = point.x,

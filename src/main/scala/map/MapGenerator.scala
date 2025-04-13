@@ -1,24 +1,10 @@
 package map
 
-import game.Direction.*
-import game.{Direction, Point}
+import scala.annotation.tailrec
 import scala.util.Random
 
-import scala.annotation.tailrec
-
 object MapGenerator {
-  def generateRoomTree(): RoomTree = {
-    val roomTree = RoomTree(Map.empty)
-      .addInitialRoom("room1", TreeRoom(0, 0))
-      .addRoom("room1", Right, "room2")
-      .addRoom("room2", Down, "room3")
-      .addRoom("room3", Left, "room4")
-      .addRoom("room2", Up, "room5")
-
-    roomTree
-  }
-
-  def generateDungeon(dungeonSize: Int, seed: Long): Dungeon = {
+  def generateRandomDungeon(dungeonSize: Int, seed: Long): Dungeon = {
     val random = new Random(seed)
 
     @tailrec
@@ -29,12 +15,34 @@ object MapGenerator {
       val (room, direction) = availableRooms(randomRoomIndex)
       val newDungeon = dungeon.addRoom(room, direction)
 
-      if(newDungeon.roomGrid.size < dungeonSize) addRoom(newDungeon)
+      if (newDungeon.roomGrid.size < dungeonSize) addRoom(newDungeon)
       else newDungeon
     }
 
     addRoom(Dungeon())
   }
 
+  //Create empty dungeon
+  //Run through all dungeon mutators (currently just create room)
+  //Run each possible dungeon through pathfinder to check it is completable
+  //Return the dungeons that are completable
+  //If any dungeons meet all completion criteria (currently just size), return them
+  def generateDungeon(dungeonSize: Int): Dungeon = {
+    @tailrec
+    def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
+      val newOpenDungeons = for {
+        dungeon <- openDungeons
+        (originRoom, direction) <- dungeon.availableRooms
+      } yield dungeon.addRoom(originRoom, direction)
 
+      newOpenDungeons.find(_.roomGrid.size == 10) match {
+        case Some(completedDungeon) =>
+          completedDungeon
+        case None =>
+          recursiveGenerator(newOpenDungeons)
+      }
+    }
+
+    recursiveGenerator(Set(Dungeon()))
+  }
 }

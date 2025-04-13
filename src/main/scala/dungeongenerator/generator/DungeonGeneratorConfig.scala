@@ -22,6 +22,7 @@ object DefaultDungeonGeneratorConfig extends DungeonGeneratorConfig(
     CreateRoomMutator,
 //    DoorSwitchLockMutator,
 //    TeleporterMutator,
+    TreasureRoomMutator
   ),
   nodeFinders = Set(
     AdjacentRoomNodeFinder,
@@ -32,10 +33,11 @@ object DefaultDungeonGeneratorConfig extends DungeonGeneratorConfig(
   ),
   predicates = Set(
     KeyCountPredicate(2),
-    NonPathRoomPredicate(1),
+//    NonPathRoomPredicate(1),
 //    SwitchCountPredicate(2),
 //    RoomCountPredicate(10),
-//    new EntityCount[BossRoom.type](1)
-//    LongestRoomPathPredicate(10)
+//    new EntityCount[BossRoom.type](1),
+//    LongestRoomPathPredicate(10),
+    TreasurePredicate(2),
   )
 )

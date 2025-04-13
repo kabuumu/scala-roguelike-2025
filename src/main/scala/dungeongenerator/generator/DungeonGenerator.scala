@@ -17,9 +17,6 @@ object DungeonGenerator {
     } else {
       val currentDungeon = openDungeons.maxBy(getPredicateScore)
 
-      println("New dungeon iteration")
-      openDungeons.foreach(dungeon => println("  " + getPredicateScore(dungeon)))
-
       val mutations = config.mutators
         .flatMap(_.getPossibleMutations(currentDungeon, config))
         .filter(_.longestRoomPath.nonEmpty)

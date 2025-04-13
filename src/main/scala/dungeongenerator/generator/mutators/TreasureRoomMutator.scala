@@ -1,6 +1,6 @@
 package dungeongenerator.generator.mutators
 
-import dungeongenerator.generator.Entity.TreasureRoom
+import dungeongenerator.generator.Entity.Treasure
 import dungeongenerator.generator.{Dungeon, DungeonGeneratorConfig}
 
 case object TreasureRoomMutator extends DungeonMutator {
@@ -8,6 +8,6 @@ case object TreasureRoomMutator extends DungeonMutator {
     for {
       treasureRoom <- CreateRoomMutator.createAdditionalRooms(dungeon, maxRoomSize = 8)
     } yield
-      dungeon + treasureRoom + (treasureRoom.center -> TreasureRoom)
+      dungeon + (treasureRoom + (treasureRoom.center -> Treasure))
   }
 }

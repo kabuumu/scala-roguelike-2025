@@ -1,6 +1,6 @@
 package dungeongenerator.generator.predicates
 
-import dungeongenerator.generator.Entity.{Key, Switch, Teleporter}
+import dungeongenerator.generator.Entity.{Key, Switch, Teleporter, Treasure}
 import dungeongenerator.generator.{Dungeon, Entity}
 
 import scala.reflect.ClassTag
@@ -27,6 +27,7 @@ case class LongestRoomPathPredicate(targetPathLength: Int)
 class EntityCount[T <: Entity](targetKeyAmount: Int)(implicit m: ClassTag[T]) extends DungeonPredicate(
   dungeon => {
     val entityCount = dungeon.count[T]
+
     if (entityCount > targetKeyAmount) Left(s"Too many entities - wanted $targetKeyAmount but got $entityCount")
     else Right(entityCount / targetKeyAmount.toDouble)
   }
@@ -41,3 +42,5 @@ case class TeleporterCountPredicate(targetAmount: Int) extends EntityCount[Telep
 case class NonPathRoomPredicate(targetAmount: Int) extends DungeonPredicate(dungeon =>
   Right(dungeon.roomLocations.filterNot(roomLocation => dungeon.longestRoomPath.exists(_._1.location == roomLocation)).size / targetAmount)
 )
+
+case class TreasurePredicate(targetAmount: Int) extends EntityCount[Treasure.type](targetAmount)

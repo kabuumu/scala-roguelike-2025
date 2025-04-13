@@ -1,6 +1,6 @@
 package dungeongenerator.generator.mutators
 
-import dungeongenerator.generator.Entity._
+import dungeongenerator.generator.Entity.*
 import dungeongenerator.generator.{Dungeon, DungeonGeneratorConfig, Entity, Point}
 
 case object CreateRoomMutator extends DungeonMutator {
@@ -33,7 +33,15 @@ case object CreateRoomMutator extends DungeonMutator {
       newRoom = createRoom(originX, originY, maxX, maxY)
       centerX = originX + (xSize / 2)
       centerY = originY + (ySize / 2)
-      intersectPoint <- dungeon.entities.filter(_._2 == Wall)
+      nonIntersectRoomEntities = dungeon.entities.collect {
+        case (_, room: Room) if room.entities.exists {
+          case (_, entity) => entity == Treasure || entity == Key
+        } => room.entities
+      }.flatten
+
+      intersectPoint <- dungeon.entities
+        .diff(nonIntersectRoomEntities)
+        .filter(_._2 == Wall)
         .intersect(newRoom.filter(_._2 == Wall))
         .collectFirst {
           case (point, _) if point.x % interval == interval / 2 || point.y % interval == interval / 2 => point
@@ -76,11 +84,15 @@ case object CreateRoomMutator extends DungeonMutator {
   case class PotentialRoom(walls: Set[Point],
                            floors: Set[Point],
                            center: Point,
-                           intersectPoint: Point) {
+                           intersectPoint: Point,
+                           otherEntities: Set[(Point, Entity)] = Set.empty) {
     val entities: Set[(Point, Entity)] = {
-      val roomEntities: Set[(Point, Entity)] =
-        Set.empty[(Point, Entity)] ++ walls.map(_ -> Wall) ++ floors.map(_ -> Floor)
+      val roomEntities: Set[(Point, Entity)] = Set.empty[(Point, Entity)] ++ walls.map(_ -> Wall) ++ floors.map(_ -> Floor) ++ otherEntities
       roomEntities + (center -> Room(roomEntities))
+    }
+
+    def +(otherEntity: (Point, Entity)): PotentialRoom = {
+      copy(otherEntities = otherEntities + otherEntity)
     }
   }
 

@@ -41,7 +41,7 @@ object Entity {
 
   case object BossRoom extends Entity
 
-  case object TreasureRoom extends Entity
+  case object Treasure extends Entity
 
   //Wrapper class idea
   case class Locked(lockedEntity: Entity) //remove lock on unlock/switch activation? Need to define type of lock

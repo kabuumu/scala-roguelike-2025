@@ -16,6 +16,8 @@ case class MoveAction(direction: Direction) extends Action {
     }.collectFirst {
       case (entity, EntityType.Key(keyColour)) if movedEntity.position == entity.position =>
         entity -> Item.Key(keyColour)
+      case (entity, EntityType.ItemEntity(Item.Potion)) if movedEntity.position == entity.position =>
+        entity -> Item.Potion
     }
 
     gameState.movementBlockingEntities.find(_.position == movedEntity.position) match {

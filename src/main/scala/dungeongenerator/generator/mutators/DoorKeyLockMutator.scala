@@ -28,6 +28,6 @@ case object DoorKeyLockMutator extends DungeonMutator {
     } yield {
       val lockedDoor = doorToLock -> Door(Some(ItemLock(Key(keyColour))))
 
-      dungeon + keyRoom + (keyRoom.center -> Key(keyColour)) - (doorToLock -> Door(None)) + lockedDoor
+      dungeon + (keyRoom + (keyRoom.center -> Key(keyColour))) - (doorToLock -> Door(None)) + lockedDoor
     }
 }
