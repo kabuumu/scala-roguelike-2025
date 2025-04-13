@@ -2,8 +2,9 @@ package dungeongenerator.generator
 
 import dungeongenerator.generator.Entity.*
 import dungeongenerator.generator.mutators.CreateRoomMutator.PotentialRoom
-import dungeongenerator.pathfinder.{DungeonCrawler, Node}
 import dungeongenerator.pathfinder.PathFinder.*
+import dungeongenerator.pathfinder.{DungeonCrawler, Node}
+import dungeongenerator.pathfinder.PathfinderPredicates.*
 
 import scala.reflect.ClassTag
 
@@ -57,7 +58,7 @@ case class Dungeon(entities: Set[(Point, Entity)]) {
               completedDungeonAnd(hasKeysFailureCase),
               completedDungeonAnd(skippedDoorFailureCase),
               completedDungeonAnd(skippedTeleporterFailureCase),
-              completedDungeonAnd(missedRoomFailureCase),
+//              completedDungeonAnd(missedRoomFailureCase),
               switchBeforeLockedDoorFailureCase,
               getKeyBeforeLockedDoorFailureCase,
             )

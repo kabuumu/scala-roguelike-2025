@@ -2,12 +2,19 @@ package game
 
 import dungeongenerator.generator
 import dungeongenerator.generator.Entity.*
-import dungeongenerator.generator.Entity.KeyColour.Yellow
 import dungeongenerator.generator.{DefaultDungeonGeneratorConfig, DungeonGenerator}
 import game.Item.Potion
 
 object StartingState {
-  val dungeon: generator.Dungeon = DungeonGenerator.generatePossibleDungeonsLinear(config = DefaultDungeonGeneratorConfig).head
+  val dungeon: generator.Dungeon = {
+    val startTime = System.currentTimeMillis()
+    val dungeon = DungeonGenerator.generatePossibleDungeons(config = DefaultDungeonGeneratorConfig).head
+    val endTime = System.currentTimeMillis()
+    println(s"Dungeon generation took ${endTime - startTime} milliseconds")
+    println(s"Generated ${dungeon.roomCount} rooms with a longest path of ${dungeon.longestRoomPath.size}")
+
+    dungeon
+  }
 
   val mapTiles: Set[Entity] = dungeon.entities.collect {
     case (generator.Point(x, y), generator.Entity.Wall) =>

@@ -3,7 +3,7 @@ package dungeongenerator.generator.mutators
 import dungeongenerator.generator.Entity.*
 import dungeongenerator.generator.{Dungeon, DungeonGeneratorConfig}
 import dungeongenerator.pathfinder.DungeonCrawlerAction.Moved
-import dungeongenerator.pathfinder.{DungeonCrawler, Node, PathFinder}
+import dungeongenerator.pathfinder.{DungeonCrawler, Node, PathFinder, PathfinderPredicates}
 
 case object DoorKeyLockMutator extends DungeonMutator {
   override def getPossibleMutations(dungeon: Dungeon, config: DungeonGeneratorConfig): Iterable[Dungeon] =
@@ -20,11 +20,11 @@ case object DoorKeyLockMutator extends DungeonMutator {
           DungeonCrawler(keyRoom.center),
           dungeon + keyRoom
         ),
-        targetNodePredicate = PathFinder.locationPredicate(previousRoom),
+        targetNodePredicate = PathfinderPredicates.locationPredicate(previousRoom),
         pathFailureTriggers = Set.empty,
         nodeFinders = config.nodeFinders
       )
-      if directPath.nonEmpty // Ensure that the path is not empty
+      if directPath.size > 2 // Ensure that the path is not empty
     } yield {
       val lockedDoor = doorToLock -> Door(Some(ItemLock(Key(keyColour))))
 

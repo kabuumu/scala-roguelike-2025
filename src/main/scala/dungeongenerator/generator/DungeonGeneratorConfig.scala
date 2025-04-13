@@ -31,9 +31,9 @@ object DefaultDungeonGeneratorConfig extends DungeonGeneratorConfig(
 //    RoomBossKeyFinder
   ),
   predicates = Set(
-    KeyCountPredicate(2),
+    KeyCountPredicate(3),
 //    SwitchCountPredicate(2),
-//    RoomCountPredicate(10),
+    RoomCountPredicate(10),
 //    new EntityCount[BossRoom.type](1)
   )
 )
