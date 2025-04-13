@@ -1,6 +1,7 @@
 package scalafx
 
 import data.Sprites
+import dungeongenerator.generator.Entity.KeyColour._
 import game.*
 import game.Item.{Key, Potion}
 import scalafx.Includes.*
@@ -244,7 +245,9 @@ object App extends JFXApp3 {
       val item = player.inventory(i)
       val sprite = item match {
         case Potion => Sprites.potionSprite
-        case Key => Sprites.keySprite
+        case Key(Yellow) => Sprites.yellowKeySprite
+        case Key(Blue) => Sprites.blueKeySprite
+        case Key(Red) => Sprites.redKeySprite
       }
 
       canvas.graphicsContext2D.drawImage(

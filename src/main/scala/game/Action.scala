@@ -11,21 +11,24 @@ case class MoveAction(direction: Direction) extends Action {
   def apply(movingEntity: Entity, gameState: GameState): GameState = {
     val movedEntity = movingEntity.move(direction)
 
-    val optItem = gameState.entities.collectFirst {
-      case itemEntity if itemEntity.position == movedEntity.position && itemEntity.entityType == EntityType.Key => (itemEntity, Item.Key)
+    val optItem: Option[(Entity, Item)] = gameState.entities.map{
+      entity => entity -> entity.entityType
+    }.collectFirst {
+      case (entity, EntityType.Key(keyColour)) if movedEntity.position == entity.position =>
+        entity -> Item.Key(keyColour)
     }
 
     gameState.movementBlockingEntities.find(_.position == movedEntity.position) match {
-      case Some(lockedDoor) if lockedDoor.entityType == EntityType.Door && movedEntity.inventory.contains(Key) =>
-        val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key), Nil, 1)
+      case Some(lockedDoorEntity @ Entity(_, _, _, EntityType.LockedDoor(keyColour), _, _, _, _, _, _)) if movedEntity.inventory.contains(Key(keyColour)) =>
+        val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key(keyColour)), Nil, 1)
 
         gameState
-          .remove(lockedDoor)
+          .remove(lockedDoorEntity)
           .updateEntity(
             movingEntity.id,
             movedEntity
               .copy(inventory = newInventory)
-              .updateSightMemory(gameState.remove(lockedDoor)) //TODO - move updating sight memory to a central point - should be done after every action
+              .updateSightMemory(gameState.remove(lockedDoorEntity)) //TODO - move updating sight memory to a central point - should be done after every action
           )
           .addMessage(s"${System.nanoTime()}: ${movingEntity.name} opened the door")
 

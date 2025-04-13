@@ -2,6 +2,7 @@ package game
 
 import dungeongenerator.generator
 import dungeongenerator.generator.Entity.*
+import dungeongenerator.generator.Entity.KeyColour.Yellow
 import dungeongenerator.generator.{DefaultDungeonGeneratorConfig, DungeonGenerator}
 import game.Item.Potion
 
@@ -13,10 +14,10 @@ object StartingState {
       Entity(xPosition = x, yPosition = y, entityType = EntityType.Wall, health = Health(0), lineOfSightBlocking = true)
     case (generator.Point(x, y), generator.Entity.Floor | generator.Entity.Door(None)) =>
       Entity(xPosition = x, yPosition = y, entityType = EntityType.Floor, health = Health(0), lineOfSightBlocking = false)
-    case (generator.Point(x, y), generator.Entity.Door(Some(ItemLock(Key(KeyColour.Yellow))))) =>
-      Entity(xPosition = x, yPosition = y, entityType = EntityType.Door, health = Health(0), lineOfSightBlocking = true)
-    case (generator.Point(x, y), generator.Entity.Key(KeyColour.Yellow)) =>
-      Entity(xPosition = x, yPosition = y, entityType = EntityType.Key, health = Health(0), lineOfSightBlocking = false)
+    case (generator.Point(x, y), generator.Entity.Door(Some(ItemLock(Key(keyColour))))) =>
+      Entity(xPosition = x, yPosition = y, entityType = EntityType.LockedDoor(keyColour), health = Health(0), lineOfSightBlocking = true)
+    case (generator.Point(x, y), generator.Entity.Key(keyColour)) =>
+      Entity(xPosition = x, yPosition = y, entityType = EntityType.Key(keyColour), health = Health(0), lineOfSightBlocking = false)
   }
 
   val enemies: Set[Entity] = (dungeon.roomLocations -- dungeon.optStartPoint).map {

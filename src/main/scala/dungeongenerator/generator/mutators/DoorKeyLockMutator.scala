@@ -13,6 +13,7 @@ case object DoorKeyLockMutator extends DungeonMutator {
         case Moved(previousRoom, door, _) if dungeon.entities.exists { case (position, entity) => position == door && entity == Door(None) } =>
           (previousRoom, door)
       }
+      keyColour <- Seq(KeyColour.Yellow, KeyColour.Blue, KeyColour.Red)
       keyRoom <- CreateRoomMutator.createAdditionalRooms(dungeon, maxRoomSize = 8)
       directPath = PathFinder.findPath(
         startingNode = Node(
@@ -25,8 +26,8 @@ case object DoorKeyLockMutator extends DungeonMutator {
       )
       if directPath.nonEmpty // Ensure that the path is not empty
     } yield {
-      val lockedDoor = doorToLock -> Door(Some(ItemLock(Key(KeyColour.Yellow))))
+      val lockedDoor = doorToLock -> Door(Some(ItemLock(Key(keyColour))))
 
-      dungeon + keyRoom + (keyRoom.center -> Key(KeyColour.Yellow)) - (doorToLock -> Door(None)) + lockedDoor
+      dungeon + keyRoom + (keyRoom.center -> Key(keyColour)) - (doorToLock -> Door(None)) + lockedDoor
     }
 }

@@ -18,7 +18,7 @@ object RoomKeyFinder extends NodeFinder {
     } yield currentNode
       .updateCrawler(
         _.addItem(keyEntity._2)
-          .addAction(PickedUpKey)
+          .addAction(PickedUpKey(keyEntity._2.colour))
       ).updateDungeon(
         _ - keyEntity
       )

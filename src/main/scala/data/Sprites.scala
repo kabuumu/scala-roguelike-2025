@@ -1,5 +1,6 @@
 package data
 
+import dungeongenerator.generator.Entity.KeyColour._
 import game.EntityType.*
 import game.{EntityType, Sprite}
 
@@ -20,15 +21,23 @@ object Sprites {
   val emptyHeartSprite: Sprite = Sprite(40, 10, uiLayer)
   val cursorSprite: Sprite = Sprite(29, 14, uiLayer)
   val potionSprite: Sprite = Sprite(33, 13, uiLayer)
-  val keySprite: Sprite = Sprite(32, 11, uiLayer)
-  val doorSprite: Sprite = Sprite(0, 9, entityLayer)
+  val yellowKeySprite: Sprite = Sprite(32, 11, uiLayer)
+  val blueKeySprite: Sprite = Sprite(33, 11, uiLayer)
+  val redKeySprite: Sprite = Sprite(34, 11, uiLayer)
+  val yellowDoorSprite: Sprite = Sprite(0, 11, entityLayer)
+  val blueDoorSprite: Sprite = Sprite(0, 9, entityLayer)
+  val redDoorSprite: Sprite = Sprite(0, 10, entityLayer)
 
   val sprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,
     Wall -> wallSprite,
     Enemy -> ratSprite,
     Floor -> floorSprite,
-    Door -> doorSprite,
-    Key -> keySprite
+    LockedDoor(Yellow) -> yellowDoorSprite,
+    LockedDoor(Blue) -> blueDoorSprite,
+    LockedDoor(Red) -> redDoorSprite,
+    Key(Yellow) -> yellowKeySprite,
+    Key(Blue) -> blueKeySprite,
+    Key(Red) -> redKeySprite,
   )
 }
