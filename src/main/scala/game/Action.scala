@@ -11,7 +11,7 @@ case class MoveAction(direction: Direction) extends Action {
   def apply(movingEntity: Entity, gameState: GameState): GameState = {
     val movedEntity = movingEntity.move(direction)
 
-    val optItem: Option[(Entity, Item)] = gameState.entities.map{
+    val optItem: Option[(Entity, Item)] = gameState.entities.map {
       entity => entity -> entity.entityType
     }.collectFirst {
       case (entity, EntityType.Key(keyColour)) if movedEntity.position == entity.position =>
@@ -20,39 +20,43 @@ case class MoveAction(direction: Direction) extends Action {
         entity -> Item.Potion
     }
 
-    gameState.movementBlockingEntities.find(_.position == movedEntity.position) match {
-      case Some(lockedDoorEntity @ Entity(_, _, _, EntityType.LockedDoor(keyColour), _, _, _, _, _, _)) if movedEntity.inventory.contains(Key(keyColour)) =>
-        val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key(keyColour)), Nil, 1)
+    if (gameState.movementBlockingPoints.contains(movedEntity.position)) {
+      gameState.entities.find(_.position == movedEntity.position) match {
+        case Some(lockedDoorEntity@Entity(_, _, _, EntityType.LockedDoor(keyColour), _, _, _, _, _, _)) if movedEntity.inventory.contains(Key(keyColour)) =>
+          val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key(keyColour)), Nil, 1)
 
-        gameState
-          .remove(lockedDoorEntity)
-          .updateEntity(
-            movingEntity.id,
-            movedEntity
-              .copy(inventory = newInventory)
-              .updateSightMemory(gameState.remove(lockedDoorEntity)) //TODO - move updating sight memory to a central point - should be done after every action
-          )
-          .addMessage(s"${System.nanoTime()}: ${movingEntity.name} opened the door")
-
-      case Some(blockingEntity) =>
-        gameState
-          .addMessage(s"${System.nanoTime()}: ${movingEntity.name} cannot move to ${blockingEntity.position} because it is blocked by ${blockingEntity.entityType}")
-      case None => optItem match {
-        case Some((entity, item)) =>
           gameState
+            .remove(lockedDoorEntity)
             .updateEntity(
               movingEntity.id,
-              movedEntity.copy(inventory = movedEntity.inventory :+ item)
-                .updateSightMemory(gameState))
-            .remove(entity)
-            .addMessage(s"${System.nanoTime()}: ${movingEntity.name} picked up a $item")
+              movedEntity
+                .copy(inventory = newInventory)
+                .updateSightMemory(gameState.remove(lockedDoorEntity)) //TODO - move updating sight memory to a central point - should be done after every action
+            )
+            .addMessage(s"${System.nanoTime()}: ${movingEntity.name} opened the door")
 
+        case Some(blockingEntity) =>
+          gameState
+            .addMessage(s"${System.nanoTime()}: ${movingEntity.name} cannot move to ${blockingEntity.position} because it is blocked by ${blockingEntity.entityType}")
         case None =>
-          gameState.updateEntity(
-            movingEntity.id,
-            movedEntity.updateSightMemory(gameState)
-          )
+          gameState
+            .addMessage(s"${System.nanoTime()}: ${movingEntity.name} cannot move to ${movedEntity.position} because it is blocked by a wall")
       }
+    } else optItem match {
+      case Some((entity, item)) =>
+        gameState
+          .updateEntity(
+            movingEntity.id,
+            movedEntity.copy(inventory = movedEntity.inventory :+ item)
+              .updateSightMemory(gameState))
+          .remove(entity)
+          .addMessage(s"${System.nanoTime()}: ${movingEntity.name} picked up a $item")
+
+      case None =>
+        gameState.updateEntity(
+          movingEntity.id,
+          movedEntity.updateSightMemory(gameState)
+        )
     }
   }
 }

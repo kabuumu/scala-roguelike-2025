@@ -4,15 +4,9 @@ import game.Item.Potion
 import map.{Dungeon, MapGenerator, TileType}
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(10)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(20)
   val startPoint: Point = dungeon.roomGrid.head
 
-  val mapTiles: Set[Entity] = dungeon.tiles.collect {
-    case (point, TileType.Wall) =>
-      Entity(xPosition = point.x, yPosition = point.y, entityType = EntityType.Wall, health = Health(0), lineOfSightBlocking = true)
-    case (point, TileType.Floor) =>
-      Entity(xPosition = point.x, yPosition = point.y, entityType = EntityType.Floor, health = Health(0), lineOfSightBlocking = false)
-  }.toSet
 
   val enemies: Set[Entity] = (dungeon.roomGrid - startPoint).map {
     point =>
@@ -36,5 +30,9 @@ object StartingState {
       )
   }
 
-  val startingGameState: GameState = GameState(player.id, Vector(player) ++ mapTiles ++ enemies)
+  val startingGameState: GameState = GameState(
+    playerEntityId = player.id,
+    entities = Vector(player) ++ enemies,
+    dungeon = dungeon
+  )
 }

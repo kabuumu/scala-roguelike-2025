@@ -1,6 +1,9 @@
 package game
 
-case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Seq[String] = Nil) {
+import map.Dungeon
+import map.TileType.Wall
+
+case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Seq[String] = Nil, dungeon: Dungeon) {
   private val framesPerSecond = 8
 
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
@@ -45,29 +48,30 @@ case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Se
     copy(entities = entities.filterNot(_.id == entity.id))
   }
 
-  lazy val playerVisibleEntities: Seq[Entity] = getVisibleEntitiesFor(playerEntity)
+  lazy val playerVisiblePoints: Set[Point] = getVisiblePointsFor(playerEntity)
 
-  def getVisibleEntitiesFor(entity: Entity): Seq[Entity] = {
-    val visiblePoints = entity.getLineOfSight(this)
-
-    entities.filter {
-      visibleEntity =>
-        visiblePoints.exists(
-          visiblePoint =>
-            visibleEntity.xPosition == visiblePoint.x && visibleEntity.yPosition == visiblePoint.y
-        )
-
-    }
+  private def getVisiblePointsFor(entity: Entity): Set[Point] = {
+    entity.getLineOfSight(this)
   }
 
   def addMessage(message: String): GameState = {
     copy(messages = message +: messages)
   }
 
-  val movementBlockingEntities: Seq[Entity] = entities.filter(entity => entity.entityType.blocksMovement && !entity.isDead)
+  val walls = dungeon.tiles.filter(_._2 == Wall).keySet
 
-  lazy val blockedPoints: Set[Point] = entities.collect {
-    case entity if entity.lineOfSightBlocking =>
-      entity.position
-  }.toSet
+  val movementBlockingPoints: Set[Point] =
+    walls ++
+      entities.collect {
+        case entity if entity.lineOfSightBlocking && !entity.isDead =>
+          entity.position
+      }.toSet
+
+
+  lazy val sightBlockingPoints: Set[Point] =
+    walls ++
+      entities.collect {
+        case entity if entity.lineOfSightBlocking && !entity.isDead =>
+          entity.position
+      }.toSet
 }

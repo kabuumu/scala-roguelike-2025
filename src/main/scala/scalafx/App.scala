@@ -4,6 +4,7 @@ import data.Sprites
 import dungeongenerator.generator.Entity.KeyColour.*
 import game.*
 import game.Item.{Key, Potion}
+import map.TileType
 import scalafx.Includes.*
 import scalafx.Resources.*
 import scalafx.animation.AnimationTimer
@@ -85,7 +86,7 @@ object App extends JFXApp3 {
       }
       val newController = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
 
-      if(newController != controller) {
+      if (newController != controller) {
         controller = newController
         updateCanvas(controller, canvas, spriteSheet)
         updateMessageArea(controller, messageArea)
@@ -109,20 +110,33 @@ object App extends JFXApp3 {
       case UIState.AttackList(enemies, position) => (enemies(position).xPosition - (canvasX / 2), enemies(position).yPosition - (canvasY / 2))
     }
 
-    val playerVisibleEntities = state.gameState.playerVisibleEntities
+    val playerVisiblePoints = state.gameState.playerVisiblePoints
     val visibleEntities = state.gameState.entities.filter {
       entity =>
         (entity.position.getChebyshevDistance(player.position) <= canvasX / 2) &&
           (player.sightMemory.contains(entity.position) || debugOmniscience)
     }
 
+    val visibleTiles = state.gameState.dungeon.tiles.filter {
+      case (tilePosition, tile) =>
+        (tilePosition.getChebyshevDistance(player.position) <= canvasX / 2) &&
+          (player.sightMemory.contains(tilePosition) || debugOmniscience)
+    }
 
-    visibleEntities.toSeq.sortBy {
+    visibleTiles.foreach {
+      case (tilePosition, tileType) =>
+      val visible = playerVisiblePoints.contains(tilePosition)
+
+      drawTile(tileType, canvas, spriteSheet, tilePosition.x - xOffset, tilePosition.y - yOffset, visible)
+    }
+
+
+    visibleEntities.sortBy {
       entity =>
         Sprites.sprites(entity.entityType).layer
     }.foreach {
       entity =>
-        val visible = playerVisibleEntities.contains(entity)
+        val visible = playerVisiblePoints.contains(entity.position)
 
         //Do not draw dynamic entities that are not visible
         if (entity.entityType.isStatic || visible) {
@@ -139,6 +153,31 @@ object App extends JFXApp3 {
     val messages = state.gameState.messages.take(4).mkString("\n")
 
     messageArea.text = messages
+  }
+
+  private def drawTile(tileType: TileType, canvas: Canvas, spriteSheet: Image, x: Int, y: Int, visible: Boolean): Unit = {
+    val tileSprite = tileType match {
+      case TileType.Wall => Sprites.wallSprite
+      case TileType.Floor => Sprites.floorSprite
+    }
+
+    if (!visible) {
+      canvas.graphicsContext2D.setGlobalAlpha(0.5)
+    } else {
+      canvas.graphicsContext2D.setGlobalAlpha(1)
+    }
+
+    canvas.graphicsContext2D.drawImage(
+      spriteSheet,
+      tileSprite.x * spriteScale,
+      tileSprite.y * spriteScale,
+      spriteScale,
+      spriteScale,
+      x * spriteScale * uiScale,
+      y * spriteScale * uiScale,
+      spriteScale * uiScale,
+      spriteScale * uiScale
+    )
   }
 
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
