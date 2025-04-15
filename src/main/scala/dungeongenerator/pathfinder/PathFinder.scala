@@ -13,16 +13,20 @@ object PathFinder {
                targetNodePredicate: TargetNodePredicate,
                pathFailureTriggers: Set[PathFailurePredicate],
                nodeFinders: Iterable[NodeFinder]): Path = {
-    findPath(Set(Seq(startingNode)), Set.empty, targetNodePredicate, pathFailureTriggers, nodeFinders)
+    val startTime = System.currentTimeMillis()
+    val path = findPathRecursive(Set(Seq(startingNode)), Set.empty, targetNodePredicate, pathFailureTriggers, nodeFinders)
+    val endTime = System.currentTimeMillis()
+//    println(s"  Pathfinding took ${endTime - startTime} ms for dungeon of size ${startingNode.dungeonState.entities.size} with ${startingNode.dungeonState.roomCount} rooms.")
+    path
   }
 
   @tailrec
-  private def findPath(openPaths: Set[Path],
-                       successfulPaths: Set[Path],
-                       targetNodePredicate: TargetNodePredicate,
-                       pathFailureTriggers: Set[PathFailurePredicate],
-                       nodeFinders: Iterable[NodeFinder],
-                       iteration: Int = 0): Path = {
+  private def findPathRecursive(openPaths: Set[Path],
+                                successfulPaths: Set[Path],
+                                targetNodePredicate: TargetNodePredicate,
+                                pathFailureTriggers: Set[PathFailurePredicate],
+                                nodeFinders: Iterable[NodeFinder],
+                                iteration: Int = 0): Path = {
     if (openPaths.exists(path => pathFailureTriggers.exists(_.apply(path)))) Nil
     else if (openPaths.isEmpty || iteration > 20000) successfulPaths.minByOption(_.size).getOrElse(Nil)
     else {
@@ -36,7 +40,7 @@ object PathFinder {
           .map(path :+ _)
       }
 
-      findPath(
+      findPathRecursive(
         updatedPaths,
         successfulPaths ++ newSuccessfulPaths,
         targetNodePredicate,

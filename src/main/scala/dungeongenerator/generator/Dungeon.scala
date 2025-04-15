@@ -37,6 +37,7 @@ case class Dungeon(entities: Set[(Point, Entity)]) {
   def count[T <: Entity](implicit tag: ClassTag[T]) = entities.count { case (_, entity) => tag.runtimeClass.isInstance(entity) }
 
   lazy val longestRoomPath: Seq[Node] = {
+    val startTime = System.currentTimeMillis()
     val bossRoom = entities.collectFirst {
       case (point, BossRoom) => point
     } match {

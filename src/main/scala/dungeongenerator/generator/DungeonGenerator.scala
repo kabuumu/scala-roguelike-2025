@@ -1,6 +1,8 @@
 package dungeongenerator.generator
 
 import scala.annotation.tailrec
+import scala.collection.parallel.CollectionConverters.*
+
 
 object DungeonGenerator {
 
@@ -10,16 +12,24 @@ object DungeonGenerator {
                                config: DungeonGeneratorConfig): Set[Dungeon] = {
 
     def getPredicateScore(dungeon: Dungeon): Double =
-      config.predicates.view.map(_.dungeonScore(dungeon).getOrElse(0.0)).sum
+      config.predicates.view.map(_.dungeonScore(dungeon).getOrElse(-10.0)).sum
 
     if (openDungeons.isEmpty || completedDungeons.size >= config.targetCount) {
       completedDungeons.take(config.targetCount)
     } else {
-      val currentDungeon = openDungeons.maxBy(getPredicateScore)
 
-      val mutations = config.mutators
-        .flatMap(_.getPossibleMutations(currentDungeon, config))
-        .filter(_.longestRoomPath.nonEmpty)
+//      val currentDungeon = openDungeons.maxBy(getPredicateScore)
+
+      val maxScore: Double = openDungeons.map(getPredicateScore).max
+
+      val currentDungeons = openDungeons.toSeq.sortBy(getPredicateScore).reverse.take(3).par
+
+      val mutations = for {
+        dungeon <- currentDungeons
+        mutator <- config.mutators
+        possibleMutation <- mutator.getPossibleMutations(dungeon, config)
+        if possibleMutation.longestRoomPath.nonEmpty
+      } yield possibleMutation
 
       val (newCompleted, newOpen) = mutations.partition(dungeon =>
         config.predicates.forall(_.dungeonScore(dungeon).contains(1.0))
@@ -27,7 +37,7 @@ object DungeonGenerator {
 
       generatePossibleDungeons(
         completedDungeons ++ newCompleted,
-        openDungeons ++ newOpen - currentDungeon,
+        openDungeons ++ newOpen -- currentDungeons,
         config
       )
     }

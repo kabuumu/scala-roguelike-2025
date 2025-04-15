@@ -1,7 +1,7 @@
 package scalafx
 
 import data.Sprites
-import dungeongenerator.generator.Entity.KeyColour._
+import dungeongenerator.generator.Entity.KeyColour.*
 import game.*
 import game.Item.{Key, Potion}
 import scalafx.Includes.*
@@ -24,11 +24,11 @@ import ui.{GameController, UIState}
 import scala.language.postfixOps
 
 object App extends JFXApp3 {
-  val uiScale = 3
+  val uiScale = 1
   val spriteScale = 16
-  val canvasX: Int = 30
-  val canvasY: Int = 15
-  val debugOmniscience: Boolean = false
+  val canvasX: Int = 30 * 3
+  val canvasY: Int = 15 * 3
+  val debugOmniscience: Boolean = true
 
   override def start(): Unit = {
     val canvas = new Canvas(spriteScale * uiScale * canvasX, spriteScale * uiScale * canvasY)
@@ -103,23 +103,25 @@ object App extends JFXApp3 {
     }
 
     val playerVisibleEntities = state.gameState.getVisibleEntitiesFor(player)
+    val visibleEntities = state.gameState.entities.filter {
+      entity =>
+        (entity.position.getChebyshevDistance(player.position) <= canvasX / 2) &&
+          (player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y) || debugOmniscience)
+    }
 
-    state.gameState.entities.toSeq
-      .filter {
-        entity =>
-          player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y) || debugOmniscience
-      }.sortBy {
-        entity =>
-          Sprites.sprites(entity.entityType).layer
-      }.foreach {
-        entity =>
-          val visible = playerVisibleEntities.contains(entity)
 
-          //Do not draw dynamic entities that are not visible
-          if (entity.entityType.isStatic || visible) {
-            drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
-          }
-      }
+    visibleEntities.toSeq.sortBy {
+      entity =>
+        Sprites.sprites(entity.entityType).layer
+    }.foreach {
+      entity =>
+        val visible = playerVisibleEntities.contains(entity)
+
+        //Do not draw dynamic entities that are not visible
+        if (entity.entityType.isStatic || visible) {
+          drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
+        }
+    }
 
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset)
     drawPlayerHearts(canvas, player)
@@ -137,25 +139,10 @@ object App extends JFXApp3 {
     val y = (entity.yPosition - yOffset) * spriteScale * uiScale
     val entitySprite = if (entity.isDead) Sprites.deadSprite else Sprites.sprites(entity.entityType)
 
-    canvas.graphicsContext2D.save() // Save the current state
-
     if (!visible) {
       canvas.graphicsContext2D.setGlobalAlpha(0.5)
     } else {
       canvas.graphicsContext2D.setGlobalAlpha(1)
-    }
-
-    // Apply ColorAdjust effect if the entity is dead
-    if (entity.isDead) {
-      val colorAdjust = new ColorAdjust {
-        hue = -0.5 // Adjust the hue (range: -1.0 to 1.0)
-        saturation = -0.5 // Adjust the saturation (range: -1.0 to 1.0)
-        brightness = -0.5 // Adjust the brightness (range: -1.0 to 1.0)
-        contrast = 0.5 // Adjust the contrast (range: -1.0 to 1.0)
-      }
-      canvas.graphicsContext2D.setEffect(colorAdjust)
-    } else {
-      canvas.graphicsContext2D.setEffect(null)
     }
 
     canvas.graphicsContext2D.drawImage(
@@ -169,8 +156,6 @@ object App extends JFXApp3 {
       spriteScale * uiScale,
       spriteScale * uiScale
     )
-
-    canvas.graphicsContext2D.restore() // Restore the saved state
   }
 
   private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {

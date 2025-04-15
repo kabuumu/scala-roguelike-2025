@@ -1,5 +1,6 @@
 package dungeongenerator.generator
 
+import dungeongenerator.generator.Entity.BossRoom
 import dungeongenerator.generator.mutators.*
 import dungeongenerator.generator.mutators.CreateBossRoomMutator.*
 import dungeongenerator.generator.predicates.*
@@ -22,7 +23,7 @@ object DefaultDungeonGeneratorConfig extends DungeonGeneratorConfig(
     CreateRoomMutator,
 //    DoorSwitchLockMutator,
 //    TeleporterMutator,
-    TreasureRoomMutator
+//    TreasureRoomMutator
   ),
   nodeFinders = Set(
     AdjacentRoomNodeFinder,
@@ -38,6 +39,6 @@ object DefaultDungeonGeneratorConfig extends DungeonGeneratorConfig(
 //    RoomCountPredicate(10),
 //    new EntityCount[BossRoom.type](1),
 //    LongestRoomPathPredicate(10),
-    TreasurePredicate(2),
+//    TreasurePredicate(2),
   )
 )

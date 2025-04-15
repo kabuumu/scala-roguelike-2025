@@ -30,16 +30,18 @@ object MapGenerator {
   def generateDungeon(dungeonSize: Int): Dungeon = {
     @tailrec
     def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
-      val newOpenDungeons = for {
-        dungeon <- openDungeons
-        (originRoom, direction) <- dungeon.availableRooms
-      } yield dungeon.addRoom(originRoom, direction)
+      val currentDungeon = openDungeons.maxBy(_.roomGrid.size)
 
-      newOpenDungeons.find(_.roomGrid.size == 10) match {
+      val newOpenDungeons = for {
+        (originRoom, direction) <- currentDungeon.availableRooms
+      } yield currentDungeon.addRoom(originRoom, direction)
+
+
+      newOpenDungeons.find(_.roomGrid.size == dungeonSize) match {
         case Some(completedDungeon) =>
           completedDungeon
         case None =>
-          recursiveGenerator(newOpenDungeons)
+          recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon)
       }
     }
 

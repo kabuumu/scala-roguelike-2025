@@ -23,11 +23,11 @@ case class GameState(playerEntityId: String, entities: Set[Entity], messages: Se
       this // wait for player to act
     } else {
       entities.foldLeft(this) {
-        case (gameState, entity) if entity.initiative <= 0 && entity.entityType == EntityType.Enemy  && !entity.isDead =>
+        case (gameState, entity) if entity.initiative <= 0 && entity.entityType == EntityType.Enemy && !entity.isDead =>
           val nextAction = EnemyAI.getNextAction(entity, gameState)
           nextAction.apply(entity, gameState)
 
-        case (gameState, entity) if entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player=>
+        case (gameState, entity) if entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player =>
           gameState.updateEntity(entity.id, entity.copy(initiative = entity.initiative - 1))
         case (gameState, _) =>
           gameState

@@ -10,14 +10,10 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
       throw new IllegalArgumentException(s"Room already exists at $newRoom")
     }
 
-    copy(roomGrid = roomGrid + newRoom)
-      .addConnection(originRoom, newRoom, direction)
-  }
-
-  def addConnection(from: Point, to: Point, direction: Direction): Dungeon = {
-    copy(roomConnections =
-      roomConnections + RoomConnection(from, direction, to)
-        + RoomConnection(to, Direction.oppositeOf(direction), from)
+    copy(
+      roomGrid = roomGrid + newRoom,
+      roomConnections = roomConnections + RoomConnection(originRoom, direction, newRoom)
+          + RoomConnection(newRoom, Direction.oppositeOf(direction), originRoom)
     )
   }
 
@@ -74,5 +70,5 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
 case class RoomConnection(originRoom: Point, direction: Direction, destinationRoom: Point)
 
 object Dungeon {
-  val roomSize = 11
+  val roomSize = 13
 }
