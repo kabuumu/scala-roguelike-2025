@@ -67,7 +67,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     case _ => (uiState, None)
   }
 
-  private val enemiesWithinRange: Set[Entity] = gameState.entities.filter { enemyEntity =>
+  private val enemiesWithinRange: Seq[Entity] = gameState.entities.filter { enemyEntity =>
     enemyEntity.entityType == EntityType.Enemy
       &&
       gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, 1)

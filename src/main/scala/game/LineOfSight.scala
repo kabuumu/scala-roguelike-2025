@@ -9,7 +9,7 @@ object LineOfSight {
       end = Point(x, y);
       line = getBresenhamLine(start, end)
       if start.isWithinRangeOf(end, sightRange)
-      if line.drop(1).forall(!blockedPoints.contains(_))
+      if !line.drop(1).exists(blockedPoints.contains)
     ) yield end
   }.toSet
 

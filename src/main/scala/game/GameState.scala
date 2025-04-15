@@ -1,14 +1,9 @@
 package game
 
-case class GameState(playerEntityId: String, entities: Set[Entity], messages: Seq[String] = Nil) {
+case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Seq[String] = Nil) {
   private val framesPerSecond = 8
 
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
-
-  val walls: Set[Point] = entities.collect {
-    case entity if entity.entityType == EntityType.Wall =>
-      Point(entity.xPosition, entity.yPosition)
-  }
 
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
@@ -35,12 +30,8 @@ case class GameState(playerEntityId: String, entities: Set[Entity], messages: Se
     }
   }
 
-  def updateEntity(entityId: String, newEntity: Entity): GameState = {
-    copy(entities = entities.map {
-      case entity if entity.id == entityId => newEntity
-      case other => other
-    })
-  }
+  def updateEntity(entityId: String, newEntity: Entity): GameState =
+    copy(entities = entities.updated(entities.indexWhere(_.id == entityId), newEntity))
 
   def getEntity(x: Int, y: Int): Option[Entity] = {
     entities.find(entity => entity.xPosition == x && entity.yPosition == y)
@@ -51,10 +42,12 @@ case class GameState(playerEntityId: String, entities: Set[Entity], messages: Se
   }
 
   def remove(entity: Entity): GameState = {
-    copy(entities = entities - entity)
+    copy(entities = entities.filterNot(_.id == entity.id))
   }
 
-  def getVisibleEntitiesFor(entity: Entity): Set[Entity] = {
+  lazy val playerVisibleEntities: Seq[Entity] = getVisibleEntitiesFor(playerEntity)
+
+  def getVisibleEntitiesFor(entity: Entity): Seq[Entity] = {
     val visiblePoints = entity.getLineOfSight(this)
 
     entities.filter {
@@ -71,5 +64,10 @@ case class GameState(playerEntityId: String, entities: Set[Entity], messages: Se
     copy(messages = message +: messages)
   }
 
-  val movementBlockingEntities: Set[Entity] = entities.filter(entity => entity.entityType.blocksMovement && !entity.isDead)
+  val movementBlockingEntities: Seq[Entity] = entities.filter(entity => entity.entityType.blocksMovement && !entity.isDead)
+
+  lazy val blockedPoints: Set[Point] = entities.collect {
+    case entity if entity.lineOfSightBlocking =>
+      entity.position
+  }.toSet
 }

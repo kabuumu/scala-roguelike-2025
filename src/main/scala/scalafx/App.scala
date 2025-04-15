@@ -75,15 +75,22 @@ object App extends JFXApp3 {
 
     vbox.requestFocus()
 
+    //Draw first frame
+    updateCanvas(controller, canvas, spriteSheet)
+    updateMessageArea(controller, messageArea)
+
     AnimationTimer { (currentTime: Long) =>
       if (controller.gameState.playerEntity.health.current <= 0) {
         System.exit(0)
       }
+      val newController = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
 
-      controller = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
+      if(newController != controller) {
+        controller = newController
+        updateCanvas(controller, canvas, spriteSheet)
+        updateMessageArea(controller, messageArea)
+      }
 
-      updateCanvas(controller, canvas, spriteSheet)
-      updateMessageArea(controller, messageArea)
     }.start()
   }
 
@@ -102,11 +109,11 @@ object App extends JFXApp3 {
       case UIState.AttackList(enemies, position) => (enemies(position).xPosition - (canvasX / 2), enemies(position).yPosition - (canvasY / 2))
     }
 
-    val playerVisibleEntities = state.gameState.getVisibleEntitiesFor(player)
+    val playerVisibleEntities = state.gameState.playerVisibleEntities
     val visibleEntities = state.gameState.entities.filter {
       entity =>
         (entity.position.getChebyshevDistance(player.position) <= canvasX / 2) &&
-          (player.sightMemory.exists(visiblePoint => entity.xPosition == visiblePoint.x && entity.yPosition == visiblePoint.y) || debugOmniscience)
+          (player.sightMemory.contains(entity.position) || debugOmniscience)
     }
 
 

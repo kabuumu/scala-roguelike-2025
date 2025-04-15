@@ -37,13 +37,12 @@ case class Entity(
     sightMemory = sightMemory ++ getLineOfSight(gameState)
   )
 
+
+  
   def getLineOfSight(gameState: GameState): Set[Point] = {
     LineOfSight.getVisiblePoints(
       Point(xPosition, yPosition),
-      gameState.entities.collect {
-        case entity if entity.lineOfSightBlocking =>
-          Point(entity.xPosition, entity.yPosition)
-      },
+      gameState.blockedPoints,
       sightRange = 10
     )
   }

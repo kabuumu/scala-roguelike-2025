@@ -5,7 +5,7 @@ import scala.collection.immutable.HashSet
 import scala.collection.mutable
 
 object Pathfinder {
-  def findPath(start: Point, end: Point, blockers: Set[Point]): Seq[Point] = {
+  def findPath(start: Point, end: Point, blockers: Seq[Point]): Seq[Point] = {
     def heuristic(a: Point, b: Point): Int = Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
     case class Node(point: Point, g: Int, f: Int, parent: Option[Node])
