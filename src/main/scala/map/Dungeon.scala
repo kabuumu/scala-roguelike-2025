@@ -1,6 +1,7 @@
 package map
 
 import game.{Direction, Point}
+import map.TileType.Wall
 
 case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set[RoomConnection] = Set.empty) {
   def addRoom(originRoom: Point, direction: Direction): Dungeon = {
@@ -64,6 +65,8 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
 
       roomTiles.toMap
   }.toMap
+
+  val walls: Set[Point] = tiles.filter(_._2 == Wall).keySet
 }
 
 

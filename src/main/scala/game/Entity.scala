@@ -42,7 +42,7 @@ case class Entity(
   def getLineOfSight(gameState: GameState): Set[Point] = {
     LineOfSight.getVisiblePoints(
       Point(xPosition, yPosition),
-      gameState.sightBlockingPoints,
+      gameState.blockingPoints,
       sightRange = 10
     )
   }

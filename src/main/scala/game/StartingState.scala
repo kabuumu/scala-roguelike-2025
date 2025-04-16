@@ -4,7 +4,7 @@ import game.Item.Potion
 import map.{Dungeon, MapGenerator, TileType}
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(20)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(10)
   val startPoint: Point = dungeon.roomGrid.head
 
 

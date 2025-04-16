@@ -58,18 +58,8 @@ case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Se
     copy(messages = message +: messages)
   }
 
-  val walls = dungeon.tiles.filter(_._2 == Wall).keySet
-
-  val movementBlockingPoints: Set[Point] =
-    walls ++
-      entities.collect {
-        case entity if entity.lineOfSightBlocking && !entity.isDead =>
-          entity.position
-      }.toSet
-
-
-  lazy val sightBlockingPoints: Set[Point] =
-    walls ++
+  val blockingPoints: Set[Point] =
+    dungeon.walls ++
       entities.collect {
         case entity if entity.lineOfSightBlocking && !entity.isDead =>
           entity.position
