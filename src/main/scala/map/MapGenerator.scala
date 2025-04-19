@@ -10,10 +10,12 @@ object MapGenerator {
   //Return the dungeons that are completable
   //If any dungeons meet all completion criteria (currently just size), return them
   def generateDungeon(dungeonSize: Int, lockedDoorCount: Int): Dungeon = {
+    val dungeonPathSize = dungeonSize / 2
+
     val mutators: Set[DungeonMutator] = Set(
-      new NewRoomMutator(dungeonSize),
-      new EndPointMutator(dungeonSize / 2),
-      new KeyLockMutator(lockedDoorCount)
+      //      new NewRoomMutator(dungeonSize),
+      new EndPointMutator(dungeonPathSize),
+      //      new KeyLockMutator(lockedDoorCount)
     )
 
     @tailrec
@@ -28,7 +30,11 @@ object MapGenerator {
         possibleDungeon <- mutator.getPossibleMutations(currentDungeon)
       } yield possibleDungeon
 
-      newOpenDungeons.find(dungeon => dungeon.roomGrid.size == dungeonSize && dungeon.endpoint.isDefined && dungeon.lockedDoorCount == lockedDoorCount) match {
+      newOpenDungeons.find(dungeon =>
+        dungeon.dungeonPath.size == dungeonPathSize
+//          && dungeon.lockedDoorCount == lockedDoorCount
+        //        && dungeon.roomGrid.size == dungeonSize
+      ) match {
         case Some(completedDungeon) =>
           println(s"Completed dungeon has locked doors at ${completedDungeon.lockedDoors}")
           println(s"Completed dungeon has keys at ${completedDungeon.items}")

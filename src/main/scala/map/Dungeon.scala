@@ -34,6 +34,12 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
       roomGrid.contains(room + direction) || blockedRooms.contains(room)
     }
 
+  def availableRooms(room: Point): Set[(Point, Direction)] =
+    availableRooms.filter {
+      case (originRoom, _) =>
+        room == originRoom
+    }
+
   val doorPoints: Set[Point] = roomConnections.map {
     case RoomConnection(originRoom, direction, _, _) =>
       val originRoomX = originRoom.x * Dungeon.roomSize
@@ -95,7 +101,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     rooms = roomGrid,
     roomConnections = roomConnections,
     startPoint = startPoint,
-    target = endpoint.getOrElse(Point(0, 0))
+    target = endpoint.getOrElse(startPoint)
   )
 
   def roomConnections(room: Point): Set[RoomConnection] = {

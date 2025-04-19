@@ -19,26 +19,19 @@ class NewRoomMutator(dungeonSize: Int) extends DungeonMutator {
 }
 
 class EndPointMutator(distanceToTargetRoom: Int) extends DungeonMutator {
-  override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
-    if (currentDungeon.endpoint.isDefined) {
-      Set.empty
-    } else {
-      for {
-        targetRoom <- currentDungeon.roomGrid
-        if targetRoom != currentDungeon.startPoint
-        if currentDungeon.roomConnections.count(_.originRoom == targetRoom) == 1
-        path = RoomGridPathfinder.findPath(
-          rooms = currentDungeon.roomGrid,
-          roomConnections = currentDungeon.roomConnections,
-          startPoint = currentDungeon.startPoint,
-          target = targetRoom
-        )
-        if path.size >= distanceToTargetRoom
-      } yield currentDungeon.copy(endpoint = Some(targetRoom))
+  override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] =
+    currentDungeon.endpoint match {
+      case None => for {
+        (originRoom, direction) <- currentDungeon.availableRooms
+      } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(originRoom + direction))
+      case Some(endpoint) if currentDungeon.dungeonPath.size < distanceToTargetRoom => for {
+        (originRoom, direction) <- currentDungeon.availableRooms(endpoint)
+      } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(originRoom + direction))
+      case _ =>
+        println(currentDungeon.dungeonPath)
+        Set.empty
     }
-  }
 }
-
 
 class KeyLockMutator(lockedDoorCount: Int) extends DungeonMutator {
   private val minRoomsPerLockedDoor: Int = 4
