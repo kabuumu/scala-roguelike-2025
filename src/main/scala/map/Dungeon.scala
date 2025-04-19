@@ -1,9 +1,16 @@
 package map
 
+import game.EntityType.LockedDoor
+import game.Item.Item
 import game.{Direction, Point}
 import map.TileType.Wall
 
-case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set[RoomConnection] = Set.empty) {
+case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
+                   roomConnections: Set[RoomConnection] = Set.empty,
+                   blockedRooms: Set[Point] = Set.empty, //Rooms to no longer add connections to
+                   startPoint: Point = Point(0, 0),
+                   endpoint: Option[Point] = None,
+                   items: Set[(Point, Item)] = Set.empty) {
   def addRoom(originRoom: Point, direction: Direction): Dungeon = {
     val newRoom = originRoom + direction
 
@@ -14,7 +21,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
     copy(
       roomGrid = roomGrid + newRoom,
       roomConnections = roomConnections + RoomConnection(originRoom, direction, newRoom)
-          + RoomConnection(newRoom, Direction.oppositeOf(direction), originRoom)
+        + RoomConnection(newRoom, Direction.oppositeOf(direction), originRoom)
     )
   }
 
@@ -24,11 +31,11 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
         (room, direction)
       }
     }.filterNot { case (room, direction) =>
-      roomGrid.contains(room + direction)
+      roomGrid.contains(room + direction) || blockedRooms.contains(room)
     }
 
   val doorPoints: Set[Point] = roomConnections.map {
-    case RoomConnection(originRoom, direction, _) =>
+    case RoomConnection(originRoom, direction, _, _) =>
       val originRoomX = originRoom.x * Dungeon.roomSize
       val originRoomY = originRoom.y * Dungeon.roomSize
 
@@ -40,18 +47,32 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
       }
   }
 
+  val lockedDoors: Set[(Point, LockedDoor)] = roomConnections.collect {
+    case RoomConnection(originRoom, direction, _, Some(LockedDoor(keyColour))) =>
+      val originRoomX = originRoom.x * Dungeon.roomSize
+      val originRoomY = originRoom.y * Dungeon.roomSize
+
+      val position = direction match {
+        case Direction.Up => Point(originRoomX + Dungeon.roomSize / 2, originRoomY)
+        case Direction.Down => Point(originRoomX + Dungeon.roomSize / 2, originRoomY + Dungeon.roomSize)
+        case Direction.Left => Point(originRoomX, originRoomY + Dungeon.roomSize / 2)
+        case Direction.Right => Point(originRoomX + Dungeon.roomSize, originRoomY + Dungeon.roomSize / 2)
+      }
+      position -> LockedDoor(keyColour)
+  }
+
   val tiles: Map[Point, TileType] = roomGrid.flatMap {
     room =>
       val roomX = room.x * Dungeon.roomSize
       val roomY = room.y * Dungeon.roomSize
 
-      def isWall(point: Point) = point.x == roomX || point.x == roomX + Dungeon.roomSize - 1 || point.y == roomY || point.y == roomY + Dungeon.roomSize - 1
+      def isWall(point: Point) = point.x == roomX || point.x == roomX + Dungeon.roomSize || point.y == roomY || point.y == roomY + Dungeon.roomSize
 
       def isDoor(point: Point) = doorPoints.contains(point)
 
       val roomTiles = for {
-        x <- roomX until roomX + Dungeon.roomSize
-        y <- roomY until roomY + Dungeon.roomSize
+        x <- roomX until roomX + Dungeon.roomSize + 1
+        y <- roomY until roomY + Dungeon.roomSize + 1
       } yield {
         val point = Point(x, y)
         if (isDoor(point)) {
@@ -67,11 +88,37 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)), roomConnections: Set
   }.toMap
 
   val walls: Set[Point] = tiles.filter(_._2 == Wall).keySet
+
+  val lockedDoorCount: Int = roomConnections.count(_.isLocked)
+
+  val dungeonPath: Seq[RoomConnection] = RoomGridPathfinder.findPath(
+    rooms = roomGrid,
+    roomConnections = roomConnections,
+    startPoint = startPoint,
+    target = endpoint.getOrElse(Point(0, 0))
+  )
+
+  def roomConnections(room: Point): Set[RoomConnection] = {
+    roomConnections.filter(_.originRoom == room)
+  }
+
+  val keyRoomPaths: Set[Seq[RoomConnection]] = for {
+    roomConnection@RoomConnection(originRoom, direction, destinationRoom, optLock) <- roomConnections
+    if optLock.isDefined
+    path = RoomGridPathfinder.findPath(
+      rooms = roomGrid,
+      roomConnections = roomConnections,
+      startPoint = originRoom,
+      target = destinationRoom
+    )
+  } yield path
 }
 
 
-case class RoomConnection(originRoom: Point, direction: Direction, destinationRoom: Point)
+case class RoomConnection(originRoom: Point, direction: Direction, destinationRoom: Point, optLock: Option[LockedDoor] = None) {
+  def isLocked: Boolean = optLock.isDefined
+}
 
 object Dungeon {
-  val roomSize = 13
+  val roomSize = 12
 }

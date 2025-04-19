@@ -14,7 +14,6 @@ import scalafx.scene.Scene
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.control.ScrollPane.ScrollBarPolicy
 import scalafx.scene.control.{ScrollPane, TextArea}
-import scalafx.scene.effect.ColorAdjust
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
@@ -27,8 +26,8 @@ import scala.language.postfixOps
 object App extends JFXApp3 {
   val uiScale = 1
   val spriteScale = 16
-  val canvasX: Int = 30 * 3
-  val canvasY: Int = 15 * 3
+  val canvasX: Int = 90 / uiScale
+  val canvasY: Int = 45 / uiScale
   val debugOmniscience: Boolean = true
 
   override def start(): Unit = {
@@ -82,7 +81,7 @@ object App extends JFXApp3 {
 
     AnimationTimer { (currentTime: Long) =>
       if (controller.gameState.playerEntity.health.current <= 0) {
-        System.exit(0)
+        println("Game Over")
       }
       val newController = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
 
@@ -117,17 +116,20 @@ object App extends JFXApp3 {
           (player.sightMemory.contains(entity.position) || debugOmniscience)
     }
 
-    val visibleTiles = state.gameState.dungeon.tiles.filter {
-      case (tilePosition, tile) =>
-        (tilePosition.getChebyshevDistance(player.position) <= canvasX / 2) &&
-          (player.sightMemory.contains(tilePosition) || debugOmniscience)
-    }
+
+    val visibleTiles = for {
+      x <- playerX - (canvasX / 2) to playerX + (canvasX / 2)
+      y <- playerY - (canvasY / 2) to playerY + (canvasY / 2)
+      tilePosition = Point(x, y)
+      if player.sightMemory.contains(tilePosition) || debugOmniscience
+      tile <- state.gameState.dungeon.tiles.get(tilePosition)
+    } yield tilePosition -> tile
 
     visibleTiles.foreach {
       case (tilePosition, tileType) =>
-      val visible = playerVisiblePoints.contains(tilePosition)
+        val visible = playerVisiblePoints.contains(tilePosition)
 
-      drawTile(tileType, canvas, spriteSheet, tilePosition.x - xOffset, tilePosition.y - yOffset, visible)
+        drawTile(tileType, canvas, spriteSheet, tilePosition.x - xOffset, tilePosition.y - yOffset, visible)
     }
 
 

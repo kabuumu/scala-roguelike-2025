@@ -28,6 +28,23 @@ object Sprites {
   val blueDoorSprite: Sprite = Sprite(0, 9, entityLayer)
   val redDoorSprite: Sprite = Sprite(0, 10, entityLayer)
 
+//  def getSprite(entityType: EntityType) = entityType match {
+//    case Player => playerSprite
+//    case Wall => wallSprite
+//    case Enemy => enemySprite
+//    case Floor => floorSprite
+//    case LockedDoor(Yellow) => yellowDoorSprite
+//    case LockedDoor(Blue) => blueDoorSprite
+//    case LockedDoor(Red) => redDoorSprite
+//    case ItemEntity(item) => item match {
+//      case Potion => potionSprite
+//      case Key(Yellow) => yellowKeySprite
+//      case Key(Blue) => blueKeySprite
+//      case Key(Red) => redKeySprite
+//    }
+//  }
+
+
   val sprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,
     Wall -> wallSprite,

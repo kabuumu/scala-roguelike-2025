@@ -18,7 +18,7 @@ object EnemyAI {
     val path = Pathfinder.findPath(
       Point(enemy.xPosition, enemy.yPosition),
       Point(target.xPosition, target.yPosition),
-      (gameState.blockingPoints - target.position).toSeq
+      (gameState.movementBlockingPoints - target.position).toSeq
     )
 
     path.drop(1).headOption match {

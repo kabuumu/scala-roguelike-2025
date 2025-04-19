@@ -1,7 +1,7 @@
 package game
 
+import game.EntityType.LockedDoor
 import map.Dungeon
-import map.TileType.Wall
 
 case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Seq[String] = Nil, dungeon: Dungeon) {
   private val framesPerSecond = 8
@@ -58,10 +58,17 @@ case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Se
     copy(messages = message +: messages)
   }
 
-  val blockingPoints: Set[Point] =
+  val lineOfSightBlockingPoints: Set[Point] =
     dungeon.walls ++
       entities.collect {
         case entity if entity.lineOfSightBlocking && !entity.isDead =>
+          entity.position
+      }.toSet
+
+  val movementBlockingPoints: Set[Point] =
+    dungeon.walls ++
+      entities.collect {
+        case entity if !entity.isDead && (entity.entityType == EntityType.Enemy || entity.entityType.isInstanceOf[LockedDoor]) =>
           entity.position
       }.toSet
 }

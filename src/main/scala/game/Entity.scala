@@ -16,7 +16,7 @@ case class Entity(
                    isDead: Boolean = false,
                    inventory: Seq[Item] = Nil
                  ) {
-  val INITIATIVE_MAX = entityType match {
+  val INITIATIVE_MAX: Int = entityType match {
     case EntityType.Player => 10
     case EntityType.Enemy => 12
     case _ => 0
@@ -42,7 +42,7 @@ case class Entity(
   def getLineOfSight(gameState: GameState): Set[Point] = {
     LineOfSight.getVisiblePoints(
       Point(xPosition, yPosition),
-      gameState.blockingPoints,
+      gameState.lineOfSightBlockingPoints,
       sightRange = 10
     )
   }

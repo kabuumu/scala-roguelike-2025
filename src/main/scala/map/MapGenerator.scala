@@ -1,49 +1,44 @@
 package map
 
 import scala.annotation.tailrec
-import scala.util.Random
 
 object MapGenerator {
-  def generateRandomDungeon(dungeonSize: Int, seed: Long): Dungeon = {
-    val random = new Random(seed)
-
-    @tailrec
-    def addRoom(dungeon: Dungeon): Dungeon = {
-      val availableRooms = dungeon.availableRooms.toSeq
-      val randomRoomIndex = random.nextInt(availableRooms.size)
-
-      val (room, direction) = availableRooms(randomRoomIndex)
-      val newDungeon = dungeon.addRoom(room, direction)
-
-      if (newDungeon.roomGrid.size < dungeonSize) addRoom(newDungeon)
-      else newDungeon
-    }
-
-    addRoom(Dungeon())
-  }
 
   //Create empty dungeon
   //Run through all dungeon mutators (currently just create room)
   //Run each possible dungeon through pathfinder to check it is completable
   //Return the dungeons that are completable
   //If any dungeons meet all completion criteria (currently just size), return them
-  def generateDungeon(dungeonSize: Int): Dungeon = {
+  def generateDungeon(dungeonSize: Int, lockedDoorCount: Int): Dungeon = {
+    val mutators: Set[DungeonMutator] = Set(
+      new NewRoomMutator(dungeonSize),
+      new EndPointMutator(dungeonSize / 2),
+      new KeyLockMutator(lockedDoorCount)
+    )
+
     @tailrec
     def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
-      val currentDungeon = openDungeons.maxBy(_.roomGrid.size)
+      val currentDungeon: Dungeon = openDungeons.find(_.endpoint.isDefined) match {
+        case Some(dungeonWithEndpoint) => dungeonWithEndpoint
+        case None => openDungeons.maxBy(_.roomGrid.size)
+      }
 
-      val newOpenDungeons = for {
-        (originRoom, direction) <- currentDungeon.availableRooms
-      } yield currentDungeon.addRoom(originRoom, direction)
+      val newOpenDungeons: Set[Dungeon] = for {
+        mutator <- mutators
+        possibleDungeon <- mutator.getPossibleMutations(currentDungeon)
+      } yield possibleDungeon
 
-
-      newOpenDungeons.find(_.roomGrid.size == dungeonSize) match {
+      newOpenDungeons.find(dungeon => dungeon.roomGrid.size == dungeonSize && dungeon.endpoint.isDefined && dungeon.lockedDoorCount == lockedDoorCount) match {
         case Some(completedDungeon) =>
+          println(s"Completed dungeon has locked doors at ${completedDungeon.lockedDoors}")
+          println(s"Completed dungeon has keys at ${completedDungeon.items}")
+
           completedDungeon
         case None =>
           recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon)
       }
     }
+
 
     recursiveGenerator(Set(Dungeon()))
   }
