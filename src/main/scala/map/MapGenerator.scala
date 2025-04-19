@@ -1,21 +1,18 @@
 package map
 
+import game.Item.Potion
+
 import scala.annotation.tailrec
 
 object MapGenerator {
-
-  //Create empty dungeon
-  //Run through all dungeon mutators (currently just create room)
-  //Run each possible dungeon through pathfinder to check it is completable
-  //Return the dungeons that are completable
-  //If any dungeons meet all completion criteria (currently just size), return them
   def generateDungeon(dungeonSize: Int, lockedDoorCount: Int): Dungeon = {
+    val startTime = System.currentTimeMillis()
     val dungeonPathSize = dungeonSize / 2
 
     val mutators: Set[DungeonMutator] = Set(
-      //      new NewRoomMutator(dungeonSize),
       new EndPointMutator(dungeonPathSize),
-      //      new KeyLockMutator(lockedDoorCount)
+      new KeyLockMutator(lockedDoorCount),
+      new TreasureRoomMutator(3, dungeonPathSize),
     )
 
     @tailrec
@@ -32,19 +29,20 @@ object MapGenerator {
 
       newOpenDungeons.find(dungeon =>
         dungeon.dungeonPath.size == dungeonPathSize
-//          && dungeon.lockedDoorCount == lockedDoorCount
+          && dungeon.lockedDoorCount == lockedDoorCount
+          && dungeon.items.count(_._2 == Potion) == 3
         //        && dungeon.roomGrid.size == dungeonSize
       ) match {
         case Some(completedDungeon) =>
           println(s"Completed dungeon has locked doors at ${completedDungeon.lockedDoors}")
           println(s"Completed dungeon has keys at ${completedDungeon.items}")
+          println(s"Completed dungeon took ${System.currentTimeMillis() - startTime}ms")
 
           completedDungeon
         case None =>
           recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon)
       }
     }
-
 
     recursiveGenerator(Set(Dungeon()))
   }

@@ -1,21 +1,13 @@
 package map
 
 import dungeongenerator.generator.Entity.KeyColour
+import dungeongenerator.generator.Entity.KeyColour.Red
 import game.EntityType.LockedDoor
 import game.Item
+import game.Item.Key
 
 trait DungeonMutator {
   def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon]
-}
-
-class NewRoomMutator(dungeonSize: Int) extends DungeonMutator {
-  override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
-    if (currentDungeon.roomGrid.size >= dungeonSize) {
-      Set.empty
-    } else for {
-      (originRoom, direction) <- currentDungeon.availableRooms
-    } yield currentDungeon.addRoom(originRoom, direction)
-  }
 }
 
 class EndPointMutator(distanceToTargetRoom: Int) extends DungeonMutator {
@@ -28,48 +20,54 @@ class EndPointMutator(distanceToTargetRoom: Int) extends DungeonMutator {
         (originRoom, direction) <- currentDungeon.availableRooms(endpoint)
       } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(originRoom + direction))
       case _ =>
-        println(currentDungeon.dungeonPath)
         Set.empty
     }
 }
 
+//TODO - Update this to have variable distance between key and lock
 class KeyLockMutator(lockedDoorCount: Int) extends DungeonMutator {
-  private val minRoomsPerLockedDoor: Int = 4
+  private val minRoomsPerLockedDoor: Int = 2
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
-    if (currentDungeon.lockedDoorCount >= lockedDoorCount || currentDungeon.endpoint.isEmpty || currentDungeon.roomGrid.size < minRoomsPerLockedDoor) {
+    if (currentDungeon.lockedDoorCount >= lockedDoorCount || currentDungeon.roomGrid.size < minRoomsPerLockedDoor) {
       Set.empty
     } else {
       for {
         roomConnection@RoomConnection(originRoom, direction, destinationRoom, optLock) <- currentDungeon.dungeonPath
+        if originRoom != currentDungeon.startPoint
         if optLock.isEmpty
-        keyRoom <- currentDungeon.roomGrid
-        newRoomConnections = currentDungeon.roomConnections - roomConnection + roomConnection.copy(optLock = Some(LockedDoor(KeyColour.Red)))
-        keyRoomPath = RoomGridPathfinder.findPath(
-          rooms = currentDungeon.roomGrid,
-          roomConnections = newRoomConnections,
-          startPoint = originRoom,
-          target = keyRoom
-        )
-        startToKeyRoomPath = RoomGridPathfinder.findPath(
-          rooms = currentDungeon.roomGrid,
-          roomConnections = newRoomConnections,
-          startPoint = currentDungeon.startPoint,
-          target = keyRoom
-        )
-        if keyRoom != originRoom && keyRoom != currentDungeon.startPoint
-        if currentDungeon.roomConnections(keyRoom).size == 1
-        if !keyRoomPath.exists(connection => connection.originRoom == destinationRoom || connection.isLocked)
-        if startToKeyRoomPath.size > keyRoomPath.size
-        if keyRoomPath.size >= 3
+        (originRoom, direction1) <- currentDungeon.availableRooms(originRoom)
+        keyRoom1 = originRoom + direction1
+        updatedDungeon = currentDungeon.addRoom(originRoom, direction1)
+        (_, direction2) <- updatedDungeon.availableRooms(keyRoom1)
+        keyRoom2 = keyRoom1 + direction2
       } yield {
+        val newRoomConnections = currentDungeon.roomConnections - roomConnection + roomConnection.copy(optLock = Some(LockedDoor(KeyColour.Red)))
 
-        currentDungeon.copy(
-          roomConnections = newRoomConnections,
-          items = currentDungeon.items + (keyRoom -> Item.Key(KeyColour.Red)),
-          blockedRooms = currentDungeon.blockedRooms + keyRoom,
-        )
+        currentDungeon
+          .addRoom(originRoom, direction1)
+          .addRoom(keyRoom1, direction2)
+          .lockRoomConnection(roomConnection, LockedDoor(Red))
+          .addItem(keyRoom2, Key(Red))
+          .blockRoom(keyRoom2)
       }
     }.toSet
+  }
+}
+
+class TreasureRoomMutator(targetTreasureRoomCount: Int, dungeonPathSize: Int) extends DungeonMutator {
+  override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
+    if (currentDungeon.items.count(_._2 == Item.Potion) >= targetTreasureRoomCount || dungeonPathSize != currentDungeon.dungeonPath.size) {
+      Set.empty
+    } else {
+      for {
+        (originRoom, direction) <- currentDungeon.availableRooms
+        if !currentDungeon.endpoint.contains(originRoom)
+        treasureRoom = originRoom + direction
+      } yield currentDungeon
+        .addRoom(originRoom, direction)
+        .blockRoom(treasureRoom)
+        .addItem(treasureRoom, Item.Potion)
+    }
   }
 }

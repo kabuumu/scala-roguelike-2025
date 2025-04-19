@@ -1,5 +1,6 @@
 package map
 
+import dungeongenerator.generator.Entity.KeyColour.Red
 import game.EntityType.LockedDoor
 import game.Item.Item
 import game.{Direction, Point}
@@ -11,6 +12,29 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    startPoint: Point = Point(0, 0),
                    endpoint: Option[Point] = None,
                    items: Set[(Point, Item)] = Set.empty) {
+  def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
+    copy(
+      roomConnections = roomConnections - roomConnection + roomConnection.copy(
+        optLock = Some(lock))
+    )
+  }
+
+  def addItem(room: Point, item: Item): Dungeon = {
+    if (roomGrid.contains(room)) {
+      copy(items = items + (room -> item))
+    } else {
+      throw new IllegalArgumentException(s"Room $room does not exist in the dungeon")
+    }
+  }
+
+  def blockRoom(room: Point): Dungeon = {
+    if (roomGrid.contains(room)) {
+      copy(blockedRooms = blockedRooms + room)
+    } else {
+      throw new IllegalArgumentException(s"Room $room does not exist in the dungeon")
+    }
+  }
+
   def addRoom(originRoom: Point, direction: Direction): Dungeon = {
     val newRoom = originRoom + direction
 

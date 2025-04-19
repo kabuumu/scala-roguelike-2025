@@ -1,10 +1,10 @@
 package game
 
-import game.Item.{Item, Potion}
+import game.Item.{Item, Key, Potion}
 import map.{Dungeon, MapGenerator}
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(10, 1)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(12, 3)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).map {
     point =>
@@ -12,7 +12,7 @@ object StartingState {
         xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
         entityType = EntityType.Enemy,
-        health = Health(2),
+        health = Health(1),
       )
   }
 
@@ -23,8 +23,8 @@ object StartingState {
         xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
         entityType = EntityType.Player,
-        health = Health(10),
-        inventory = Seq(Potion)
+        health = Health(12),
+        inventory = Seq(Potion, Potion)
       )
   }
 
@@ -34,6 +34,13 @@ object StartingState {
         xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
         entityType = EntityType.Key(keyColour),
+        health = Health(0)
+      )
+    case (point, Item.Potion) =>
+      Entity(
+        xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
+        entityType = EntityType.ItemEntity(Item.Potion),
         health = Health(0)
       )
   }
