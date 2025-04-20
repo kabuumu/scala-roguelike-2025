@@ -61,9 +61,9 @@ case class MoveAction(direction: Direction) extends Action {
   }
 }
 
-case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
+case class AttackAction(position: Point) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): GameState = {
-    gameState.getActor(cursorX, cursorY) match {
+    gameState.getActor(position) match {
       case Some(target) =>
         val newEnemy = target.copy(health = target.health - 1)
         if (newEnemy.health.current <= 0) {
@@ -84,7 +84,7 @@ case class AttackAction(cursorX: Int, cursorY: Int) extends Action {
             .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} attacked ${target.name}")
         }
       case _ =>
-        throw new Exception(s"No target found at $cursorX, $cursorY")
+        throw new Exception(s"No target found at $position")
     }
   }
 }

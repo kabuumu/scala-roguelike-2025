@@ -6,7 +6,7 @@ object EnemyAI {
     val target = gameState.playerEntity
 
     if (enemy.position.isWithinRangeOf(target.position, 1)) {
-      AttackAction(target.xPosition, target.yPosition)
+      AttackAction(target.position)
     } else if(enemy.canSee(gameState, target)) {
       getMoveAction(enemy, target, gameState)
     } else {
@@ -16,15 +16,15 @@ object EnemyAI {
 
   private def getMoveAction(enemy: Entity, target: Entity, gameState: GameState): Action = {
     val path = Pathfinder.findPath(
-      Point(enemy.xPosition, enemy.yPosition),
-      Point(target.xPosition, target.yPosition),
+      enemy.position,
+      target.position,
       (gameState.movementBlockingPoints - target.position).toSeq
     )
 
     path.drop(1).headOption match {
       case Some(nextStep) =>
         val direction = Direction.fromPoints(
-          Point(enemy.xPosition, enemy.yPosition),
+          enemy.position,
           nextStep
         )
 

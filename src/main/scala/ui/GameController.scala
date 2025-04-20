@@ -59,8 +59,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(direction) => (attack.iterate, None)
         case Input.Attack =>
-          val Point(targetX, targetY) = attack.enemies(attack.index).position
-          (UIState.Move, Some(AttackAction(targetX, targetY)))
+          val targetPosition = attack.enemies(attack.index).position
+          (UIState.Move, Some(AttackAction(targetPosition)))
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
       }

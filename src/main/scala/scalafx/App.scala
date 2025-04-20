@@ -100,13 +100,12 @@ object App extends JFXApp3 {
 
     //Update to draw entities relative to the player
     val player = state.gameState.playerEntity
-    val playerX = player.xPosition
-    val playerY = player.yPosition
+    val Point(playerX, playerY) = player.position
 
     val (xOffset, yOffset) = state.uiState match {
       case UIState.Move => (playerX - (canvasX / 2), playerY - (canvasY / 2))
       case UIState.Attack(cursorX, cursorY) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
-      case UIState.AttackList(enemies, position) => (enemies(position).xPosition - (canvasX / 2), enemies(position).yPosition - (canvasY / 2))
+      case attack: UIState.AttackList => (attack.position.x - (canvasX / 2), attack.position.y - (canvasY / 2))
     }
 
     val playerVisiblePoints = state.gameState.playerVisiblePoints
@@ -183,8 +182,8 @@ object App extends JFXApp3 {
   }
 
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
-    val x = (entity.xPosition - xOffset) * spriteScale * uiScale
-    val y = (entity.yPosition - yOffset) * spriteScale * uiScale
+    val x = (entity.position.x - xOffset) * spriteScale * uiScale
+    val y = (entity.position.y - yOffset) * spriteScale * uiScale
     val entitySprite = if (entity.isDead) Sprites.deadSprite else Sprites.sprites(entity.entityType)
 
     if (!visible) {
@@ -231,9 +230,9 @@ object App extends JFXApp3 {
         val offsetCursorY = (cursorY - yOffset) * spriteScale * uiScale
 
         drawCursor(offsetCursorX, offsetCursorY)
-      case UIState.AttackList(enemies, position) =>
-        val offsetCursorX = (enemies(position).xPosition - xOffset) * spriteScale * uiScale
-        val offsetCursorY = (enemies(position).yPosition - yOffset) * spriteScale * uiScale
+      case attack: UIState.AttackList =>
+        val offsetCursorX = (attack.position.x - xOffset) * spriteScale * uiScale
+        val offsetCursorY = (attack.position.y - yOffset) * spriteScale * uiScale
 
         drawCursor(offsetCursorX, offsetCursorY)
       case _ =>
@@ -246,6 +245,8 @@ object App extends JFXApp3 {
     val maxHearts = player.health.max / 2
     val fullHearts = player.health.current / 2
     val hasHalfHeart = player.health.current % 2 != 0
+
+    canvas.graphicsContext2D.setGlobalAlpha(1)
 
     for (i <- 0 until maxHearts) {
       val heartX = i * heartWidth
@@ -271,6 +272,8 @@ object App extends JFXApp3 {
   def drawInventory(canvas: Canvas, player: Entity): Unit = {
     val itemWidth = spriteScale * uiScale
     val itemHeight = spriteScale * uiScale
+
+    canvas.graphicsContext2D.setGlobalAlpha(1)
 
     for (i <- player.inventory.indices) {
       val itemX = i * itemWidth

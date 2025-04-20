@@ -36,12 +36,8 @@ case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Se
   def updateEntity(entityId: String, newEntity: Entity): GameState =
     copy(entities = entities.updated(entities.indexWhere(_.id == entityId), newEntity))
 
-  def getEntity(x: Int, y: Int): Option[Entity] = {
-    entities.find(entity => entity.xPosition == x && entity.yPosition == y)
-  }
-
-  def getActor(x: Int, y: Int): Option[Entity] = {
-    entities.find(entity => entity.xPosition == x && entity.yPosition == y && (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player))
+  def getActor(point: Point): Option[Entity] = {
+    entities.find(entity => entity.position == point && (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player))
   }
 
   def remove(entity: Entity): GameState = {
