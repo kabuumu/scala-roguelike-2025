@@ -22,7 +22,7 @@ case class MoveAction(direction: Direction) extends Action {
 
     if (gameState.movementBlockingPoints.contains(movedEntity.position)) {
       gameState.entities.find(_.position == movedEntity.position) match {
-        case Some(lockedDoorEntity@Entity(_, _, _, EntityType.LockedDoor(keyColour), _, _, _, _, _, _)) if movedEntity.inventory.contains(Key(keyColour)) =>
+        case Some(lockedDoorEntity@Entity(_, _, EntityType.LockedDoor(keyColour), _, _, _, _, _, _)) if movedEntity.inventory.contains(Key(keyColour)) =>
           val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key(keyColour)), Nil, 1)
 
           gameState

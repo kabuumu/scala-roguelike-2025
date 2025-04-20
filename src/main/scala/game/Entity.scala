@@ -6,8 +6,7 @@ import java.util.UUID
 
 case class Entity(
                    id: String = UUID.randomUUID().toString,
-                   xPosition: Int,
-                   yPosition: Int,
+                   position: Point,
                    entityType: EntityType,
                    health: Health,
                    lineOfSightBlocking: Boolean = false,
@@ -22,12 +21,9 @@ case class Entity(
     case _ => 0
   }
 
-  val position: Point = Point(xPosition, yPosition)
-
   def move(direction: Direction): Entity = {
     copy(
-      xPosition = xPosition + direction.x,
-      yPosition = yPosition + direction.y,
+      position = position + direction,
       initiative = INITIATIVE_MAX
     )
   }
@@ -41,7 +37,7 @@ case class Entity(
   
   def getLineOfSight(gameState: GameState): Set[Point] = {
     LineOfSight.getVisiblePoints(
-      Point(xPosition, yPosition),
+      position,
       gameState.lineOfSightBlockingPoints,
       sightRange = 10
     )

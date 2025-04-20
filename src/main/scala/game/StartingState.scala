@@ -9,8 +9,10 @@ object StartingState {
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).map {
     point =>
       Entity(
-        xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
+        position = Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        ),
         entityType = EntityType.Enemy,
         health = Health(1),
       )
@@ -20,8 +22,10 @@ object StartingState {
     case point =>
       Entity(
         id = "Player ID",
-        xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
+        position = Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        ),
         entityType = EntityType.Player,
         health = Health(12),
         inventory = Seq(Potion, Potion)
@@ -31,15 +35,19 @@ object StartingState {
   val items: Set[Entity] = dungeon.items.collect {
     case (point, Item.Key(keyColour)) =>
       Entity(
-        xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
+        position = Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        ),
         entityType = EntityType.Key(keyColour),
         health = Health(0)
       )
     case (point, Item.Potion) =>
       Entity(
-        xPosition = point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        yPosition = point.y * Dungeon.roomSize + Dungeon.roomSize / 2,
+        position = Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        ),
         entityType = EntityType.ItemEntity(Item.Potion),
         health = Health(0)
       )
@@ -48,10 +56,13 @@ object StartingState {
   val lockedDoors: Set[Entity] = dungeon.lockedDoors.map {
     case (point, lockedDoor) =>
       Entity(
-        xPosition = point.x,
-        yPosition = point.y,
+        position = Point(
+          point.x,
+          point.y
+        ),
         entityType = lockedDoor,
-        health = Health(0)
+        health = Health(0),
+        lineOfSightBlocking = true,
       )
   }
 
