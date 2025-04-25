@@ -1,6 +1,6 @@
 package game
 
-import game.Item.{Item, Key}
+import game.Item.{Item, Key, Weapon}
 
 //TODO - Add separate initiative costs for different actions
 trait Action {
@@ -23,7 +23,7 @@ case class MoveAction(direction: Direction) extends Action {
     if (gameState.movementBlockingPoints.contains(movedEntity.position)) {
       gameState.entities.find(_.position == movedEntity.position) match {
         case Some(lockedDoorEntity@Entity(_, _, EntityType.LockedDoor(keyColour), _, _, _, _, _, _)) if movedEntity.inventory.contains(Key(keyColour)) =>
-          val newInventory = movedEntity.inventory.patch(movedEntity.inventory.indexOf(Key(keyColour)), Nil, 1)
+          val newInventory = movedEntity.inventory - Key(keyColour)
 
           gameState
             .remove(lockedDoorEntity)
@@ -47,7 +47,7 @@ case class MoveAction(direction: Direction) extends Action {
         gameState
           .updateEntity(
             movingEntity.id,
-            movedEntity.copy(inventory = movedEntity.inventory :+ item)
+            movedEntity.copy(inventory = movedEntity.inventory + item)
               .updateSightMemory(gameState))
           .remove(entity)
           .addMessage(s"${System.nanoTime()}: ${movingEntity.name} picked up a $item")
@@ -61,11 +61,16 @@ case class MoveAction(direction: Direction) extends Action {
   }
 }
 
-case class AttackAction(position: Point) extends Action {
+case class AttackAction(position: Point, optWeapon: Option[Weapon]) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): GameState = {
     gameState.getActor(position) match {
       case Some(target) =>
-        val newEnemy = target.copy(health = target.health - 1)
+        val damage = optWeapon match {
+          case Some(weapon) => weapon.damage
+          case None => 1
+        }
+
+        val newEnemy = target.copy(health = target.health - damage)
         if (newEnemy.health.current <= 0) {
           gameState
             .updateEntity(target.id, newEnemy.copy(isDead = true))
@@ -81,7 +86,7 @@ case class AttackAction(position: Point) extends Action {
               attackingEntity.id,
               attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
             )
-            .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} attacked ${target.name}")
+            .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} attacked ${target.name} for $damage damage")
         }
       case _ =>
         throw new Exception(s"No target found at $position")
@@ -102,15 +107,12 @@ case class UseItemAction(item: Item) extends Action {
     if (entity.health.isFull) {
       gameState
         .addMessage(s"${System.nanoTime()}: ${entity.name} is already at full health")
-    } else if (entity.inventory.isEmpty) {
-      gameState
-        .addMessage(s"${System.nanoTime()}: ${entity.name} has no items to use")
-    } else if (!entity.inventory.headOption.contains(item)) {
+    } else if (!entity.inventory.contains(item)) {
       gameState
         .addMessage(s"${System.nanoTime()}: ${entity.name} does not have a $item")
     } else {
       val newEntity = entity.copy(
-        inventory = entity.inventory.drop(1)
+        inventory = entity.inventory - item
       ).copy(
         health = entity.health + Item.potionValue
       )

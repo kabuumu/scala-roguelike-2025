@@ -1,6 +1,6 @@
 package game
 
-import game.Item.{Item, Key, Potion}
+import game.Item.{Item, Key, Potion, Weapon}
 import map.{Dungeon, MapGenerator}
 
 object StartingState {
@@ -14,7 +14,7 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         ),
         entityType = EntityType.Enemy,
-        health = Health(1),
+        health = Health(2),
       )
   }
 
@@ -28,7 +28,11 @@ object StartingState {
         ),
         entityType = EntityType.Player,
         health = Health(12),
-        inventory = Seq(Potion, Potion)
+        inventory = Inventory(
+          items = Seq(Potion),
+          primaryWeapon = Some(Weapon(2, 1)),
+          secondaryWeapon = Some(Weapon(1, 4))
+        )
       )
   }
 

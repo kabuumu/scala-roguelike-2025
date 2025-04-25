@@ -50,18 +50,36 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     case UIState.Move =>
       input match {
         case Input.Move(direction) => (UIState.Move, Some(MoveAction(direction)))
-        case Input.Attack if enemiesWithinRange(1).nonEmpty => (UIState.AttackList(enemiesWithinRange(1)), None)
-        case Input.RangedAttack if enemiesWithinRange(5).nonEmpty => (UIState.AttackList(enemiesWithinRange(5)), None)
+        case Input.Attack(attackType) =>
+          val optWeapon = attackType match {
+            case Input.PrimaryAttack => gameState.playerEntity.inventory.primaryWeapon
+            case Input.SecondaryAttack => gameState.playerEntity.inventory.secondaryWeapon
+          }
+
+          val range = optWeapon match {
+            case Some(weapon) => weapon.range
+            case None => 1 //Default to melee range
+          }
+
+          val enemies = enemiesWithinRange(range)
+          if (enemies.nonEmpty) {
+            (UIState.Attack(
+              enemies = enemies,
+              optWeapon = optWeapon
+            ), None)
+          } else {
+            (UIState.Move, None)
+          }
         case Input.UseItem => (UIState.Move, Some(UseItemAction(Potion)))
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
       }
-    case attack: UIState.AttackList =>
+    case attack: UIState.Attack =>
       input match {
         case Input.Move(direction) => (attack.iterate, None)
-        case Input.Attack | Input.RangedAttack =>
+        case Input.Attack(_) =>
           val targetPosition = attack.position
-          (UIState.Move, Some(AttackAction(targetPosition)))
+          (UIState.Move, Some(AttackAction(targetPosition, attack.optWeapon)))
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
       }

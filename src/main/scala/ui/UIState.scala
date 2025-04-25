@@ -1,5 +1,6 @@
 package ui
 
+import game.Item.Weapon
 import game.{Entity, Point}
 
 object UIState {
@@ -7,10 +8,10 @@ object UIState {
 
   case object Move extends UIState
 
-  case class Attack(cursorX: Int, cursorY: Int) extends UIState
+  case class FreeSelect(cursorX: Int, cursorY: Int) extends UIState
 
-  case class AttackList(enemies: Seq[Entity], index: Int = 0) extends UIState {
-    def iterate: AttackList = AttackList(enemies, (index + 1) % enemies.length)
+  case class Attack(enemies: Seq[Entity], index: Int = 0, optWeapon: Option[Weapon]) extends UIState {
+    def iterate: Attack = Attack(enemies, (index + 1) % enemies.length, optWeapon)
 
     val position: Point = enemies(index).position
   }

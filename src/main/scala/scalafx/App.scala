@@ -19,7 +19,7 @@ import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
 import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
-import ui.UIState.{Attack, UIState}
+import ui.UIState.{FreeSelect, UIState}
 import ui.{GameController, UIState}
 
 import scala.language.postfixOps
@@ -105,8 +105,8 @@ object App extends JFXApp3 {
 
     val (xOffset, yOffset) = state.uiState match {
       case UIState.Move => (playerX - (canvasX / 2), playerY - (canvasY / 2))
-      case UIState.Attack(cursorX, cursorY) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
-      case attack: UIState.AttackList => (attack.position.x - (canvasX / 2), attack.position.y - (canvasY / 2))
+      case UIState.FreeSelect(cursorX, cursorY) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
+      case attack: UIState.Attack => (attack.position.x - (canvasX / 2), attack.position.y - (canvasY / 2))
     }
 
     val playerVisiblePoints = state.gameState.playerVisiblePoints
@@ -135,7 +135,7 @@ object App extends JFXApp3 {
 
     visibleEntities.sortBy {
       entity =>
-        Sprites.sprites(entity.entityType).layer
+        Sprites.entitySprites(entity.entityType).layer
     }.foreach {
       entity =>
         val visible = playerVisiblePoints.contains(entity.position)
@@ -185,7 +185,7 @@ object App extends JFXApp3 {
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
     val x = (entity.position.x - xOffset) * spriteScale * uiScale
     val y = (entity.position.y - yOffset) * spriteScale * uiScale
-    val entitySprite = if (entity.isDead) Sprites.deadSprite else Sprites.sprites(entity.entityType)
+    val entitySprite = if (entity.isDead) Sprites.deadSprite else Sprites.entitySprites(entity.entityType)
 
     if (!visible) {
       canvas.graphicsContext2D.setGlobalAlpha(0.5)
@@ -226,12 +226,12 @@ object App extends JFXApp3 {
     }
 
     uiState match {
-      case Attack(cursorX, cursorY) =>
+      case FreeSelect(cursorX, cursorY) =>
         val offsetCursorX = (cursorX - xOffset) * spriteScale * uiScale
         val offsetCursorY = (cursorY - yOffset) * spriteScale * uiScale
 
         drawCursor(offsetCursorX, offsetCursorY)
-      case attack: UIState.AttackList =>
+      case attack: UIState.Attack =>
         val offsetCursorX = (attack.position.x - xOffset) * spriteScale * uiScale
         val offsetCursorY = (attack.position.y - yOffset) * spriteScale * uiScale
 
@@ -290,10 +290,10 @@ object App extends JFXApp3 {
 
     canvas.graphicsContext2D.setGlobalAlpha(1)
 
-    for (i <- player.inventory.indices) {
+    for (i <- player.inventory.items.indices) {
       val itemX = i * itemWidth
       val itemY = spriteScale * uiScale
-      val item = player.inventory(i)
+      val item = player.inventory.items(i)
       val sprite = item match {
         case Potion => Sprites.potionSprite
         case Key(Yellow) => Sprites.yellowKeySprite

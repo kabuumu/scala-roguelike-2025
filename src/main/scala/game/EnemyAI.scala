@@ -6,7 +6,7 @@ object EnemyAI {
     val target = gameState.playerEntity
 
     if (enemy.position.isWithinRangeOf(target.position, 1)) {
-      AttackAction(target.position)
+      AttackAction(target.position, None)
     } else if(enemy.canSee(gameState, target)) {
       getMoveAction(enemy, target, gameState)
     } else {

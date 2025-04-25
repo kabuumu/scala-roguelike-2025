@@ -10,4 +10,6 @@ object Item {
   case object Potion extends Item
 
   case class Key(keyColour: KeyColour) extends Item
+
+  case class Weapon(damage: Int, range: Int) extends Item
 }

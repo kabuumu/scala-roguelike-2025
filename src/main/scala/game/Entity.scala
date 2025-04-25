@@ -13,7 +13,7 @@ case class Entity(
                    sightMemory: Set[Point] = Set.empty,
                    initiative: Int = 0,
                    isDead: Boolean = false,
-                   inventory: Seq[Item] = Nil
+                   inventory: Inventory = Inventory()
                  ) {
   val INITIATIVE_MAX: Int = entityType match {
     case EntityType.Player => 10
