@@ -61,14 +61,18 @@ case class MoveAction(direction: Direction) extends Action {
   }
 }
 
-case class AttackAction(position: Point, optWeapon: Option[Weapon]) extends Action {
+case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): GameState = {
-    gameState.getActor(position) match {
+    gameState.getActor(targetPosition) match {
       case Some(target) =>
         val damage = optWeapon match {
           case Some(weapon) => weapon.damage
           case None => 1
         }
+
+        val optProjectile: Option[Projectile] = if(optWeapon.exists(_.range > 1)) {
+          Some(Projectile.apply(attackingEntity.position, targetPosition))
+        } else None
 
         val newEnemy = target.copy(health = target.health - damage)
         if (newEnemy.health.current <= 0) {
@@ -87,9 +91,16 @@ case class AttackAction(position: Point, optWeapon: Option[Weapon]) extends Acti
               attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
             )
             .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} attacked ${target.name} for $damage damage")
+        } match {
+          case state =>
+            optProjectile match {
+              case Some(projectile) =>
+                state.copy(projectiles = state.projectiles :+ projectile)
+              case None => state
+            }
         }
       case _ =>
-        throw new Exception(s"No target found at $position")
+        throw new Exception(s"No target found at $targetPosition")
     }
   }
 }

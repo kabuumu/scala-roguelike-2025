@@ -3,9 +3,11 @@ package game
 import game.EntityType.LockedDoor
 import map.Dungeon
 
-case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Seq[String] = Nil, dungeon: Dungeon) {
-  private val framesPerSecond = 8
-
+case class GameState(playerEntityId: String,
+                     entities: Seq[Entity],
+                     messages: Seq[String] = Nil,
+                     dungeon: Dungeon,
+                     projectiles: Seq[Projectile] = Nil) {
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
   def update(playerAction: Option[Action]): GameState = {
@@ -20,7 +22,7 @@ case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Se
     if (playerEntity.initiative == 0) {
       this // wait for player to act
     } else {
-      entities.foldLeft(this) {
+      val entityUpdated = entities.foldLeft(this) {
         case (gameState, entity) if entity.initiative <= 0 && entity.entityType == EntityType.Enemy && !entity.isDead =>
           val nextAction = EnemyAI.getNextAction(entity, gameState)
           nextAction.apply(entity, gameState)
@@ -30,6 +32,13 @@ case class GameState(playerEntityId: String, entities: Seq[Entity], messages: Se
         case (gameState, _) =>
           gameState
       }
+
+      val projectileUpdated = projectiles.foldLeft(entityUpdated) {
+        case (gameState, projectile) =>
+          projectile.update(gameState)
+      }
+
+      projectileUpdated
     }
   }
 

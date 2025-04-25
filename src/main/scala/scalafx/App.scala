@@ -104,7 +104,7 @@ object App extends JFXApp3 {
     val Point(playerX, playerY) = player.position
 
     val (xOffset, yOffset) = state.uiState match {
-      case UIState.Move => (playerX - (canvasX / 2), playerY - (canvasY / 2))
+      case _ => (playerX - (canvasX / 2), playerY - (canvasY / 2))
       case UIState.FreeSelect(cursorX, cursorY) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
       case attack: UIState.Attack => (attack.position.x - (canvasX / 2), attack.position.y - (canvasY / 2))
     }
@@ -146,6 +146,7 @@ object App extends JFXApp3 {
         }
     }
 
+    drawProjectiles(state.gameState.projectiles, canvas, spriteSheet, xOffset, yOffset)
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player.position)
     drawPlayerHearts(canvas, player)
     drawInventory(canvas, player)
@@ -312,6 +313,28 @@ object App extends JFXApp3 {
         itemWidth,
         itemHeight
       )
+    }
+  }
+  private def drawProjectiles(projectiles: Seq[Projectile], canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {
+    projectiles.foreach {
+      projectile =>
+        val x = (projectile.position.x - xOffset) * spriteScale * uiScale
+        val y = (projectile.position.y - yOffset) * spriteScale * uiScale
+        val projectileSprite = Sprites.potionSprite
+
+        canvas.graphicsContext2D.setGlobalAlpha(1)
+
+        canvas.graphicsContext2D.drawImage(
+          spriteSheet,
+          projectileSprite.x * spriteScale,
+          projectileSprite.y * spriteScale,
+          spriteScale,
+          spriteScale,
+          x,
+          y,
+          spriteScale * uiScale,
+          spriteScale * uiScale
+        )
     }
   }
 }

@@ -27,6 +27,7 @@ object Sprites {
   val yellowDoorSprite: Sprite = Sprite(0, 11, entityLayer)
   val blueDoorSprite: Sprite = Sprite(0, 9, entityLayer)
   val redDoorSprite: Sprite = Sprite(0, 10, entityLayer)
+  val arrowSprite: Sprite = Sprite(40, 5, entityLayer)
 
   val entitySprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,

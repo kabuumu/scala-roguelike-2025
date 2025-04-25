@@ -31,7 +31,7 @@ object StartingState {
         inventory = Inventory(
           items = Seq(Potion),
           primaryWeapon = Some(Weapon(2, 1)),
-          secondaryWeapon = Some(Weapon(1, 4))
+          secondaryWeapon = Some(Weapon(1, 6))
         )
       )
   }
