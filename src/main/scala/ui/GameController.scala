@@ -50,7 +50,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     case UIState.Move =>
       input match {
         case Input.Move(direction) => (UIState.Move, Some(MoveAction(direction)))
-        case Input.Attack if enemiesWithinRange.nonEmpty => (UIState.AttackList(enemiesWithinRange.toSeq, 0), None)
+        case Input.Attack if enemiesWithinRange(1).nonEmpty => (UIState.AttackList(enemiesWithinRange(1)), None)
+        case Input.RangedAttack if enemiesWithinRange(5).nonEmpty => (UIState.AttackList(enemiesWithinRange(5)), None)
         case Input.UseItem => (UIState.Move, Some(UseItemAction(Potion)))
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
@@ -58,8 +59,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     case attack: UIState.AttackList =>
       input match {
         case Input.Move(direction) => (attack.iterate, None)
-        case Input.Attack =>
-          val targetPosition = attack.enemies(attack.index).position
+        case Input.Attack | Input.RangedAttack =>
+          val targetPosition = attack.position
           (UIState.Move, Some(AttackAction(targetPosition)))
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
@@ -67,10 +68,10 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     case _ => (uiState, None)
   }
 
-  private val enemiesWithinRange: Seq[Entity] = gameState.entities.filter { enemyEntity =>
+  def enemiesWithinRange(range: Int): Seq[Entity] = gameState.entities.filter { enemyEntity =>
     enemyEntity.entityType == EntityType.Enemy
       &&
-      gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, 1)
+      gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range)
       &&
       !enemyEntity.isDead
   }

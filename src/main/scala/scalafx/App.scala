@@ -17,6 +17,7 @@ import scalafx.scene.control.{ScrollPane, TextArea}
 import scalafx.scene.image.Image
 import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
+import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 import ui.UIState.{Attack, UIState}
 import ui.{GameController, UIState}
@@ -145,7 +146,7 @@ object App extends JFXApp3 {
         }
     }
 
-    drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset)
+    drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player.position)
     drawPlayerHearts(canvas, player)
     drawInventory(canvas, player)
   }
@@ -205,7 +206,7 @@ object App extends JFXApp3 {
     )
   }
 
-  private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {
+  private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, playerPosition: Point): Unit = {
     def drawCursor(x: Int, y: Int): Unit = {
       val cursorSprite = Sprites.cursorSprite
 
@@ -233,6 +234,20 @@ object App extends JFXApp3 {
       case attack: UIState.AttackList =>
         val offsetCursorX = (attack.position.x - xOffset) * spriteScale * uiScale
         val offsetCursorY = (attack.position.y - yOffset) * spriteScale * uiScale
+
+        val line = LineOfSight.getBresenhamLine(playerPosition, attack.position)
+
+        canvas.graphicsContext2D.save()
+        line.dropRight(1).foreach {
+          point =>
+            val lineX = (point.x - xOffset) * spriteScale * uiScale
+            val lineY = (point.y - yOffset) * spriteScale * uiScale
+
+            canvas.graphicsContext2D.setGlobalAlpha(0.5)
+            canvas.graphicsContext2D.setFill(Color.Red)
+            canvas.graphicsContext2D.fillRect(lineX, lineY, spriteScale * uiScale, spriteScale * uiScale)
+        }
+        canvas.graphicsContext2D.restore()
 
         drawCursor(offsetCursorX, offsetCursorY)
       case _ =>

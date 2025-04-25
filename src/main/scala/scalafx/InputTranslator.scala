@@ -10,7 +10,8 @@ object InputTranslator {
       case KeyCode.A => Move(Direction.Left)
       case KeyCode.S => Move(Direction.Down)
       case KeyCode.D => Move(Direction.Right)
-      case KeyCode.Space => Attack
+      case KeyCode.Z => Attack
+      case KeyCode.X => RangedAttack
       case KeyCode.E => Interact
       case KeyCode.Q => UseItem
       case KeyCode.C => Cancel

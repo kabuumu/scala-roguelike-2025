@@ -14,7 +14,7 @@ object LineOfSight {
   }.toSet
 
 
-  private def getBresenhamLine(start: Point, end: Point) = {
+  def getBresenhamLine(start: Point, end: Point): Seq[Point] = {
     val dx = Math.abs(end.x - start.x)
     val dy = Math.abs(end.y - start.y)
     val sx = if (start.x < end.x) 1 else -1
