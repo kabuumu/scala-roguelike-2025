@@ -63,44 +63,35 @@ case class MoveAction(direction: Direction) extends Action {
 
 case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): GameState = {
-    gameState.getActor(targetPosition) match {
-      case Some(target) =>
-        val damage = optWeapon match {
-          case Some(weapon) => weapon.damage
-          case None => 1
-        }
+    val damage = optWeapon match {
+      case Some(weapon) => weapon.damage
+      case None => 1
+    }
 
-        val optProjectile: Option[Projectile] = if(optWeapon.exists(_.range > 1)) {
-          Some(Projectile.apply(attackingEntity.position, targetPosition))
-        } else None
+    optWeapon match {
+      case Some(_, Item.Ranged(_)) =>
+        val projectile = Projectile(attackingEntity.position, targetPosition)
 
-        val newEnemy = target.copy(health = target.health - damage)
-        if (newEnemy.health.current <= 0) {
-          gameState
-            .updateEntity(target.id, newEnemy.copy(isDead = true))
-            .updateEntity(
-              attackingEntity.id,
-              attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
-            )
-            .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} killed ${target.name}")
-        } else {
-          gameState
-            .updateEntity(target.id, newEnemy)
-            .updateEntity(
-              attackingEntity.id,
-              attackingEntity.copy(initiative = attackingEntity.INITIATIVE_MAX)
-            )
-            .addMessage(s"${System.nanoTime()}: ${attackingEntity.name} attacked ${target.name} for $damage damage")
-        } match {
-          case state =>
-            optProjectile match {
-              case Some(projectile) =>
-                state.copy(projectiles = state.projectiles :+ projectile)
-              case None => state
-            }
-        }
+        gameState
+          .copy(projectiles = gameState.projectiles :+ projectile)
+          .updateEntity(
+            attackingEntity.id,
+            attackingEntity.resetInitiative()
+          )
       case _ =>
-        throw new Exception(s"No target found at $targetPosition")
+        gameState.getActor(targetPosition) match {
+          case Some(target) =>
+            gameState
+              .updateEntity(
+                target.id, target.takeDamage(damage)
+              )
+              .updateEntity(
+                attackingEntity.id,
+                attackingEntity.resetInitiative()
+              )
+          case _ =>
+            throw new Exception(s"No target found at $targetPosition")
+        }
     }
   }
 }

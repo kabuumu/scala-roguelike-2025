@@ -4,11 +4,12 @@ object EnemyAI {
   def getNextAction(enemy: Entity, gameState: GameState): Action = {
     //TODO - Make target persistent
     val target = gameState.playerEntity
+    val attackRange = enemy.inventory.primaryWeapon.map(_.range).getOrElse(1) //TODO allow enemies to have secondary weapons?
 
-    if (enemy.position.isWithinRangeOf(target.position, 1)) {
-      AttackAction(target.position, None)
-    } else if(enemy.canSee(gameState, target)) {
-      getMoveAction(enemy, target, gameState)
+    if (enemy.canSee(gameState, target)) {
+      if (enemy.position.isWithinRangeOf(target.position, attackRange)) {
+        AttackAction(target.position, enemy.inventory.primaryWeapon)
+      } else getMoveAction(enemy, target, gameState)
     } else {
       WaitAction
     }

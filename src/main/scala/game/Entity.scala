@@ -16,8 +16,8 @@ case class Entity(
                    inventory: Inventory = Inventory()
                  ) {
   val INITIATIVE_MAX: Int = entityType match {
-    case EntityType.Player => 5
-    case EntityType.Enemy => 6
+    case EntityType.Player => 10
+    case EntityType.Enemy => 12
     case _ => 0
   }
 
@@ -48,4 +48,17 @@ case class Entity(
   }
 
   val name: String = entityType.toString
+
+  def takeDamage(damage: Int): Entity = {
+    val newHealth = health.current - damage
+    if (newHealth <= 0) {
+      copy(health = health.copy(current = 0), isDead = true)
+    } else {
+      copy(health = health.copy(current = newHealth))
+    }
+  }
+
+  def resetInitiative(): Entity = {
+    copy(initiative = INITIATIVE_MAX)
+  }
 }

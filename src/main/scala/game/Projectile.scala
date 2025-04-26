@@ -1,8 +1,6 @@
 package game
 
 case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double) {
-
-
   def update(currentGameState: GameState): GameState = {
     val (currentX, currentY) = precisePosition
     val newX = currentX + xVelocity
@@ -10,12 +8,15 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
 
     val updatedProjectile = Projectile((newX, newY), xVelocity, yVelocity)
 
-    currentGameState.entities.find(_.position == updatedProjectile.position) match {
+    currentGameState.entities.find(entity =>
+      entity.position == updatedProjectile.position || entity.position == position
+    ) match {
       case Some(collision) =>
-        println(s"Projectile hit ${collision.entityType} at ${collision.position}")
-
         currentGameState.copy(
           projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
+        ).updateEntity(
+          collision.id,
+          collision.takeDamage(1)
         )
       case None =>
         currentGameState.copy(
@@ -31,7 +32,7 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
 }
 
 object Projectile {
-  val projectileSpeed = 1
+  val projectileSpeed: Double = 1
 
   def apply(start: Point, end: Point): Projectile = {
     val dx = end.x - start.x

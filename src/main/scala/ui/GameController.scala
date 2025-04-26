@@ -7,8 +7,8 @@ import ui.GameController.*
 import ui.UIState.UIState
 
 object GameController {
-  val framesPerSecond = 20
-  val allowedActionsPerSecond = 4
+  val framesPerSecond = 40
+  val allowedActionsPerSecond = 6
 }
 
 case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
