@@ -16,8 +16,8 @@ case class Entity(
                    inventory: Inventory = Inventory()
                  ) {
   val INITIATIVE_MAX: Int = entityType match {
-    case EntityType.Player => 10
-    case EntityType.Enemy => 12
+    case EntityType.Player => 20
+    case EntityType.Enemy => 25
     case _ => 0
   }
 

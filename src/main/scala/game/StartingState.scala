@@ -15,7 +15,7 @@ object StartingState {
         ),
         entityType = EntityType.Enemy,
         health = Health(2),
-        inventory = Inventory(Nil, Some(Weapon(1, Ranged(4)))),
+        inventory = Inventory(Nil, Some(Weapon(1, Ranged(6)))),
       )
   }
 

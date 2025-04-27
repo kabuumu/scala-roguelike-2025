@@ -1,27 +1,33 @@
 package game
 
-case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double) {
+case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType) {
   def update(currentGameState: GameState): GameState = {
     val (currentX, currentY) = precisePosition
     val newX = currentX + xVelocity
     val newY = currentY + yVelocity
 
-    val updatedProjectile = Projectile((newX, newY), xVelocity, yVelocity)
-
-    currentGameState.entities.find(entity =>
-      entity.position == updatedProjectile.position || entity.position == position
-    ) match {
-      case Some(collision) =>
-        currentGameState.copy(
-          projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
-        ).updateEntity(
-          collision.id,
-          collision.takeDamage(1)
-        )
-      case None =>
-        currentGameState.copy(
-          projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition) :+ updatedProjectile
-        )
+    val updatedProjectile = copy(precisePosition = (newX, newY))
+    //TODO - find better way to return all collisions - collision class?
+    if (currentGameState.dungeon.walls.contains(updatedProjectile.position) || currentGameState.dungeon.walls.contains(position)) {
+      currentGameState.copy(
+        projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
+      )
+    } else {
+      currentGameState.entities.find(entity =>
+        (entity.position == updatedProjectile.position || entity.position == position) && entity.entityType == targetType
+      ) match {
+        case Some(collision) =>
+          currentGameState.copy(
+            projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
+          ).updateEntity(
+            collision.id,
+            collision.takeDamage(1)
+          )
+        case None =>
+          currentGameState.copy(
+            projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition) :+ updatedProjectile
+          )
+      }
     }
   }
 
@@ -34,16 +40,17 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
 object Projectile {
   val projectileSpeed: Double = 1
 
-  def apply(start: Point, end: Point): Projectile = {
+  def apply(start: Point, end: Point, targetType: EntityType): Projectile = {
     val dx = end.x - start.x
     val dy = end.y - start.y
     val magnitude = Math.sqrt(dx * dx + dy * dy)
     val xVelocity = (dx / magnitude) * projectileSpeed
     val yVelocity = (dy / magnitude) * projectileSpeed
-    Projectile(
+    new Projectile(
       (start.x.toDouble + xVelocity, start.y.toDouble + yVelocity),
       xVelocity,
-      yVelocity
+      yVelocity,
+      targetType
     )
   }
 }

@@ -70,7 +70,8 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
 
     optWeapon match {
       case Some(_, Item.Ranged(_)) =>
-        val projectile = Projectile(attackingEntity.position, targetPosition)
+        val targetType = if(attackingEntity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
+        val projectile = Projectile(attackingEntity.position, targetPosition, targetType)
 
         gameState
           .copy(projectiles = gameState.projectiles :+ projectile)

@@ -76,4 +76,9 @@ case class GameState(playerEntityId: String,
         case entity if !entity.isDead && (entity.entityType == EntityType.Enemy || entity.entityType.isInstanceOf[LockedDoor]) =>
           entity.position
       }.toSet
+
+
+  val drawableChanges: Seq[Point] = {
+    entities.map(_.position) ++ projectiles.map(_.position)
+  }
 }

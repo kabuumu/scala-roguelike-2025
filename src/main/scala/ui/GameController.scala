@@ -7,7 +7,7 @@ import ui.GameController.*
 import ui.UIState.UIState
 
 object GameController {
-  val framesPerSecond = 40
+  val framesPerSecond = 25
   val allowedActionsPerSecond = 6
 }
 
@@ -39,7 +39,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case (newUiState, newGameState) =>
           val updatedGameState = newGameState.update()
 
-          val newUpdateTime = if (updatedGameState != gameState || newUiState != uiState) {
+          val newUpdateTime = if (updatedGameState.drawableChanges != gameState.drawableChanges || newUiState != uiState) {
             currentTime
           } else lastUpdateTime
 
