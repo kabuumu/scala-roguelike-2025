@@ -148,7 +148,8 @@ object App extends JFXApp3 {
 
     drawProjectiles(state.gameState.projectiles, canvas, spriteSheet, xOffset, yOffset)
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player.position)
-    drawPlayerHearts(canvas, player)
+    //    drawPlayerHearts(canvas, player)
+    drawHealthBar(canvas, player)
     drawInventory(canvas, player)
   }
 
@@ -283,6 +284,45 @@ object App extends JFXApp3 {
         heartHeight
       )
     }
+  }
+
+
+  private def drawHealthBar(canvas: Canvas, player: Entity): Unit = {
+    canvas.graphicsContext2D.setGlobalAlpha(1)
+
+    val barWidth = (spriteScale * uiScale) * 4 // Total width of the health bar
+    val barHeight = (spriteScale * uiScale) / 2 // Height of the health bar
+    val xOffset = (spriteScale * uiScale) / 2 // X position of the bar
+    val yOffset = (spriteScale * uiScale) / 4 // Y position of the bar
+
+    val currentHealth = player.health.current
+    val maxHealth = player.health.max
+
+    // Calculate the width of the filled portion of the health bar
+    val filledWidth = (currentHealth.toDouble / maxHealth) * barWidth
+
+    val gc = canvas.graphicsContext2D
+
+    // Draw the background of the health bar (gray)
+    gc.setFill(Color.Gray)
+    gc.fillRect(xOffset, yOffset, barWidth, barHeight)
+
+    // Draw the filled portion of the health bar (red)
+    gc.setFill(Color.Red)
+    gc.fillRect(xOffset, yOffset, filledWidth, barHeight)
+
+    // Draw the border around the health bar
+    gc.setStroke(Color.White) // Set border color
+    gc.setLineWidth(uiScale) // Set border thickness
+    gc.strokeRect(xOffset, yOffset, barWidth, barHeight)
+
+    // Draw the health numbers to the right of the bar
+    gc.setFill(Color.White)
+    gc.setFont(pixelFont)
+    gc.fillText(
+      s"$currentHealth/$maxHealth",
+      xOffset + barWidth + xOffset,
+      yOffset + barHeight - uiScale)
   }
 
   def drawInventory(canvas: Canvas, player: Entity): Unit = {

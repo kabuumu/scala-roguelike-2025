@@ -1,6 +1,5 @@
 package map
 
-import dungeongenerator.generator.Entity.KeyColour.Red
 import game.EntityType.LockedDoor
 import game.Item.Item
 import game.{Direction, Point}
@@ -107,7 +106,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
         val point = Point(x, y)
         if (isDoor(point)) {
           (point, TileType.Floor)
-        } else if (isWall(point)) {
+        } else if (isWall(point) && wallIsOnLockedConnection(point)) {
           (point, TileType.Wall)
         } else {
           (point, TileType.Floor)
@@ -142,6 +141,26 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
       target = destinationRoom
     )
   } yield path
+
+  def wallIsOnLockedConnection(wall: Point): Boolean = {
+    val roomConnectionsForWall = roomConnections.filter {
+      case RoomConnection(originRoom, direction, destinationRoom, optLock) =>
+        val originRoomX = originRoom.x * Dungeon.roomSize
+        val originRoomY = originRoom.y * Dungeon.roomSize
+
+        val isWithinXBounds = wall.x > originRoomX && wall.x < originRoomX + Dungeon.roomSize
+        val isWithinYBounds = wall.y > originRoomY && wall.y < originRoomY + Dungeon.roomSize
+
+        direction match {
+          case Direction.Up => wall.y == originRoomY && isWithinXBounds
+          case Direction.Down => wall.y == originRoomY + Dungeon.roomSize && isWithinXBounds
+          case Direction.Left => wall.x == originRoomX && isWithinYBounds
+          case Direction.Right => wall.x == originRoomX + Dungeon.roomSize && isWithinYBounds
+        }
+    }
+
+    roomConnectionsForWall.exists(_.isLocked) || roomConnectionsForWall.isEmpty
+  }
 }
 
 
@@ -150,5 +169,5 @@ case class RoomConnection(originRoom: Point, direction: Direction, destinationRo
 }
 
 object Dungeon {
-  val roomSize = 12
+  val roomSize = 8
 }

@@ -4,7 +4,7 @@ import game.Item.{Item, Key, Melee, Potion, Ranged, Weapon}
 import map.{Dungeon, MapGenerator}
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(12, 3)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 10, lockedDoorCount = 2)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).map {
     point =>
@@ -15,7 +15,7 @@ object StartingState {
         ),
         entityType = EntityType.Enemy,
         health = Health(2),
-        inventory = Inventory(Nil, Some(Weapon(1, Ranged(6)))),
+//        inventory = Inventory(Nil, Some(Weapon(1, Ranged(6)))),
       )
   }
 
@@ -73,7 +73,7 @@ object StartingState {
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ enemies ++ items ++ lockedDoors,
+    entities = Vector(player) ++ items ++ enemies ++ lockedDoors,
     dungeon = dungeon
   )
 }
