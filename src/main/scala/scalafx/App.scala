@@ -4,7 +4,7 @@ import data.Sprites
 import game.Item.KeyColour.*
 import game.*
 import game.Item.{Key, Potion}
-import game.entity._
+import game.entity.*
 import map.TileType
 import scalafx.Includes.*
 import scalafx.Resources.*
@@ -22,6 +22,8 @@ import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 import ui.UIState.{FreeSelect, UIState}
 import ui.{GameController, UIState}
+import Health.isDead
+import data.Sprites.errorSprite
 
 import scala.language.postfixOps
 
@@ -188,7 +190,7 @@ object App extends JFXApp3 {
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
     val x = (entity[Movement].position.x - xOffset) * spriteScale * uiScale
     val y = (entity[Movement].position.y - yOffset) * spriteScale * uiScale
-    val entitySprite = if (entity.exists[Health](_.isDead)) Sprites.deadSprite else Sprites.entitySprites(entity[EntityTypeComponent].entityType)
+    val entitySprite = if entity.isDead then Sprites.deadSprite else entity.get[Sprite].getOrElse(errorSprite)
 
     if (!visible) {
       canvas.graphicsContext2D.setGlobalAlpha(0.5)
@@ -361,7 +363,7 @@ object App extends JFXApp3 {
       projectile =>
         val x = (projectile.position.x - xOffset) * spriteScale * uiScale
         val y = (projectile.position.y - yOffset) * spriteScale * uiScale
-        val projectileSprite = Sprites.potionSprite
+        val projectileSprite = Sprites.projectileSprite
 
         canvas.graphicsContext2D.setGlobalAlpha(1)
 

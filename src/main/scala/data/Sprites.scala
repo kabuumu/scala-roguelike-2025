@@ -1,9 +1,9 @@
 package data
 
 import game.Item.KeyColour.*
-import game.entity.EntityType
+import game.entity.{EntityType, Sprite}
 import game.entity.EntityType.*
-import game.{Item, Sprite}
+import game.Item
 
 object Sprites {
   val floorLayer = 0
@@ -16,6 +16,7 @@ object Sprites {
   val enemySprite: Sprite = Sprite(26, 0, entityLayer)
   val floorSprite: Sprite = Sprite(2, 0, floorLayer)
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
+  val snakeSprite: Sprite = Sprite(28, 8, entityLayer)
   val deadSprite: Sprite = Sprite(0, 15, backgroundLayer)
   val fullHeartSprite: Sprite = Sprite(42, 10, uiLayer)
   val halfHeartSprite: Sprite = Sprite(41, 10, uiLayer)
@@ -29,11 +30,15 @@ object Sprites {
   val blueDoorSprite: Sprite = Sprite(0, 9, entityLayer)
   val redDoorSprite: Sprite = Sprite(0, 10, entityLayer)
   val arrowSprite: Sprite = Sprite(40, 5, entityLayer)
+  val projectileSprite: Sprite = Sprite(28, 11, entityLayer)
+
+  val errorSprite: Sprite = Sprite(35, 21, uiLayer)
 
   val entitySprites: Map[EntityType, Sprite] = Map(
     Player -> playerSprite,
     Wall -> wallSprite,
     Enemy -> ratSprite,
+//    Enemy -> snakeSprite,
     Floor -> floorSprite,
     LockedDoor(Yellow) -> yellowDoorSprite,
     LockedDoor(Blue) -> blueDoorSprite,

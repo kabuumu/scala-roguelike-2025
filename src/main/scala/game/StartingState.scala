@@ -1,5 +1,6 @@
 package game
 
+import data.Sprites
 import game.Item.*
 import game.entity.*
 import map.{Dungeon, MapGenerator}
@@ -7,8 +8,8 @@ import map.{Dungeon, MapGenerator}
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 10, lockedDoorCount = 2)
 
-  val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).map {
-    point =>
+  val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
+    case (point, index) if index % 2 == 0 =>
       Entity(
         Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
@@ -17,8 +18,21 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
         Initiative(10),
-//        inventory = Inventory(Nil, Some(Weapon(1, Ranged(6)))),
         Controller(),
+        Sprites.ratSprite,
+      )
+    case (point, _) =>
+      Entity(
+        Movement(position = Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        )),
+        EntityTypeComponent(EntityType.Enemy),
+        Health(1),
+        Initiative(20),
+        Inventory(Nil, Some(Weapon(1, Ranged(4)))),
+        Controller(),
+        Sprites.snakeSprite,
       )
   }
 
@@ -39,7 +53,8 @@ object StartingState {
           secondaryWeapon = Some(Weapon(1, Ranged(6)))
         ),
         SightMemory(),
-        Controller()
+        Controller(),
+        Sprites.playerSprite,
       )
   }
 
@@ -51,6 +66,11 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Key(keyColour)),
+        keyColour match {
+          case KeyColour.Yellow => Sprites.yellowKeySprite
+          case KeyColour.Blue => Sprites.blueKeySprite
+          case KeyColour.Red => Sprites.redKeySprite
+        }
       )
     case (point, Item.Potion) =>
       Entity(
@@ -59,6 +79,7 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(Item.Potion)),
+        Sprites.potionSprite
       )
   }
 
@@ -70,10 +91,13 @@ object StartingState {
           point.y
         )),
         EntityTypeComponent(lockedDoor),
+        lockedDoor.keyColour match {
+          case KeyColour.Yellow => Sprites.yellowDoorSprite
+          case KeyColour.Blue => Sprites.blueDoorSprite
+          case KeyColour.Red => Sprites.redDoorSprite
+        }
       )
   }
-
-  println(items)
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
