@@ -89,10 +89,15 @@ object App extends JFXApp3 {
       }
       val newController = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
 
+      val fps = 1000000000 / (currentTime - controller.lastUpdateTime)
+
+      if(newController.gameState.messages != controller.gameState.messages) {
+        updateMessageArea(newController, messageArea)
+      }
+
       if (newController != controller) {
         controller = newController
         updateCanvas(controller, canvas, spriteSheet)
-        updateMessageArea(controller, messageArea)
       }
 
     }.start()
@@ -157,7 +162,7 @@ object App extends JFXApp3 {
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
-    val messages = state.gameState.messages.take(4).mkString("\n")
+    val messages = state.gameState.messages.take(6).mkString("\n")
 
     messageArea.text = messages
   }

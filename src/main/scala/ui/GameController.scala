@@ -47,7 +47,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           ) {
             currentTime
           } else lastUpdateTime
-
+          
           GameController(newUiState, updatedGameState, newUpdateTime)
       }
     } else this

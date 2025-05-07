@@ -35,14 +35,14 @@ case class MoveAction(direction: Direction) extends Action {
                 .update[Inventory](_ - Key(keyColour))
                 .update[SightMemory](_.update(gameState.remove(lockedDoorEntity), movingEntity))
             )
-            .addMessage(s"${System.nanoTime()}: ${movingEntity.toString} opened the door")
+            .addMessage(s"${System.nanoTime()}: ${movingEntity[EntityTypeComponent]} opened the door")
 
         case Some(blockingEntity) =>
           gameState
-            .addMessage(s"${System.nanoTime()}: ${movingEntity.toString} cannot move to ${blockingEntity[Movement].position} because it is blocked by ${blockingEntity[EntityTypeComponent]}")
+            .addMessage(s"${System.nanoTime()}: ${movingEntity[EntityTypeComponent]} cannot move to ${blockingEntity[Movement].position} because it is blocked by ${blockingEntity[EntityTypeComponent]}")
         case None =>
           gameState
-            .addMessage(s"${System.nanoTime()}: ${movingEntity.toString} cannot move to ${movedEntity[Movement].position} because it is blocked by a wall")
+            .addMessage(s"${System.nanoTime()}: ${movingEntity[EntityTypeComponent]} cannot move to ${movedEntity[Movement].position} because it is blocked by a wall")
       }
     } else optItem match {
       case Some((itemEntity, item)) if movingEntity.entityType == EntityType.Player =>
@@ -54,7 +54,7 @@ case class MoveAction(direction: Direction) extends Action {
               .update[SightMemory](_.update(gameState, movingEntity))
           )
           .remove(itemEntity)
-          .addMessage(s"${System.nanoTime()}: ${movingEntity.toString} picked up a $item")
+          .addMessage(s"${System.nanoTime()}: ${movingEntity[EntityTypeComponent]} picked up a $item")
 
       case _ =>
         gameState
@@ -113,10 +113,10 @@ case class UseItemAction(item: Item) extends Action {
 
     if (entity[Health].isFull) {
       gameState
-        .addMessage(s"${System.nanoTime()}: ${entity.toString} is already at full health")
+        .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} is already at full health")
     } else if (!entity[Inventory].contains(item)) {
       gameState
-        .addMessage(s"${System.nanoTime()}: ${entity.toString} does not have a $item")
+        .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} does not have a $item")
     } else {
       val newEntity = entity
         .update[Inventory](_ - item)
@@ -124,7 +124,7 @@ case class UseItemAction(item: Item) extends Action {
 
       gameState
         .updateEntity(entity.id, newEntity)
-        .addMessage(s"${System.nanoTime()}: ${entity.toString} used a $item")
+        .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a $item")
     }
   }
 }
