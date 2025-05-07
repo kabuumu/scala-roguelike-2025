@@ -1,7 +1,5 @@
 package game
 
-import dungeongenerator.generator.Entity.KeyColour
-
 object Item {
   val potionValue = 5
 
@@ -21,4 +19,8 @@ object Item {
   sealed trait WeaponType
   case object Melee extends WeaponType
   case class Ranged(range: Int) extends WeaponType
+
+  enum KeyColour {
+    case Yellow, Red, Blue
+  }
 }

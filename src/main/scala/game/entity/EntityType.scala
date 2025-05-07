@@ -1,7 +1,9 @@
-package game
+package game.entity
 
-import dungeongenerator.generator.Entity.KeyColour
+import game.Item.KeyColour
 import game.Item.Item
+
+case class EntityTypeComponent(entityType: EntityType) extends Component
 
 enum EntityType(val isStatic: Boolean, val blocksMovement: Boolean):
   case Player extends EntityType(false, true)

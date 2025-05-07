@@ -1,10 +1,9 @@
 package map
 
-import dungeongenerator.generator.Entity.KeyColour
-import dungeongenerator.generator.Entity.KeyColour.Red
-import game.EntityType.LockedDoor
+import game.Item.KeyColour.*
+import game.entity.EntityType.LockedDoor
 import game.Item
-import game.Item.Key
+import game.Item.{Key, KeyColour}
 
 trait DungeonMutator {
   def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon]

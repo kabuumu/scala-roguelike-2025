@@ -1,8 +1,9 @@
 package data
 
-import dungeongenerator.generator.Entity.KeyColour.*
-import game.EntityType.*
-import game.{EntityType, Item, Sprite}
+import game.Item.KeyColour.*
+import game.entity.EntityType
+import game.entity.EntityType.*
+import game.{Item, Sprite}
 
 object Sprites {
   val floorLayer = 0

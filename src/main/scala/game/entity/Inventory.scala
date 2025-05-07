@@ -1,8 +1,8 @@
-package game
+package game.entity
 
 import game.Item.{Item, Weapon}
 
-case class Inventory(items: Seq[Item] = Nil, primaryWeapon: Option[Weapon] = None, secondaryWeapon: Option[Weapon] = None) {
+case class Inventory(items: Seq[Item] = Nil, primaryWeapon: Option[Weapon] = None, secondaryWeapon: Option[Weapon] = None) extends Component {
   def contains(item: Item): Boolean = items.contains(item)
 
   def -(item: Item): Inventory = {

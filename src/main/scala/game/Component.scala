@@ -1,3 +1,0 @@
-package game
-
-trait Component

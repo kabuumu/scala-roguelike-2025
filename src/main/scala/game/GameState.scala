@@ -1,6 +1,8 @@
 package game
 
-import game.EntityType.LockedDoor
+import game.entity.*
+import game.entity.EntityType.LockedDoor
+import game.entity.Initiative.*
 import map.Dungeon
 
 case class GameState(playerEntityId: String,
@@ -12,23 +14,22 @@ case class GameState(playerEntityId: String,
 
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
-      case Some(action) if playerEntity.initiative == 0 =>
+      case Some(action) if playerEntity[Initiative].isReady =>
         action.apply(playerEntity, this)
       case _ => this
     }
   }
 
   def update(): GameState = {
-    if (playerEntity.initiative == 0) {
+    if (playerEntity[Initiative].isReady) {
       this // wait for player to act
     } else {
       val entityUpdated = entities.foldLeft(this) {
-        case (gameState, entity) if entity.initiative <= 0 && entity.entityType == EntityType.Enemy && !entity.isDead =>
+        case (gameState, entity) if entity.exists[Initiative](_.isReady) && entity.exists[EntityTypeComponent](_.entityType == EntityType.Enemy) && entity.exists[Health](_.isAlive) =>
           val nextAction = EnemyAI.getNextAction(entity, gameState)
           nextAction.apply(entity, gameState)
-
-        case (gameState, entity) if entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player =>
-          gameState.updateEntity(entity.id, entity.copy(initiative = entity.initiative - 1))
+        case (gameState, entity) if entity[EntityTypeComponent].entityType == EntityType.Enemy || entity[EntityTypeComponent].entityType == EntityType.Player =>
+          gameState.updateEntity(entity.id, entity.update[Initiative](_.decrement()))
         case (gameState, _) =>
           gameState
       }
@@ -46,7 +47,7 @@ case class GameState(playerEntityId: String,
     copy(entities = entities.updated(entities.indexWhere(_.id == entityId), newEntity))
 
   def getActor(point: Point): Option[Entity] = {
-    entities.find(entity => entity.position == point && (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player))
+    entities.find(entity => entity.exists[Movement](_.position == point) && (entity.exists[EntityTypeComponent](entityType => entityType.entityType == EntityType.Enemy || entityType.entityType == EntityType.Player)))
   }
 
   def remove(entity: Entity): GameState = {
@@ -55,30 +56,31 @@ case class GameState(playerEntityId: String,
 
   lazy val playerVisiblePoints: Set[Point] = getVisiblePointsFor(playerEntity)
 
-  private def getVisiblePointsFor(entity: Entity): Set[Point] = {
-    entity.getLineOfSight(this)
-  }
+
+  //TODO - remove magic number
+  def getVisiblePointsFor(entity: Entity): Set[Point] = for {
+    entityPosition <- entity.get[Movement].map(_.position).toSet
+    lineOfSight <- LineOfSight.getVisiblePoints(entityPosition, lineOfSightBlockingPoints, 10)
+  } yield lineOfSight
 
   def addMessage(message: String): GameState = {
     copy(messages = message +: messages)
   }
 
-  val lineOfSightBlockingPoints: Set[Point] =
-    dungeon.walls ++
+  val lineOfSightBlockingPoints: Set[Point] = dungeon.walls ++
       entities.collect {
-        case entity if entity.lineOfSightBlocking && !entity.isDead =>
-          entity.position
+        case entity@Entity[Movement](movement)if entity.exists[EntityTypeComponent](_.entityType.isInstanceOf[EntityType.LockedDoor])=>
+        movement.position
       }.toSet
 
-  val movementBlockingPoints: Set[Point] =
-    dungeon.walls ++
+  val movementBlockingPoints: Set[Point] = dungeon.walls ++
       entities.collect {
-        case entity if !entity.isDead && (entity.entityType == EntityType.Enemy || entity.entityType.isInstanceOf[LockedDoor]) =>
-          entity.position
+        case entity@Entity[Movement](movement) if (entity.exists[Health](_.isAlive) && entity.exists[EntityTypeComponent](_.entityType == EntityType.Enemy)) || entity.exists[EntityTypeComponent](_.entityType.isInstanceOf[LockedDoor]) =>
+        movement.position
       }.toSet
 
 
   val drawableChanges: Seq[Point] = {
-    entities.map(_.position) ++ projectiles.map(_.position)
+    entities.flatMap(_.get[Movement].map(_.position)) ++ projectiles.map(_.position)
   }
 }

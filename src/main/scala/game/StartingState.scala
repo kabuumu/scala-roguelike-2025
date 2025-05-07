@@ -1,6 +1,7 @@
 package game
 
-import game.Item.{Item, Key, Melee, Potion, Ranged, Weapon}
+import game.Item.*
+import game.entity.*
 import map.{Dungeon, MapGenerator}
 
 object StartingState {
@@ -9,12 +10,13 @@ object StartingState {
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).map {
     point =>
       Entity(
-        position = Point(
+        Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        ),
-        entityType = EntityType.Enemy,
-        health = Health(2),
+        )),
+        EntityTypeComponent(EntityType.Enemy),
+        Health(2),
+        Initiative(10)
 //        inventory = Inventory(Nil, Some(Weapon(1, Ranged(6)))),
       )
   }
@@ -23,53 +25,53 @@ object StartingState {
     case point =>
       Entity(
         id = "Player ID",
-        position = Point(
+        Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        ),
-        entityType = EntityType.Player,
-        health = Health(12),
-        inventory = Inventory(
+        )),
+        EntityTypeComponent(EntityType.Player),
+        Health(12),
+        Initiative(10),
+        Inventory(
           items = Seq(Potion),
           primaryWeapon = Some(Weapon(2, Melee)),
           secondaryWeapon = Some(Weapon(1, Ranged(6)))
-        )
+        ),
+        SightMemory()
       )
   }
 
   val items: Set[Entity] = dungeon.items.collect {
     case (point, Item.Key(keyColour)) =>
       Entity(
-        position = Point(
+        Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        ),
-        entityType = EntityType.Key(keyColour),
-        health = Health(0)
+        )),
+        EntityTypeComponent(EntityType.Key(keyColour)),
       )
     case (point, Item.Potion) =>
       Entity(
-        position = Point(
+        Movement(Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        ),
-        entityType = EntityType.ItemEntity(Item.Potion),
-        health = Health(0)
+        )),
+        EntityTypeComponent(EntityType.ItemEntity(Item.Potion)),
       )
   }
 
   val lockedDoors: Set[Entity] = dungeon.lockedDoors.map {
     case (point, lockedDoor) =>
       Entity(
-        position = Point(
+        Movement(position = Point(
           point.x,
           point.y
-        ),
-        entityType = lockedDoor,
-        health = Health(0),
-        lineOfSightBlocking = true,
+        )),
+        EntityTypeComponent(lockedDoor),
       )
   }
+
+  println(items)
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,

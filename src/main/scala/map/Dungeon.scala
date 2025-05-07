@@ -1,6 +1,6 @@
 package map
 
-import game.EntityType.LockedDoor
+import game.entity.EntityType.LockedDoor
 import game.Item.Item
 import game.{Direction, Point}
 import map.TileType.Wall

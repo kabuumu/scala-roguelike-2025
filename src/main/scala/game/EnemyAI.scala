@@ -1,14 +1,17 @@
 package game
 
+import game.entity.*
+
 object EnemyAI {
   def getNextAction(enemy: Entity, gameState: GameState): Action = {
     //TODO - Make target persistent
     val target = gameState.playerEntity
-    val attackRange = enemy.inventory.primaryWeapon.map(_.range).getOrElse(1) //TODO allow enemies to have secondary weapons?
+    val attackRange = enemy.get[Inventory].flatMap(_.primaryWeapon.map(_.range)).getOrElse(1) //TODO allow enemies to have secondary weapons?
 
-    if (enemy.canSee(gameState, target)) {
-      if (enemy.position.isWithinRangeOf(target.position, attackRange)) {
-        AttackAction(target.position, enemy.inventory.primaryWeapon)
+
+    if(gameState.getVisiblePointsFor(enemy).contains(target[Movement].position)) {
+      if (enemy[Movement].position.isWithinRangeOf(target[Movement].position, attackRange)) {
+        AttackAction(target[Movement].position, enemy.get[Inventory].flatMap(_.primaryWeapon))
       } else getMoveAction(enemy, target, gameState)
     } else {
       WaitAction
@@ -17,15 +20,15 @@ object EnemyAI {
 
   private def getMoveAction(enemy: Entity, target: Entity, gameState: GameState): Action = {
     val path = Pathfinder.findPath(
-      enemy.position,
-      target.position,
-      (gameState.movementBlockingPoints - target.position).toSeq
+      enemy[Movement].position,
+      target[Movement].position,
+      (gameState.movementBlockingPoints - target[Movement].position).toSeq
     )
 
     path.drop(1).headOption match {
       case Some(nextStep) =>
         val direction = Direction.fromPoints(
-          enemy.position,
+          enemy[Movement].position,
           nextStep
         )
 

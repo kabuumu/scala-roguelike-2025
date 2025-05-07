@@ -1,5 +1,7 @@
 package game
 
+import game.entity._
+
 case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType) {
   def update(currentGameState: GameState): GameState = {
     val (currentX, currentY) = precisePosition
@@ -14,14 +16,14 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
       )
     } else {
       currentGameState.entities.find(entity =>
-        (entity.position == updatedProjectile.position || entity.position == position) && entity.entityType == targetType
+        (entity[Movement].position == updatedProjectile.position || entity[Movement].position == position) && entity[EntityTypeComponent].entityType == targetType
       ) match {
         case Some(collision) =>
           currentGameState.copy(
             projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
           ).updateEntity(
             collision.id,
-            collision.takeDamage(1)
+            collision.update[Health](_ - 1)
           )
         case None =>
           currentGameState.copy(

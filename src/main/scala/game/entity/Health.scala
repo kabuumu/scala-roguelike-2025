@@ -1,6 +1,6 @@
-package game
+package game.entity
 
-case class Health(current: Int, max: Int) {
+case class Health(current: Int, max: Int) extends Component {
   lazy val toMax: Health = Health(max, max)
   def -(health: Int): Health = {
     val newCurrent = math.max(current - health, 0)
@@ -13,6 +13,9 @@ case class Health(current: Int, max: Int) {
   }
 
   val isFull: Boolean = current == max
+
+  val isAlive: Boolean = current > 0
+  val isDead: Boolean = current <= 0
 }
 
 object Health {

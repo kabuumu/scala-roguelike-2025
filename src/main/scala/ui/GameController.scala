@@ -3,6 +3,7 @@ package ui
 import game.*
 import game.Input.*
 import game.Item.Potion
+import game.entity._
 import ui.GameController.*
 import ui.UIState.UIState
 
@@ -16,7 +17,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     copy(gameState =
       gameState.updateEntity(
         gameState.playerEntity.id,
-        gameState.playerEntity.updateSightMemory(gameState)
+        gameState.playerEntity.update[SightMemory](_.update(gameState, entity = gameState.playerEntity))
       )
     )
   }
@@ -54,8 +55,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Input.Move(direction) => (UIState.Move, Some(MoveAction(direction)))
         case Input.Attack(attackType) =>
           val optWeapon = attackType match {
-            case Input.PrimaryAttack => gameState.playerEntity.inventory.primaryWeapon
-            case Input.SecondaryAttack => gameState.playerEntity.inventory.secondaryWeapon
+            case Input.PrimaryAttack => gameState.playerEntity[Inventory].primaryWeapon
+            case Input.SecondaryAttack => gameState.playerEntity[Inventory].secondaryWeapon
           }
 
           val range = optWeapon match {
@@ -89,10 +90,10 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
   }
 
   def enemiesWithinRange(range: Int): Seq[Entity] = gameState.entities.filter { enemyEntity =>
-    enemyEntity.entityType == EntityType.Enemy
+    enemyEntity[EntityTypeComponent].entityType == EntityType.Enemy
       &&
-      gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range)
+      gameState.playerEntity[Movement].position.isWithinRangeOf(enemyEntity[Movement].position, range)
       &&
-      !enemyEntity.isDead
+      enemyEntity[Health].isAlive
   }
 }

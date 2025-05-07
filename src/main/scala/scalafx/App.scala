@@ -1,9 +1,10 @@
 package scalafx
 
 import data.Sprites
-import dungeongenerator.generator.Entity.KeyColour.*
+import game.Item.KeyColour.*
 import game.*
 import game.Item.{Key, Potion}
+import game.entity._
 import map.TileType
 import scalafx.Includes.*
 import scalafx.Resources.*
@@ -81,7 +82,7 @@ object App extends JFXApp3 {
     updateMessageArea(controller, messageArea)
 
     AnimationTimer { (currentTime: Long) =>
-      if (controller.gameState.playerEntity.health.current <= 0) {
+      if (controller.gameState.playerEntity[Health].current <= 0) {
         println("Game Over")
       }
       val newController = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
@@ -101,7 +102,7 @@ object App extends JFXApp3 {
 
     //Update to draw entities relative to the player
     val player = state.gameState.playerEntity
-    val Point(playerX, playerY) = player.position
+    val Point(playerX, playerY) = player[Movement].position
 
     val (xOffset, yOffset) = state.uiState match {
       case _ => (playerX - (canvasX / 2), playerY - (canvasY / 2))
@@ -112,8 +113,8 @@ object App extends JFXApp3 {
     val playerVisiblePoints = state.gameState.playerVisiblePoints
     val visibleEntities = state.gameState.entities.filter {
       entity =>
-        (entity.position.getChebyshevDistance(player.position) <= canvasX / 2) &&
-          (player.sightMemory.contains(entity.position) || debugOmniscience)
+        (entity[Movement].position.getChebyshevDistance(player[Movement].position) <= canvasX / 2)
+          && (player.exists[SightMemory](_.seenPoints.contains(entity[Movement].position)) || debugOmniscience)
     }
 
 
@@ -121,7 +122,7 @@ object App extends JFXApp3 {
       x <- playerX - (canvasX / 2) to playerX + (canvasX / 2)
       y <- playerY - (canvasY / 2) to playerY + (canvasY / 2)
       tilePosition = Point(x, y)
-      if player.sightMemory.contains(tilePosition) || debugOmniscience
+      if player.exists[SightMemory](_.seenPoints.contains(tilePosition)) || debugOmniscience
       tile <- state.gameState.dungeon.tiles.get(tilePosition)
     } yield tilePosition -> tile
 
@@ -135,19 +136,19 @@ object App extends JFXApp3 {
 
     visibleEntities.sortBy {
       entity =>
-        Sprites.entitySprites(entity.entityType).layer
+        Sprites.entitySprites(entity[EntityTypeComponent].entityType).layer
     }.foreach {
       entity =>
-        val visible = playerVisiblePoints.contains(entity.position)
+        val visible = playerVisiblePoints.contains(entity[Movement].position)
 
         //Do not draw dynamic entities that are not visible
-        if (entity.entityType.isStatic || visible) {
+        if (entity[EntityTypeComponent].entityType.isStatic || visible) {
           drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
         }
     }
 
     drawProjectiles(state.gameState.projectiles, canvas, spriteSheet, xOffset, yOffset)
-    drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player.position)
+    drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player[Movement].position)
     //    drawPlayerHearts(canvas, player)
     drawHealthBar(canvas, player)
     drawInventory(canvas, player)
@@ -185,9 +186,9 @@ object App extends JFXApp3 {
   }
 
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
-    val x = (entity.position.x - xOffset) * spriteScale * uiScale
-    val y = (entity.position.y - yOffset) * spriteScale * uiScale
-    val entitySprite = if (entity.isDead) Sprites.deadSprite else Sprites.entitySprites(entity.entityType)
+    val x = (entity[Movement].position.x - xOffset) * spriteScale * uiScale
+    val y = (entity[Movement].position.y - yOffset) * spriteScale * uiScale
+    val entitySprite = if (entity.exists[Health](_.isDead)) Sprites.deadSprite else Sprites.entitySprites(entity[EntityTypeComponent].entityType)
 
     if (!visible) {
       canvas.graphicsContext2D.setGlobalAlpha(0.5)
@@ -259,9 +260,9 @@ object App extends JFXApp3 {
   def drawPlayerHearts(canvas: Canvas, player: Entity): Unit = {
     val heartWidth = spriteScale * uiScale
     val heartHeight = spriteScale * uiScale
-    val maxHearts = player.health.max / 2
-    val fullHearts = player.health.current / 2
-    val hasHalfHeart = player.health.current % 2 != 0
+    val maxHearts = player[Health].max / 2
+    val fullHearts = player[Health].current / 2
+    val hasHalfHeart = player[Health].current % 2 != 0
 
     canvas.graphicsContext2D.setGlobalAlpha(1)
 
@@ -295,8 +296,8 @@ object App extends JFXApp3 {
     val xOffset = (spriteScale * uiScale) / 2 // X position of the bar
     val yOffset = (spriteScale * uiScale) / 4 // Y position of the bar
 
-    val currentHealth = player.health.current
-    val maxHealth = player.health.max
+    val currentHealth = player[Health].current
+    val maxHealth = player[Health].max
 
     // Calculate the width of the filled portion of the health bar
     val filledWidth = (currentHealth.toDouble / maxHealth) * barWidth
@@ -331,10 +332,10 @@ object App extends JFXApp3 {
 
     canvas.graphicsContext2D.setGlobalAlpha(1)
 
-    for (i <- player.inventory.items.indices) {
+    for (i <- player[Inventory].items.indices) {
       val itemX = i * itemWidth
       val itemY = spriteScale * uiScale
-      val item = player.inventory.items(i)
+      val item = player[Inventory].items(i)
       val sprite = item match {
         case Potion => Sprites.potionSprite
         case Key(Yellow) => Sprites.yellowKeySprite
