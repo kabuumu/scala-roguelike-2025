@@ -3,7 +3,7 @@ package ui
 import game.*
 import game.Input.*
 import game.Item.Potion
-import game.entity._
+import game.entity.*
 import ui.GameController.*
 import ui.UIState.UIState
 
@@ -40,7 +40,11 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case (newUiState, newGameState) =>
           val updatedGameState = newGameState.update()
 
-          val newUpdateTime = if (updatedGameState.drawableChanges != gameState.drawableChanges || newUiState != uiState) {
+          val newUpdateTime = if (
+            updatedGameState.drawableChanges != gameState.drawableChanges
+              || newUiState != uiState
+              || updatedGameState.messages != gameState.messages
+          ) {
             currentTime
           } else lastUpdateTime
 

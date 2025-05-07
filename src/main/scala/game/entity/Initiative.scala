@@ -14,9 +14,18 @@ case class Initiative(maxInitiative: Int, currentInitiative: Int) extends Compon
 }
 
 object Initiative {
-  val isReady: Initiative => Boolean = _.isReady
-
   def apply(maxInitiative: Int): Initiative = {
     Initiative(maxInitiative, maxInitiative)
+  }
+
+  extension (entity: Entity) {
+    def isReady: Boolean = entity.exists[Initiative](_.isReady)
+
+    def resetInitiative(): Entity = {
+      entity.update[Initiative](_.reset())
+    }
+
+    def decreaseInitiative(): Entity =
+      entity.update[Initiative](_.decrement())
   }
 }

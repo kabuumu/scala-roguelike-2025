@@ -5,6 +5,13 @@ import game.Item.Item
 
 case class EntityTypeComponent(entityType: EntityType) extends Component
 
+object EntityType {
+  extension (entity: Entity) {
+    //TODO - remove default to player, potentially remove entity types entirely
+    def entityType: EntityType = entity.get[EntityTypeComponent].map(_.entityType).getOrElse(EntityType.Player)
+  }
+}
+
 enum EntityType(val isStatic: Boolean, val blocksMovement: Boolean):
   case Player extends EntityType(false, true)
   case Enemy extends EntityType(false, true)

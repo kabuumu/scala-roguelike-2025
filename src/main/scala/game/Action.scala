@@ -1,8 +1,9 @@
 package game
 
-import game.Item.KeyColour.*
 import game.Item.{Item, Key, Weapon}
 import game.entity.*
+import game.entity.EntityType.entityType
+import game.entity.Initiative.*
 
 //TODO - Add separate initiative costs for different actions
 trait Action {
@@ -11,10 +12,10 @@ trait Action {
 
 case class MoveAction(direction: Direction) extends Action {
   def apply(movingEntity: Entity, gameState: GameState): GameState = {
-    val movedEntity = movingEntity.update[Movement](_.move(direction)).update[Initiative](_.reset())
+    val movedEntity = movingEntity.update[Movement](_.move(direction)).resetInitiative()
 
     val optItem: Option[(Entity, Item)] = gameState.entities.map {
-      entity => entity -> entity[EntityTypeComponent].entityType
+      entity => entity -> entity.entityType
     }.collectFirst {
       case (entity, EntityType.Key(keyColour)) if movedEntity[Movement].position == entity[Movement].position =>
         entity -> Item.Key(keyColour)
@@ -44,7 +45,7 @@ case class MoveAction(direction: Direction) extends Action {
             .addMessage(s"${System.nanoTime()}: ${movingEntity.toString} cannot move to ${movedEntity[Movement].position} because it is blocked by a wall")
       }
     } else optItem match {
-      case Some((itemEntity, item)) if movingEntity.exists[EntityTypeComponent](_.entityType == EntityType.Player) =>
+      case Some((itemEntity, item)) if movingEntity.entityType == EntityType.Player =>
         gameState
           .updateEntity(
             movingEntity.id,
@@ -73,14 +74,14 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
 
     optWeapon match {
       case Some(_, Item.Ranged(_)) =>
-        val targetType = if(attackingEntity[EntityTypeComponent].entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
+        val targetType = if(attackingEntity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
         val projectile = Projectile(attackingEntity[Movement].position, targetPosition, targetType)
 
         gameState
           .copy(projectiles = gameState.projectiles :+ projectile)
           .updateEntity(
             attackingEntity.id,
-            attackingEntity.update[Initiative](_.reset())
+            attackingEntity.resetInitiative()
           )
       case _ =>
         gameState.getActor(targetPosition) match {
@@ -91,7 +92,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
               )
               .updateEntity(
                 attackingEntity.id,
-                attackingEntity.update[Initiative](_.reset())
+                attackingEntity.resetInitiative()
               )
           case _ =>
             throw new Exception(s"No target found at $targetPosition")
@@ -102,7 +103,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
 
 case object WaitAction extends Action {
   def apply(entity: Entity, gameState: GameState): GameState = {
-    gameState.updateEntity(entity.id, entity.update[Initiative](_.reset()))
+    gameState.updateEntity(entity.id, entity.resetInitiative())
   }
 }
 
