@@ -103,7 +103,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
 
 case object WaitAction extends Action {
   def apply(entity: Entity, gameState: GameState): GameState = {
-    gameState.updateEntity(entity.id, entity.resetInitiative())
+    gameState.updateEntity(entity.id, entity.decreaseInitiative())
   }
 }
 

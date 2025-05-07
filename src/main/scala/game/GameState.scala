@@ -4,6 +4,7 @@ import game.entity.*
 import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
 import map.Dungeon
+import Controller.*
 
 case class GameState(playerEntityId: String,
                      entities: Seq[Entity],
@@ -14,24 +15,19 @@ case class GameState(playerEntityId: String,
 
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
-      case Some(action) if playerEntity[Initiative].isReady =>
+      case Some(action) if playerEntity.isReady =>
         action.apply(playerEntity, this)
       case _ => this
     }
   }
 
   def update(): GameState = {
-    if (playerEntity[Initiative].isReady) {
+    if (playerEntity.isReady) {
       this // wait for player to act
     } else {
       val entityUpdated = entities.foldLeft(this) {
-        case (gameState, entity) if entity.exists[Initiative](_.isReady) && entity.exists[EntityTypeComponent](_.entityType == EntityType.Enemy) && entity.exists[Health](_.isAlive) =>
-          val nextAction = EnemyAI.getNextAction(entity, gameState)
-          nextAction.apply(entity, gameState)
-        case (gameState, entity) if entity[EntityTypeComponent].entityType == EntityType.Enemy || entity[EntityTypeComponent].entityType == EntityType.Player =>
-          gameState.updateEntity(entity.id, entity.update[Initiative](_.decrement()))
-        case (gameState, _) =>
-          gameState
+        case (gameState, entity) =>
+          entity.update(gameState)
       }
 
       val projectileUpdated = projectiles.foldLeft(entityUpdated) {

@@ -16,8 +16,9 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
-        Initiative(10)
+        Initiative(10),
 //        inventory = Inventory(Nil, Some(Weapon(1, Ranged(6)))),
+        Controller(),
       )
   }
 
@@ -37,7 +38,8 @@ object StartingState {
           primaryWeapon = Some(Weapon(2, Melee)),
           secondaryWeapon = Some(Weapon(1, Ranged(6)))
         ),
-        SightMemory()
+        SightMemory(),
+        Controller()
       )
   }
 
