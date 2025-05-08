@@ -1,10 +1,11 @@
-package game
+package game.entity
 
 import game.entity.*
 import game.entity.EntityType.*
 import game.entity.Health.*
+import game.{GameState, Point}
 
-case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int) {
+case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int) extends Component {
   def update(currentGameState: GameState): GameState = {
     val (currentX, currentY) = precisePosition
     val newX = currentX + xVelocity
@@ -59,5 +60,16 @@ object Projectile {
       targetType,
       damage
     )
+  }
+
+  extension (entity: Entity) {
+    def projectileUpdate(gameState: GameState): GameState = {
+      entity.get[Projectile] match {
+        case Some(projectile) =>
+          projectile.update(gameState)
+        case None =>
+          gameState
+      }
+    }
   }
 }

@@ -2,7 +2,8 @@ package game.entity
 
 import game.entity.Health.*
 import game.entity.Initiative.*
-import game.{EnemyAI, GameState}
+import game.{EnemyAI, GameState, Point}
+import Projectile.*
 
 trait UpdateAction {
   def apply(entity: Entity, gameState: GameState): GameState
@@ -26,6 +27,12 @@ object UpdateAction {
         ai.getNextAction(entity, gameState).apply(entity, gameState)
       else
         gameState
+    }
+  }
+
+  case class ProjectileUpdateAction(target: Point) extends UpdateAction {
+    override def apply(entity: Entity, gameState: GameState): GameState = {
+      entity.projectileUpdate(gameState)
     }
   }
 }
