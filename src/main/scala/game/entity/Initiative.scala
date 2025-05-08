@@ -20,6 +20,7 @@ object Initiative {
 
   extension (entity: Entity) {
     def isReady: Boolean = entity.exists[Initiative](_.isReady)
+    def notReady: Boolean = !isReady
 
     def resetInitiative(): Entity = {
       entity.update[Initiative](_.reset())

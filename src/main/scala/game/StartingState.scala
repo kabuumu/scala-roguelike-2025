@@ -1,8 +1,10 @@
 package game
 
 import data.Sprites
+import game.EnemyAI.DefaultAI
 import game.Item.*
 import game.entity.*
+import game.entity.UpdateAction.{AIAction, UpdateInitiative}
 import map.{Dungeon, MapGenerator}
 
 object StartingState {
@@ -18,7 +20,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
         Initiative(10),
-        Controller(),
+        ActorController(UpdateInitiative, AIAction(DefaultAI)),
         Sprites.ratSprite,
       )
     case (point, _) =>
@@ -31,7 +33,7 @@ object StartingState {
         Health(1),
         Initiative(20),
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
-        Controller(),
+        ActorController(UpdateInitiative, AIAction(DefaultAI)),
         Sprites.snakeSprite,
       )
   }
@@ -53,7 +55,7 @@ object StartingState {
           secondaryWeapon = Some(Weapon(1, Ranged(6)))
         ),
         SightMemory(),
-        Controller(),
+        ActorController(UpdateInitiative),
         Sprites.playerSprite,
       )
   }

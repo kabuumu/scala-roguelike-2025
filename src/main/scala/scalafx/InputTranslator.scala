@@ -13,7 +13,7 @@ object InputTranslator {
       case KeyCode.Z => Attack(PrimaryAttack)
       case KeyCode.X => Attack(SecondaryAttack)
       case KeyCode.E => Interact
-      case KeyCode.Q => UseItem
+      case KeyCode.U => UseItem
       case KeyCode.C => Cancel
       case _ => Wait
     }

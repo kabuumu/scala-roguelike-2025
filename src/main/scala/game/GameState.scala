@@ -1,7 +1,7 @@
 package game
 
 import game.entity.*
-import game.entity.Controller.*
+import game.entity.ActorController.*
 import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
 import map.Dungeon
@@ -49,6 +49,10 @@ case class GameState(playerEntityId: String,
 
   def getActor(point: Point): Option[Entity] = {
     entities.find(entity => entity.exists[Movement](_.position == point) && (entity.exists[EntityTypeComponent](entityType => entityType.entityType == EntityType.Enemy || entityType.entityType == EntityType.Player)))
+  }
+
+  def add(entity: Entity): GameState = {
+    copy(entities = entities :+ entity)
   }
 
   def remove(entity: Entity): GameState = {
