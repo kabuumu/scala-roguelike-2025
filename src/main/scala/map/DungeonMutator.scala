@@ -61,12 +61,13 @@ class TreasureRoomMutator(targetTreasureRoomCount: Int, dungeonPathSize: Int) ex
     } else {
       for {
         (originRoom, direction) <- currentDungeon.availableRooms
+        item <- Set(Item.Potion, Item.Scroll)
         if !currentDungeon.endpoint.contains(originRoom)
         treasureRoom = originRoom + direction
       } yield currentDungeon
         .addRoom(originRoom, direction)
         .blockRoom(treasureRoom)
-        .addItem(treasureRoom, Item.Potion)
+        .addItem(treasureRoom, item)
     }
   }
 }

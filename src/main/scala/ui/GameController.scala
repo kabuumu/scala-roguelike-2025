@@ -2,8 +2,9 @@ package ui
 
 import game.*
 import game.Input.*
-import game.Item.Potion
+import game.Item.{Potion, Scroll}
 import game.entity.*
+import game.entity.Inventory.*
 import ui.GameController.*
 import ui.UIState.UIState
 
@@ -47,7 +48,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           ) {
             currentTime
           } else lastUpdateTime
-          
+
           GameController(newUiState, updatedGameState, newUpdateTime)
       }
     } else this
@@ -77,7 +78,9 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           } else {
             (UIState.Move, None)
           }
-        case Input.UseItem => (UIState.Move, Some(UseItemAction(Potion)))
+        case Input.UseItem if gameState.playerEntity.usableItems.nonEmpty =>
+          val items = gameState.playerEntity.usableItems
+          (UIState.SelectItem(items), None)
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
       }
@@ -90,7 +93,28 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
       }
-    case _ => (uiState, None)
+    case selectItem: UIState.SelectItem =>
+      input match {
+        case Input.Move(direction) => (selectItem.iterate, None)
+        case Input.UseItem if selectItem.selectedItem == Potion =>
+          (UIState.Move, Some(UseItemAction(selectItem.selectedItem, gameState.playerEntity)))
+        case Input.UseItem if selectItem.selectedItem == Scroll =>
+          (UIState.ScrollSelect(gameState.playerEntity[Movement].position), None)
+        case Input.Cancel => (UIState.Move, None)
+        case _ => (uiState, None)
+      }
+    case scrollSelect: UIState.ScrollSelect =>
+      input match {
+        case Input.Move(direction) =>
+          val newCursor = scrollSelect.cursor + direction
+          (UIState.ScrollSelect(newCursor), None)
+        case Input.UseItem =>
+          val targetPosition = scrollSelect.cursor
+          (UIState.Move, Some(UseItemAction(Scroll, gameState.getActor(targetPosition).get)))
+        case Input.Cancel => (UIState.Move, None)
+        case _ => (uiState, None)
+      }
+
   }
 
   def enemiesWithinRange(range: Int): Seq[Entity] = gameState.entities.filter { enemyEntity =>

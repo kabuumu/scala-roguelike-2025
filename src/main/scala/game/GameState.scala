@@ -1,10 +1,10 @@
 package game
 
 import game.entity.*
+import game.entity.Controller.*
 import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
 import map.Dungeon
-import Controller.*
 
 case class GameState(playerEntityId: String,
                      entities: Seq[Entity],
@@ -41,6 +41,11 @@ case class GameState(playerEntityId: String,
 
   def updateEntity(entityId: String, newEntity: Entity): GameState =
     copy(entities = entities.updated(entities.indexWhere(_.id == entityId), newEntity))
+
+  def updateEntity(entityId: String, update: Entity => Entity): GameState =
+    copy(
+      entities = entities.updated(entities.indexWhere(_.id == entityId), update(entities.find(_.id == entityId).get))
+    )
 
   def getActor(point: Point): Option[Entity] = {
     entities.find(entity => entity.exists[Movement](_.position == point) && (entity.exists[EntityTypeComponent](entityType => entityType.entityType == EntityType.Enemy || entityType.entityType == EntityType.Player)))

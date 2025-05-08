@@ -23,6 +23,7 @@ object Sprites {
   val emptyHeartSprite: Sprite = Sprite(40, 10, uiLayer)
   val cursorSprite: Sprite = Sprite(29, 14, uiLayer)
   val potionSprite: Sprite = Sprite(33, 13, uiLayer)
+  val scrollSprite: Sprite = Sprite(33, 15, uiLayer)
   val yellowKeySprite: Sprite = Sprite(32, 11, uiLayer)
   val blueKeySprite: Sprite = Sprite(33, 11, uiLayer)
   val redKeySprite: Sprite = Sprite(34, 11, uiLayer)
@@ -34,25 +35,11 @@ object Sprites {
 
   val errorSprite: Sprite = Sprite(35, 21, uiLayer)
 
-  val entitySprites: Map[EntityType, Sprite] = Map(
-    Player -> playerSprite,
-    Wall -> wallSprite,
-    Enemy -> ratSprite,
-//    Enemy -> snakeSprite,
-    Floor -> floorSprite,
-    LockedDoor(Yellow) -> yellowDoorSprite,
-    LockedDoor(Blue) -> blueDoorSprite,
-    LockedDoor(Red) -> redDoorSprite,
-    Key(Yellow) -> yellowKeySprite,
-    Key(Blue) -> blueKeySprite,
-    Key(Red) -> redKeySprite,
-    ItemEntity(game.Item.Potion) -> potionSprite,
-  )
-
   val itemSprites: Map[Item.Item, Sprite] = Map(
     game.Item.Potion -> potionSprite,
     game.Item.Key(Yellow) -> yellowKeySprite,
     game.Item.Key(Blue) -> blueKeySprite,
-    game.Item.Key(Red) -> redKeySprite
+    game.Item.Key(Red) -> redKeySprite,
+    game.Item.Scroll -> scrollSprite
   )
 }

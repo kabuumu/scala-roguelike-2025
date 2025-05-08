@@ -7,6 +7,8 @@ object Item {
 
   case object Potion extends Item
 
+  case object Scroll extends Item
+
   case class Key(keyColour: KeyColour) extends Item
 
   case class Weapon(damage: Int, weaponType: WeaponType) extends Item {

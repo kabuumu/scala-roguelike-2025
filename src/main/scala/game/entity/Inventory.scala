@@ -1,5 +1,6 @@
 package game.entity
 
+import game.Item
 import game.Item.{Item, Weapon}
 
 case class Inventory(items: Seq[Item] = Nil, primaryWeapon: Option[Weapon] = None, secondaryWeapon: Option[Weapon] = None) extends Component {
@@ -19,4 +20,11 @@ case class Inventory(items: Seq[Item] = Nil, primaryWeapon: Option[Weapon] = Non
   }
 
   val isEmpty: Boolean = items.isEmpty
+}
+
+object Inventory {
+  extension (entity: Entity) {
+    def items: Seq[Item] = entity.get[Inventory].toSeq.flatMap(_.items)
+    def usableItems: Seq[Item] = items.filterNot(_.isInstanceOf[Item.Key])
+  }
 }

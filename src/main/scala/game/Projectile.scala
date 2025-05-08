@@ -2,7 +2,7 @@ package game
 
 import game.entity._
 
-case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType) {
+case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int) {
   def update(currentGameState: GameState): GameState = {
     val (currentX, currentY) = precisePosition
     val newX = currentX + xVelocity
@@ -42,7 +42,7 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
 object Projectile {
   val projectileSpeed: Double = 1
 
-  def apply(start: Point, end: Point, targetType: EntityType): Projectile = {
+  def apply(start: Point, end: Point, targetType: EntityType, damage: Int): Projectile = {
     val dx = end.x - start.x
     val dy = end.y - start.y
     val magnitude = Math.sqrt(dx * dx + dy * dy)
@@ -52,7 +52,8 @@ object Projectile {
       (start.x.toDouble + xVelocity, start.y.toDouble + yVelocity),
       xVelocity,
       yVelocity,
-      targetType
+      targetType,
+      damage
     )
   }
 }

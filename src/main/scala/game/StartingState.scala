@@ -48,7 +48,7 @@ object StartingState {
         Health(12),
         Initiative(10),
         Inventory(
-          items = Seq(Potion),
+          items = Seq(Potion, Scroll),
           primaryWeapon = Some(Weapon(2, Melee)),
           secondaryWeapon = Some(Weapon(1, Ranged(6)))
         ),
@@ -80,6 +80,15 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.ItemEntity(Item.Potion)),
         Sprites.potionSprite
+      )
+    case (point, Item.Scroll) =>
+      Entity(
+        Movement(Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        )),
+        EntityTypeComponent(EntityType.ItemEntity(Item.Scroll)),
+        Sprites.scrollSprite
       )
   }
 

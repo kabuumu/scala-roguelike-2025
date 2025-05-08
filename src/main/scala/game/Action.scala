@@ -1,8 +1,9 @@
 package game
 
-import game.Item.{Item, Key, Weapon}
+import game.Item.{Item, Key, Potion, Scroll, Weapon}
 import game.entity.*
 import game.entity.EntityType.entityType
+import game.entity.Health.*
 import game.entity.Initiative.*
 
 //TODO - Add separate initiative costs for different actions
@@ -19,8 +20,8 @@ case class MoveAction(direction: Direction) extends Action {
     }.collectFirst {
       case (entity, EntityType.Key(keyColour)) if movedEntity[Movement].position == entity[Movement].position =>
         entity -> Item.Key(keyColour)
-      case (entity, EntityType.ItemEntity(Item.Potion)) if movedEntity[Movement].position == entity[Movement].position =>
-        entity -> Item.Potion
+      case (entity, EntityType.ItemEntity(item)) if movedEntity[Movement].position == entity[Movement].position =>
+        entity -> item
     }
 
     if (gameState.movementBlockingPoints.contains(movedEntity[Movement].position)) {
@@ -67,15 +68,10 @@ case class MoveAction(direction: Direction) extends Action {
 
 case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): GameState = {
-    val damage = optWeapon match {
-      case Some(weapon) => weapon.damage
-      case None => 1
-    }
-
     optWeapon match {
-      case Some(_, Item.Ranged(_)) =>
+      case Some(Weapon(damage, Item.Ranged(_))) =>
         val targetType = if(attackingEntity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-        val projectile = Projectile(attackingEntity[Movement].position, targetPosition, targetType)
+        val projectile = Projectile(attackingEntity[Movement].position, targetPosition, targetType, damage)
 
         gameState
           .copy(projectiles = gameState.projectiles :+ projectile)
@@ -84,6 +80,10 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
             attackingEntity.resetInitiative()
           )
       case _ =>
+        val damage = optWeapon match {
+          case Some(weapon) => weapon.damage
+          case None => 1
+        }
         gameState.getActor(targetPosition) match {
           case Some(target) =>
             gameState
@@ -107,24 +107,41 @@ case object WaitAction extends Action {
   }
 }
 
-//TODO make it for more items, not just potions
-case class UseItemAction(item: Item) extends Action {
-  def apply(entity: Entity, gameState: GameState): GameState = {
+case class UseItemAction(item: Item, target: Entity) extends Action {
+  def apply(entity: Entity, gameState: GameState): GameState =
+    if (entity.exists[Inventory](_.contains(item)))
+      item match
+        case Potion =>
+          if (target.hasFullHealth)
+            gameState
+              .addMessage(s"${System.nanoTime()}: ${target[EntityTypeComponent]} is already at full health")
+          else
+            gameState.updateEntity(
+              target.id,
+              _.heal(Item.potionValue)
+            ).updateEntity(
+              entity.id,
+              _.update[Inventory](_ - item)
+                .resetInitiative()
+            ).addMessage(
+              s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a $item to heal ${Item.potionValue} health"
+            )
+        case Scroll =>
+          val scrollDamage = 3
 
-    if (entity[Health].isFull) {
-      gameState
-        .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} is already at full health")
-    } else if (!entity[Inventory].contains(item)) {
+          val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
+          val projectile = Projectile(entity[Movement].position, target[Movement].position, targetType, scrollDamage)
+
+          gameState
+            .copy(projectiles = gameState.projectiles :+ projectile)
+            .updateEntity(
+              entity.id,
+              _.update[Inventory](_ - item)
+                .resetInitiative(),
+            ).addMessage(
+              s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a $item to attack ${target[EntityTypeComponent]}"
+            )
+    else
       gameState
         .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} does not have a $item")
-    } else {
-      val newEntity = entity
-        .update[Inventory](_ - item)
-        .update[Health](_ + Item.potionValue)
-
-      gameState
-        .updateEntity(entity.id, newEntity)
-        .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a $item")
-    }
-  }
 }

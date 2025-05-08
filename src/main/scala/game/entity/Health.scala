@@ -8,6 +8,7 @@ case class Health(current: Int, max: Int) extends Component {
 
   def +(health: Int): Health = {
     val newCurrent = math.min(current + health, max)
+
     Health(newCurrent, max)
   }
 

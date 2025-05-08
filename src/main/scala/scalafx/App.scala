@@ -20,10 +20,11 @@ import scalafx.scene.input.KeyCode
 import scalafx.scene.layout.VBox
 import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
-import ui.UIState.{FreeSelect, UIState}
+import ui.UIState.{ScrollSelect, UIState}
 import ui.{GameController, UIState}
 import Health.isDead
 import data.Sprites.errorSprite
+import Inventory.*
 
 import scala.language.postfixOps
 
@@ -113,7 +114,7 @@ object App extends JFXApp3 {
 
     val (xOffset, yOffset) = state.uiState match {
       case _ => (playerX - (canvasX / 2), playerY - (canvasY / 2))
-      case UIState.FreeSelect(cursorX, cursorY) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
+      case UIState.ScrollSelect(Point(cursorX, cursorY)) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
       case attack: UIState.Attack => (attack.position.x - (canvasX / 2), attack.position.y - (canvasY / 2))
     }
 
@@ -143,7 +144,7 @@ object App extends JFXApp3 {
 
     visibleEntities.sortBy {
       entity =>
-        Sprites.entitySprites(entity[EntityTypeComponent].entityType).layer
+        entity.get[Sprite].map(_.layer).getOrElse(0)
     }.foreach {
       entity =>
         val visible = playerVisiblePoints.contains(entity[Movement].position)
@@ -158,7 +159,8 @@ object App extends JFXApp3 {
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player[Movement].position)
     //    drawPlayerHearts(canvas, player)
     drawHealthBar(canvas, player)
-    drawInventory(canvas, player)
+    drawInventory(canvas, player, state.uiState)
+    drawKeys(canvas, player)
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
@@ -236,7 +238,7 @@ object App extends JFXApp3 {
     }
 
     uiState match {
-      case FreeSelect(cursorX, cursorY) =>
+      case ScrollSelect(Point(cursorX, cursorY)) =>
         val offsetCursorX = (cursorX - xOffset) * spriteScale * uiScale
         val offsetCursorY = (cursorY - yOffset) * spriteScale * uiScale
 
@@ -333,21 +335,26 @@ object App extends JFXApp3 {
       yOffset + barHeight - uiScale)
   }
 
-  def drawInventory(canvas: Canvas, player: Entity): Unit = {
+  def drawInventory(canvas: Canvas, player: Entity, uiState: UIState): Unit = {
     val itemWidth = spriteScale * uiScale
     val itemHeight = spriteScale * uiScale
 
     canvas.graphicsContext2D.setGlobalAlpha(1)
+    val items = player.usableItems
 
-    for (i <- player[Inventory].items.indices) {
+    for (i <- items.indices) {
       val itemX = i * itemWidth
       val itemY = spriteScale * uiScale
-      val item = player[Inventory].items(i)
-      val sprite = item match {
-        case Potion => Sprites.potionSprite
-        case Key(Yellow) => Sprites.yellowKeySprite
-        case Key(Blue) => Sprites.blueKeySprite
-        case Key(Red) => Sprites.redKeySprite
+      val item = items(i)
+      val sprite = Sprites.itemSprites(item)
+
+      uiState match {
+        case UIState.SelectItem(_, index) if index == i =>
+          canvas.graphicsContext2D.setGlobalAlpha(0.5)
+          canvas.graphicsContext2D.setFill(Color.Red)
+          canvas.graphicsContext2D.fillRect(itemX, itemY, itemWidth, itemHeight)
+        case _ =>
+          canvas.graphicsContext2D.setGlobalAlpha(1)
       }
 
       canvas.graphicsContext2D.drawImage(
@@ -363,6 +370,36 @@ object App extends JFXApp3 {
       )
     }
   }
+
+
+  def drawKeys(canvas: Canvas, player: Entity): Unit = {
+    val itemWidth = spriteScale * uiScale
+    val itemHeight = spriteScale * uiScale
+
+    canvas.graphicsContext2D.setGlobalAlpha(1)
+    val keys = player[Inventory].items.filter(_.isInstanceOf[Item.Key])
+
+
+    for (i <- keys.indices) {
+      val itemX = i * itemWidth
+      val itemY = spriteScale * uiScale * 2
+      val key = keys(i)
+      val sprite = Sprites.itemSprites(key)
+
+      canvas.graphicsContext2D.drawImage(
+        spriteSheet,
+        sprite.x * spriteScale,
+        sprite.y * spriteScale,
+        spriteScale,
+        spriteScale,
+        itemX,
+        itemY,
+        itemWidth,
+        itemHeight
+      )
+    }
+  }
+
   private def drawProjectiles(projectiles: Seq[Projectile], canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {
     projectiles.foreach {
       projectile =>
