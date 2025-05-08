@@ -6,7 +6,7 @@ import game.entity.Health.*
 import game.{GameState, Point}
 
 case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int) extends Component {
-  def update(currentGameState: GameState): GameState = {
+  def update(entity: Entity, currentGameState: GameState): GameState = {
     val (currentX, currentY) = precisePosition
     val newX = currentX + xVelocity
     val newY = currentY + yVelocity
@@ -14,9 +14,7 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
     val updatedProjectile = copy(precisePosition = (newX, newY))
     //TODO - find better way to return all collisions - collision class?
     if (currentGameState.dungeon.walls.contains(updatedProjectile.position) || currentGameState.dungeon.walls.contains(position)) {
-      currentGameState.copy(
-        projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
-      )
+      currentGameState.remove(entity)
     } else {
       currentGameState.entities.find(entity =>
         (entity[Movement].position == updatedProjectile.position || entity[Movement].position == position)
@@ -24,15 +22,17 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
           && entity.isAlive
       ) match {
         case Some(collision) =>
-          currentGameState.copy(
-            projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
-          ).updateEntity(
-            collision.id,
-            collision.update[Health](_ - damage)
-          )
+          currentGameState
+            .remove(entity)
+            .updateEntity(
+              collision.id,
+              collision.update[Health](_ - damage)
+            )
         case None =>
-          currentGameState.copy(
-            projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition) :+ updatedProjectile
+          currentGameState.updateEntity(
+            entity.id,
+            _.update[Projectile](_ => updatedProjectile)
+              .update[Movement](_.copy(position = updatedProjectile.position))
           )
       }
     }
@@ -66,7 +66,7 @@ object Projectile {
     def projectileUpdate(gameState: GameState): GameState = {
       entity.get[Projectile] match {
         case Some(projectile) =>
-          projectile.update(gameState)
+          projectile.update(entity, gameState)
         case None =>
           gameState
       }

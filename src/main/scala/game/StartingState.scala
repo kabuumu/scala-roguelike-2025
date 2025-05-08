@@ -20,7 +20,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
         Initiative(10),
-        ActorController(UpdateInitiative, AIAction(DefaultAI)),
+        UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Sprites.ratSprite,
       )
     case (point, _) =>
@@ -33,7 +33,7 @@ object StartingState {
         Health(1),
         Initiative(20),
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
-        ActorController(UpdateInitiative, AIAction(DefaultAI)),
+        UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Sprites.snakeSprite,
       )
   }
@@ -55,7 +55,7 @@ object StartingState {
           secondaryWeapon = Some(Weapon(1, Ranged(6)))
         ),
         SightMemory(),
-        ActorController(UpdateInitiative),
+        UpdateController(UpdateInitiative),
         Sprites.playerSprite,
       )
   }

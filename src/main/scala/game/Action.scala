@@ -1,10 +1,12 @@
 package game
 
+import data.Sprites
 import game.Item.{Item, Key, Potion, Scroll, Weapon}
 import game.entity.*
 import game.entity.EntityType.entityType
 import game.entity.Health.*
 import game.entity.Initiative.*
+import game.entity.UpdateAction.ProjectileUpdateAction
 
 //TODO - Add separate initiative costs for different actions
 trait Action {
@@ -71,10 +73,19 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
     optWeapon match {
       case Some(Weapon(damage, Item.Ranged(_))) =>
         val targetType = if(attackingEntity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-        val projectile = Projectile(attackingEntity[Movement].position, targetPosition, targetType, damage)
+        val startingPosition = attackingEntity[Movement].position
+        val projectileEntity =
+          Entity(
+            id = s"Projectile-${System.nanoTime()}",
+            Movement(position = startingPosition),
+            Projectile(startingPosition, targetPosition, targetType, damage),
+            UpdateController(ProjectileUpdateAction),
+            EntityTypeComponent(EntityType.Projectile),
+            Sprites.projectileSprite
+          )
 
         gameState
-          .copy(projectiles = gameState.projectiles :+ projectile)
+          .add(projectileEntity)
           .updateEntity(
             attackingEntity.id,
             attackingEntity.resetInitiative()
@@ -130,10 +141,20 @@ case class UseItemAction(item: Item, target: Entity) extends Action {
           val scrollDamage = 3
 
           val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-          val projectile = Projectile(entity[Movement].position, target[Movement].position, targetType, scrollDamage)
+          val startingPosition = entity[Movement].position
+          val projectileEntity =
+            Entity(
+              id = s"Projectile-${System.nanoTime()}",
+              Movement(position = startingPosition),
+              Projectile(startingPosition, target[Movement].position, targetType, scrollDamage),
+              UpdateController(ProjectileUpdateAction),
+              EntityTypeComponent(EntityType.Projectile),
+              Sprites.projectileSprite
+            )
+
 
           gameState
-            .copy(projectiles = gameState.projectiles :+ projectile)
+            .add(projectileEntity)
             .updateEntity(
               entity.id,
               _.update[Inventory](_ - item)

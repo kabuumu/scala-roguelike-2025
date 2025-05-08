@@ -1,10 +1,11 @@
 package scalafx
 
 import data.Sprites
-import game.Item.KeyColour.*
+import data.Sprites.errorSprite
 import game.*
-import game.Item.{Key, Potion}
 import game.entity.*
+import game.entity.Health.isDead
+import game.entity.Inventory.*
 import map.TileType
 import scalafx.Includes.*
 import scalafx.Resources.*
@@ -22,9 +23,6 @@ import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 import ui.UIState.{ScrollSelect, UIState}
 import ui.{GameController, UIState}
-import Health.isDead
-import data.Sprites.errorSprite
-import Inventory.*
 
 import scala.language.postfixOps
 
@@ -155,7 +153,6 @@ object App extends JFXApp3 {
         }
     }
 
-    drawProjectiles(state.gameState.projectiles, canvas, spriteSheet, xOffset, yOffset)
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player[Movement].position)
     //    drawPlayerHearts(canvas, player)
     drawHealthBar(canvas, player)
@@ -397,29 +394,6 @@ object App extends JFXApp3 {
         itemWidth,
         itemHeight
       )
-    }
-  }
-
-  private def drawProjectiles(projectiles: Seq[Projectile], canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int): Unit = {
-    projectiles.foreach {
-      projectile =>
-        val x = (projectile.position.x - xOffset) * spriteScale * uiScale
-        val y = (projectile.position.y - yOffset) * spriteScale * uiScale
-        val projectileSprite = Sprites.projectileSprite
-
-        canvas.graphicsContext2D.setGlobalAlpha(1)
-
-        canvas.graphicsContext2D.drawImage(
-          spriteSheet,
-          projectileSprite.x * spriteScale,
-          projectileSprite.y * spriteScale,
-          spriteScale,
-          spriteScale,
-          x,
-          y,
-          spriteScale * uiScale,
-          spriteScale * uiScale
-        )
     }
   }
 }

@@ -1,16 +1,15 @@
 package game
 
 import game.entity.*
-import game.entity.ActorController.*
 import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
+import game.entity.UpdateController.*
 import map.Dungeon
 
 case class GameState(playerEntityId: String,
                      entities: Seq[Entity],
                      messages: Seq[String] = Nil,
-                     dungeon: Dungeon,
-                     projectiles: Seq[Projectile] = Nil) {
+                     dungeon: Dungeon) {
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
   def update(playerAction: Option[Action]): GameState = {
@@ -21,21 +20,13 @@ case class GameState(playerEntityId: String,
     }
   }
 
-  def update(): GameState = {
+  def update(): GameState =
     if (playerEntity.isReady) {
       this // wait for player to act
     } else {
-      val entityUpdated = entities.foldLeft(this) {
+      entities.foldLeft(this) {
         case (gameState, entity) =>
           entity.update(gameState)
-      }
-
-      val projectileUpdated = projectiles.foldLeft(entityUpdated) {
-        case (gameState, projectile) =>
-          projectile.update(gameState)
-      }
-
-      projectileUpdated
     }
   }
 
@@ -86,6 +77,6 @@ case class GameState(playerEntityId: String,
 
 
   val drawableChanges: Seq[Point] = {
-    entities.flatMap(_.get[Movement].map(_.position)) ++ projectiles.map(_.position)
+    entities.flatMap(_.get[Movement].map(_.position))
   }
 }

@@ -30,7 +30,7 @@ object UpdateAction {
     }
   }
 
-  case class ProjectileUpdateAction(target: Point) extends UpdateAction {
+  object ProjectileUpdateAction extends UpdateAction {
     override def apply(entity: Entity, gameState: GameState): GameState = {
       entity.projectileUpdate(gameState)
     }
