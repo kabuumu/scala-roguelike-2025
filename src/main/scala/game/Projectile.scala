@@ -1,6 +1,8 @@
 package game
 
-import game.entity._
+import game.entity.*
+import game.entity.EntityType.*
+import game.entity.Health.*
 
 case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int) {
   def update(currentGameState: GameState): GameState = {
@@ -16,14 +18,16 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
       )
     } else {
       currentGameState.entities.find(entity =>
-        (entity[Movement].position == updatedProjectile.position || entity[Movement].position == position) && entity[EntityTypeComponent].entityType == targetType
+        (entity[Movement].position == updatedProjectile.position || entity[Movement].position == position)
+          && entity.entityType == targetType
+          && entity.isAlive
       ) match {
         case Some(collision) =>
           currentGameState.copy(
             projectiles = currentGameState.projectiles.filterNot(_.precisePosition == precisePosition)
           ).updateEntity(
             collision.id,
-            collision.update[Health](_ - 1)
+            collision.update[Health](_ - damage)
           )
         case None =>
           currentGameState.copy(
