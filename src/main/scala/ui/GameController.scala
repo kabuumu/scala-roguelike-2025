@@ -122,6 +122,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       &&
       gameState.playerEntity[Movement].position.isWithinRangeOf(enemyEntity[Movement].position, range)
       &&
+      gameState.getVisiblePointsFor(gameState.playerEntity).contains(enemyEntity[Movement].position)
+      &&
       enemyEntity[Health].isAlive
   }
 }

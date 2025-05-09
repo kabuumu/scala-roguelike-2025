@@ -5,6 +5,7 @@ import game.Item.{Item, Key, Potion, Scroll, Weapon}
 import game.entity.*
 import game.entity.EntityType.entityType
 import game.entity.Health.*
+import game.entity.Hitbox.*
 import game.entity.Initiative.*
 import game.entity.UpdateAction.ProjectileUpdateAction
 
@@ -20,14 +21,14 @@ case class MoveAction(direction: Direction) extends Action {
     val optItem: Option[(Entity, Item)] = gameState.entities.map {
       entity => entity -> entity.entityType
     }.collectFirst {
-      case (entity, EntityType.Key(keyColour)) if movedEntity[Movement].position == entity[Movement].position =>
-        entity -> Item.Key(keyColour)
-      case (entity, EntityType.ItemEntity(item)) if movedEntity[Movement].position == entity[Movement].position =>
-        entity -> item
+      case (itemEntity, EntityType.Key(keyColour)) if movedEntity.collidesWith(itemEntity) =>
+        itemEntity -> Item.Key(keyColour)
+      case (itemEntity, EntityType.ItemEntity(item)) if movedEntity.collidesWith(itemEntity) =>
+        itemEntity -> item
     }
 
-    if (gameState.movementBlockingPoints.contains(movedEntity[Movement].position)) {
-      gameState.entities.find(_[Movement].position == movedEntity[Movement].position) match {
+    if (movedEntity.collidesWith(gameState.movementBlockingPoints)) {
+      gameState.entities.find(collidingEntity => movedEntity.collidesWith(collidingEntity)) match {
         case Some(lockedDoorEntity @ Entity[EntityTypeComponent](EntityTypeComponent(EntityType.LockedDoor(keyColour)))) if movedEntity[Inventory].contains(Key(keyColour)) =>
 
           gameState
@@ -81,7 +82,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
             Projectile(startingPosition, targetPosition, targetType, damage),
             UpdateController(ProjectileUpdateAction),
             EntityTypeComponent(EntityType.Projectile),
-            Sprites.projectileSprite
+            Drawable(Sprites.projectileSprite)
           )
 
         gameState
@@ -149,7 +150,7 @@ case class UseItemAction(item: Item, target: Entity) extends Action {
               Projectile(startingPosition, target[Movement].position, targetType, scrollDamage),
               UpdateController(ProjectileUpdateAction),
               EntityTypeComponent(EntityType.Projectile),
-              Sprites.projectileSprite
+              Drawable(Sprites.projectileSprite)
             )
 
 

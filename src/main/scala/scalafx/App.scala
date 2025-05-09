@@ -1,9 +1,9 @@
 package scalafx
 
 import data.Sprites
-import data.Sprites.errorSprite
 import game.*
 import game.entity.*
+import game.entity.Drawable.*
 import game.entity.Health.isDead
 import game.entity.Inventory.*
 import map.TileType
@@ -142,7 +142,7 @@ object App extends JFXApp3 {
 
     visibleEntities.sortBy {
       entity =>
-        entity.get[Sprite].map(_.layer).getOrElse(0)
+        entity.get[Drawable].map(_.sprites.head._2.layer).getOrElse(0)
     }.foreach {
       entity =>
         val visible = playerVisiblePoints.contains(entity[Movement].position)
@@ -192,27 +192,26 @@ object App extends JFXApp3 {
   }
 
   private def drawEntity(entity: Entity, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, visible: Boolean): Unit = {
-    val x = (entity[Movement].position.x - xOffset) * spriteScale * uiScale
-    val y = (entity[Movement].position.y - yOffset) * spriteScale * uiScale
-    val entitySprite = if entity.isDead then Sprites.deadSprite else entity.get[Sprite].getOrElse(errorSprite)
-
     if (!visible) {
       canvas.graphicsContext2D.setGlobalAlpha(0.5)
     } else {
       canvas.graphicsContext2D.setGlobalAlpha(1)
     }
 
-    canvas.graphicsContext2D.drawImage(
-      spriteSheet,
-      entitySprite.x * spriteScale,
-      entitySprite.y * spriteScale,
-      spriteScale,
-      spriteScale,
-      x,
-      y,
-      spriteScale * uiScale,
-      spriteScale * uiScale
-    )
+    entity.sprites.foreach {
+      case (Point(x, y), entitySprite) =>
+        canvas.graphicsContext2D.drawImage(
+          spriteSheet,
+          entitySprite.x * spriteScale,
+          entitySprite.y * spriteScale,
+          spriteScale,
+          spriteScale,
+          (x - xOffset) * spriteScale * uiScale,
+          (y - yOffset) * spriteScale * uiScale,
+          spriteScale * uiScale,
+          spriteScale * uiScale
+        )
+    }
   }
 
   private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, playerPosition: Point): Unit = {

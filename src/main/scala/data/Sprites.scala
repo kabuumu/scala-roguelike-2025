@@ -1,9 +1,9 @@
 package data
 
 import game.Item.KeyColour.*
-import game.entity.{EntityType, Sprite}
+import game.entity.EntityType
 import game.entity.EntityType.*
-import game.Item
+import game.{Item, Sprite}
 
 object Sprites {
   val floorLayer = 0

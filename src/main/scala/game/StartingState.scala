@@ -21,7 +21,8 @@ object StartingState {
         Health(2),
         Initiative(10),
         UpdateController(UpdateInitiative, AIAction(DefaultAI)),
-        Sprites.ratSprite,
+        Drawable(Sprites.ratSprite),
+        Hitbox()
       )
     case (point, _) =>
       Entity(
@@ -34,7 +35,8 @@ object StartingState {
         Initiative(20),
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
         UpdateController(UpdateInitiative, AIAction(DefaultAI)),
-        Sprites.snakeSprite,
+        Drawable(Sprites.snakeSprite),
+        Hitbox()
       )
   }
 
@@ -56,7 +58,8 @@ object StartingState {
         ),
         SightMemory(),
         UpdateController(UpdateInitiative),
-        Sprites.playerSprite,
+        Drawable(Sprites.playerSprite),
+        Hitbox(),
       )
   }
 
@@ -68,10 +71,11 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Key(keyColour)),
+        Hitbox(),
         keyColour match {
-          case KeyColour.Yellow => Sprites.yellowKeySprite
-          case KeyColour.Blue => Sprites.blueKeySprite
-          case KeyColour.Red => Sprites.redKeySprite
+          case KeyColour.Yellow => Drawable(Sprites.yellowKeySprite)
+          case KeyColour.Blue => Drawable(Sprites.blueKeySprite)
+          case KeyColour.Red => Drawable(Sprites.redKeySprite)
         }
       )
     case (point, Item.Potion) =>
@@ -81,7 +85,8 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(Item.Potion)),
-        Sprites.potionSprite
+        Hitbox(),
+        Drawable(Sprites.potionSprite)
       )
     case (point, Item.Scroll) =>
       Entity(
@@ -90,7 +95,8 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(Item.Scroll)),
-        Sprites.scrollSprite
+        Hitbox(),
+        Drawable(Sprites.scrollSprite)
       )
   }
 
@@ -102,10 +108,11 @@ object StartingState {
           point.y
         )),
         EntityTypeComponent(lockedDoor),
+        Hitbox(),
         lockedDoor.keyColour match {
-          case KeyColour.Yellow => Sprites.yellowDoorSprite
-          case KeyColour.Blue => Sprites.blueDoorSprite
-          case KeyColour.Red => Sprites.redDoorSprite
+          case KeyColour.Yellow => Drawable(Sprites.yellowDoorSprite)
+          case KeyColour.Blue => Drawable(Sprites.blueDoorSprite)
+          case KeyColour.Red => Drawable(Sprites.redDoorSprite)
         }
       )
   }

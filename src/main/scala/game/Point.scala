@@ -19,6 +19,8 @@ case class Point(x: Int, y: Int) {
   )
   
   def +(direction: Direction): Point = Point(x + direction.x, y + direction.y)
+
+  def +(other: Point): Point = Point(x + other.x, y + other.y)
   
   override def toString: String = s"$x:$y"
 }
