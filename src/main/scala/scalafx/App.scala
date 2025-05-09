@@ -331,21 +331,23 @@ object App extends JFXApp3 {
       yOffset + barHeight - uiScale)
   }
 
-  def drawInventory(canvas: Canvas, player: Entity, uiState: UIState): Unit = {
+  private def drawInventory(canvas: Canvas, player: Entity, uiState: UIState): Unit = {
     val itemWidth = spriteScale * uiScale
     val itemHeight = spriteScale * uiScale
 
     canvas.graphicsContext2D.setGlobalAlpha(1)
-    val items = player.usableItems
 
-    for (i <- items.indices) {
-      val itemX = i * itemWidth
+    // Group items and count their occurrences
+    val groupedItems = player.groupedUsableItems
+
+    for ((item, count) <- groupedItems.zipWithIndex) {
+      val (itemType, quantity) = item
+      val itemX = (itemWidth / 2) + count * (itemWidth * 1.5)
       val itemY = spriteScale * uiScale
-      val item = items(i)
-      val sprite = Sprites.itemSprites(item)
+      val sprite = Sprites.itemSprites(itemType)
 
       uiState match {
-        case UIState.SelectItem(_, index) if index == i =>
+        case UIState.SelectItem(_, index) if index == count =>
           canvas.graphicsContext2D.setGlobalAlpha(0.5)
           canvas.graphicsContext2D.setFill(Color.Red)
           canvas.graphicsContext2D.fillRect(itemX, itemY, itemWidth, itemHeight)
@@ -353,6 +355,7 @@ object App extends JFXApp3 {
           canvas.graphicsContext2D.setGlobalAlpha(1)
       }
 
+      // Draw the item sprite
       canvas.graphicsContext2D.drawImage(
         spriteSheet,
         sprite.x * spriteScale,
@@ -363,6 +366,15 @@ object App extends JFXApp3 {
         itemY,
         itemWidth,
         itemHeight
+      )
+
+      // Draw the quantity number
+      canvas.graphicsContext2D.setFill(Color.White)
+      canvas.graphicsContext2D.setFont(pixelFont)
+      canvas.graphicsContext2D.fillText(
+        quantity.toString,
+        itemX + itemWidth + (spriteScale * uiScale / 8),
+        itemY + itemHeight - (spriteScale * uiScale / 8)
       )
     }
   }
@@ -377,7 +389,7 @@ object App extends JFXApp3 {
 
 
     for (i <- keys.indices) {
-      val itemX = i * itemWidth
+      val itemX = (itemWidth / 2) + i * itemWidth
       val itemY = spriteScale * uiScale * 2
       val key = keys(i)
       val sprite = Sprites.itemSprites(key)

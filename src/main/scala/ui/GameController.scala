@@ -78,8 +78,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           } else {
             (UIState.Move, None)
           }
-        case Input.UseItem if gameState.playerEntity.usableItems.nonEmpty =>
-          val items = gameState.playerEntity.usableItems
+        case Input.UseItem if gameState.playerEntity.groupedUsableItems.keys.nonEmpty =>
+          val items = gameState.playerEntity.groupedUsableItems.keys.toSeq
           (UIState.SelectItem(items), None)
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
