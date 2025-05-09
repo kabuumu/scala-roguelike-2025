@@ -1,7 +1,5 @@
 package game.entity
 
-import game.entity.*
-import game.entity.EntityType.*
 import game.entity.Health.*
 import game.{GameState, Point}
 
@@ -12,30 +10,12 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
     val newY = currentY + yVelocity
 
     val updatedProjectile = copy(precisePosition = (newX, newY))
-    //TODO - find better way to return all collisions - collision class?
-    if (currentGameState.dungeon.walls.contains(updatedProjectile.position) || currentGameState.dungeon.walls.contains(position)) {
-      currentGameState.remove(entity)
-    } else {
-      currentGameState.entities.find(entity =>
-        (entity[Movement].position == updatedProjectile.position || entity[Movement].position == position)
-          && entity.entityType == targetType
-          && entity.isAlive
-      ) match {
-        case Some(collision) =>
-          currentGameState
-            .remove(entity)
-            .updateEntity(
-              collision.id,
-              collision.update[Health](_ - damage)
-            )
-        case None =>
-          currentGameState.updateEntity(
-            entity.id,
-            _.update[Projectile](_ => updatedProjectile)
-              .update[Movement](_.copy(position = updatedProjectile.position))
-          )
-      }
-    }
+
+    currentGameState.updateEntity(
+      entity.id,
+      _.update[Projectile](_ => updatedProjectile)
+        .update[Movement](_.copy(position = updatedProjectile.position))
+    )
   }
 
   val position: Point = {
@@ -54,7 +34,7 @@ object Projectile {
     val xVelocity = (dx / magnitude) * projectileSpeed
     val yVelocity = (dy / magnitude) * projectileSpeed
     new Projectile(
-      (start.x.toDouble + xVelocity, start.y.toDouble + yVelocity),
+      (start.x.toDouble, start.y.toDouble),
       xVelocity,
       yVelocity,
       targetType,

@@ -7,7 +7,7 @@ import game.entity.EntityType.entityType
 import game.entity.Health.*
 import game.entity.Hitbox.*
 import game.entity.Initiative.*
-import game.entity.UpdateAction.ProjectileUpdateAction
+import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
 
 //TODO - Add separate initiative costs for different actions
 trait Action {
@@ -80,9 +80,11 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
             id = s"Projectile-${System.nanoTime()}",
             Movement(position = startingPosition),
             Projectile(startingPosition, targetPosition, targetType, damage),
-            UpdateController(ProjectileUpdateAction),
+            UpdateController(ProjectileUpdateAction, CollisionCheckAction),
             EntityTypeComponent(EntityType.Projectile),
-            Drawable(Sprites.projectileSprite)
+            Drawable(Sprites.projectileSprite),
+            Collision(damage = damage, explodes = false, persistent = false, targetType),
+            Hitbox()
           )
 
         gameState
@@ -143,19 +145,21 @@ case class UseItemAction(item: Item, target: Entity) extends Action {
 
           val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
           val startingPosition = entity[Movement].position
-          val projectileEntity =
+          val fireballEntity =
             Entity(
               id = s"Projectile-${System.nanoTime()}",
               Movement(position = startingPosition),
               Projectile(startingPosition, target[Movement].position, targetType, scrollDamage),
-              UpdateController(ProjectileUpdateAction),
+              UpdateController(ProjectileUpdateAction, CollisionCheckAction),
               EntityTypeComponent(EntityType.Projectile),
-              Drawable(Sprites.projectileSprite)
+              Drawable(Sprites.projectileSprite),
+              Collision(damage = scrollDamage, explodes = true, persistent = false, targetType),
+              Hitbox()
             )
 
 
           gameState
-            .add(projectileEntity)
+            .add(fireballEntity)
             .updateEntity(
               entity.id,
               _.update[Inventory](_ - item)

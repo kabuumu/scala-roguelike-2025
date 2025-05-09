@@ -9,7 +9,7 @@ import ui.GameController.*
 import ui.UIState.UIState
 
 object GameController {
-  val framesPerSecond = 25
+  val framesPerSecond = 12
   val allowedActionsPerSecond = 6
 }
 

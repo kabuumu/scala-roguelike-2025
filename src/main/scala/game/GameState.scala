@@ -76,7 +76,8 @@ case class GameState(playerEntityId: String,
       }.toSet
 
 
-  val drawableChanges: Seq[Point] = {
-    entities.flatMap(_.get[Movement].map(_.position))
+  val drawableChanges: Seq[Set[(Point, Sprite)]] = {
+    import game.entity.Drawable.*
+    entities.map(_.sprites)
   }
 }

@@ -3,7 +3,9 @@ package game.entity
 import game.entity.Health.*
 import game.entity.Initiative.*
 import game.{EnemyAI, GameState, Point}
+import Wave.*
 import Projectile.*
+import Collision.*
 
 trait UpdateAction {
   def apply(entity: Entity, gameState: GameState): GameState
@@ -33,6 +35,18 @@ object UpdateAction {
   object ProjectileUpdateAction extends UpdateAction {
     override def apply(entity: Entity, gameState: GameState): GameState = {
       entity.projectileUpdate(gameState)
+    }
+  }
+
+  object CollisionCheckAction extends UpdateAction {
+    override def apply(entity: Entity, gameState: GameState): GameState = {
+      entity.collisionCheck(gameState)
+    }
+  }
+
+  object WaveUpdateAction extends UpdateAction {
+    override def apply(entity: Entity, gameState: GameState): GameState = {
+      entity.waveUpdate(gameState)
     }
   }
 }
