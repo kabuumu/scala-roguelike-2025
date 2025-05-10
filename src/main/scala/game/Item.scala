@@ -1,21 +1,42 @@
 package game
 
+import game.Item.TargetType.{Point, Self}
+
 object Item {
   val potionValue = 5
 
-  sealed trait Item
+  enum ItemEffect {
+    case Usable(targetType: TargetType)
+    case Unusable
+  }
 
-  case object Potion extends Item
+  enum TargetType:
+    case Self, Point
 
-  case object Scroll extends Item
 
-  case class Key(keyColour: KeyColour) extends Item
+  sealed trait Item {
+    def itemEffect: ItemEffect
+  }
+
+  case object Potion extends Item {
+    val itemEffect: ItemEffect = ItemEffect.Usable(Self)
+  }
+
+  case object Scroll extends Item {
+    val itemEffect: ItemEffect = ItemEffect.Usable(Point)
+  }
+
+  case class Key(keyColour: KeyColour) extends Item {
+    val itemEffect: ItemEffect = ItemEffect.Unusable
+  }
 
   case class Weapon(damage: Int, weaponType: WeaponType) extends Item {
     val range: Int = weaponType match {
       case Melee => 1
       case Ranged(range) => range
     }
+
+    val itemEffect: ItemEffect = ItemEffect.Unusable
   }
 
   sealed trait WeaponType

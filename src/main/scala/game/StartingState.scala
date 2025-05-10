@@ -19,7 +19,7 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
-        Initiative(20),
+        Initiative(23),
         UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Drawable(Sprites.ratSprite),
         Hitbox()
@@ -32,7 +32,7 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Enemy),
         Health(1),
-        Initiative(40),
+        Initiative(41),
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
         UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Drawable(Sprites.snakeSprite),
@@ -50,7 +50,7 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Player),
         Health(12),
-        Initiative(20),
+        Initiative(23),
         Inventory(
           items = Seq(Potion, Scroll),
           primaryWeapon = Some(Weapon(2, Melee)),

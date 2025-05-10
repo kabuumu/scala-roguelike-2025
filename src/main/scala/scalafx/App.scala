@@ -2,6 +2,7 @@ package scalafx
 
 import data.Sprites
 import game.*
+import game.Item.Item
 import game.entity.*
 import game.entity.Drawable.*
 import game.entity.Health.isDead
@@ -38,7 +39,7 @@ object App extends JFXApp3 {
     val messageArea = new TextArea {
       editable = false
       prefWidth = spriteScale * uiScale * canvasX
-      prefHeight = spriteScale * uiScale * 4
+      prefHeight = spriteScale * uiScale * 4.5
       font = pixelFont
       style = "-fx-control-inner-background: black; -fx-text-fill: white;"
       focusTraversable = false
@@ -110,11 +111,7 @@ object App extends JFXApp3 {
     val player = state.gameState.playerEntity
     val Point(playerX, playerY) = player[Movement].position
 
-    val (xOffset, yOffset) = state.uiState match {
-      case _ => (playerX - (canvasX / 2), playerY - (canvasY / 2))
-      case UIState.ScrollSelect(Point(cursorX, cursorY)) => (cursorX - (canvasX / 2), cursorY - (canvasY / 2))
-      case attack: UIState.Attack => (attack.position.x - (canvasX / 2), attack.position.y - (canvasY / 2))
-    }
+    val (xOffset, yOffset) = (playerX - (canvasX / 2), playerY - (canvasY / 2))
 
     val playerVisiblePoints = state.gameState.playerVisiblePoints
     val visibleEntities = state.gameState.entities.filter {
@@ -215,35 +212,22 @@ object App extends JFXApp3 {
   }
 
   private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, playerPosition: Point): Unit = {
-    def drawCursor(x: Int, y: Int): Unit = {
-      val cursorSprite = Sprites.cursorSprite
-
-      canvas.graphicsContext2D.setGlobalAlpha(1)
-
-      canvas.graphicsContext2D.drawImage(
-        spriteSheet,
-        cursorSprite.x * spriteScale,
-        cursorSprite.y * spriteScale,
-        spriteScale,
-        spriteScale,
-        x,
-        y,
-        spriteScale * uiScale,
-        spriteScale * uiScale
-      )
+    val optCursorPosition = uiState match {
+      case ScrollSelect(cursor) =>
+        Some(cursor)
+      case list: UIState.ListSelect[Entity] if list.list.head.isInstanceOf[Entity] =>
+        val position = list.list(list.index)[Movement].position
+        Some(position)
+      case _ =>
+        None
     }
 
-    uiState match {
-      case ScrollSelect(Point(cursorX, cursorY)) =>
+    optCursorPosition.foreach {
+      case Point(cursorX, cursorY) =>
         val offsetCursorX = (cursorX - xOffset) * spriteScale * uiScale
         val offsetCursorY = (cursorY - yOffset) * spriteScale * uiScale
 
-        drawCursor(offsetCursorX, offsetCursorY)
-      case attack: UIState.Attack =>
-        val offsetCursorX = (attack.position.x - xOffset) * spriteScale * uiScale
-        val offsetCursorY = (attack.position.y - yOffset) * spriteScale * uiScale
-
-        val line = LineOfSight.getBresenhamLine(playerPosition, attack.position)
+        val line = LineOfSight.getBresenhamLine(playerPosition, Point(cursorX, cursorY))
 
         canvas.graphicsContext2D.save()
         line.dropRight(1).foreach {
@@ -257,8 +241,21 @@ object App extends JFXApp3 {
         }
         canvas.graphicsContext2D.restore()
 
-        drawCursor(offsetCursorX, offsetCursorY)
-      case _ =>
+        val cursorSprite = Sprites.cursorSprite
+
+        canvas.graphicsContext2D.setGlobalAlpha(1)
+
+        canvas.graphicsContext2D.drawImage(
+          spriteSheet,
+          cursorSprite.x * spriteScale,
+          cursorSprite.y * spriteScale,
+          spriteScale,
+          spriteScale,
+          offsetCursorX,
+          offsetCursorY,
+          spriteScale * uiScale,
+          spriteScale * uiScale
+        )
     }
   }
 
@@ -347,7 +344,7 @@ object App extends JFXApp3 {
       val sprite = Sprites.itemSprites(itemType)
 
       uiState match {
-        case UIState.SelectItem(_, index) if index == count =>
+        case UIState.ListSelect(list, index, _) if index == count && list.head.isInstanceOf[Item] =>
           canvas.graphicsContext2D.setGlobalAlpha(0.5)
           canvas.graphicsContext2D.setFill(Color.Red)
           canvas.graphicsContext2D.fillRect(itemX, itemY, itemWidth, itemHeight)

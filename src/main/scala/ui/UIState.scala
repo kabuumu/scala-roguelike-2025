@@ -1,9 +1,8 @@
 package ui
 
-import game.Item.Weapon
-import game.Point
-import game.entity._
-import game.Item.Item
+import game.{Action, Point}
+
+import scala.reflect.ClassTag
 
 object UIState {
   sealed trait UIState
@@ -15,15 +14,9 @@ object UIState {
     val cursorY: Int = cursor.y
   }
 
-  case class Attack(enemies: Seq[Entity], index: Int = 0, optWeapon: Option[Weapon]) extends UIState {
-    def iterate: Attack = Attack(enemies, (index + 1) % enemies.length, optWeapon)
+  case class ListSelect[T: ClassTag](list: Seq[T], index: Int = 0, effect: T => (UIState, Option[Action])) extends UIState {
+    def iterate: ListSelect[T] = copy(index = (index + 1) % list.length)
 
-    val position: Point = enemies(index)[Movement].position
-  }
-
-  case class SelectItem(items: Seq[Item], index: Int = 0) extends UIState {
-    def iterate: SelectItem = SelectItem(items, (index + 1) % items.length)
-
-    val selectedItem: Item = items(index)
+    val action: (UIState, Option[Action]) = effect(list(index))
   }
 }

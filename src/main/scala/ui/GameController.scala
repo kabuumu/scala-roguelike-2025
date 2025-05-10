@@ -1,10 +1,11 @@
 package ui
 
-import game.*
 import game.Input.*
-import game.Item.{Potion, Scroll}
+import game.Item.ItemEffect.{Unusable, Usable}
+import game.Item.{Scroll, TargetType}
 import game.entity.*
 import game.entity.Inventory.*
+import game.{Item, *}
 import ui.GameController.*
 import ui.UIState.UIState
 
@@ -71,35 +72,40 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
 
           val enemies = enemiesWithinRange(range)
           if (enemies.nonEmpty) {
-            (UIState.Attack(
-              enemies = enemies,
-              optWeapon = optWeapon
+            (UIState.ListSelect(
+              list = enemies,
+              effect = target => {
+                (UIState.Move, Some(AttackAction(target[Movement].position, optWeapon)))
+              }
             ), None)
           } else {
             (UIState.Move, None)
           }
         case Input.UseItem if gameState.playerEntity.groupedUsableItems.keys.nonEmpty =>
           val items = gameState.playerEntity.groupedUsableItems.keys.toSeq
-          (UIState.SelectItem(items), None)
+          (UIState.ListSelect(
+            list = items,
+            effect = item => {
+              item.itemEffect match {
+                case Usable(TargetType.Self) =>
+                  (UIState.Move, Some(UseItemAction(item, gameState.playerEntity)))
+                case Usable(TargetType.Point) =>
+                  (UIState.ScrollSelect(gameState.playerEntity[Movement].position), None)
+                case Unusable =>
+                  throw new IllegalStateException(
+                    s"Item ${item} is not usable in this context"
+                  )
+              }
+            }
+          ), None)
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
       }
-    case attack: UIState.Attack =>
+    case listSelect: UIState.ListSelect[Entity] =>
       input match {
-        case Input.Move(direction) => (attack.iterate, None)
-        case Input.Attack(_) =>
-          val targetPosition = attack.position
-          (UIState.Move, Some(AttackAction(targetPosition, attack.optWeapon)))
-        case Input.Cancel => (UIState.Move, None)
-        case _ => (uiState, None)
-      }
-    case selectItem: UIState.SelectItem =>
-      input match {
-        case Input.Move(direction) => (selectItem.iterate, None)
-        case Input.UseItem if selectItem.selectedItem == Potion =>
-          (UIState.Move, Some(UseItemAction(selectItem.selectedItem, gameState.playerEntity)))
-        case Input.UseItem if selectItem.selectedItem == Scroll =>
-          (UIState.ScrollSelect(gameState.playerEntity[Movement].position), None)
+        case Input.Move(direction) => (listSelect.iterate, None)
+        case Input.UseItem | Input.Attack(_) =>
+          listSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
       }
@@ -107,7 +113,12 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(direction) =>
           val newCursor = scrollSelect.cursor + direction
-          (UIState.ScrollSelect(newCursor), None)
+          if(newCursor.isWithinRangeOf(gameState.playerEntity[Movement].position, 8)
+            && gameState.getVisiblePointsFor(gameState.playerEntity).contains(newCursor)) {
+            (UIState.ScrollSelect(newCursor), None)
+          } else {
+            (scrollSelect, None)
+          }
         case Input.UseItem =>
           val targetPosition = scrollSelect.cursor
           (UIState.Move, Some(UseItemAction(Scroll, gameState.getActor(targetPosition).get)))
@@ -125,5 +136,5 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       gameState.getVisiblePointsFor(gameState.playerEntity).contains(enemyEntity[Movement].position)
       &&
       enemyEntity[Health].isAlive
-  }
+  }.sortBy(enemyEntity => enemyEntity[Movement].position.getChebyshevDistance(gameState.playerEntity[Movement].position))
 }
