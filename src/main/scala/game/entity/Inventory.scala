@@ -27,5 +27,6 @@ object Inventory {
     def items: Seq[Item] = entity.get[Inventory].toSeq.flatMap(_.items)
     def usableItems: Seq[Item] = items.filterNot(_.isInstanceOf[Item.Key])
     def groupedUsableItems: Map[Item, Int] = usableItems.groupBy(identity).view.mapValues(_.size).toMap
+    def addItem(item: Item): Entity = entity.update[Inventory](_ + item)
   }
 }

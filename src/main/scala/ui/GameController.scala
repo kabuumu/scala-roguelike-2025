@@ -3,6 +3,7 @@ package ui
 import game.Input.*
 import game.Item.ItemEffect.{Unusable, Usable}
 import game.Item.{Scroll, TargetType}
+import game.action.{Action, AttackAction, MoveAction, UseItemAction, WaitAction}
 import game.entity.*
 import game.entity.Inventory.*
 import game.{Item, *}
@@ -12,6 +13,8 @@ import ui.UIState.UIState
 object GameController {
   val framesPerSecond = 12
   val allowedActionsPerSecond = 6
+  val ticksPerSecond: Long = 1000000000l
+  val frameTime: Long = ticksPerSecond / allowedActionsPerSecond
 }
 
 case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
@@ -25,14 +28,13 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
   }
 
   def update(optInput: Option[Input], currentTime: Long): GameController = {
-    val ticksPerSecond = 1000000000
     val delta = currentTime - lastUpdateTime
-
+    
     //To ensure updates only happen at a certain rate
-    if (delta > ticksPerSecond / framesPerSecond) {
+    if (delta >= ticksPerSecond / framesPerSecond) {
       (optInput match {
         //To ensure inputs only happen at a certain rate
-        case Some(input) if delta > ticksPerSecond / allowedActionsPerSecond =>
+        case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond =>
           val (newUiState, optAction) = handleInput(input)
           val newGameState = gameState.update(optAction)
 
@@ -101,7 +103,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
       }
-    case listSelect: UIState.ListSelect[Entity] =>
+    case listSelect: UIState.ListSelect[_] =>
       input match {
         case Input.Move(direction) => (listSelect.iterate, None)
         case Input.UseItem | Input.Attack(_) =>

@@ -1,5 +1,6 @@
 package game
 
+import game.action.{Action, AttackAction, MoveAction, WaitAction}
 import game.entity.*
 
 trait EnemyAI {

@@ -1,5 +1,6 @@
 package game
 
+import game.action.Action
 import game.entity.*
 import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*

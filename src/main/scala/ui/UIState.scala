@@ -1,6 +1,7 @@
 package ui
 
-import game.{Action, Point}
+import game.Point
+import game.action.Action
 
 import scala.reflect.ClassTag
 

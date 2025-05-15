@@ -29,5 +29,8 @@ object Health {
 
     def damage(amount: Int): Entity = entity.update[Health](_ - amount)
     def heal(amount: Int): Entity = entity.update[Health](_ + amount)
+    
+    def currentHealth: Int = entity.get[Health].map(_.current).getOrElse(0)
+    def maxHealth: Int = entity.get[Health].map(_.max).getOrElse(0)
   }
 }
