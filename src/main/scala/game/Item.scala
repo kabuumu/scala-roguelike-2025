@@ -1,6 +1,12 @@
 package game
 
-import game.Item.TargetType.{Point, Self}
+import data.Sprites
+import game.Item.ItemEffect.PointTargeted
+import game.entity.Health.*
+import game.entity.Initiative.*
+import game.entity.EntityType.*
+import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
+import game.entity.{Collision, Drawable, Entity, EntityType, EntityTypeComponent, Hitbox, Inventory, Movement, UpdateController}
 
 object Item {
   val potionValue = 5
@@ -14,51 +20,89 @@ object Item {
   // Multi use usable (e.g. wand or staff) would need a charges mechanic
   // Usable with ammo (e.g. bow or gun) would need linking to an ammo item
 
-  object ItemTypes {
-    case class ItemCharge(currentCharge: Int, maxCharge: Int)
+  sealed trait Item
 
-    sealed trait Item
-    sealed trait UsableItem extends Item {
-      def targetType: TargetType
-    }
-    case class SingleUseItem(targetType: TargetType) extends UsableItem
-    case class MultiUseItem(targetType: TargetType, charges: ItemCharge) extends UsableItem
-    case class LoadableItem(targetType: TargetType, ammoType: Item) extends UsableItem
-    case class UnusableItem() extends Item
+  sealed trait UsableItem extends Item {
+    def itemEffect: ItemEffect
   }
 
+  sealed trait UnusableItem extends Item
+
+
   enum ItemEffect {
-    case Usable(targetType: TargetType)
-    case Unusable
+    case EntityTargeted(effect: Entity => Entity => GameState => GameState)
+    case PointTargeted(effect: Point => Entity => GameState => GameState)
+    case NonTargeted(effect: Entity => GameState => GameState)
   }
 
   enum TargetType:
     case Self, Point
 
 
-  sealed trait Item {
-    def itemEffect: ItemEffect
+  case object Potion extends UsableItem {
+    override def itemEffect: ItemEffect =
+      ItemEffect.NonTargeted {
+        entity =>
+          gameState =>
+            if (entity.hasFullHealth)
+              gameState
+                .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} is already at full health")
+            else
+              gameState.updateEntity(
+                entity.id,
+                _.heal(Item.potionValue)
+              ).updateEntity(
+                entity.id,
+                _.update[Inventory](_ - this)
+                  .resetInitiative()
+              ).addMessage(
+                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a potion to heal ${Item.potionValue} health"
+              )
+      }
   }
 
-  case object Potion extends Item {
-    val itemEffect: ItemEffect = ItemEffect.Usable(Self)
+  case object Scroll extends UsableItem {
+
+    override def itemEffect: ItemEffect =
+      PointTargeted { target =>
+        entity =>
+          gameState => {
+            val scrollDamage = 3
+
+            val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
+            val startingPosition = entity[Movement].position
+            val fireballEntity =
+              Entity(
+                id = s"Projectile-${System.nanoTime()}",
+                Movement(position = startingPosition),
+                game.entity.Projectile(startingPosition, target, targetType, scrollDamage),
+                UpdateController(ProjectileUpdateAction, CollisionCheckAction),
+                EntityTypeComponent(EntityType.Projectile),
+                Drawable(Sprites.projectileSprite),
+                Collision(damage = scrollDamage, explodes = true, persistent = false, targetType),
+                Hitbox()
+              )
+
+            gameState
+              .add(fireballEntity)
+              .updateEntity(
+                entity.id,
+                _.update[Inventory](_ - Scroll)
+                  .resetInitiative(),
+              ).addMessage(
+                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Scroll to attack $target"
+              )
+          }
+      }
   }
 
-  case object Scroll extends Item {
-    val itemEffect: ItemEffect = ItemEffect.Usable(Point)
-  }
+  case class Key(keyColour: KeyColour) extends UnusableItem
 
-  case class Key(keyColour: KeyColour) extends Item {
-    val itemEffect: ItemEffect = ItemEffect.Unusable
-  }
-
-  case class Weapon(damage: Int, weaponType: WeaponType) extends Item {
+  case class Weapon(damage: Int, weaponType: WeaponType) extends UnusableItem {
     val range: Int = weaponType match {
       case Melee => 1
       case Ranged(range) => range
     }
-
-    val itemEffect: ItemEffect = ItemEffect.Unusable
   }
 
   sealed trait WeaponType

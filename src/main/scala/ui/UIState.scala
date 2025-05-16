@@ -10,9 +10,11 @@ object UIState {
 
   case object Move extends UIState
 
-  case class ScrollSelect(cursor: Point) extends UIState {
+  case class ScrollSelect(cursor: Point, effect: Point => (UIState, Option[Action])) extends UIState {
     val cursorX: Int = cursor.x
     val cursorY: Int = cursor.y
+
+    val action: (UIState, Option[Action]) = effect(cursor)
   }
 
   case class ListSelect[T: ClassTag](list: Seq[T], index: Int = 0, effect: T => (UIState, Option[Action])) extends UIState {

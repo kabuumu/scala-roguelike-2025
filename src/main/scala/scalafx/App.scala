@@ -213,7 +213,7 @@ object App extends JFXApp3 {
 
   private def drawUiElements(uiState: UIState, canvas: Canvas, spriteSheet: Image, xOffset: Int, yOffset: Int, playerPosition: Point): Unit = {
     val optCursorPosition = uiState match {
-      case ScrollSelect(cursor) =>
+      case ScrollSelect(cursor, _) =>
         Some(cursor)
       case list: UIState.ListSelect[Entity] if list.list.head.isInstanceOf[Entity] =>
         val position = list.list(list.index)[Movement].position

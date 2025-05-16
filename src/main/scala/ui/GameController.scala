@@ -1,9 +1,9 @@
 package ui
 
 import game.Input.*
-import game.Item.ItemEffect.{Unusable, Usable}
-import game.Item.{Scroll, TargetType}
-import game.action.{Action, AttackAction, MoveAction, UseItemAction, WaitAction}
+import game.Item.*
+import game.Item.ItemEffect.{NonTargeted, PointTargeted, EntityTargeted}
+import game.action.*
 import game.entity.*
 import game.entity.Inventory.*
 import game.{Item, *}
@@ -85,19 +85,30 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           }
         case Input.UseItem if gameState.playerEntity.groupedUsableItems.keys.nonEmpty =>
           val items = gameState.playerEntity.groupedUsableItems.keys.toSeq
-          (UIState.ListSelect(
+          (UIState.ListSelect[UsableItem](
             list = items,
-            effect = item => {
-              item.itemEffect match {
-                case Usable(TargetType.Self) =>
-                  (UIState.Move, Some(UseItemAction(item, gameState.playerEntity)))
-                case Usable(TargetType.Point) =>
-                  (UIState.ScrollSelect(gameState.playerEntity[Movement].position), None)
-                case Unusable =>
-                  throw new IllegalStateException(
-                    s"Item ${item} is not usable in this context"
-                  )
-              }
+            effect = _.itemEffect match {
+              case EntityTargeted(effect) =>
+                val enemies = enemiesWithinRange(5) //TODO - default range for now
+                if (enemies.nonEmpty) {
+                  (UIState.ListSelect(
+                    list = enemies,
+                    effect = target => {
+                      (UIState.Move, Some(UseItemAction(effect(target))))
+                    }
+                  ), None)
+                } else {
+                  (UIState.Move, None)
+                }
+              case PointTargeted(effect) =>
+                (UIState.ScrollSelect(
+                  gameState.playerEntity[Movement].position,
+                  target => (
+                    UIState.Move,
+                    Some(UseItemAction(effect(target))))
+                ), None)
+              case NonTargeted(effect) =>
+                (UIState.Move, Some(UseItemAction(effect)))
             }
           ), None)
         case Input.Wait => (UIState.Move, Some(WaitAction))
@@ -117,13 +128,12 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           val newCursor = scrollSelect.cursor + direction
           if(newCursor.isWithinRangeOf(gameState.playerEntity[Movement].position, 8)
             && gameState.getVisiblePointsFor(gameState.playerEntity).contains(newCursor)) {
-            (UIState.ScrollSelect(newCursor), None)
+            (scrollSelect.copy(cursor = newCursor), None)
           } else {
             (scrollSelect, None)
           }
-        case Input.UseItem =>
-          val targetPosition = scrollSelect.cursor
-          (UIState.Move, Some(UseItemAction(Scroll, gameState.getActor(targetPosition).get)))
+        case Input.UseItem | Input.Attack(_) =>
+          scrollSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
       }
