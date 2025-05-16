@@ -1,7 +1,8 @@
 package game.entity
 
 import game.Item
-import game.Item.{Item, UsableItem, Weapon}
+import game.Item.ChargeType.{Ammo, SingleUse}
+import game.Item.{Item, UnusableItem, UsableItem, Weapon}
 
 case class Inventory(items: Seq[Item] = Nil, primaryWeapon: Option[Weapon] = None, secondaryWeapon: Option[Weapon] = None) extends Component {
   def contains(item: Item): Boolean = items.contains(item)
@@ -25,10 +26,23 @@ case class Inventory(items: Seq[Item] = Nil, primaryWeapon: Option[Weapon] = Non
 object Inventory {
   extension (entity: Entity) {
     def items: Seq[Item] = entity.get[Inventory].toSeq.flatMap(_.items)
-    def usableItems: Seq[Item] = items.filterNot(_.isInstanceOf[Item.Key])
-    def groupedUsableItems: Map[UsableItem, Int] = usableItems.collect {
+
+    def groupedUsableItems: Map[UsableItem, Int] = items.collect {
       case usableItem: UsableItem => usableItem
+    }.groupBy(identity).view.map {
+      case (item, list) =>
+        item.chargeType match {
+          case SingleUse => item -> list.size
+          case Ammo(ammoType) =>
+            item -> items.count(_ == ammoType)
+        }
+
+    }.toMap
+
+    def groupedUnusableItems: Map[UnusableItem, Int] = items.collect {
+      case unusableItem: UnusableItem => unusableItem
     }.groupBy(identity).view.mapValues(_.size).toMap
+
     def addItem(item: Item): Entity = entity.update[Inventory](_ + item)
   }
 }

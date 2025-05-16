@@ -24,6 +24,7 @@ object Sprites {
   val cursorSprite: Sprite = Sprite(29, 14, uiLayer)
   val potionSprite: Sprite = Sprite(33, 13, uiLayer)
   val scrollSprite: Sprite = Sprite(33, 15, uiLayer)
+  val bowSprite: Sprite = Sprite(37, 6, uiLayer)
   val yellowKeySprite: Sprite = Sprite(32, 11, uiLayer)
   val blueKeySprite: Sprite = Sprite(33, 11, uiLayer)
   val redKeySprite: Sprite = Sprite(34, 11, uiLayer)
@@ -40,6 +41,8 @@ object Sprites {
     game.Item.Key(Yellow) -> yellowKeySprite,
     game.Item.Key(Blue) -> blueKeySprite,
     game.Item.Key(Red) -> redKeySprite,
-    game.Item.Scroll -> scrollSprite
+    game.Item.Scroll -> scrollSprite,
+    game.Item.Bow -> bowSprite,
+    game.Item.Arrow -> arrowSprite,
   )
 }

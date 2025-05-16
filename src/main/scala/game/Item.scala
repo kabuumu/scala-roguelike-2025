@@ -1,12 +1,12 @@
 package game
 
 import data.Sprites
-import game.Item.ItemEffect.PointTargeted
+import game.Item.ItemEffect.{EntityTargeted, PointTargeted}
+import game.entity.*
+import game.entity.EntityType.*
 import game.entity.Health.*
 import game.entity.Initiative.*
-import game.entity.EntityType.*
 import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
-import game.entity.{Collision, Drawable, Entity, EntityType, EntityTypeComponent, Hitbox, Inventory, Movement, UpdateController}
 
 object Item {
   val potionValue = 5
@@ -24,10 +24,15 @@ object Item {
 
   sealed trait UsableItem extends Item {
     def itemEffect: ItemEffect
+    def chargeType: ChargeType
   }
 
   sealed trait UnusableItem extends Item
 
+  enum ChargeType {
+    case SingleUse
+    case Ammo(ammoItem: Item)
+  }
 
   enum ItemEffect {
     case EntityTargeted(effect: Entity => Entity => GameState => GameState)
@@ -40,6 +45,7 @@ object Item {
 
 
   case object Potion extends UsableItem {
+    override def chargeType: ChargeType = ChargeType.SingleUse
     override def itemEffect: ItemEffect =
       ItemEffect.NonTargeted {
         entity =>
@@ -62,7 +68,7 @@ object Item {
   }
 
   case object Scroll extends UsableItem {
-
+    override def chargeType: ChargeType = ChargeType.SingleUse
     override def itemEffect: ItemEffect =
       PointTargeted { target =>
         entity =>
@@ -87,13 +93,49 @@ object Item {
               .add(fireballEntity)
               .updateEntity(
                 entity.id,
-                _.update[Inventory](_ - Scroll)
+                _.update[Inventory](_ - this)
                   .resetInitiative(),
               ).addMessage(
                 s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Scroll to attack $target"
               )
           }
       }
+  }
+
+  case object Arrow extends UnusableItem
+
+  case object Bow extends UsableItem {
+    override def chargeType: ChargeType = ChargeType.Ammo(Arrow)
+    override def itemEffect: ItemEffect = EntityTargeted {
+      target =>
+        entity =>
+          gameState => {
+            val bowDamage = 2
+            val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
+            val startingPosition = entity[Movement].position
+            val projectileEntity =
+              Entity(
+                id = s"Projectile-${System.nanoTime()}",
+                Movement(position = startingPosition),
+                game.entity.Projectile(startingPosition, target[Movement].position, targetType, bowDamage),
+                UpdateController(ProjectileUpdateAction, CollisionCheckAction),
+                EntityTypeComponent(EntityType.Projectile),
+                Drawable(Sprites.projectileSprite),
+                Collision(damage = bowDamage, explodes = false, persistent = false, targetType),
+                Hitbox()
+              )
+
+            gameState
+              .add(projectileEntity)
+              .updateEntity(
+                entity.id,
+                _.update[Inventory](_ - Arrow)
+                  .resetInitiative()
+              ).addMessage(
+                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Bow to attack $target"
+              )
+          }
+    }
   }
 
   case class Key(keyColour: KeyColour) extends UnusableItem

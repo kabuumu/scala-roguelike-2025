@@ -2,7 +2,8 @@ package ui
 
 import game.Input.*
 import game.Item.*
-import game.Item.ItemEffect.{NonTargeted, PointTargeted, EntityTargeted}
+import game.Item.ChargeType.{Ammo, SingleUse}
+import game.Item.ItemEffect.{EntityTargeted, NonTargeted, PointTargeted}
 import game.action.*
 import game.entity.*
 import game.entity.Inventory.*
@@ -60,7 +61,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
   private def handleInput(input: Input): (UIState, Option[Action]) = uiState match {
     case UIState.Move =>
       input match {
-        case Input.Move(direction) => (UIState.Move, Some(MoveAction(direction)))
+        case Input.Move(direction) =>
+          (UIState.Move, Some(MoveAction(direction)))
         case Input.Attack(attackType) =>
           val optWeapon = attackType match {
             case Input.PrimaryAttack => gameState.playerEntity[Inventory].primaryWeapon
@@ -87,28 +89,40 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           val items = gameState.playerEntity.groupedUsableItems.keys.toSeq
           (UIState.ListSelect[UsableItem](
             list = items,
-            effect = _.itemEffect match {
-              case EntityTargeted(effect) =>
-                val enemies = enemiesWithinRange(5) //TODO - default range for now
-                if (enemies.nonEmpty) {
-                  (UIState.ListSelect(
-                    list = enemies,
-                    effect = target => {
-                      (UIState.Move, Some(UseItemAction(effect(target))))
+            effect = item => {
+              val canUseItem = item.chargeType match {
+                case SingleUse => true
+                case Ammo(ammoItem) if gameState.playerEntity.items.contains(ammoItem) => true
+                case _ => false
+              }
+
+              if (canUseItem) {
+                item.itemEffect match {
+                  case EntityTargeted(effect) =>
+                    val enemies = enemiesWithinRange(10) //TODO - default range for now
+                    if (enemies.nonEmpty) {
+                      (UIState.ListSelect(
+                        list = enemies,
+                        effect = target => {
+                          (UIState.Move, Some(UseItemAction(effect(target))))
+                        }
+                      ), None)
+                    } else {
+                      (UIState.Move, None)
                     }
-                  ), None)
-                } else {
-                  (UIState.Move, None)
+                  case PointTargeted(effect) =>
+                    (UIState.ScrollSelect(
+                      gameState.playerEntity[Movement].position,
+                      target => (
+                        UIState.Move,
+                        Some(UseItemAction(effect(target))))
+                    ), None)
+                  case NonTargeted(effect) =>
+                    (UIState.Move, Some(UseItemAction(effect)))
                 }
-              case PointTargeted(effect) =>
-                (UIState.ScrollSelect(
-                  gameState.playerEntity[Movement].position,
-                  target => (
-                    UIState.Move,
-                    Some(UseItemAction(effect(target))))
-                ), None)
-              case NonTargeted(effect) =>
-                (UIState.Move, Some(UseItemAction(effect)))
+              } else {
+                (UIState.Move, None)
+              }
             }
           ), None)
         case Input.Wait => (UIState.Move, Some(WaitAction))

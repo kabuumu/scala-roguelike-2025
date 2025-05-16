@@ -52,9 +52,9 @@ object StartingState {
         Health(12),
         Initiative(23),
         Inventory(
-          items = Seq(Potion, Scroll),
+          items = Seq(Potion, Scroll, Bow, Arrow, Arrow, Arrow, Arrow, Arrow, Arrow),
           primaryWeapon = Some(Weapon(2, Melee)),
-          secondaryWeapon = Some(Weapon(1, Ranged(6)))
+          secondaryWeapon = None
         ),
         SightMemory(),
         UpdateController(UpdateInitiative),
@@ -97,6 +97,16 @@ object StartingState {
         EntityTypeComponent(EntityType.ItemEntity(Item.Scroll)),
         Hitbox(),
         Drawable(Sprites.scrollSprite)
+      )
+    case (point, Item.Arrow) =>
+      Entity(
+        Movement(Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        )),
+        EntityTypeComponent(EntityType.ItemEntity(Item.Arrow)),
+        Hitbox(),
+        Drawable(Sprites.arrowSprite)
       )
   }
 

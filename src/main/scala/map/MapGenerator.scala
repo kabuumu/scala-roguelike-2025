@@ -1,6 +1,6 @@
 package map
 
-import game.Item.Potion
+import game.Item.{Key, Potion}
 
 import scala.annotation.tailrec
 
@@ -12,7 +12,7 @@ object MapGenerator {
     val mutators: Set[DungeonMutator] = Set(
       new EndPointMutator(dungeonPathSize),
       new KeyLockMutator(lockedDoorCount),
-      new TreasureRoomMutator(3, dungeonPathSize),
+      new TreasureRoomMutator(dungeonSize / 2, dungeonPathSize),
     )
 
     @tailrec
@@ -30,7 +30,7 @@ object MapGenerator {
       newOpenDungeons.find(dungeon =>
         dungeon.dungeonPath.size == dungeonPathSize
           && dungeon.lockedDoorCount == lockedDoorCount
-          && dungeon.items.count(_._2 == Potion) == 3
+          && dungeon.items.count(!_._2.isInstanceOf[Key]) == 3
         //        && dungeon.roomGrid.size == dungeonSize
       ) match {
         case Some(completedDungeon) =>

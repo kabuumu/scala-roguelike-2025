@@ -2,7 +2,7 @@ package scalafx
 
 import data.Sprites
 import game.*
-import game.Item.Item
+import game.Item.{Item, UnusableItem}
 import game.entity.*
 import game.entity.Drawable.*
 import game.entity.Health.isDead
@@ -154,7 +154,7 @@ object App extends JFXApp3 {
     //    drawPlayerHearts(canvas, player)
     drawHealthBar(canvas, player)
     drawInventory(canvas, player, state.uiState)
-    drawKeys(canvas, player)
+    drawUnusableItems(canvas, player)
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
@@ -337,14 +337,13 @@ object App extends JFXApp3 {
     // Group items and count their occurrences
     val groupedItems = player.groupedUsableItems
 
-    for ((item, count) <- groupedItems.zipWithIndex) {
-      val (itemType, quantity) = item
-      val itemX = (itemWidth / 2) + count * (itemWidth * 1.5)
+    for (((item, quantity), index) <- groupedItems.zipWithIndex) {
+      val itemX = (itemWidth / 2) + index * (itemWidth * 1.5)
       val itemY = spriteScale * uiScale
-      val sprite = Sprites.itemSprites(itemType)
+      val sprite = Sprites.itemSprites(item)
 
       uiState match {
-        case UIState.ListSelect(list, index, _) if index == count && list.head.isInstanceOf[Item] =>
+        case UIState.ListSelect(list, selectedIndex, _) if selectedIndex == index && list.head.isInstanceOf[Item] =>
           canvas.graphicsContext2D.setGlobalAlpha(0.5)
           canvas.graphicsContext2D.setFill(Color.Red)
           canvas.graphicsContext2D.fillRect(itemX, itemY, itemWidth, itemHeight)
@@ -377,13 +376,12 @@ object App extends JFXApp3 {
   }
 
 
-  def drawKeys(canvas: Canvas, player: Entity): Unit = {
+  def drawUnusableItems(canvas: Canvas, player: Entity): Unit = {
     val itemWidth = spriteScale * uiScale
     val itemHeight = spriteScale * uiScale
 
     canvas.graphicsContext2D.setGlobalAlpha(1)
     val keys = player[Inventory].items.filter(_.isInstanceOf[Item.Key])
-
 
     for (i <- keys.indices) {
       val itemX = (itemWidth / 2) + i * itemWidth

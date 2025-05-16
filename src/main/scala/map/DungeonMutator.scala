@@ -3,7 +3,7 @@ package map
 import game.Item.KeyColour.*
 import game.entity.EntityType.LockedDoor
 import game.Item
-import game.Item.{Key, KeyColour}
+import game.Item.{Item, Key, KeyColour}
 
 trait DungeonMutator {
   def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon]
@@ -55,13 +55,15 @@ class KeyLockMutator(lockedDoorCount: Int) extends DungeonMutator {
 }
 
 class TreasureRoomMutator(targetTreasureRoomCount: Int, dungeonPathSize: Int) extends DungeonMutator {
+  val possibleItems: Set[Item] = Set(Item.Potion, Item.Scroll, Item.Arrow)
+
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
-    if (currentDungeon.items.count(_._2 == Item.Potion) >= targetTreasureRoomCount || dungeonPathSize != currentDungeon.dungeonPath.size) {
+    if (currentDungeon.items.count((_, item) => possibleItems.contains(item)) >= targetTreasureRoomCount || dungeonPathSize != currentDungeon.dungeonPath.size) {
       Set.empty
     } else {
       for {
         (originRoom, direction) <- currentDungeon.availableRooms
-        item <- Set(Item.Potion, Item.Scroll)
+        item <- possibleItems
         if !currentDungeon.endpoint.contains(originRoom)
         treasureRoom = originRoom + direction
       } yield currentDungeon
