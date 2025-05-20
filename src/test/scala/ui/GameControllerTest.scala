@@ -2,6 +2,7 @@ package ui
 
 import data.Sprites
 import game.Direction.Up
+import game.Input.Wait
 import game.Item.*
 import game.entity.*
 import game.entity.EntityType.*
@@ -12,15 +13,16 @@ import game.{GameState, Input, Point}
 import map.Dungeon
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import ui.GameController.frameTime
+import ui.GameController.{frameTime, framesPerSecond}
 import ui.UIState.Move
+
 
 class GameControllerTest extends AnyFunSuiteLike with Matchers {
   val playerId = "testPlayerId"
 
   val playerEntity: Entity = Entity(
     id = playerId,
-    Movement(position = Point(0, 0)),
+    Movement(position = Point(4, 4)),
     EntityTypeComponent(EntityType.Player),
     Health(10),
     Initiative(0),
@@ -86,5 +88,50 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
         .update(Some(Input.UseItem), frameTime * 6) //To select the target
 
     afterSelectingFireball.gameState.entities.count(_.entityType == EntityType.Projectile) shouldBe 1
+  }
+
+  test("Player firing an arrow at an enemy entity") {
+    val playerWithBowAndArrow = playerEntity.addItem(Bow).addItem(Arrow).update[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
+
+    val enemyEntity = Entity(
+      id = "enemyId",
+      Movement(position = Point(4, 7)),
+      EntityTypeComponent(EntityType.Enemy),
+      Health(10),
+      Initiative(10),
+      Inventory(Seq(), Some(Weapon(2, Melee)), Some(Weapon(1, Ranged(6)))),
+      SightMemory(),
+      UpdateController(UpdateInitiative),
+      Drawable(Sprites.enemySprite),
+      Hitbox()
+    )
+
+    val gameState = GameState(playerEntityId = playerId, entities = Seq(playerWithBowAndArrow, enemyEntity), messages = Nil, dungeon = Dungeon())
+    val gameController = GameController(Move, gameState)
+
+    val beforeFiringArrow =
+      gameController
+        .update(Some(Input.UseItem), frameTime) //To enter the use item state
+        .update(Some(Input.UseItem), frameTime * 2) //To select the bow
+
+    beforeFiringArrow.gameState.entities.count(_.entityType == EntityType.Projectile) shouldBe 0
+
+    val afterFiringArrow =
+      beforeFiringArrow
+        .update(Some(Input.UseItem), frameTime * 3) //To select the bow target
+
+    afterFiringArrow.gameState.entities.count(_.entityType == EntityType.Projectile) shouldBe 1
+
+    val afterCollision =
+      afterFiringArrow
+        .update(None, frameTime * 4)
+        .update(None, frameTime * 5)
+        .update(None, frameTime * 6)
+
+
+    afterCollision.gameState.entities.count(_.entityType == EntityType.Projectile) shouldBe 0
+    afterCollision.gameState.entities.find(_.id == enemyEntity.id).get.currentHealth shouldBe 8
+
+
   }
 }
