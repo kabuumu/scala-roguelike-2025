@@ -7,6 +7,7 @@ import game.entity.EntityType.entityType
 import game.entity.Initiative.*
 import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
 import game.{Item, *}
+import Health.*
 
 case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): GameState = {
@@ -41,7 +42,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
           case Some(target) =>
             gameState
               .updateEntity(
-                target.id, target.update[Health](_ - damage)
+                target.id, target.damage(damage)
               )
               .updateEntity(
                 attackingEntity.id,

@@ -3,10 +3,11 @@ package ui
 import data.Sprites
 import game.Direction.Up
 import game.Item.*
+import game.entity.*
+import game.entity.EntityType.*
 import game.entity.Health.*
 import game.entity.Inventory.*
 import game.entity.UpdateAction.UpdateInitiative
-import game.entity.*
 import game.{GameState, Input, Point}
 import map.Dungeon
 import org.scalatest.funsuite.AnyFunSuiteLike
@@ -62,5 +63,28 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
         .update(Some(Input.UseItem), frameTime * 2) //To select the potion
 
     updatedGameState.gameState.playerEntity.currentHealth shouldBe 10
+  }
+
+  test("Player using a scroll fireball scroll should create a projectile") {
+    val playerWithScroll = playerEntity.addItem(Scroll)
+
+    val gameState = GameState(playerEntityId = playerId, entities = Seq(playerWithScroll), messages = Nil, dungeon = Dungeon())
+    val gameController = GameController(Move, gameState)
+
+    val beforeSelectingFireball =
+      gameController
+        .update(Some(Input.UseItem), frameTime) //To enter the use item state
+        .update(Some(Input.UseItem), frameTime * 2) //To select the scroll
+        .update(Some(Input.Move(Up)), frameTime * 3) //To move the target cursor up
+        .update(Some(Input.Move(Up)), frameTime * 4) //To move the target cursor up
+        .update(Some(Input.Move(Up)), frameTime * 5) //To move the target cursor up
+
+    beforeSelectingFireball.gameState.entities.count(_.entityType == EntityType.Projectile) shouldBe 0
+
+    val afterSelectingFireball =
+      beforeSelectingFireball
+        .update(Some(Input.UseItem), frameTime * 6) //To select the target
+
+    afterSelectingFireball.gameState.entities.count(_.entityType == EntityType.Projectile) shouldBe 1
   }
 }
