@@ -132,7 +132,7 @@ object Item {
                 _.update[Inventory](_ - Arrow)
                   .resetInitiative()
               ).addMessage(
-                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Bow to attack $target"
+                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Bow to attack ${target.id}"
               )
           }
     }

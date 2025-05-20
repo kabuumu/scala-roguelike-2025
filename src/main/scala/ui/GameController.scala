@@ -12,8 +12,8 @@ import ui.GameController.*
 import ui.UIState.UIState
 
 object GameController {
-  val framesPerSecond = 12
-  val allowedActionsPerSecond = 6
+  val framesPerSecond = 18
+  val allowedActionsPerSecond = 8
   val ticksPerSecond: Long = 1000000000l
   val frameTime: Long = ticksPerSecond / allowedActionsPerSecond
 }

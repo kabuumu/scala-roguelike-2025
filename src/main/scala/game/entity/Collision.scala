@@ -49,18 +49,13 @@ object Collision {
     }
 
     def collisionCheck(gameState: GameState): GameState = {
-      entity.get[Movement].map(_.position) match {
-        case Some(colliderPosition) =>
-          if (gameState.dungeon.walls.contains(colliderPosition)) {
+      val collisionHitbox = entity.hitbox
+
+      if (gameState.dungeon.walls.intersect(collisionHitbox).nonEmpty)
             gameState.remove(entity)
-          } else gameState.entities.find(entity.collidesWith) match {
-            case Some(collidingEntity) =>
-              handleCollision(gameState, collidingEntity)
-            case None =>
-              gameState
-          }
-        case None =>
-          gameState
+      else gameState.entities.filter(entity.collidesWith).foldLeft(gameState){
+        case (state, collidingEntity) =>
+          handleCollision(state, collidingEntity)
       }
     }
   }

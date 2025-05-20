@@ -2,10 +2,9 @@ package scalafx
 
 import data.Sprites
 import game.*
-import game.Item.{Item, UnusableItem}
+import game.Item.Item
 import game.entity.*
 import game.entity.Drawable.*
-import game.entity.Health.isDead
 import game.entity.Inventory.*
 import map.TileType
 import scalafx.Includes.*
@@ -95,10 +94,12 @@ object App extends JFXApp3 {
         updateMessageArea(newController, messageArea)
       }
 
-      if (newController != controller) {
-        controller = newController
-        updateCanvas(controller, canvas, spriteSheet)
+      if (newController.gameState.drawableChanges != controller.gameState.drawableChanges
+        || newController.uiState != controller.uiState) {
+        updateCanvas(newController, canvas, spriteSheet)
       }
+
+      controller = newController
 
     }.start()
   }
