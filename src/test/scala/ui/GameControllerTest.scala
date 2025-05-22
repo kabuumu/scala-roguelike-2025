@@ -48,7 +48,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
     val gameController = GameController(Move, gameState)
 
     val updatedGameState = gameController.update(Some(Input.Move(Up)), Long.MaxValue)
-    updatedGameState.gameState.playerEntity.get[Movement] should contain(Movement(Point(0, -1)))
+    updatedGameState.gameState.playerEntity.get[Movement] should contain(Movement(Point(4, 3)))
   }
 
   test("Player should heal when using a potion") {

@@ -28,7 +28,7 @@ case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target
 
         gameState
           .add(explosionEntity)
-          .remove(parentEntity)
+          .remove(parentEntity.id)
       } else {
         val damagedEntity = collidingEntity.damage(damage)
 
@@ -44,7 +44,7 @@ case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target
             gameState
           case gameState =>
             gameState
-              .remove(parentEntity)
+              .remove(parentEntity.id)
         }
       }
     } else {
@@ -64,7 +64,7 @@ object Collision {
       val collisionHitbox = entity.hitbox
 
       if (gameState.dungeon.walls.intersect(collisionHitbox).nonEmpty)
-            gameState.remove(entity)
+            gameState.remove(entity.id)
       else gameState.entities.filter(entity.collidesWith).foldLeft(gameState){
         case (state, collidingEntity) =>
           handleCollision(state, collidingEntity)

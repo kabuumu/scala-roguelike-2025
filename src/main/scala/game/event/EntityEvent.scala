@@ -3,12 +3,12 @@ package game.event
 import game.GameState
 import game.entity.Entity
 
-trait EntityEvent {
+trait EntityEvent extends Event {
   def entityId: String
 
   def event: Entity => Entity
 
-  def apply(gameState: GameState): GameState = gameState.updateEntity(entityId, event)
+  override def apply(gameState: GameState): GameState = gameState.updateEntity(entityId, event)
 }
 
 object EntityTest {

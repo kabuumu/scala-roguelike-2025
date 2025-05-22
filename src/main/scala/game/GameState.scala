@@ -47,8 +47,8 @@ case class GameState(playerEntityId: String,
     copy(entities = entities :+ entity)
   }
 
-  def remove(entity: Entity): GameState = {
-    copy(entities = entities.filterNot(_.id == entity.id))
+  def remove(entityId: String): GameState = {
+    copy(entities = entities.filterNot(_.id == entityId))
   }
 
   lazy val playerVisiblePoints: Set[Point] = getVisiblePointsFor(playerEntity)

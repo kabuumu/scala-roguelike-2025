@@ -46,7 +46,7 @@ object Wave {
         case Some(wave) if wave.range > 0 =>
           gameState.updateEntity(entity.id, wave.update)
         case Some(wave) if wave.range <= 0 =>
-          gameState.remove(entity)
+          gameState.remove(entity.id)
         case _ =>
           gameState
       }

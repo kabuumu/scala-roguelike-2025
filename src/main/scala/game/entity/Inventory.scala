@@ -44,5 +44,7 @@ object Inventory {
     }.groupBy(identity).view.mapValues(_.size).toMap
 
     def addItem(item: Item): Entity = entity.update[Inventory](_ + item)
+
+    def removeItem(item: Item): Entity = entity.update[Inventory](_ - item)
   }
 }
