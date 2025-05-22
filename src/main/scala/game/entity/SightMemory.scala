@@ -9,3 +9,11 @@ case class SightMemory(seenPoints: Set[Point] = Set.empty) extends Component {
   }
 }
 
+object SightMemory {
+  extension (entity: Entity) {
+    def updateSightMemory(gameState: GameState): Entity = {
+      entity.update[SightMemory](_.update(gameState, entity))
+    }
+  }
+}
+

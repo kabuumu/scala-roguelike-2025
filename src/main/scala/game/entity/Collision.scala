@@ -3,16 +3,18 @@ package game.entity
 import data.Sprites
 import game.Constants.DEFAULT_EXP
 import game.entity.EntityType.Projectile
+import game.entity.Experience.*
 import game.entity.Health.*
 import game.entity.Hitbox.*
-import game.entity.Experience.*
 import game.entity.UpdateAction.{CollisionCheckAction, WaveUpdateAction}
+import game.event.*
 import game.{Constants, GameState, Point}
 
 import java.util.UUID
+import scala.language.postfixOps
 
 case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target: EntityType, creatorId: String) extends Component {
-  private def handleCollision(parentEntity: Entity, collidingEntity: Entity, gameState: GameState): GameState = {
+  private def handleCollision(parentEntity: Entity, collidingEntity: Entity, gameState: GameState): Seq[Event] = {
     if (collidingEntity[EntityTypeComponent].entityType == target && collidingEntity.isAlive) {
       if (explodes) {
         val explosionEntity = Entity(
@@ -26,48 +28,49 @@ case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target
           EntityTypeComponent(Projectile)
         )
 
-        gameState
-          .add(explosionEntity)
-          .remove(parentEntity.id)
+        Seq(
+          AddEntityEvent(explosionEntity),
+          RemoveEntityEvent(parentEntity.id)
+        )
       } else {
         val damagedEntity = collidingEntity.damage(damage)
 
-        gameState.updateEntity(damagedEntity.id, damagedEntity) match {
-          case gameState if damagedEntity.isDead =>
-            gameState
-              .updateEntity(creatorId, _.addExperience(DEFAULT_EXP))
-              .addMessage(s"$creatorId killed ${damagedEntity.id} and gained $DEFAULT_EXP experience")
-          case gameState =>
-            gameState
-        } match {
-          case gameState if persistent =>
-            gameState
-          case gameState =>
-            gameState
-              .remove(parentEntity.id)
-        }
+        Seq(
+          DamageEntityEvent(collidingEntity.id, damage)
+        ) ++ (if(damagedEntity.isDead) {
+          Seq(
+            RemoveEntityEvent(collidingEntity.id),
+            AddExperienceEvent(creatorId, DEFAULT_EXP)
+          )
+        } else {
+          Nil
+        }) ++ (if(persistent) {
+          Nil
+        } else {
+          Seq(RemoveEntityEvent(parentEntity.id))
+        })
       }
     } else {
-      gameState
+      Nil
     }
   }
 }
 
 object Collision {
   extension (entity: Entity) {
-    private def handleCollision(gameState: GameState, collidingEntity: Entity): GameState = entity.get[Collision] match {
+    private def handleCollision(gameState: GameState, collidingEntity: Entity): Seq[Event] = entity.get[Collision] match {
       case Some(collisionComponent) => collisionComponent.handleCollision(entity, collidingEntity, gameState)
-      case None => gameState
+      case None => Nil
     }
 
-    def collisionCheck(gameState: GameState): GameState = {
+    def collisionCheck(gameState: GameState): Seq[Event] = {
       val collisionHitbox = entity.hitbox
 
       if (gameState.dungeon.walls.intersect(collisionHitbox).nonEmpty)
-            gameState.remove(entity.id)
-      else gameState.entities.filter(entity.collidesWith).foldLeft(gameState){
-        case (state, collidingEntity) =>
-          handleCollision(state, collidingEntity)
+          Seq(RemoveEntityEvent(entity.id))
+      else gameState.entities.filter(entity.collidesWith).flatMap { 
+        collidingEntity =>
+          handleCollision(gameState, collidingEntity)
       }
     }
   }

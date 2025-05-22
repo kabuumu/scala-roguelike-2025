@@ -1,51 +1,49 @@
 package game.entity
 
+import game.entity.Collision.*
 import game.entity.Health.*
 import game.entity.Initiative.*
+import game.entity.Projectile.*
+import game.entity.Wave.*
+import game.event.{DecreaseInitiativeEvent, Event}
 import game.{EnemyAI, GameState, Point}
-import Wave.*
-import Projectile.*
-import Collision.*
 
 trait UpdateAction {
-  def apply(entity: Entity, gameState: GameState): GameState
+  def apply(entity: Entity, gameState: GameState): Seq[Event]
 }
 
 object UpdateAction {
   case object UpdateInitiative extends UpdateAction {
-    override def apply(entity: Entity, gameState: GameState): GameState = {
-      gameState.updateEntity(entity.id, {
-        case entity if entity.isAlive && entity.notReady =>
-          entity.decreaseInitiative()
-        case entity =>
-          entity
-      })
-    }
+    override def apply(entity: Entity, gameState: GameState): Seq[Event] =
+      if (entity.isAlive && entity.notReady)
+        Seq(DecreaseInitiativeEvent(entity.id))
+      else
+        Nil
   }
 
   case class AIAction(ai: EnemyAI) extends UpdateAction {
-    override def apply(entity: Entity, gameState: GameState): GameState = {
+    override def apply(entity: Entity, gameState: GameState): Seq[Event] = {
       if(entity.isReady)
         ai.getNextAction(entity, gameState).apply(entity, gameState)
       else
-        gameState
+        Nil
     }
   }
 
   object ProjectileUpdateAction extends UpdateAction {
-    override def apply(entity: Entity, gameState: GameState): GameState = {
-      entity.projectileUpdate(gameState)
+    override def apply(entity: Entity, gameState: GameState): Seq[Event] = {
+      entity.projectileUpdate()
     }
   }
 
   object CollisionCheckAction extends UpdateAction {
-    override def apply(entity: Entity, gameState: GameState): GameState = {
+    override def apply(entity: Entity, gameState: GameState): Seq[Event] = {
       entity.collisionCheck(gameState)
     }
   }
 
   object WaveUpdateAction extends UpdateAction {
-    override def apply(entity: Entity, gameState: GameState): GameState = {
+    override def apply(entity: Entity, gameState: GameState): Seq[Event] = {
       entity.waveUpdate(gameState)
     }
   }

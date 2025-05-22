@@ -5,5 +5,5 @@ import game.entity.{Entity, Movement}
 import game.entity.Movement.*
 
 case class MoveEvent(entityId: String, direction: Direction) extends EntityEvent {
-  override def event: Entity => Entity = _.update[Movement](_.move(direction))
+  override def action: Entity => Entity = _.update[Movement](_.move(direction))
 }

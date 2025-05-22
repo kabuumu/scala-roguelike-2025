@@ -6,9 +6,9 @@ import game.entity.Entity
 trait EntityEvent extends Event {
   def entityId: String
 
-  def event: Entity => Entity
+  def action: Entity => Entity
 
-  override def apply(gameState: GameState): GameState = gameState.updateEntity(entityId, event)
+  override def apply(gameState: GameState): GameState = gameState.updateEntity(entityId, action)
 }
 
 object EntityTest {

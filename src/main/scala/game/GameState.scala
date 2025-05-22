@@ -5,6 +5,7 @@ import game.entity.*
 import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
 import game.entity.UpdateController.*
+import game.event.*
 import map.Dungeon
 
 case class GameState(playerEntityId: String,
@@ -16,7 +17,7 @@ case class GameState(playerEntityId: String,
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
       case Some(action) if playerEntity.isReady =>
-        action.apply(playerEntity, this)
+        handleEvents(action.apply(playerEntity, this))
       case _ => this
     }
   }
@@ -25,9 +26,13 @@ case class GameState(playerEntityId: String,
     if (playerEntity.isReady) {
       this // wait for player to act
     } else {
-      entities.foldLeft(this) {
-        case (gameState, entity) =>
-          entity.update(gameState)
+      handleEvents(entities.flatMap(_.update(this)))
+    }
+
+  private def handleEvents(events: Seq[Event]): GameState = {
+    events.foldLeft(this) {
+      (gameState, event) =>
+        event(gameState)
     }
   }
 

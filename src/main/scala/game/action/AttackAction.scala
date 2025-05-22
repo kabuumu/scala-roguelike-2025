@@ -8,9 +8,11 @@ import game.entity.Initiative.*
 import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
 import game.{Item, *}
 import Health.*
+import game.event.*
+import game.event.ResetInitiativeEvent
 
 case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extends Action {
-  def apply(attackingEntity: Entity, gameState: GameState): GameState = {
+  def apply(attackingEntity: Entity, gameState: GameState): Seq[Event] = {
     optWeapon match {
       case Some(Weapon(damage, Item.Ranged(_))) =>
         val targetType = if (attackingEntity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
@@ -27,12 +29,10 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
             Hitbox()
           )
 
-        gameState
-          .add(projectileEntity)
-          .updateEntity(
-            attackingEntity.id,
-            attackingEntity.resetInitiative()
-          )
+        Seq(
+          AddEntityEvent(projectileEntity),
+          ResetInitiativeEvent(attackingEntity.id)
+        )
       case _ =>
         val damage = optWeapon match {
           case Some(weapon) => weapon.damage
@@ -40,14 +40,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
         }
         gameState.getActor(targetPosition) match {
           case Some(target) =>
-            gameState
-              .updateEntity(
-                target.id, target.damage(damage)
-              )
-              .updateEntity(
-                attackingEntity.id,
-                attackingEntity.resetInitiative()
-              )
+            Nil
           case _ =>
             throw new Exception(s"No target found at $targetPosition")
         }

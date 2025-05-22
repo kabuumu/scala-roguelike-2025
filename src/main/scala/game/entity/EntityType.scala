@@ -10,6 +10,10 @@ object EntityType {
     //TODO - remove default to player, potentially remove entity types entirely
     def entityType: EntityType = entity.get[EntityTypeComponent].map(_.entityType).getOrElse(EntityType.Player)
   }
+  
+  def unapply(entity: Entity): Option[EntityType] = {
+    entity.get[EntityTypeComponent].map(_.entityType)
+  }
 }
 
 enum EntityType(val isStatic: Boolean, val blocksMovement: Boolean):

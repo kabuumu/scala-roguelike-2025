@@ -2,10 +2,10 @@ package game.action
 
 import game.*
 import game.entity.*
+import game.event.Event
 
-//TODO - Add separate initiative costs for different actions
 trait Action {
-  def apply(entity: Entity, gameState: GameState): GameState
+  def apply(entity: Entity, gameState: GameState): Seq[Event]
 }
 
 

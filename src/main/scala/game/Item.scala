@@ -7,6 +7,7 @@ import game.entity.EntityType.*
 import game.entity.Health.*
 import game.entity.Initiative.*
 import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
+import game.event.{AddEntityEvent, Event, HealEvent, MessageEvent, RemoveItemEvent, ResetInitiativeEvent}
 
 object Item {
   val potionValue = 5
@@ -35,9 +36,9 @@ object Item {
   }
 
   enum ItemEffect {
-    case EntityTargeted(effect: Entity => Entity => GameState => GameState)
-    case PointTargeted(effect: Point => Entity => GameState => GameState)
-    case NonTargeted(effect: Entity => GameState => GameState)
+    case EntityTargeted(effect: Entity => Entity => GameState => Seq[Event])
+    case PointTargeted(effect: Point => Entity => GameState => Seq[Event])
+    case NonTargeted(effect: Entity => GameState => Seq[Event])
   }
 
   enum TargetType:
@@ -51,18 +52,15 @@ object Item {
         entity =>
           gameState =>
             if (entity.hasFullHealth)
-              gameState
-                .addMessage(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} is already at full health")
+              Seq(
+                MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} is already at full health")
+              )
             else
-              gameState.updateEntity(
-                entity.id,
-                _.heal(Item.potionValue)
-              ).updateEntity(
-                entity.id,
-                _.update[Inventory](_ - this)
-                  .resetInitiative()
-              ).addMessage(
-                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a potion to heal ${Item.potionValue} health"
+              Seq(
+                HealEvent(entity.id, Item.potionValue),
+                RemoveItemEvent(entity.id, this),
+                ResetInitiativeEvent(entity.id),
+                MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a potion to heal ${Item.potionValue} health")
               )
       }
   }
@@ -89,15 +87,12 @@ object Item {
                 Hitbox()
               )
 
-            gameState
-              .add(fireballEntity)
-              .updateEntity(
-                entity.id,
-                _.update[Inventory](_ - this)
-                  .resetInitiative(),
-              ).addMessage(
-                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Scroll to attack $target"
-              )
+            Seq(
+              AddEntityEvent(fireballEntity),
+              RemoveItemEvent(entity.id, this),
+              ResetInitiativeEvent(entity.id),
+              MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} threw a fireball at ${target}"),
+            )
           }
       }
   }
@@ -124,16 +119,13 @@ object Item {
                 Collision(damage = bowDamage, explodes = false, persistent = false, targetType, entity.id),
                 Hitbox()
               )
-
-            gameState
-              .add(projectileEntity)
-              .updateEntity(
-                entity.id,
-                _.update[Inventory](_ - Arrow)
-                  .resetInitiative()
-              ).addMessage(
-                s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Bow to attack ${target.id}"
-              )
+            
+            Seq(
+              AddEntityEvent(projectileEntity),
+              RemoveItemEvent(entity.id, Arrow),
+              ResetInitiativeEvent(entity.id),
+              MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Bow to attack ${target.id}"),
+            )
           }
     }
   }

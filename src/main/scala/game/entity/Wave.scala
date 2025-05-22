@@ -3,6 +3,7 @@ package game.entity
 import game.{GameState, Point}
 import game.entity.Drawable.*
 import game.entity.Hitbox.*
+import game.event.{Event, RemoveEntityEvent, WaveUpdateEvent}
 
 case class Wave(range: Int) extends Component {
   //If range is > 0, expand hitbox and drawable outwards in all directions and decrease range by one
@@ -41,14 +42,16 @@ case class Wave(range: Int) extends Component {
 
 object Wave {
   extension (entity: Entity) {
-    def waveUpdate(gameState: GameState): GameState = {
+    def waveUpdate(gameState: GameState): Seq[Event] = {
       entity.get[Wave] match {
         case Some(wave) if wave.range > 0 =>
-          gameState.updateEntity(entity.id, wave.update)
+          Seq(WaveUpdateEvent(entity.id))
         case Some(wave) if wave.range <= 0 =>
-          gameState.remove(entity.id)
+          Seq(
+            RemoveEntityEvent(entity.id)
+          )
         case _ =>
-          gameState
+          Nil
       }
     }
   }
