@@ -85,7 +85,7 @@ object Item {
                 UpdateController(ProjectileUpdateAction, CollisionCheckAction),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
-                Collision(damage = scrollDamage, explodes = true, persistent = false, targetType),
+                Collision(damage = scrollDamage, explodes = true, persistent = false, targetType, entity.id),
                 Hitbox()
               )
 
@@ -121,7 +121,7 @@ object Item {
                 UpdateController(ProjectileUpdateAction, CollisionCheckAction),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
-                Collision(damage = bowDamage, explodes = false, persistent = false, targetType),
+                Collision(damage = bowDamage, explodes = false, persistent = false, targetType, entity.id),
                 Hitbox()
               )
 

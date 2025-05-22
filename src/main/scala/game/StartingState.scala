@@ -7,12 +7,15 @@ import game.entity.*
 import game.entity.UpdateAction.{AIAction, UpdateInitiative}
 import map.{Dungeon, MapGenerator}
 
+import java.util.UUID
+
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 4)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 2 == 0 =>
       Entity(
+        id = s"Rat ${UUID.randomUUID}",
         Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
@@ -26,6 +29,7 @@ object StartingState {
       )
     case (point, _) =>
       Entity(
+        id = s"Snake ${UUID.randomUUID}",
         Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
@@ -60,6 +64,7 @@ object StartingState {
         UpdateController(UpdateInitiative),
         Drawable(Sprites.playerSprite),
         Hitbox(),
+        Experience(),
       )
   }
 

@@ -152,10 +152,9 @@ object App extends JFXApp3 {
     }
 
     drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player[Movement].position)
-    //    drawPlayerHearts(canvas, player)
     drawHealthBar(canvas, player)
     drawInventory(canvas, player, state.uiState)
-    drawUnusableItems(canvas, player)
+    drawKeys(canvas, player)
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
@@ -260,37 +259,6 @@ object App extends JFXApp3 {
     }
   }
 
-  def drawPlayerHearts(canvas: Canvas, player: Entity): Unit = {
-    val heartWidth = spriteScale * uiScale
-    val heartHeight = spriteScale * uiScale
-    val maxHearts = player[Health].max / 2
-    val fullHearts = player[Health].current / 2
-    val hasHalfHeart = player[Health].current % 2 != 0
-
-    canvas.graphicsContext2D.setGlobalAlpha(1)
-
-    for (i <- 0 until maxHearts) {
-      val heartX = i * heartWidth
-      val heartY = 0
-      val sprite = if (i < fullHearts) Sprites.fullHeartSprite
-      else if (i == fullHearts && hasHalfHeart) Sprites.halfHeartSprite
-      else Sprites.emptyHeartSprite
-
-      canvas.graphicsContext2D.drawImage(
-        spriteSheet,
-        sprite.x * spriteScale,
-        sprite.y * spriteScale,
-        spriteScale,
-        spriteScale,
-        heartX,
-        heartY,
-        heartWidth,
-        heartHeight
-      )
-    }
-  }
-
-
   private def drawHealthBar(canvas: Canvas, player: Entity): Unit = {
     canvas.graphicsContext2D.setGlobalAlpha(1)
 
@@ -377,7 +345,7 @@ object App extends JFXApp3 {
   }
 
 
-  def drawUnusableItems(canvas: Canvas, player: Entity): Unit = {
+  def drawKeys(canvas: Canvas, player: Entity): Unit = {
     val itemWidth = spriteScale * uiScale
     val itemHeight = spriteScale * uiScale
 

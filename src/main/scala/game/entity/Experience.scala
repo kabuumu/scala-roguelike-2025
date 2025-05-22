@@ -1,6 +1,6 @@
 package game.entity
 
-case class Experience(currentExperience: Int) extends Component {
+case class Experience(currentExperience: Int = 0) extends Component {
   val levelConstant = 10
 
   val currentLevel: Int = {

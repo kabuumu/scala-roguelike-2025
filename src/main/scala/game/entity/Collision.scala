@@ -1,15 +1,17 @@
 package game.entity
 
 import data.Sprites
+import game.Constants.DEFAULT_EXP
 import game.entity.EntityType.Projectile
 import game.entity.Health.*
 import game.entity.Hitbox.*
+import game.entity.Experience.*
 import game.entity.UpdateAction.{CollisionCheckAction, WaveUpdateAction}
-import game.{GameState, Point}
+import game.{Constants, GameState, Point}
 
 import java.util.UUID
 
-case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target: EntityType) extends Component {
+case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target: EntityType, creatorId: String) extends Component {
   private def handleCollision(parentEntity: Entity, collidingEntity: Entity, gameState: GameState): GameState = {
     if (collidingEntity[EntityTypeComponent].entityType == target && collidingEntity.isAlive) {
       if (explodes) {
@@ -17,7 +19,7 @@ case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target
           s"explosion ${UUID.randomUUID()}",
           Hitbox(Set(Point(0, 0))),
           parentEntity[Movement],
-          Collision(damage = damage, explodes = false, persistent = true, target),
+          Collision(damage = damage, explodes = false, persistent = true, target, creatorId),
           UpdateController(CollisionCheckAction, WaveUpdateAction),
           Drawable(Sprites.projectileSprite),
           Wave(2),
@@ -27,13 +29,23 @@ case class Collision(damage: Int, explodes: Boolean, persistent: Boolean, target
         gameState
           .add(explosionEntity)
           .remove(parentEntity)
-      } else if (persistent) {
-        gameState
-          .updateEntity(collidingEntity.id, _.damage(damage))
       } else {
-        gameState
-          .updateEntity(collidingEntity.id, _.damage(damage))
-          .remove(parentEntity)
+        val damagedEntity = collidingEntity.damage(damage)
+
+        gameState.updateEntity(damagedEntity.id, damagedEntity) match {
+          case gameState if damagedEntity.isDead =>
+            gameState
+              .updateEntity(creatorId, _.addExperience(DEFAULT_EXP))
+              .addMessage(s"$creatorId killed ${damagedEntity.id} and gained $DEFAULT_EXP experience")
+          case gameState =>
+            gameState
+        } match {
+          case gameState if persistent =>
+            gameState
+          case gameState =>
+            gameState
+              .remove(parentEntity)
+        }
       }
     } else {
       gameState

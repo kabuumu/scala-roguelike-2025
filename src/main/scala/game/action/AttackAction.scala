@@ -23,7 +23,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
             UpdateController(ProjectileUpdateAction, CollisionCheckAction),
             EntityTypeComponent(EntityType.Projectile),
             Drawable(Sprites.projectileSprite),
-            Collision(damage = damage, explodes = false, persistent = false, targetType),
+            Collision(damage = damage, explodes = false, persistent = false, targetType, ""),
             Hitbox()
           )
 
