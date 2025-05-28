@@ -1,5 +1,5 @@
 package game
 
 object Constants {
-  final val DEFAULT_EXP = 10
+  final val DEFAULT_EXP = 250
 }

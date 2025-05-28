@@ -5,7 +5,10 @@ import game.*
 import game.Item.Item
 import game.entity.*
 import game.entity.Drawable.*
+import game.entity.EntityType.*
+import game.entity.Health.*
 import game.entity.Inventory.*
+import game.entity.Movement.*
 import map.TileType
 import scalafx.Includes.*
 import scalafx.Resources.*
@@ -83,7 +86,7 @@ object App extends JFXApp3 {
     updateMessageArea(controller, messageArea)
 
     AnimationTimer { (currentTime: Long) =>
-      if (controller.gameState.playerEntity[Health].current <= 0) {
+      if (controller.gameState.playerEntity.currentHealth <= 0) {
         println("Game Over")
       }
       val newController = controller.update(keyCodes.headOption.map(InputTranslator.translateKeyCode), currentTime)
@@ -95,7 +98,8 @@ object App extends JFXApp3 {
       }
 
       if (newController.gameState.drawableChanges != controller.gameState.drawableChanges
-        || newController.uiState != controller.uiState) {
+        || newController.uiState != controller.uiState
+        || newController.gameState.messages != controller.gameState.messages) {
         updateCanvas(newController, canvas, spriteSheet)
       }
 
@@ -110,15 +114,15 @@ object App extends JFXApp3 {
 
     //Update to draw entities relative to the player
     val player = state.gameState.playerEntity
-    val Point(playerX, playerY) = player[Movement].position
+    val Point(playerX, playerY) = player.position
 
     val (xOffset, yOffset) = (playerX - (canvasX / 2), playerY - (canvasY / 2))
 
     val playerVisiblePoints = state.gameState.playerVisiblePoints
     val visibleEntities = state.gameState.entities.filter {
       entity =>
-        (entity[Movement].position.getChebyshevDistance(player[Movement].position) <= canvasX / 2)
-          && (player.exists[SightMemory](_.seenPoints.contains(entity[Movement].position)) || debugOmniscience)
+        (entity.position.getChebyshevDistance(player.position) <= canvasX / 2)
+          && (player.exists[SightMemory](_.seenPoints.contains(entity.position)) || debugOmniscience)
     }
 
 
@@ -143,18 +147,19 @@ object App extends JFXApp3 {
         entity.get[Drawable].map(_.sprites.head._2.layer).getOrElse(0)
     }.foreach {
       entity =>
-        val visible = playerVisiblePoints.contains(entity[Movement].position)
+        val visible = playerVisiblePoints.contains(entity.position)
 
         //Do not draw dynamic entities that are not visible
-        if (entity[EntityTypeComponent].entityType.isStatic || visible) {
+        if (entity.entityType.isStatic || visible) {
           drawEntity(entity, canvas, spriteSheet, xOffset, yOffset, visible)
         }
     }
 
-    drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player[Movement].position)
+    drawUiElements(state.uiState, canvas, spriteSheet, xOffset, yOffset, player.position)
     drawHealthBar(canvas, player)
     drawInventory(canvas, player, state.uiState)
     drawKeys(canvas, player)
+    drawExperienceBar(canvas, player)
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
@@ -216,7 +221,7 @@ object App extends JFXApp3 {
       case ScrollSelect(cursor, _) =>
         Some(cursor)
       case list: UIState.ListSelect[Entity] if list.list.head.isInstanceOf[Entity] =>
-        val position = list.list(list.index)[Movement].position
+        val position = list.list(list.index).position
         Some(position)
       case _ =>
         None
@@ -267,8 +272,8 @@ object App extends JFXApp3 {
     val xOffset = (spriteScale * uiScale) / 2 // X position of the bar
     val yOffset = (spriteScale * uiScale) / 4 // Y position of the bar
 
-    val currentHealth = player[Health].current
-    val maxHealth = player[Health].max
+    val currentHealth = player.currentHealth
+    val maxHealth = player.maxHealth
 
     // Calculate the width of the filled portion of the health bar
     val filledWidth = (currentHealth.toDouble / maxHealth) * barWidth
@@ -308,7 +313,7 @@ object App extends JFXApp3 {
 
     for (((item, quantity), index) <- groupedItems.zipWithIndex) {
       val itemX = (itemWidth / 2) + index * (itemWidth * 1.5)
-      val itemY = spriteScale * uiScale
+      val itemY = spriteScale * uiScale * 1.5
       val sprite = Sprites.itemSprites(item)
 
       uiState match {
@@ -350,11 +355,11 @@ object App extends JFXApp3 {
     val itemHeight = spriteScale * uiScale
 
     canvas.graphicsContext2D.setGlobalAlpha(1)
-    val keys = player[Inventory].items.filter(_.isInstanceOf[Item.Key])
+    val keys = player.items.filter(_.isInstanceOf[Item.Key])
 
     for (i <- keys.indices) {
       val itemX = (itemWidth / 2) + i * itemWidth
-      val itemY = spriteScale * uiScale * 2
+      val itemY = spriteScale * uiScale * 2.5
       val key = keys(i)
       val sprite = Sprites.itemSprites(key)
 
@@ -370,5 +375,47 @@ object App extends JFXApp3 {
         itemHeight
       )
     }
+  }
+
+  def drawExperienceBar(canvas: Canvas, player: Entity): Unit = {
+    import Experience.*
+
+    val barWidth = (spriteScale * uiScale) * 4 // Total width of the experience bar
+    val barHeight = (spriteScale * uiScale) / 4 // Height of the experience bar
+    val xOffset = (spriteScale * uiScale) / 2 // X position of the bar
+    val yOffset = (spriteScale * uiScale) // Y position of the bar
+
+    val currentExp = player.experience
+    val nextLevelExp = player.nextLevelExperience
+
+    val drawableCurrentExperience = currentExp - player.previousLevelExperience
+    val drawableNextLevelExperience = nextLevelExp - player.previousLevelExperience
+
+    // Calculate the width of the filled portion of the experience bar
+    val filledWidth: Double = if (player.canLevelUp) barWidth else (drawableCurrentExperience.toDouble / drawableNextLevelExperience) * barWidth
+
+    val gc = canvas.graphicsContext2D
+
+    // Draw the background of the experience bar (gray)
+    gc.setFill(Color.Gray)
+    gc.fillRect(xOffset, yOffset, barWidth, barHeight)
+
+    // Draw the filled portion of the experience bar (blue)
+    gc.setFill(Color.Yellow)
+    gc.fillRect(xOffset, yOffset, filledWidth, barHeight)
+
+    // Draw the border around the experience bar
+    gc.setStroke(Color.White) // Set border color
+    gc.setLineWidth(uiScale) // Set border thickness
+    gc.strokeRect(xOffset, yOffset, barWidth, barHeight)
+
+    if (player.canLevelUp)
+      //Display text saying "Press 'L' to level up!"
+      gc.fillText(
+        "Press 'L' to level up!",
+        xOffset + barWidth + xOffset,
+        yOffset + barHeight
+      )
+
   }
 }

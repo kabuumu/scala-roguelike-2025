@@ -6,8 +6,9 @@ import game.entity.*
 import game.entity.EntityType.*
 import game.entity.Health.*
 import game.entity.Initiative.*
+import game.entity.Movement.*
 import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
-import game.event.{AddEntityEvent, Event, HealEvent, MessageEvent, RemoveItemEvent, ResetInitiativeEvent}
+import game.event.*
 
 object Item {
   val potionValue = 5
@@ -53,14 +54,14 @@ object Item {
           gameState =>
             if (entity.hasFullHealth)
               Seq(
-                MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} is already at full health")
+                MessageEvent(s"${System.nanoTime()}: ${entity.entityType} is already at full health")
               )
             else
               Seq(
                 HealEvent(entity.id, Item.potionValue),
                 RemoveItemEvent(entity.id, this),
                 ResetInitiativeEvent(entity.id),
-                MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a potion to heal ${Item.potionValue} health")
+                MessageEvent(s"${System.nanoTime()}: ${entity.entityType} used a potion to heal ${Item.potionValue} health")
               )
       }
   }
@@ -74,7 +75,7 @@ object Item {
             val scrollDamage = 3
 
             val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-            val startingPosition = entity[Movement].position
+            val startingPosition = entity.position
             val fireballEntity =
               Entity(
                 id = s"Projectile-${System.nanoTime()}",
@@ -91,7 +92,7 @@ object Item {
               AddEntityEvent(fireballEntity),
               RemoveItemEvent(entity.id, this),
               ResetInitiativeEvent(entity.id),
-              MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} threw a fireball at ${target}"),
+              MessageEvent(s"${System.nanoTime()}: ${entity.entityType} threw a fireball at ${target}"),
             )
           }
       }
@@ -107,12 +108,12 @@ object Item {
           gameState => {
             val bowDamage = 2
             val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-            val startingPosition = entity[Movement].position
+            val startingPosition = entity.position
             val projectileEntity =
               Entity(
                 id = s"Projectile-${System.nanoTime()}",
                 Movement(position = startingPosition),
-                game.entity.Projectile(startingPosition, target[Movement].position, targetType, bowDamage),
+                game.entity.Projectile(startingPosition, target.position, targetType, bowDamage),
                 UpdateController(ProjectileUpdateAction, CollisionCheckAction),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
@@ -124,7 +125,7 @@ object Item {
               AddEntityEvent(projectileEntity),
               RemoveItemEvent(entity.id, Arrow),
               ResetInitiativeEvent(entity.id),
-              MessageEvent(s"${System.nanoTime()}: ${entity[EntityTypeComponent]} used a Bow to attack ${target.id}"),
+              MessageEvent(s"${System.nanoTime()}: ${entity.entityType} used a Bow to attack ${target.id}"),
             )
           }
     }

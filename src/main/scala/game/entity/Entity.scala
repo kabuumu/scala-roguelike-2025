@@ -1,18 +1,22 @@
 package game.entity
 
+import game.status.StatusEffect
+
 import java.util.UUID
 import scala.reflect.ClassTag
 
-case class Entity(
-                   id: String = UUID.randomUUID().toString,
-                   components: Map[Class[? <: Component], Component] = Map.empty
+case class Entity(id: String = UUID.randomUUID().toString,
+                  components: Map[Class[? <: Component], Component] = Map.empty,
+                  entityStatuses: Seq[StatusEffect] = Nil
                  ) {
-  // This is the unsafe version of the get method
-  @deprecated
-  def apply[ComponentType <: Component](implicit classTag: ClassTag[ComponentType]): ComponentType = {
-    get[ComponentType].get
+  def addStatusEffect(statusEffect: StatusEffect): Entity = {
+    copy(entityStatuses = entityStatuses :+ statusEffect)
   }
 
+  def removeStatusEffect(statusEffect: StatusEffect): Entity = {
+    copy(entityStatuses = entityStatuses.filterNot(_ == statusEffect))
+  }
+  
   def addComponent(component: Component): Entity = {
     copy(components = components + (component.getClass -> component))
   }
@@ -22,11 +26,19 @@ case class Entity(
   }
 
   def get[ComponentType <: Component](implicit classTag: ClassTag[ComponentType]): Option[ComponentType] = {
-    components.get(classTag.runtimeClass.asInstanceOf[Class[ComponentType]]).map(_.asInstanceOf[ComponentType])
+    entityStatuses.foldLeft(this) { (entity, effect) =>
+        effect(entity)
+      }.getBase[ComponentType]
+  }
+  
+  def getBase[ComponentType <: Component](implicit classTag: ClassTag[ComponentType]): Option[ComponentType] = {
+    components
+      .get(classTag.runtimeClass.asInstanceOf[Class[ComponentType]])
+      .map(_.asInstanceOf[ComponentType])
   }
 
   def update[ComponentType <: Component](updateFunction: ComponentType => ComponentType)(implicit classTag: ClassTag[ComponentType]): Entity = {
-    get[ComponentType] match {
+    getBase[ComponentType] match {
       case Some(component) =>
         val updatedComponent = updateFunction(component)
         copy(components = components + (classTag.runtimeClass.asInstanceOf[Class[? <: Component]] -> updatedComponent))

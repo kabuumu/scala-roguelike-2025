@@ -16,6 +16,8 @@ case class Health(current: Int, max: Int) extends Component {
 
   val isAlive: Boolean = current > 0
   val isDead: Boolean = current <= 0
+  
+  def setToFull(): Health = Health(max, max)
 }
 
 object Health {

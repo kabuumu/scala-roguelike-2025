@@ -4,19 +4,19 @@ import data.Sprites
 import game.Item.*
 import game.entity.*
 import game.entity.EntityType.entityType
+import game.entity.Health.*
 import game.entity.Initiative.*
+import game.entity.Movement.*
 import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
-import game.{Item, *}
-import Health.*
 import game.event.*
-import game.event.ResetInitiativeEvent
+import game.{Item, *}
 
 case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extends Action {
   def apply(attackingEntity: Entity, gameState: GameState): Seq[Event] = {
     optWeapon match {
       case Some(Weapon(damage, Item.Ranged(_))) =>
         val targetType = if (attackingEntity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-        val startingPosition = attackingEntity[Movement].position
+        val startingPosition = attackingEntity.position
         val projectileEntity =
           Entity(
             id = s"Projectile-${System.nanoTime()}",

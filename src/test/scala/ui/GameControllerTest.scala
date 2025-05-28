@@ -1,11 +1,11 @@
 package ui
 
 import data.Sprites
-import game.Direction.Up
-import game.Input.Wait
+import game.Direction.{Down, Up}
 import game.Item.*
 import game.entity.*
 import game.entity.EntityType.*
+import game.entity.Experience.*
 import game.entity.Health.*
 import game.entity.Inventory.*
 import game.entity.UpdateAction.UpdateInitiative
@@ -13,8 +13,8 @@ import game.{GameState, Input, Point}
 import map.Dungeon
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import ui.GameController.{frameTime, framesPerSecond}
-import ui.UIState.Move
+import ui.GameController.frameTime
+import ui.UIState.{Move, ScrollSelect}
 
 
 class GameControllerTest extends AnyFunSuiteLike with Matchers {
@@ -30,7 +30,8 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
     SightMemory(),
     UpdateController(UpdateInitiative),
     Drawable(Sprites.playerSprite),
-    Hitbox()
+    Hitbox(),
+    Experience(),
   )
 
   test("Player initiative should decrease when not 0") {
@@ -91,7 +92,10 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
   }
 
   test("Player firing an arrow at an enemy entity") {
-    val playerWithBowAndArrow = playerEntity.addItem(Bow).addItem(Arrow).update[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
+    val playerWithBowAndArrow = playerEntity
+      .addItem(Bow)
+      .addItem(Arrow)
+      .update[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
 
     val enemyEntity = Entity(
       id = "enemyId",
@@ -131,7 +135,79 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
     afterCollision.gameState.entities.count(_.entityType == EntityType.Projectile) shouldBe 0
     afterCollision.gameState.entities.find(_.id == enemyEntity.id).get.currentHealth shouldBe 8
+  }
+
+  test("Player fires a fireball that hits multiple enemies, removing them and granting experience") {
+    val playerWithScroll = playerEntity
+      .addItem(Scroll)
+      .update[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
 
 
+    val enemy1 = Entity(
+      id = "enemy1",
+      Movement(position = Point(4, 7)),
+      EntityTypeComponent(EntityType.Enemy),
+      Health(2),
+      Initiative(10),
+      Inventory(),
+      SightMemory(),
+      UpdateController(UpdateInitiative),
+      Drawable(Sprites.enemySprite),
+      Hitbox()
+    )
+
+    val enemy2 = Entity(
+      id = "enemy2",
+      Movement(position = Point(5, 7)),
+      EntityTypeComponent(EntityType.Enemy),
+      Health(2),
+      Initiative(10),
+      Inventory(),
+      SightMemory(),
+      UpdateController(UpdateInitiative),
+      Drawable(Sprites.enemySprite),
+      Hitbox()
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(playerWithScroll, enemy1, enemy2),
+      messages = Nil,
+      dungeon = Dungeon()
+    )
+    val gameController = GameController(Move, gameState)
+
+    // Simulate using the fireball scroll and targeting the enemies' position
+    val beforeFiringFireball = gameController
+      .update(Some(Input.UseItem), frameTime) // Enter use item state
+      .update(Some(Input.UseItem), frameTime * 2) // Select scroll
+      .update(Some(Input.Move(Down)), frameTime * 3) // Move target cursor up
+
+    beforeFiringFireball.uiState.asInstanceOf[ScrollSelect].cursor shouldBe Point(4, 5)
+    
+    val afterFiringFireball = beforeFiringFireball
+      .update(Some(Input.UseItem), frameTime * 4) // Confirm fireball target
+      
+    val fireballMoving = afterFiringFireball
+      .update(None, frameTime * 5) // Process explosion/collision
+      .update(None, frameTime * 6) // Process entity removals and experience
+      .update(None, frameTime * 7) // Process entity removals and experience
+      .update(None, frameTime * 8) 
+      
+    val afterCollision = afterFiringFireball  // Process entity removals and experience
+      .update(None, frameTime * 9) // Process entity removals and experience
+      .update(None, frameTime * 10) // Process entity removals and experience
+      .update(None, frameTime * 11) // Process entity removals and experience
+      .update(None, frameTime * 12) // Process entity removals and experience
+      .update(None, frameTime * 13) // Process entity removals and experience
+      .update(None, frameTime * 14) // Process entity removals and experience
+
+    // Both enemies should be removed
+    afterCollision.gameState.entities.find(_.id == "enemy1").get.isDead shouldBe true
+    afterCollision.gameState.entities.find(_.id == "enemy2").get.isDead shouldBe true
+
+    // Player should have gained experience for both enemies
+    val expectedExp = game.Constants.DEFAULT_EXP * 2
+    afterCollision.gameState.playerEntity.experience shouldBe expectedExp
   }
 }

@@ -11,4 +11,6 @@ object Input {
   case object Cancel extends Input
   case object UseItem extends Input
   case object Interact extends Input
+  case object Confirm extends Input
+  case object LevelUp extends Input
 }

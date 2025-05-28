@@ -1,6 +1,7 @@
 package scalafx
 import game.Direction
 import game.Input.*
+import scalafx.scene.control.Alert.AlertType.Confirmation
 import scalafx.scene.input.KeyCode
 
 object InputTranslator {
@@ -15,6 +16,8 @@ object InputTranslator {
       case KeyCode.E => Interact
       case KeyCode.U => UseItem
       case KeyCode.C | KeyCode.Escape => Cancel
+      case KeyCode.Space | KeyCode.Enter => Confirm
+      case KeyCode.L => LevelUp
       case _ => Wait
     }
   }

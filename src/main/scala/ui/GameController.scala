@@ -6,7 +6,13 @@ import game.Item.ChargeType.{Ammo, SingleUse}
 import game.Item.ItemEffect.{EntityTargeted, NonTargeted, PointTargeted}
 import game.action.*
 import game.entity.*
+import game.entity.EntityType.*
+import game.entity.Experience.*
+import game.entity.Health.*
+import game.entity.Initiative.*
 import game.entity.Inventory.*
+import game.entity.Movement.*
+import game.perk.IncreaseMaxHealthPerk
 import game.{Item, *}
 import ui.GameController.*
 import ui.UIState.UIState
@@ -35,7 +41,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     if (delta >= ticksPerSecond / framesPerSecond) {
       (optInput match {
         //To ensure inputs only happen at a certain rate
-        case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond =>
+        case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond && gameState.playerEntity.isReady =>
           val (newUiState, optAction) = handleInput(input)
           val newGameState = gameState.update(optAction)
 
@@ -65,8 +71,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           (UIState.Move, Some(MoveAction(direction)))
         case Input.Attack(attackType) =>
           val optWeapon = attackType match {
-            case Input.PrimaryAttack => gameState.playerEntity[Inventory].primaryWeapon
-            case Input.SecondaryAttack => gameState.playerEntity[Inventory].secondaryWeapon
+            case Input.PrimaryAttack => gameState.playerEntity.get[Inventory].get.primaryWeapon
+            case Input.SecondaryAttack => gameState.playerEntity.get[Inventory].get.secondaryWeapon
           }
 
           val range = optWeapon match {
@@ -79,7 +85,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.ListSelect(
               list = enemies,
               effect = target => {
-                (UIState.Move, Some(AttackAction(target[Movement].position, optWeapon)))
+                (UIState.Move, Some(AttackAction(target.position, optWeapon)))
               }
             ), None)
           } else {
@@ -112,7 +118,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
                     }
                   case PointTargeted(effect) =>
                     (UIState.ScrollSelect(
-                      gameState.playerEntity[Movement].position,
+                      gameState.playerEntity.position,
                       target => (
                         UIState.Move,
                         Some(UseItemAction(effect(target))))
@@ -125,13 +131,16 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
               }
             }
           ), None)
+        case Input.LevelUp if gameState.playerEntity.canLevelUp =>
+          //Give player choice of level up perks
+          (UIState.Move, Some(LevelUpAction(IncreaseMaxHealthPerk(10))))
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
       }
     case listSelect: UIState.ListSelect[_] =>
       input match {
         case Input.Move(direction) => (listSelect.iterate, None)
-        case Input.UseItem | Input.Attack(_) =>
+        case Input.UseItem | Input.Attack(_) | Input.Confirm =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
@@ -140,13 +149,13 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(direction) =>
           val newCursor = scrollSelect.cursor + direction
-          if(newCursor.isWithinRangeOf(gameState.playerEntity[Movement].position, 8)
+          if (newCursor.isWithinRangeOf(gameState.playerEntity.position, 8)
             && gameState.getVisiblePointsFor(gameState.playerEntity).contains(newCursor)) {
             (scrollSelect.copy(cursor = newCursor), None)
           } else {
             (scrollSelect, None)
           }
-        case Input.UseItem | Input.Attack(_) =>
+        case Input.UseItem | Input.Attack(_) | Input.Confirm =>
           scrollSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
@@ -155,12 +164,12 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
   }
 
   def enemiesWithinRange(range: Int): Seq[Entity] = gameState.entities.filter { enemyEntity =>
-    enemyEntity[EntityTypeComponent].entityType == EntityType.Enemy
+    enemyEntity.entityType == EntityType.Enemy
       &&
-      gameState.playerEntity[Movement].position.isWithinRangeOf(enemyEntity[Movement].position, range)
+      gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range)
       &&
-      gameState.getVisiblePointsFor(gameState.playerEntity).contains(enemyEntity[Movement].position)
+      gameState.getVisiblePointsFor(gameState.playerEntity).contains(enemyEntity.position)
       &&
-      enemyEntity[Health].isAlive
-  }.sortBy(enemyEntity => enemyEntity[Movement].position.getChebyshevDistance(gameState.playerEntity[Movement].position))
+      enemyEntity.isAlive
+  }.sortBy(enemyEntity => enemyEntity.position.getChebyshevDistance(gameState.playerEntity.position))
 }
