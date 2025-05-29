@@ -8,15 +8,6 @@ trait EntityEvent extends Event {
 
   def action: Entity => Entity
 
-  override def apply(gameState: GameState): GameState = gameState.updateEntity(entityId, action)
-}
-
-object EntityTest {
-  // Player attacks an enemy with a projectile attack (bow)
-  // Update initiative for player
-  // Create projectile
-  // OnCollision
-  // Remove projectile entity
-  // Damage enemy
-  // If enemy is dead, create update experience for player
+  override def apply(gameState: GameState): (GameState, Seq[Event]) =
+    (gameState.updateEntity(entityId, action), Nil)
 }

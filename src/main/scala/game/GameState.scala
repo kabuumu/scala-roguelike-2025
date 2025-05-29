@@ -8,6 +8,8 @@ import game.entity.UpdateController.*
 import game.event.*
 import map.Dungeon
 
+import scala.annotation.tailrec
+
 case class GameState(playerEntityId: String,
                      entities: Seq[Entity],
                      messages: Seq[String] = Nil,
@@ -29,10 +31,12 @@ case class GameState(playerEntityId: String,
       handleEvents(entities.flatMap(_.update(this)))
     }
 
+  @scala.annotation.tailrec
   private def handleEvents(events: Seq[Event]): GameState = {
-    events.foldLeft(this) {
-      (gameState, event) =>
-        event(gameState)
+    if (events.isEmpty) this
+    else {
+      val (newGameState, newEvents) = events.head.apply(this)
+      newGameState.handleEvents(newEvents ++ events.tail)
     }
   }
 
