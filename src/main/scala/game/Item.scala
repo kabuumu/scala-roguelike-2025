@@ -6,7 +6,7 @@ import game.entity.*
 import game.entity.EntityType.*
 import game.entity.Health.*
 import game.entity.Movement.*
-import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction, WaveUpdateAction}
+import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction, RangeCheckAction, WaveUpdateAction}
 import game.event.*
 
 import java.util.UUID
@@ -80,7 +80,7 @@ object Item {
               def explosionEntity(parentEntity: Entity) = Entity(
                 s"explosion ${UUID.randomUUID()}",
                 Hitbox(Set(Point(0, 0))),
-                Collision(damage = 2, persistent = true, targetType, entity.id),
+                Collision(damage = scrollDamage, persistent = true, targetType, entity.id),
                 Movement(position = parentEntity.position),
                 UpdateController(CollisionCheckAction, WaveUpdateAction),
                 Drawable(Sprites.projectileSprite),
@@ -92,8 +92,8 @@ object Item {
               Entity(
                 id = s"Projectile-${System.nanoTime()}",
                 Movement(position = startingPosition),
-                game.entity.Projectile(startingPosition, target, targetType, scrollDamage),
-                UpdateController(ProjectileUpdateAction, CollisionCheckAction),
+                game.entity.Projectile(startingPosition, target, targetType, 0),
+                UpdateController(ProjectileUpdateAction, CollisionCheckAction, RangeCheckAction),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
                 Collision(damage = scrollDamage, persistent = false, targetType, entity.id),
@@ -131,7 +131,7 @@ object Item {
                 id = s"Projectile-${System.nanoTime()}",
                 Movement(position = startingPosition),
                 game.entity.Projectile(startingPosition, target.position, targetType, bowDamage),
-                UpdateController(ProjectileUpdateAction, CollisionCheckAction),
+                UpdateController(ProjectileUpdateAction, CollisionCheckAction, RangeCheckAction),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
                 Collision(damage = bowDamage, persistent = false, targetType, entity.id),

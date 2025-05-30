@@ -20,8 +20,6 @@ case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) exte
     val newExperience = currentExperience + amount
     val newLevelUp = levelUp || newExperience >= nextLevelExperience
     
-    println(s"Adding $amount experience to entity. Current: $currentExperience, New: $newExperience, Level Up: $newLevelUp")
-    
     copy(currentExperience = newExperience, levelUp = newLevelUp)
   }
 }

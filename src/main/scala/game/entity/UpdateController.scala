@@ -12,10 +12,11 @@ case class UpdateController(updateActions: UpdateAction*) extends Component {
 
 object UpdateController {
   extension (entity: Entity) {
-    def update(gameState: GameState): Seq[Event] =
+    def getEvents(gameState: GameState): Seq[Event] =
       entity.get[UpdateController] match {
         case Some(controller) =>
-          controller.update(entity, gameState)
+          val events = controller.update(entity, gameState)
+          events
         case None =>
           Nil
       }

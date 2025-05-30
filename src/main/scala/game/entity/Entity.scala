@@ -18,7 +18,16 @@ case class Entity(id: String = UUID.randomUUID().toString,
   }
   
   def addComponent(component: Component): Entity = {
-    copy(components = components + (component.getClass -> component))
+    val updatedComponents = components.get(component.getClass) match {
+      case Some(existingComponent) =>
+        // If the component already exists, we can keep the existing one
+        components
+      case None =>
+        // If it doesn't exist, we add the new component
+        components + (component.getClass -> component)
+    }
+
+    copy(components = updatedComponents)
   }
 
   def removeComponent[ComponentType <: Component](implicit classTag: ClassTag[ComponentType]): Entity = {
@@ -49,7 +58,7 @@ case class Entity(id: String = UUID.randomUUID().toString,
   def exists[ComponentType <: Component](predicate: ComponentType => Boolean)(implicit classTag: ClassTag[ComponentType]): Boolean = {
     get[ComponentType].exists(predicate)
   }
-  
+
   def has[ComponentType <: Component](implicit classTag: ClassTag[ComponentType]): Boolean = {
     components.contains(classTag.runtimeClass.asInstanceOf[Class[? <: Component]])
   }

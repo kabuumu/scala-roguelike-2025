@@ -4,7 +4,7 @@ import game.entity.Health.*
 import game.event.{Event, UpdateProjectilePositionEvent, UpdateProjectileWorldPositionEvent}
 import game.{GameState, Point}
 
-case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int) extends Component {
+case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int, targetPoint: Point) extends Component {
   val position: Point = {
     val (x, y) = precisePosition
     Point(x.round.toInt, y.round.toInt)
@@ -17,6 +17,8 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
 
     copy(precisePosition = (newX, newY))
   }
+  
+  def isAtTarget: Boolean = position == targetPoint
 }
 
 object Projectile {
@@ -33,7 +35,8 @@ object Projectile {
       xVelocity,
       yVelocity,
       targetType,
-      damage
+      damage,
+      end
     )
   }
 

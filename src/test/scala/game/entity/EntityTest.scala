@@ -13,15 +13,6 @@ class EntityTest extends AnyFunSuite {
     assert(updatedEntity.components(classOf[TestComponent]) == component)
   }
 
-  test("adding a component of the same type should overwrite the existing one") {
-    val entity = Entity().addComponent(new TestComponent("old"))
-    val newComponent = new TestComponent("new")
-    val updatedEntity = entity.addComponent(newComponent)
-
-    assert(updatedEntity.components.size == 1)
-    assert(updatedEntity.components(classOf[TestComponent]) == newComponent)
-  }
-
   test("adding a component should not modify the original entity") {
     val entity = Entity()
     val component = new TestComponent

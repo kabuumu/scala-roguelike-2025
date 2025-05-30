@@ -29,7 +29,7 @@ case class GameState(playerEntityId: String,
     (if (playerEntity.isReady) {
       this // wait for player to act
     } else {
-      handleEvents(entities.flatMap(_.update(this)))
+      handleEvents(entities.flatMap(_.getEvents(this)))
     }) match {
       case updatedGameState =>
         val deathEvents = DeathHandlerSystem.update(updatedGameState)

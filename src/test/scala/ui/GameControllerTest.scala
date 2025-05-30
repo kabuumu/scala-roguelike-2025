@@ -9,12 +9,14 @@ import game.entity.Experience.*
 import game.entity.Health.*
 import game.entity.Inventory.*
 import game.entity.UpdateAction.UpdateInitiative
+import game.event.AddExperienceEvent
 import game.{GameState, Input, Point}
 import map.Dungeon
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import ui.GameController.frameTime
 import ui.UIState.{Move, ScrollSelect}
+import game.event.NullEvent
 
 
 class GameControllerTest extends AnyFunSuiteLike with Matchers {
@@ -153,7 +155,15 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       SightMemory(),
       UpdateController(UpdateInitiative),
       Drawable(Sprites.enemySprite),
-      Hitbox()
+      Hitbox(),
+      DeathEvents(Seq(deathDetails =>
+        deathDetails.killerId match {
+          case Some(killerId) =>
+            AddExperienceEvent(killerId, game.Constants.DEFAULT_EXP)
+          case None =>
+            NullEvent
+        }
+      ))
     )
 
     val enemy2 = Entity(
@@ -166,7 +176,15 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       SightMemory(),
       UpdateController(UpdateInitiative),
       Drawable(Sprites.enemySprite),
-      Hitbox()
+      Hitbox(),
+      DeathEvents(Seq(deathDetails =>
+        deathDetails.killerId match {
+          case Some(killerId) =>
+            AddExperienceEvent(killerId, game.Constants.DEFAULT_EXP)
+          case None =>
+            NullEvent
+        }
+      ))
     )
 
     val gameState = GameState(
@@ -203,8 +221,8 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       .update(None, frameTime * 14) // Process entity removals and experience
 
     // Both enemies should be removed
-    afterCollision.gameState.entities.find(_.id == "enemy1").get.isDead shouldBe true
-    afterCollision.gameState.entities.find(_.id == "enemy2").get.isDead shouldBe true
+    afterCollision.gameState.entities.find(_.id == "enemy1") shouldBe empty
+    afterCollision.gameState.entities.find(_.id == "enemy2") shouldBe empty
 
     // Player should have gained experience for both enemies
     val expectedExp = game.Constants.DEFAULT_EXP * 2
