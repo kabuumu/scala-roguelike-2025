@@ -8,7 +8,9 @@ case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) exte
     if (level < 1) 1 else level
   }
   
-  def experienceForLevel(level: Int): Int = level * level * LEVEL_CONSTANT
+  def experienceForLevel(level: Int): Int = 
+    if(level <= 1) 0
+    else level * level * LEVEL_CONSTANT
 
   val nextLevel: Int = currentLevel + 1
 
@@ -17,6 +19,8 @@ case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) exte
   def addExperience(amount: Int): Experience = {
     val newExperience = currentExperience + amount
     val newLevelUp = levelUp || newExperience >= nextLevelExperience
+    
+    println(s"Adding $amount experience to entity. Current: $currentExperience, New: $newExperience, Level Up: $newLevelUp")
     
     copy(currentExperience = newExperience, levelUp = newLevelUp)
   }

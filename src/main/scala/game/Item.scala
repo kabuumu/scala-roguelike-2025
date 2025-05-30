@@ -5,10 +5,11 @@ import game.Item.ItemEffect.{EntityTargeted, PointTargeted}
 import game.entity.*
 import game.entity.EntityType.*
 import game.entity.Health.*
-import game.entity.Initiative.*
 import game.entity.Movement.*
-import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
+import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction, WaveUpdateAction}
 import game.event.*
+
+import java.util.UUID
 
 object Item {
   val potionValue = 5
@@ -76,6 +77,17 @@ object Item {
 
             val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
             val startingPosition = entity.position
+              def explosionEntity(parentEntity: Entity) = Entity(
+                s"explosion ${UUID.randomUUID()}",
+                Hitbox(Set(Point(0, 0))),
+                Collision(damage = 2, persistent = true, targetType, entity.id),
+                Movement(position = parentEntity.position),
+                UpdateController(CollisionCheckAction, WaveUpdateAction),
+                Drawable(Sprites.projectileSprite),
+                Wave(2),
+                EntityTypeComponent(EntityType.Projectile)
+              )
+            
             val fireballEntity =
               Entity(
                 id = s"Projectile-${System.nanoTime()}",
@@ -84,8 +96,13 @@ object Item {
                 UpdateController(ProjectileUpdateAction, CollisionCheckAction),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
-                Collision(damage = scrollDamage, explodes = true, persistent = false, targetType, entity.id),
-                Hitbox()
+                Collision(damage = scrollDamage, persistent = false, targetType, entity.id),
+                Hitbox(),
+                DeathEvents(
+                  Seq(
+                    deathDetails => AddEntityEvent(explosionEntity(deathDetails.victim))
+                  )
+                )
               )
 
             Seq(
@@ -117,7 +134,7 @@ object Item {
                 UpdateController(ProjectileUpdateAction, CollisionCheckAction),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
-                Collision(damage = bowDamage, explodes = false, persistent = false, targetType, entity.id),
+                Collision(damage = bowDamage, persistent = false, targetType, entity.id),
                 Hitbox()
               )
             

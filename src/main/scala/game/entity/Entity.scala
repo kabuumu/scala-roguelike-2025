@@ -49,6 +49,10 @@ case class Entity(id: String = UUID.randomUUID().toString,
   def exists[ComponentType <: Component](predicate: ComponentType => Boolean)(implicit classTag: ClassTag[ComponentType]): Boolean = {
     get[ComponentType].exists(predicate)
   }
+  
+  def has[ComponentType <: Component](implicit classTag: ClassTag[ComponentType]): Boolean = {
+    components.contains(classTag.runtimeClass.asInstanceOf[Class[? <: Component]])
+  }
 }
 
 object Entity {

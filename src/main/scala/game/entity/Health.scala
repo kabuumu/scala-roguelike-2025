@@ -1,5 +1,9 @@
 package game.entity
 
+import game.Constants.DEFAULT_EXP
+import game.DeathDetails
+import game.event.AddExperienceEvent
+
 case class Health(current: Int, max: Int) extends Component {
   def -(health: Int): Health = {
     val newCurrent = math.max(current - health, 0)
@@ -29,7 +33,14 @@ object Health {
 
     def hasFullHealth: Boolean = entity.exists[Health](_.isFull)
 
-    def damage(amount: Int): Entity = entity.update[Health](_ - amount)
+    def damage(amount: Int, attackerId: String): Entity =
+      entity.update[Health](_ - amount) match {
+        case entity if entity.isDead =>
+          entity.addComponent(MarkedForDeath(DeathDetails(entity, Some(attackerId))))
+        case entity =>
+          entity
+      }
+    
     def heal(amount: Int): Entity = entity.update[Health](_ + amount)
     
     def currentHealth: Int = entity.get[Health].map(_.current).getOrElse(0)

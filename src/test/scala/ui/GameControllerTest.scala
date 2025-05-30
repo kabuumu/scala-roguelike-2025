@@ -53,7 +53,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
   }
 
   test("Player should heal when using a potion") {
-    val woundedPlayer = playerEntity.damage(5).addItem(Potion)
+    val woundedPlayer = playerEntity.damage(5, "").addItem(Potion)
 
     val gameState = GameState(playerEntityId = playerId, entities = Seq(woundedPlayer), messages = Nil, dungeon = Dungeon())
     val gameController = GameController(Move, gameState)

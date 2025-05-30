@@ -25,7 +25,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
             UpdateController(ProjectileUpdateAction, CollisionCheckAction),
             EntityTypeComponent(EntityType.Projectile),
             Drawable(Sprites.projectileSprite),
-            Collision(damage = damage, explodes = false, persistent = false, targetType, ""),
+            Collision(damage = damage, persistent = false, targetType, ""),
             Hitbox()
           )
 
@@ -41,7 +41,7 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
         gameState.getActor(targetPosition) match {
           case Some(target) =>
             Seq(
-              DamageEntityEvent(target.id, damage),
+              DamageEntityEvent(target.id, damage, attackingEntity.id),
               ResetInitiativeEvent(attackingEntity.id)
             )
           case _ =>

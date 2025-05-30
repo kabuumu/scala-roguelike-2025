@@ -30,7 +30,7 @@ import ui.{GameController, UIState}
 import scala.language.postfixOps
 
 object App extends JFXApp3 {
-  val uiScale = 3
+  val uiScale = 2
   val spriteScale = 16
   val canvasX: Int = 90 / uiScale
   val canvasY: Int = 45 / uiScale

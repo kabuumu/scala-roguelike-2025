@@ -1,10 +1,12 @@
 package game
 
 import data.Sprites
+import game.Constants.DEFAULT_EXP
 import game.EnemyAI.DefaultAI
 import game.Item.*
 import game.entity.*
 import game.entity.UpdateAction.{AIAction, UpdateInitiative}
+import game.event.{AddExperienceEvent, NullEvent}
 import map.{Dungeon, MapGenerator}
 
 import java.util.UUID
@@ -25,7 +27,15 @@ object StartingState {
         Initiative(40),
         UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Drawable(Sprites.ratSprite),
-        Hitbox()
+        Hitbox(),
+        DeathEvents(Seq(deathDetails =>
+          deathDetails.killerId match {
+            case Some(killerId) =>
+              AddExperienceEvent(killerId, DEFAULT_EXP)
+            case None =>
+              NullEvent
+          }
+        ))
       )
     case (point, _) =>
       Entity(
@@ -40,7 +50,15 @@ object StartingState {
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
         UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Drawable(Sprites.snakeSprite),
-        Hitbox()
+        Hitbox(),
+        DeathEvents(Seq(deathDetails =>
+          deathDetails.killerId match {
+            case Some(killerId) =>
+              AddExperienceEvent(killerId, DEFAULT_EXP)
+            case None =>
+              NullEvent
+          }
+        ))
       )
   }
 
@@ -65,6 +83,7 @@ object StartingState {
         Drawable(Sprites.playerSprite),
         Hitbox(),
         Experience(),
+        DeathEvents()
       )
   }
 

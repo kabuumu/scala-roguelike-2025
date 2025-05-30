@@ -6,6 +6,7 @@ import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
 import game.entity.UpdateController.*
 import game.event.*
+import game.system.DeathHandlerSystem
 import map.Dungeon
 
 import scala.annotation.tailrec
@@ -25,10 +26,14 @@ case class GameState(playerEntityId: String,
   }
 
   def update(): GameState =
-    if (playerEntity.isReady) {
+    (if (playerEntity.isReady) {
       this // wait for player to act
     } else {
       handleEvents(entities.flatMap(_.update(this)))
+    }) match {
+      case updatedGameState =>
+        val deathEvents = DeathHandlerSystem.update(updatedGameState)
+        updatedGameState.handleEvents(deathEvents)
     }
 
   @scala.annotation.tailrec
