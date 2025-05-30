@@ -40,7 +40,10 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
         }
         gameState.getActor(targetPosition) match {
           case Some(target) =>
-            Nil
+            Seq(
+              DamageEntityEvent(target.id, damage),
+              ResetInitiativeEvent(attackingEntity.id)
+            )
           case _ =>
             throw new Exception(s"No target found at $targetPosition")
         }
