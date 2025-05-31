@@ -20,6 +20,7 @@ object DeathHandlerSystem extends GameSystem {
                 Seq(RemoveEntityEvent(entity.id))
             }
           case _ =>
+            // If the entity is not marked for death, do nothing
             Nil
         }
     }
