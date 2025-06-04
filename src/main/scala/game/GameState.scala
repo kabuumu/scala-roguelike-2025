@@ -17,6 +17,10 @@ case class GameState(playerEntityId: String,
                      dungeon: Dungeon) {
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
+  def getEntity(entityId: String): Option[Entity] = {
+    entities.find(_.id == entityId)
+  }
+  
   def update(playerAction: Option[Action]): GameState = {
     playerAction match {
       case Some(action) if playerEntity.isReady =>
@@ -32,12 +36,12 @@ case class GameState(playerEntityId: String,
       handleEvents(entities.flatMap(_.getEvents(this)))
     }) match {
       case updatedGameState =>
-        val deathEvents = DeathHandlerSystem.update(updatedGameState)
-        updatedGameState.handleEvents(deathEvents)
+        val (updatedState, _) = DeathHandlerSystem.update(updatedGameState, Nil)
+        updatedState
     }
 
   @scala.annotation.tailrec
-  private def handleEvents(events: Seq[Event]): GameState = {
+  final def handleEvents(events: Seq[Event]): GameState = {
     if (events.isEmpty) this
     else {
       val (newGameState, newEvents) = events.head.apply(this)
