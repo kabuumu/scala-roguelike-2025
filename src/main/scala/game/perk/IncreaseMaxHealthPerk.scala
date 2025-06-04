@@ -10,4 +10,8 @@ case class IncreaseMaxHealthPerk(amount: Int) extends Perk {
         current = health.current + amount
       )
   )
+  
+  override def name: String = s"Hearty"
+  
+  override def description: String = s"Increases maximum health by $amount."
 }

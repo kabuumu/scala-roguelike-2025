@@ -9,6 +9,7 @@ import game.entity.EntityType.*
 import game.entity.Health.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
+import game.perk.Perk
 import map.TileType
 import scalafx.Includes.*
 import scalafx.Resources.*
@@ -160,6 +161,12 @@ object App extends JFXApp3 {
     drawInventory(canvas, player, state.uiState)
     drawKeys(canvas, player)
     drawExperienceBar(canvas, player)
+    state.uiState match {
+      case uiState@UIState.ListSelect[Perk] (list, _, _) if list.head.isInstanceOf[Perk] =>
+    drawPerkSelection (canvas, player, uiState)
+      case _ =>
+      // Do nothing
+    }
   }
 
   private def updateMessageArea(state: GameController, messageArea: TextArea): Unit = {
@@ -417,5 +424,60 @@ object App extends JFXApp3 {
         yOffset + barHeight
       )
 
+  }
+
+  def drawPerkSelection(canvas: Canvas, player: Entity, uiState: UIState.ListSelect[Perk]): Unit = {
+
+    val perkCardWidth = spriteScale * uiScale * 7 // Width of the perk card
+    val perkCardHeight = spriteScale * uiScale * 11 // Height of the perk card
+
+    canvas.graphicsContext2D.setGlobalAlpha(1)
+
+    // Get the possible perks for the player
+    val perks = uiState.list
+
+    val numPerks = perks.size
+    val spacing = perkCardWidth * 0.5
+    val totalWidth = numPerks * perkCardWidth + (numPerks - 1) * spacing
+    val startX = (canvas.width.value - totalWidth) / 2
+
+    for ((perk, index) <- perks.zipWithIndex) {
+      val isChosenPerk: Boolean = uiState.index == index
+
+      val itemX = startX + index * (perkCardWidth + spacing)
+      val itemY = spriteScale * uiScale * 1.5
+
+      // Draw the perk rectangle
+      canvas.graphicsContext2D.setFill(Color.Gray)
+      canvas.graphicsContext2D.fillRect(itemX, itemY, perkCardWidth, perkCardHeight)
+
+      // Draw the perk name
+      canvas.graphicsContext2D.setFill(Color.Black)
+      canvas.graphicsContext2D.setFont(pixelFont)
+      canvas.graphicsContext2D.fillText(
+        perk.name,
+        itemX + (perkCardWidth / 8),
+        itemY + (perkCardHeight / 4)
+      )
+
+      // Draw the perk description and wrap to fit within the card width
+      val descriptionLines = perk.description.split("(?<=\\G.{18})").toSeq // Split into lines of 30 characters
+
+      for ((line, lineIndex) <- descriptionLines.zipWithIndex) {
+        canvas.graphicsContext2D.fillText(
+          line,
+          itemX + (perkCardWidth / 8),
+          itemY + (perkCardHeight / 2) + (lineIndex * (spriteScale * uiScale / 2))
+        )
+      }
+
+      //Highlight the chosen perk
+      if (isChosenPerk) {
+        canvas.graphicsContext2D.setGlobalAlpha(0.5)
+        canvas.graphicsContext2D.setFill(Color.Red)
+        canvas.graphicsContext2D.fillRect(itemX, itemY, perkCardWidth, perkCardHeight)
+        canvas.graphicsContext2D.setGlobalAlpha(1)
+      }
+    }
   }
 }

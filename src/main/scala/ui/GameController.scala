@@ -132,8 +132,14 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             }
           ), None)
         case Input.LevelUp if gameState.playerEntity.canLevelUp =>
+          val levelUpState = UIState.ListSelect(
+            list = gameState.playerEntity.getPossiblePerks,
+            effect = selectedPerk => {
+              (UIState.Move, Some(LevelUpAction(selectedPerk)))
+            }
+          )
           //Give player choice of level up perks
-          (UIState.Move, Some(LevelUpAction(IncreaseMaxHealthPerk(10))))
+          (levelUpState, None)
         case Input.Wait => (UIState.Move, Some(WaitAction))
         case _ => (uiState, None)
       }
