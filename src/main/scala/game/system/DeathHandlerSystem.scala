@@ -14,6 +14,8 @@ object DeathHandlerSystem extends GameSystem {
             // If the entity is marked for death, process the death events
             optDeathEvents match {
               case Some(deathEvents) =>
+                println(s"Processing death events for entity ${entity.id} with details: ${markedForDeath.deathDetails}")
+                
                 // Apply each death event to the death details
                 currentGameState.handleEvents(deathEvents.deathEvents.map(_.apply(markedForDeath.deathDetails)) :+ RemoveEntityEvent(entity.id))
               case None =>

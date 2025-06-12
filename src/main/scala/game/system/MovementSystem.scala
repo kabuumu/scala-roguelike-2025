@@ -1,34 +1,34 @@
 package game.system
 
 import game.GameState
-import game.entity.Hitbox.*
 import game.entity.Movement
+import game.entity.Movement.*
+import game.entity.SightMemory.*
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
+import game.entity.Initiative.*
+import ui.InputAction
 
 object MovementSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
-    val movementEvents = events.collect {
-      case moveAction: GameSystemEvent.MoveAction => moveAction
-    }
-
-    val updatedGamestate = movementEvents.foldLeft(gameState) {
-      case (currentState, GameSystemEvent.MoveAction(entityId, direction)) =>
+    val updatedGamestate = events.foldLeft(gameState) {
+      case (currentState, GameSystemEvent.InputEvent(entityId, InputAction.Move(direction))) =>
         currentState.getEntity(entityId) match {
-          case Some(entity) =>
-            val movedEntity = entity.update[Movement](_.move(direction))
-
-            if (movedEntity.collidesWith(gameState.movementBlockingPoints)) {
-              // If the entity collides with a movement blocking point, return the current state unchanged
-              currentState
-            } else {
-              // If the entity does not collide, update the entity in the current state
-              currentState.updateEntity(entityId, movedEntity)
-            }
-          case None =>
-            // If the entity is not found, return the current state unchanged
+          case Some(entity) if entity.isReady && !gameState.movementBlockingPoints.contains(entity.position + direction) =>
+            currentState
+              .updateEntity(
+                entityId,
+                _.update[Movement](_.move(direction))
+                  .updateSightMemory(
+                    currentState
+                  )
+                  .resetInitiative()
+              )
+          case _ =>
             currentState
         }
+      case (currentState, _) =>
+        currentState
     }
     (updatedGamestate, Nil)
   }

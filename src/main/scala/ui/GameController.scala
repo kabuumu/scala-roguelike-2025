@@ -12,7 +12,7 @@ import game.entity.Health.*
 import game.entity.Initiative.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
-import game.perk.IncreaseMaxHealthPerk
+import game.system.event.GameSystemEvent.InputEvent
 import game.{Item, *}
 import ui.GameController.*
 import ui.UIState.UIState
@@ -39,36 +39,34 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     
     //To ensure updates only happen at a certain rate
     if (delta >= ticksPerSecond / framesPerSecond) {
-      (optInput match {
-        //To ensure inputs only happen at a certain rate
+      val (newUiState, optAction) = optInput match {
         case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond && gameState.playerEntity.isReady =>
-          val (newUiState, optAction) = handleInput(input)
-          val newGameState = gameState.update(optAction)
-
-          (newUiState, newGameState)
-        case _ => (uiState, gameState)
-      }) match {
-        case (newUiState, newGameState) =>
-          val updatedGameState = newGameState.update()
-
-          val newUpdateTime = if (
-            updatedGameState.drawableChanges != gameState.drawableChanges
-              || newUiState != uiState
-              || updatedGameState.messages != gameState.messages
-          ) {
-            currentTime
-          } else lastUpdateTime
-
-          GameController(newUiState, updatedGameState, newUpdateTime)
+          handleInput(input)
+        case _ =>
+          (uiState, None)
       }
+      
+      val newGameState = gameState.updateWithSystems(optAction.map(
+        action => InputEvent(gameState.playerEntity.id, action)
+      ).toSeq)
+
+      val newUpdateTime = if (
+        newGameState.drawableChanges != gameState.drawableChanges
+          || newUiState != uiState
+          || newGameState.messages != gameState.messages
+      ) {
+        currentTime
+      } else lastUpdateTime
+
+      GameController(newUiState, newGameState, newUpdateTime)
     } else this
   }
 
-  private def handleInput(input: Input): (UIState, Option[Action]) = uiState match {
+  private def handleInput(input: Input): (UIState, Option[InputAction]) = uiState match {
     case UIState.Move =>
       input match {
         case Input.Move(direction) =>
-          (UIState.Move, Some(MoveAction(direction)))
+          (UIState.Move, Some(InputAction.Move(direction)))
         case Input.Attack(attackType) =>
           val optWeapon = attackType match {
             case Input.PrimaryAttack => gameState.playerEntity.get[Inventory].get.primaryWeapon
@@ -85,7 +83,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.ListSelect(
               list = enemies,
               effect = target => {
-                (UIState.Move, Some(AttackAction(target.position, optWeapon)))
+                (UIState.Move, Some(???))
               }
             ), None)
           } else {
@@ -109,9 +107,9 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
                     if (enemies.nonEmpty) {
                       (UIState.ListSelect(
                         list = enemies,
-                        effect = target => {
-                          (UIState.Move, Some(UseItemAction(effect(target))))
-                        }
+                        effect = target => (
+                          UIState.Move,
+                          Some(InputAction.UseItem(effect(target))))
                       ), None)
                     } else {
                       (UIState.Move, None)
@@ -121,10 +119,10 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
                       gameState.playerEntity.position,
                       target => (
                         UIState.Move,
-                        Some(UseItemAction(effect(target))))
+                        Some(InputAction.UseItem(effect(target))))
                     ), None)
                   case NonTargeted(effect) =>
-                    (UIState.Move, Some(UseItemAction(effect)))
+                    (UIState.Move, Some(InputAction.UseItem(effect)))
                 }
               } else {
                 (UIState.Move, None)
@@ -135,12 +133,12 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           val levelUpState = UIState.ListSelect(
             list = gameState.playerEntity.getPossiblePerks,
             effect = selectedPerk => {
-              (UIState.Move, Some(LevelUpAction(selectedPerk)))
+              (UIState.Move, Some(InputAction.LevelUp(selectedPerk)))
             }
           )
           //Give player choice of level up perks
           (levelUpState, None)
-        case Input.Wait => (UIState.Move, Some(WaitAction))
+        case Input.Wait => (UIState.Move, Some(InputAction.Wait))
         case _ => (uiState, None)
       }
     case listSelect: UIState.ListSelect[_] =>

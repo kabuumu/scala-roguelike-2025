@@ -43,10 +43,6 @@ object Item {
     case NonTargeted(effect: Entity => GameState => Seq[Event])
   }
 
-  enum TargetType:
-    case Self, Point
-
-
   case object Potion extends UsableItem {
     override def chargeType: ChargeType = ChargeType.SingleUse
     override def itemEffect: ItemEffect =
@@ -87,7 +83,7 @@ object Item {
                 Wave(2),
                 EntityTypeComponent(EntityType.Projectile)
               )
-            
+
             val fireballEntity =
               Entity(
                 id = s"Projectile-${System.nanoTime()}",
@@ -100,7 +96,10 @@ object Item {
                 Hitbox(),
                 DeathEvents(
                   Seq(
-                    deathDetails => AddEntityEvent(explosionEntity(deathDetails.victim))
+                    deathDetails => {
+                      println(s"Explosion at ${deathDetails.victim.position} with damage ${scrollDamage}")
+                      AddEntityEvent(explosionEntity(deathDetails.victim))
+                    }
                   )
                 )
               )

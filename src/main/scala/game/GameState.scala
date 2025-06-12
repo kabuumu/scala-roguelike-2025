@@ -1,12 +1,11 @@
 package game
 
-import game.action.Action
 import game.entity.*
 import game.entity.EntityType.LockedDoor
-import game.entity.Initiative.*
 import game.entity.UpdateController.*
 import game.event.*
-import game.system.DeathHandlerSystem
+import game.system.*
+import game.system.event.GameSystemEvent.GameSystemEvent
 import map.Dungeon
 
 import scala.annotation.tailrec
@@ -20,27 +19,31 @@ case class GameState(playerEntityId: String,
   def getEntity(entityId: String): Option[Entity] = {
     entities.find(_.id == entityId)
   }
-  
-  def update(playerAction: Option[Action]): GameState = {
-    playerAction match {
-      case Some(action) if playerEntity.isReady =>
-        handleEvents(action.apply(playerEntity, this))
-      case _ => this
-    }
-  }
 
-  def update(): GameState =
-    (if (playerEntity.isReady) {
-      this // wait for player to act
-    } else {
-      handleEvents(entities.flatMap(_.getEvents(this)))
-    }) match {
-      case updatedGameState =>
-        val (updatedState, _) = DeathHandlerSystem.update(updatedGameState, Nil)
-        updatedState
-    }
+  val systems: Seq[GameSystem] = Seq(
+    LegacyAISystem,
+    MovementSystem,
+    VelocitySystem,
+    LegacyWaveSystem,
+    ItemUseSystem,
+    CollisionCheckSystem,
+    LegacyCollisionSystem,
+    InventorySystem,
+    DeathHandlerSystem,
+    InitiativeSystem,
+    LevelUpSystem,
+  )
+
+  def updateWithSystems(events: Seq[GameSystemEvent]): GameState =
+    systems.foldLeft((this, events)) {
+      case ((currentState, currentEvents), system) =>
+        val (newState, newEvents) = system.update(currentState, currentEvents)
+        (newState, currentEvents ++ newEvents)
+    }._1
+  
 
   @scala.annotation.tailrec
+  @deprecated
   final def handleEvents(events: Seq[Event]): GameState = {
     if (events.isEmpty) this
     else {
@@ -91,7 +94,10 @@ case class GameState(playerEntityId: String,
 
   val movementBlockingPoints: Set[Point] = dungeon.walls ++
       entities.collect {
-        case entity@Entity[Movement](movement) if (entity.exists[Health](_.isAlive) && entity.exists[EntityTypeComponent](_.entityType == EntityType.Enemy)) || entity.exists[EntityTypeComponent](_.entityType.isInstanceOf[LockedDoor]) =>
+        case entity@Entity[Movement
+        ] (movement)
+        if (entity.exists[Health](_.isAlive) && entity.exists[EntityTypeComponent](_.entityType == EntityType.Enemy)) ||(entity.exists[EntityTypeComponent](_.entityType.isInstanceOf[LockedDoor]))
+        =>
         movement.position
       }.toSet
 

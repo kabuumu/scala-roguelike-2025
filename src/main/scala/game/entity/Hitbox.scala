@@ -9,9 +9,6 @@ object Hitbox {
     def collidesWith(points: Set[Point]): Boolean =
       hitbox.intersect(points).nonEmpty
 
-    def collidesWith(point: Point): Boolean =
-      hitbox.contains(point)
-
     def collidesWith(other: Entity): Boolean =
       other.hitbox.intersect(hitbox).nonEmpty
 
