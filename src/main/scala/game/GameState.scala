@@ -2,7 +2,6 @@ package game
 
 import game.entity.*
 import game.entity.EntityType.LockedDoor
-import game.entity.UpdateController.*
 import game.event.*
 import game.system.*
 import game.system.event.GameSystemEvent.GameSystemEvent

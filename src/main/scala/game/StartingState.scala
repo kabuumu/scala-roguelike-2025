@@ -5,7 +5,6 @@ import game.Constants.DEFAULT_EXP
 import game.EnemyAI.DefaultAI
 import game.Item.*
 import game.entity.*
-import game.entity.UpdateAction.{AIAction, UpdateInitiative}
 import game.event.{AddExperienceEvent, NullEvent}
 import map.{Dungeon, MapGenerator}
 
@@ -25,7 +24,6 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
         Initiative(40),
-        UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>
@@ -48,7 +46,6 @@ object StartingState {
         Health(1),
         Initiative(80),
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
-        UpdateController(UpdateInitiative, AIAction(DefaultAI)),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>
@@ -79,7 +76,6 @@ object StartingState {
           secondaryWeapon = None
         ),
         SightMemory(),
-        UpdateController(UpdateInitiative),
         Drawable(Sprites.playerSprite),
         Hitbox(),
         Experience(),

@@ -4,10 +4,7 @@ import data.Sprites
 import game.Item.*
 import game.entity.*
 import game.entity.EntityType.entityType
-import game.entity.Health.*
-import game.entity.Initiative.*
 import game.entity.Movement.*
-import game.entity.UpdateAction.{CollisionCheckAction, ProjectileUpdateAction}
 import game.event.*
 import game.{Item, *}
 
@@ -22,7 +19,6 @@ case class AttackAction(targetPosition: Point, optWeapon: Option[Weapon]) extend
             id = s"Projectile-${System.nanoTime()}",
             Movement(position = startingPosition),
             Projectile(startingPosition, targetPosition, targetType, damage),
-            UpdateController(ProjectileUpdateAction, CollisionCheckAction),
             EntityTypeComponent(EntityType.Projectile),
             Drawable(Sprites.projectileSprite),
             Collision(damage = damage, persistent = false, targetType, ""),

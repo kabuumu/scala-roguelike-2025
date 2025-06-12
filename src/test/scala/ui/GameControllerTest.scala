@@ -8,7 +8,6 @@ import game.entity.EntityType.*
 import game.entity.Experience.*
 import game.entity.Health.*
 import game.entity.Inventory.*
-import game.entity.UpdateAction.UpdateInitiative
 import game.event.AddExperienceEvent
 import game.{GameState, Input, Point}
 import map.Dungeon
@@ -30,7 +29,6 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
     Initiative(0),
     Inventory(Seq(), Some(Weapon(2, Melee)), Some(Weapon(1, Ranged(6)))),
     SightMemory(),
-    UpdateController(UpdateInitiative),
     Drawable(Sprites.playerSprite),
     Hitbox(),
     Experience(),
@@ -107,7 +105,6 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       Initiative(10),
       Inventory(Seq(), Some(Weapon(2, Melee)), Some(Weapon(1, Ranged(6)))),
       SightMemory(),
-      UpdateController(UpdateInitiative),
       Drawable(Sprites.enemySprite),
       Hitbox()
     )
@@ -153,7 +150,6 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       Initiative(10),
       Inventory(),
       SightMemory(),
-      UpdateController(UpdateInitiative),
       Drawable(Sprites.enemySprite),
       Hitbox(),
       DeathEvents(Seq(deathDetails =>
@@ -174,7 +170,6 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       Initiative(10),
       Inventory(),
       SightMemory(),
-      UpdateController(UpdateInitiative),
       Drawable(Sprites.enemySprite),
       Hitbox(),
       DeathEvents(Seq(deathDetails =>
