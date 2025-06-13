@@ -83,7 +83,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.ListSelect(
               list = enemies,
               effect = target => {
-                (UIState.Move, Some(???))
+                (UIState.Move, Some(InputAction.Attack(target)))
               }
             ), None)
           } else {

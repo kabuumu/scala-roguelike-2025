@@ -94,7 +94,6 @@ object Item {
                 DeathEvents(
                   Seq(
                     deathDetails => {
-                      println(s"Explosion at ${deathDetails.victim.position} with damage ${scrollDamage}")
                       AddEntityEvent(explosionEntity(deathDetails.victim))
                     }
                   )

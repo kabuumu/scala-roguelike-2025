@@ -100,7 +100,8 @@ object App extends JFXApp3 {
 
       if (newController.gameState.drawableChanges != controller.gameState.drawableChanges
         || newController.uiState != controller.uiState
-        || newController.gameState.messages != controller.gameState.messages) {
+        || newController.gameState.messages != controller.gameState.messages
+        || newController.gameState.playerEntity.currentHealth != controller.gameState.playerEntity.currentHealth) {
         updateCanvas(newController, canvas, spriteSheet)
       }
 

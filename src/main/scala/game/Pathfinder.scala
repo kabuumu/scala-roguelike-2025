@@ -47,4 +47,23 @@ object Pathfinder {
 
     search(openSet, closedSet)
   }
-}
+
+  def getNextStep(startPosition: Point, targetPosition: Point, gameState: GameState): Option[Direction] = {
+    val path = Pathfinder.findPath(
+      startPosition,
+      targetPosition,
+      (gameState.movementBlockingPoints - targetPosition).toSeq
+    )
+
+    path.drop(1).headOption match {
+      case Some(nextStep) =>
+        val direction = Direction.fromPoints(
+          startPosition,
+          nextStep
+        )
+
+        Some(direction)
+      case None =>
+        None
+    }
+  }}
