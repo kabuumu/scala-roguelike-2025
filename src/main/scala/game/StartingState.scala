@@ -23,7 +23,7 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
-        Initiative(40),
+        Initiative(12),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>
@@ -44,7 +44,7 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Enemy),
         Health(1),
-        Initiative(80),
+        Initiative(25),
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
@@ -69,7 +69,7 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Player),
         Health(12),
-        Initiative(35),
+        Initiative(10),
         Inventory(
           items = Seq(Potion, Scroll, Bow) ++ Seq.fill(6)(Arrow),
           primaryWeapon = Some(Weapon(2, Melee)),
