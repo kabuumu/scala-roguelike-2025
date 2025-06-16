@@ -1,17 +1,16 @@
-ThisBuild / version := "0.1.0-SNAPSHOT"
+enablePlugins(ScalaJSPlugin)
 
-ThisBuild / scalaVersion := "3.5.1"
+version := "0.1.0-SNAPSHOT"
+scalaVersion := "3.6.4"
+name := "scala-roguelike"
+
+scalaJSUseMainModuleInitializer := true
 
 lazy val root = (project in file("."))
   .settings(
-    name := "scala-roguelike"
+    name := "scala-roguelike",
+    libraryDependencies ++= Seq(
+      "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
+      "io.indigoengine" %%% "indigo" % "0.21.1"
+    )
   )
-
-libraryDependencies ++= Seq(
-  "org.typelevel" %% "shapeless3-deriving" % "3.4.0",
-  "org.scalafx" %% "scalafx" % "23.0.1-R34",
-  "org.scala-graph" %% "graph-core" % "2.0.2",
-  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
-  "org.scalatest" %% "scalatest" % "3.2.19" % Test
-)
-
