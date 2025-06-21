@@ -1,8 +1,10 @@
 package indigo
 
 import Batch.toBatch
-import game.StartingState
+import data.Sprites
+import game.entity.Entity
 import game.entity.Movement.position
+import game.{LineOfSight, StartingState}
 import indigo.*
 import indigo.SpriteExtension.*
 import ui.UIConfig.*
@@ -39,23 +41,69 @@ object Game extends IndigoSandbox[Unit, GameController] {
   override def updateModel(context: Context[Unit], model: GameController): GlobalEvent => Outcome[GameController] =
     _ =>
       val optInput = context.frame.input.mapInputsOption(InputMappings.inputMapping)
-      
-      val time = context.frame.time.running.toMillis.toLong * GameController.ticksPerSecond
-      
-      println(context.frame.time.delta)
+      val time = context.frame.time.running.toMillis.toLong * 1000000L
       
       Outcome(model.update(optInput, time))
 
   override def present(context: Context[Unit], model: GameController): Outcome[SceneUpdateFragment] = {
     val spriteSheet: Graphic[Material.ImageEffects] = Graphic(0, 0, 784, 352, Material.ImageEffects(AssetName("sprites")))
     val game.Point(playerX, playerY) = model.gameState.playerEntity.position
+
+    val tileSprites = model.gameState.dungeon.tiles.map {
+      case (tilePosition, tileType) => spriteSheet.fromTile(tilePosition, tileType)
+    }.toSeq
+
+    val entitySprites = model.gameState.entities.flatMap(spriteSheet.fromEntity)
+
+    val cursor = drawUIElements(spriteSheet, model)
     
     Outcome(
       SceneUpdateFragment(
-        (model.gameState.dungeon.tiles.map {
-          case (tilePosition, tileType) => spriteSheet.fromTile(tilePosition, tileType)
-        }.toSeq ++ model.gameState.entities.flatMap(spriteSheet.fromEntity)).toBatch
-      ).withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale), Zoom(UIConfig.uiScale)))
+        (tileSprites ++ entitySprites ++ cursor).toBatch
+      ).withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale), Zoom.x3))
     )
+  }
+
+  private def drawUIElements(spriteSheet: Graphic[Material.ImageEffects], model: GameController): Seq[SceneNode] = {
+    val optCursorPosition = model.uiState match {
+      case UIState.ScrollSelect(cursor, _) =>
+        Some(cursor)
+      case list: UIState.ListSelect[Entity] if list.list.head.isInstanceOf[Entity] =>
+        val position = list.list(list.index).position
+        Some(position)
+      case _ =>
+        None
+    }
+
+    val playerPosition = model.gameState.playerEntity.position
+
+    optCursorPosition.toSeq.flatMap {
+      case game.Point(cursorX, cursorY) =>
+        val line = LineOfSight.getBresenhamLine(playerPosition, game.Point(cursorX, cursorY)).dropRight(1)
+          .map {
+            point =>
+              Shape.Box(
+                Rectangle(
+                  Point(point.x * spriteScale, point.y * spriteScale),
+                  Size(spriteScale)
+                ),
+                Fill.Color(RGBA.Red.withAlpha(0.5f))
+              )
+          }
+
+
+        val cursorSprite = Sprites.cursorSprite
+
+        val sprite = spriteSheet
+          .withCrop(
+            cursorSprite.x * spriteScale,
+            cursorSprite.y * spriteScale,
+            spriteScale,
+            spriteScale
+          )
+          .moveTo(cursorX * spriteScale, cursorY * spriteScale)
+
+        line :+ sprite
+    }
   }
 }  
