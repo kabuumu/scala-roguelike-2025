@@ -4,8 +4,6 @@ version := "0.1.0-SNAPSHOT"
 scalaVersion := "3.6.4"
 name := "scala-roguelike"
 
-scalaJSUseMainModuleInitializer := true
-
 lazy val root = (project in file("."))
   .settings(
     name := "scala-roguelike",
@@ -14,3 +12,21 @@ lazy val root = (project in file("."))
       "io.indigoengine" %%% "indigo" % "0.21.1"
     )
   )
+
+addCommandAlias(
+  "runGame",
+  List(
+    "compile",
+    "fastLinkJS",
+    "indigoRun"
+  ).mkString(";", ";", "")
+)
+
+addCommandAlias(
+  "build",
+  List(
+    "compile",
+    "fastLinkJS",
+    "indigoBuild"
+  ).mkString(";", ";", "")
+)

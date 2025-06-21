@@ -17,6 +17,7 @@ object MapGenerator {
 
     @tailrec
     def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
+      println("Iterating through open dungeons:")
       val currentDungeon: Dungeon = openDungeons.find(_.endpoint.isDefined) match {
         case Some(dungeonWithEndpoint) => dungeonWithEndpoint
         case None => openDungeons.maxBy(_.roomGrid.size)

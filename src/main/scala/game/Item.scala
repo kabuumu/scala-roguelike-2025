@@ -8,7 +8,8 @@ import game.entity.Health.*
 import game.entity.Movement.*
 import game.event.*
 
-import java.util.UUID
+import scala.util.Random
+
 
 object Item {
   val potionValue = 5
@@ -73,7 +74,7 @@ object Item {
             val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
             val startingPosition = entity.position
               def explosionEntity(parentEntity: Entity) = Entity(
-                s"explosion ${UUID.randomUUID()}",
+                s"explosion ${Random.nextInt()}",
                 Hitbox(Set(Point(0, 0))),
                 Collision(damage = scrollDamage, persistent = true, targetType, entity.id),
                 Movement(position = parentEntity.position),

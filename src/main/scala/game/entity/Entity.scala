@@ -2,10 +2,10 @@ package game.entity
 
 import game.status.StatusEffect
 
-import java.util.UUID
 import scala.reflect.ClassTag
+import scala.util.Random
 
-case class Entity(id: String = UUID.randomUUID().toString,
+case class Entity(id: String = Random.nextString(12),
                   components: Map[Class[? <: Component], Component] = Map.empty,
                   entityStatuses: Seq[StatusEffect] = Nil
                  ) {
