@@ -1,12 +1,14 @@
-package indigo
+package indigoengine
 
-import Batch.toBatch
 import data.Sprites
-import game.entity.Entity
 import game.entity.Movement.position
+import game.entity.{Entity, SightMemory}
 import game.{LineOfSight, StartingState}
 import indigo.*
-import indigo.SpriteExtension.*
+import indigo.Batch.toBatch
+import indigoengine.SpriteExtension.*
+import indigoengine.shaders.{CustomShader, Darken}
+import indigoengine.view.Elements.*
 import ui.UIConfig.*
 import ui.{GameController, UIConfig, UIState}
 
@@ -15,7 +17,10 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 @JSExportTopLevel("IndigoGame")
 object Game extends IndigoSandbox[Unit, GameController] {
 
-  override def config: GameConfig = GameConfig.default.withViewport(240, 480)
+  override def config: GameConfig = GameConfig.default
+    .withViewport(xPixels, yPixels)
+    .withMagnification(uiScale)
+    .noResize
 
   override def assets: Set[AssetType] = Set(
     AssetType.Image(AssetName("sprites"), AssetPath("assets/sprites/sprites.png"))
@@ -25,7 +30,12 @@ object Game extends IndigoSandbox[Unit, GameController] {
 
   override def animations: Set[Animation] = Set.empty
 
-  override def shaders: Set[ShaderProgram] = Set.empty
+  override def shaders: Set[ShaderProgram] = Set(
+    CustomShader.shader,
+    Darken.shader
+  )
+
+
 
   override def setup(assetCollection: AssetCollection, dice: Dice): Outcome[Startup[Unit]] = Outcome(
     Startup.Success(())
@@ -35,36 +45,56 @@ object Game extends IndigoSandbox[Unit, GameController] {
     Outcome(GameController(
       UIState.Move,
       StartingState.startingGameState
-    ))
+    ).init())
   }
 
   override def updateModel(context: Context[Unit], model: GameController): GlobalEvent => Outcome[GameController] =
     _ =>
       val optInput = context.frame.input.mapInputsOption(InputMappings.inputMapping)
       val time = context.frame.time.running.toMillis.toLong * 1000000L
-      
+
       Outcome(model.update(optInput, time))
 
   override def present(context: Context[Unit], model: GameController): Outcome[SceneUpdateFragment] = {
-    val spriteSheet: Graphic[Material.ImageEffects] = Graphic(0, 0, 784, 352, Material.ImageEffects(AssetName("sprites")))
-    val game.Point(playerX, playerY) = model.gameState.playerEntity.position
+    val spriteSheet: Graphic[Material.Bitmap] = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+    val player = model.gameState.playerEntity
+    val game.Point(playerX, playerY) = player.position
+    val visiblePoints = model.gameState.getVisiblePointsFor(player)
+    val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
 
-    val tileSprites = model.gameState.dungeon.tiles.map {
-      case (tilePosition, tileType) => spriteSheet.fromTile(tilePosition, tileType)
+    val tileSprites = model.gameState.dungeon.tiles
+      .filter {
+        case (tilePosition, _) => sightMemory.contains(tilePosition)
+      }.map {
+        case (tilePosition, tileType) =>
+          val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
+          if (visiblePoints.contains(tilePosition)) {
+            tileSprite
+          } else {
+            //darken sprite if not visible
+            tileSprite.asInstanceOf[Graphic[Material.Bitmap]]
+              .modifyMaterial(
+                _.toImageEffects.withTint(RGBA.SlateGray)
+              )
+          }
     }.toSeq
 
-    val entitySprites = model.gameState.entities.flatMap(spriteSheet.fromEntity)
+    val entitySprites = model.gameState.entities.filter {
+      entity => visiblePoints.contains(entity.position)
+    }.flatMap(spriteSheet.fromEntity)
 
     val cursor = drawUIElements(spriteSheet, model)
-    
+
     Outcome(
       SceneUpdateFragment(
-        (tileSprites ++ entitySprites ++ cursor).toBatch
-      ).withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale), Zoom.x3))
+        Layer.Content((tileSprites ++ entitySprites ++ cursor).toBatch)
+          .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
+        Layer.Content(healthBar(model) ++ experienceBar(model) ++ usableItems(model, spriteSheet))
+      )
     )
   }
 
-  private def drawUIElements(spriteSheet: Graphic[Material.ImageEffects], model: GameController): Seq[SceneNode] = {
+  private def drawUIElements(spriteSheet: Graphic[?], model: GameController): Seq[SceneNode] = {
     val optCursorPosition = model.uiState match {
       case UIState.ScrollSelect(cursor, _) =>
         Some(cursor)
@@ -95,12 +125,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
         val cursorSprite = Sprites.cursorSprite
 
         val sprite = spriteSheet
-          .withCrop(
-            cursorSprite.x * spriteScale,
-            cursorSprite.y * spriteScale,
-            spriteScale,
-            spriteScale
-          )
+          .fromSprite(cursorSprite)
           .moveTo(cursorX * spriteScale, cursorY * spriteScale)
 
         line :+ sprite

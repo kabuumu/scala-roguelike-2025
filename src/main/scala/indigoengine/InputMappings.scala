@@ -1,8 +1,9 @@
-package indigo
+package indigoengine
 
 import game.Direction
 import game.Input.*
 import indigo.shared.events.Combo.KeyInputs
+import indigo.*
 
 object InputMappings {
   val inputMapping: InputMapping[Input] = InputMapping[game.Input.Input](
