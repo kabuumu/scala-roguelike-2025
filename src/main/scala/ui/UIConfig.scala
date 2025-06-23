@@ -10,4 +10,7 @@ object UIConfig {
   val yPixels: Int = yTiles * spriteScale * uiScale
   
   val borderSize: Int = 2
+  
+  val uiXOffset: Int = spriteScale / 2
+  val uiYOffset: Int = spriteScale / 2
 }

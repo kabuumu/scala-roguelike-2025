@@ -11,6 +11,7 @@ import indigoengine.shaders.{CustomShader, Darken}
 import indigoengine.view.Elements.*
 import ui.UIConfig.*
 import ui.{GameController, UIConfig, UIState}
+import generated.PixelFont
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
@@ -24,9 +25,11 @@ object Game extends IndigoSandbox[Unit, GameController] {
 
   override def assets: Set[AssetType] = Set(
     AssetType.Image(AssetName("sprites"), AssetPath("assets/sprites/sprites.png"))
-  )
+  ) ++ generated.Assets.assets.generated.assetSet
 
-  override def fonts: Set[FontInfo] = Set.empty
+  override def fonts: Set[FontInfo] = Set(
+    PixelFont.fontInfo
+  )
 
   override def animations: Set[Animation] = Set.empty
 
@@ -34,8 +37,6 @@ object Game extends IndigoSandbox[Unit, GameController] {
     CustomShader.shader,
     Darken.shader
   )
-
-
 
   override def setup(assetCollection: AssetCollection, dice: Dice): Outcome[Startup[Unit]] = Outcome(
     Startup.Success(())

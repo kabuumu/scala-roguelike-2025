@@ -6,9 +6,11 @@ import ui.UIConfig.*
 import indigoengine.SpriteExtension.*
 import indigo.Batch.toBatch
 import game.Item.Item
+import generated.PixelFont
+import generated.Assets
 
 object Elements {
-  def healthBar(model: GameController): Batch[BlankEntity] = {
+  def healthBar(model: GameController): Batch[SceneNode] = {
     import game.entity.Health.*
 
     val currentHealth = model.gameState.playerEntity.currentHealth
@@ -16,8 +18,8 @@ object Elements {
 
     val barWidth = spriteScale * 6 // Total width of the health bar
     val barHeight = (spriteScale / 4) * 3 // Height of the health bar
-    val xOffset = spriteScale // X position of the bar
-    val yOffset = spriteScale // Y position of the bar
+    val xOffset = uiXOffset // X position of the bar
+    val yOffset = uiYOffset // Y position of the bar
 
     val filledWidth = (currentHealth * barWidth) / maxHealth
 
@@ -26,10 +28,10 @@ object Elements {
       filledWidth,
       RGBA.Green,
       RGBA.Crimson,
-    )
+    ) :+ text(s"$currentHealth/$maxHealth", xOffset + barWidth + borderSize, yOffset)
   }
-
-  def experienceBar(model: GameController): Batch[BlankEntity] = {
+  
+  def experienceBar(model: GameController): Batch[SceneNode] = {
     import game.entity.Experience.*
 
     val player = model.gameState.playerEntity
@@ -44,8 +46,8 @@ object Elements {
 
     val barWidth = spriteScale * 6 // Total width of the experience bar
     val barHeight = spriteScale / 2 // Height of the experience bar
-    val xOffset = spriteScale // X position of the bar
-    val yOffset = spriteScale * 2 // Y position of the bar
+    val xOffset = uiXOffset // X position of the bar
+    val yOffset = uiYOffset + spriteScale // Y position of the bar
 
     val filledWidth: Int = if (player.canLevelUp) barWidth 
     else (drawableCurrentExperience * barWidth) / drawableNextLevelExperience
@@ -55,7 +57,9 @@ object Elements {
       filledWidth,
       RGBA.Orange,
       RGBA.SlateGray,
-    )
+    ) ++ (if(player.canLevelUp)
+      Some(text("Press 'L' to level up!", xOffset + barWidth + borderSize, yOffset - borderSize))
+    else None).toSeq.toBatch
   }
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
@@ -64,12 +68,14 @@ object Elements {
     val groupedItems = model.gameState.playerEntity.groupedUsableItems
 
     val itemSprites = for {((item, quantity), index) <- groupedItems.zipWithIndex} yield {
-      val itemX = spriteScale + index * (spriteScale * 1.5)
-      val itemY = spriteScale * 3
+      val itemX: Int = uiXOffset + index * ((spriteScale * 3) / 2)
+      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + borderSize
       val sprite = data.Sprites.itemSprites(item)
 
-      Seq(spriteSheet.fromSprite(sprite)
-        .moveTo(itemX.toInt, itemY.toInt)
+      Seq(
+        spriteSheet.fromSprite(sprite)
+        .moveTo(itemX.toInt, itemY.toInt),
+        text(s"$quantity", itemX + spriteScale, itemY + 8)
       ) ++ (model.uiState match {
         case UIState.ListSelect(list, selectedIndex, _) if selectedIndex == index && list.head.isInstanceOf[Item] =>
           Some(
@@ -81,16 +87,15 @@ object Elements {
         case _ =>
           None
       })
-
-      // Draw the quantity number
-      //        canvas.graphicsContext2D.setFill(Color.White)
-      //        canvas.graphicsContext2D.setFont(pixelFont)
-      //        canvas.graphicsContext2D.fillText(
-      //          quantity.toString,
-      //          itemX + itemWidth + (spriteScale * uiScale / 8),
-      //          itemY + itemHeight - (spriteScale * uiScale / 8)
-      //        )
     }
     itemSprites.flatten.toSeq.toBatch
   }
+  
+  def text(text: String, x: Int, y: Int): SceneNode = Text(
+    text,
+    x,
+    y,
+    PixelFont.fontKey,
+    Assets.assets.generated.PixelFontMaterial
+  )
 }
