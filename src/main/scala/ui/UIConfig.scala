@@ -6,8 +6,11 @@ object UIConfig {
   val xTiles = 24
   val yTiles = 16
 
-  val xPixels: Int = xTiles * spriteScale * uiScale
-  val yPixels: Int = yTiles * spriteScale * uiScale
+  val canvasWidth: Int = xTiles * spriteScale
+  val canvasHeight: Int = yTiles * spriteScale
+  
+  val xPixels: Int = canvasWidth * uiScale
+  val yPixels: Int = canvasHeight * uiScale
   
   val borderSize: Int = 2
   

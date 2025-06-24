@@ -21,7 +21,7 @@ lazy val root = (project in file("."))
     indigoOptions := gameOptions,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
-      "io.indigoengine" %%% "indigo" % "0.21.1"
+      "io.indigoengine" %%% "indigo" % "0.21.2-SNAPSHOT"
     ),
     Compile / sourceGenerators += Def.task {
       IndigoGenerators("generated")
@@ -31,6 +31,19 @@ lazy val root = (project in file("."))
           fontOptions = FontOptions(
             fontKey = "PixelFont",
             fontSize = 16,
+            charSet = CharSet.ASCII,
+            color = RGB.White,
+            antiAlias = false,
+            layout = FontLayout.normal
+          ),
+          imageOut = workspaceDir / "assets" / "generated"
+        )
+        .embedFont(
+          moduleName = "PixelFontSmall",
+          font = workspaceDir / "assets" / "fonts" / "Kenney Mini.ttf",
+          fontOptions = FontOptions(
+            fontKey = "PixelFontSmall",
+            fontSize = 8,
             charSet = CharSet.ASCII,
             color = RGB.White,
             antiAlias = false,

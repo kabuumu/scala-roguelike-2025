@@ -1,15 +1,33 @@
 package indigoengine.view
 
-import indigo.*
-import ui.{GameController, UIState}
-import ui.UIConfig.*
-import indigoengine.SpriteExtension.*
-import indigo.Batch.toBatch
 import game.Item.Item
-import generated.PixelFont
-import generated.Assets
+import generated.{Assets, PixelFont, PixelFontSmall}
+import indigo.*
+import indigo.Batch.toBatch
+import indigoengine.SpriteExtension.*
+import ui.UIConfig.*
+import ui.{GameController, UIState}
 
 object Elements {
+  def text(text: String, x: Int, y: Int): SceneNode = Text(
+    text,
+    x,
+    y,
+    PixelFont.fontKey,
+    Assets.assets.generated.PixelFontMaterial
+  )
+
+  def wrapText(text: String, maxLineLength: Int): Seq[String] = {
+    text.split("\\s+").foldLeft(Seq("")) { (lines, word) =>
+      val currentLine = lines.last
+      if (currentLine.isEmpty) lines.init :+ word
+      else if ((currentLine.length + 1 + word.length) <= maxLineLength)
+        lines.init :+ (currentLine + " " + word)
+      else
+        lines :+ word
+    }
+  }
+
   def healthBar(model: GameController): Batch[SceneNode] = {
     import game.entity.Health.*
 
@@ -90,12 +108,59 @@ object Elements {
     }
     itemSprites.flatten.toSeq.toBatch
   }
-  
-  def text(text: String, x: Int, y: Int): SceneNode = Text(
-    text,
-    x,
-    y,
-    PixelFont.fontKey,
-    Assets.assets.generated.PixelFontMaterial
-  )
+
+
+  def perkSelection(model: GameController): Batch[SceneNode] = {
+    import game.perk.Perk
+
+    model.uiState match {
+      case uiState@UIState.ListSelect(list, _, _) if list.head.isInstanceOf[Perk] =>
+        val perkCardWidth = spriteScale * 4 // Width of the perk card
+        val perkCardHeight = spriteScale * 6 // Height of the perk card
+
+        // Get the possible perks for the player
+        val perks = uiState.list.asInstanceOf[Seq[Perk]]
+
+        val numPerks = perks.size
+        val spacing = spriteScale * 2
+        val totalWidth = numPerks * perkCardWidth + (numPerks - 1) * spacing
+        val startX = (canvasWidth - totalWidth) / 2
+
+        (for {
+          (perk, index) <- perks.zipWithIndex
+        } yield {
+          val index = perks.indexOf(perk)
+          val isChosenPerk: Boolean = uiState.index == index
+
+          val itemX = startX + index * (perkCardWidth + spacing)
+          val itemY = spriteScale * 3
+
+          // Draw the perk rectangle
+          Seq(
+            BlockBar.getBlockBar(
+              Rectangle(Point(itemX.toInt, itemY.toInt), Size(perkCardWidth, perkCardHeight)),
+              if (isChosenPerk) RGBA.Orange else RGBA.SlateGray
+            ),
+            Text(
+              perk.name,
+              itemX + borderSize,
+              itemY + borderSize,
+              PixelFont.fontKey,
+              Assets.assets.generated.PixelFontMaterial
+            ),
+            // Draw the perk description and wrap to fit within the card width
+            Text(
+              //Wrap the description text if full words are longer than 14 characters on a line
+              wrapText(perk.description, 13).mkString("\n"),
+              itemX + borderSize,
+              itemY + spriteScale + borderSize,
+              PixelFontSmall.fontKey,
+              Assets.assets.generated.PixelFontSmallMaterial
+            )
+          )
+        }).flatten.toBatch
+      case _ =>
+        Batch.empty
+    }
+  }
 }

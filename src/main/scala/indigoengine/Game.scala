@@ -4,6 +4,8 @@ import data.Sprites
 import game.entity.Movement.position
 import game.entity.{Entity, SightMemory}
 import game.{LineOfSight, StartingState}
+import generated.PixelFontSmall
+import generated.PixelFont
 import indigo.*
 import indigo.Batch.toBatch
 import indigoengine.SpriteExtension.*
@@ -11,7 +13,6 @@ import indigoengine.shaders.{CustomShader, Darken}
 import indigoengine.view.Elements.*
 import ui.UIConfig.*
 import ui.{GameController, UIConfig, UIState}
-import generated.PixelFont
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
@@ -28,7 +29,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
   ) ++ generated.Assets.assets.generated.assetSet
 
   override def fonts: Set[FontInfo] = Set(
-    PixelFont.fontInfo
+    PixelFont.fontInfo,
+    PixelFontSmall.fontInfo
   )
 
   override def animations: Set[Animation] = Set.empty
@@ -90,7 +92,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
       SceneUpdateFragment(
         Layer.Content((tileSprites ++ entitySprites ++ cursor).toBatch)
           .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
-        Layer.Content(healthBar(model) ++ experienceBar(model) ++ usableItems(model, spriteSheet))
+        Layer.Content(healthBar(model) ++ experienceBar(model) ++ usableItems(model, spriteSheet) ++ perkSelection(model))
       )
     )
   }
