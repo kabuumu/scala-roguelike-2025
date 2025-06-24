@@ -1,5 +1,6 @@
 package game
 
+import game.Input.Wait
 import game.entity.*
 import game.entity.EntityType.LockedDoor
 import game.event.*
@@ -20,12 +21,15 @@ case class GameState(playerEntityId: String,
   }
 
   val systems: Seq[GameSystem] = Seq(
-    LegacyAISystem,
+    EnemyAISystem,
     MovementSystem,
     LegacyVelocitySystem,
     LegacyWaveSystem,
     ItemUseSystem,
+    WaitSystem,
+    OpenDoorSystem,
     CollisionCheckSystem,
+    LegacyAttackSystem,
     LegacyRangeCheckSystem,
     LegacyCollisionSystem,
     InventorySystem,

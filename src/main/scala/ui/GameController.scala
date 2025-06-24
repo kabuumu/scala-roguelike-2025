@@ -4,7 +4,6 @@ import game.Input.*
 import game.Item.*
 import game.Item.ChargeType.{Ammo, SingleUse}
 import game.Item.ItemEffect.{EntityTargeted, NonTargeted, PointTargeted}
-import game.action.*
 import game.entity.*
 import game.entity.EntityType.*
 import game.entity.Experience.*
@@ -83,7 +82,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.ListSelect(
               list = enemies,
               effect = target => {
-                (UIState.Move, Some(???))
+                (UIState.Move, Some(InputAction.Attack(target)))
               }
             ), None)
           } else {

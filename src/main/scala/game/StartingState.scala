@@ -8,22 +8,21 @@ import game.entity.*
 import game.event.{AddExperienceEvent, NullEvent}
 import map.{Dungeon, MapGenerator}
 
-import java.util.UUID
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 4)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 10, lockedDoorCount = 2)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 2 == 0 =>
       Entity(
-        id = s"Rat ${UUID.randomUUID}",
+        id = s"Rat $index",
         Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Enemy),
         Health(2),
-        Initiative(40),
+        Initiative(12),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>
@@ -35,16 +34,16 @@ object StartingState {
           }
         ))
       )
-    case (point, _) =>
+    case (point, index) =>
       Entity(
-        id = s"Snake ${UUID.randomUUID}",
+        id = s"Snake $index",
         Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Enemy),
         Health(1),
-        Initiative(80),
+        Initiative(25),
         Inventory(Nil, Some(Weapon(1, Ranged(4)))),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
@@ -69,7 +68,7 @@ object StartingState {
         )),
         EntityTypeComponent(EntityType.Player),
         Health(12),
-        Initiative(35),
+        Initiative(10),
         Inventory(
           items = Seq(Potion, Scroll, Bow) ++ Seq.fill(6)(Arrow),
           primaryWeapon = Some(Weapon(2, Melee)),
