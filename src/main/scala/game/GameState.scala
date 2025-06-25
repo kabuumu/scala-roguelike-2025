@@ -36,6 +36,7 @@ case class GameState(playerEntityId: String,
     DeathHandlerSystem,
     InitiativeSystem,
     LevelUpSystem,
+    SightMemorySystem,
   )
 
   def updateWithSystems(events: Seq[GameSystemEvent]): GameState =
