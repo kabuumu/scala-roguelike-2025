@@ -16,4 +16,7 @@ object UIConfig {
   
   val uiXOffset: Int = spriteScale / 2
   val uiYOffset: Int = spriteScale / 2
+  
+  val itemBorder: Int = spriteScale / 2
+  val uiItemScale: Int = spriteScale + itemBorder
 }
