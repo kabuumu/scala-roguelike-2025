@@ -39,6 +39,8 @@ object SpriteExtension {
       val sprite = tileType match {
         case TileType.Floor => Sprites.floorSprite
         case TileType.Wall => Sprites.wallSprite
+        case TileType.MaybeFloor => Sprites.maybeFloorSprite
+        case TileType.Water => Sprites.waterSprite
       }
 
       spriteSheet

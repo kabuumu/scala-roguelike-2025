@@ -1,9 +1,10 @@
 package map
 
-import game.entity.EntityType.LockedDoor
 import game.Item.Item
+import game.entity.EntityType.LockedDoor
 import game.{Direction, Point}
-import map.TileType.Wall
+import map.Dungeon.roomSize
+import map.TileType._
 
 case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    roomConnections: Set[RoomConnection] = Set.empty,
@@ -89,8 +90,24 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
       }
       position -> LockedDoor(keyColour)
   }
-
-  val tiles: Map[Point, TileType] = roomGrid.flatMap {
+  
+  lazy val noise: Map[(Int, Int), Int] = {
+    val minX: Int = roomGrid.map(_.x).min * roomSize
+    val maxX: Int = roomGrid.map(_.x).max * roomSize + roomSize
+    val minY: Int = roomGrid.map(_.y).min * roomSize
+    val maxY: Int = roomGrid.map(_.y).max * roomSize + roomSize
+    
+    val noise = NoiseGenerator.getNoise(minX, maxX, minY, maxY)
+    
+    noise.values.groupBy(identity).foreach {
+      case (value, points) =>
+        println(s"Noise value $value has ${points.size} points")
+    }
+    
+    noise
+  }
+  
+  lazy val tiles: Map[Point, TileType] = roomGrid.flatMap {
     room =>
       val roomX = room.x * Dungeon.roomSize
       val roomY = room.y * Dungeon.roomSize
@@ -99,24 +116,55 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
 
       def isDoor(point: Point) = doorPoints.contains(point)
 
+      // If the point is the centre of a room, a door, or the path between, it must be a floor tile
+      def mustBeFloor(point: Point): Boolean = {
+        val roomCentre = Point(
+          roomX + Dungeon.roomSize / 2,
+          roomY + Dungeon.roomSize / 2
+        )
+
+        // Find all points between the centre of the room and any doors within the room
+        val roomPaths = for {
+          roomConnection <- roomConnections(room)
+          doorPoint = roomConnection.direction match {
+            case Direction.Up => Point(roomX + Dungeon.roomSize / 2, roomY)
+            case Direction.Down => Point(roomX + Dungeon.roomSize / 2, roomY + Dungeon.roomSize)
+            case Direction.Left => Point(roomX, roomY + Dungeon.roomSize / 2)
+            case Direction.Right => Point(roomX + Dungeon.roomSize, roomY + Dungeon.roomSize / 2)
+          }
+          pathX <- (Math.min(roomCentre.x, doorPoint.x)) to (Math.max(roomCentre.x, doorPoint.x))
+          pathY <- (Math.min(roomCentre.y, doorPoint.y)) to (Math.max(roomCentre.y, doorPoint.y))
+          if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
+        } yield Point(pathX, pathY)
+        
+        roomPaths.contains(point)
+      }
+      
       val roomTiles = for {
-        x <- roomX until roomX + Dungeon.roomSize + 1
-        y <- roomY until roomY + Dungeon.roomSize + 1
+        x <- roomX to roomX + Dungeon.roomSize
+        y <- roomY to roomY + Dungeon.roomSize
       } yield {
         val point = Point(x, y)
-        if (isDoor(point)) {
-          (point, TileType.Floor)
-        } else if (isWall(point) && wallIsOnLockedConnection(point)) {
-          (point, TileType.Wall)
-        } else {
-          (point, TileType.Floor)
-        }
+        
+        if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
+          case 0 | 1 | 2 | 3 => (point, TileType.Floor)
+          case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
+        else if(isWall(point) && wallIsOnLockedConnection(point)) noise(x -> y) match
+          case 0 | 1 | 2 | 3 => (point, TileType.Water)
+          case 4 | 5 | 6 | 7 => (point, TileType.Wall)
+        else noise(x -> y) match
+          case 0 | 1 => (point, TileType.Water)
+          case 2 | 3 => (point, TileType.Floor)
+          case 4 | 5 => (point, TileType.MaybeFloor)
+          case 6 | 7 => (point, TileType.Wall)
       }
 
       roomTiles.toMap
   }.toMap
 
-  val walls: Set[Point] = tiles.filter(_._2 == Wall).keySet
+  lazy val walls: Set[Point] = tiles.filter(_._2 == Wall).keySet
+  
+  lazy val pits: Set[Point] = tiles.filter(_._2 == TileType.Water).keySet
 
   val lockedDoorCount: Int = roomConnections.count(_.isLocked)
 
@@ -169,5 +217,5 @@ case class RoomConnection(originRoom: Point, direction: Direction, destinationRo
 }
 
 object Dungeon {
-  val roomSize = 8
+  val roomSize = 10
 }

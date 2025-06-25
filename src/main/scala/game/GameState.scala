@@ -97,7 +97,7 @@ case class GameState(playerEntityId: String,
         movement.position
       }.toSet
 
-  val movementBlockingPoints: Set[Point] = dungeon.walls ++
+  val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.pits ++
       entities.collect {
         case entity@Entity[Movement
         ] (movement)

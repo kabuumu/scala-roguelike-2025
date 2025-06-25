@@ -59,8 +59,6 @@ object LegacyAttackSystem extends GameSystem {
             }
         }} yield events
         
-        println(events)
-        
         gameState.handleEvents(events)
       case (currentState, _) =>
         currentState
