@@ -27,6 +27,10 @@ object Inventory {
   extension (entity: Entity) {
     def items: Seq[Item] = entity.get[Inventory].toSeq.flatMap(_.items)
 
+    def keys: Seq[Item.Key] = items.collect {
+      case key: Item.Key => key
+    }
+    
     def groupedUsableItems: Map[UsableItem, Int] = items.collect {
       case usableItem: UsableItem => usableItem
     }.groupBy(identity).view.map {

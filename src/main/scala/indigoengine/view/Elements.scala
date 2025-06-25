@@ -108,6 +108,25 @@ object Elements {
     }
     itemSprites.flatten.toSeq.toBatch
   }
+  
+  def keys(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
+    import game.entity.Inventory.*
+
+    // Get the keys from the player's inventory
+    val keys = model.gameState.playerEntity.keys
+
+    val keySprites = for {(key, index) <- keys.zipWithIndex} yield {
+      val itemX: Int = uiXOffset + index * uiItemScale
+      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + uiItemScale + borderSize
+      val sprite = data.Sprites.itemSprites(key)
+
+      Seq(
+        spriteSheet.fromSprite(sprite)
+          .moveTo(itemX.toInt, itemY.toInt),
+      )
+    }
+    keySprites.flatten.toSeq.toBatch
+  }
 
 
   def perkSelection(model: GameController): Batch[SceneNode] = {

@@ -92,7 +92,13 @@ object Game extends IndigoSandbox[Unit, GameController] {
       SceneUpdateFragment(
         Layer.Content((tileSprites ++ entitySprites ++ cursor).toBatch)
           .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
-        Layer.Content(healthBar(model) ++ experienceBar(model) ++ usableItems(model, spriteSheet) ++ perkSelection(model))
+        Layer.Content(
+          healthBar(model) 
+            ++ experienceBar(model) 
+            ++ usableItems(model, spriteSheet) 
+            ++ perkSelection(model)
+            ++ keys(model, spriteSheet)
+        )
       )
     )
   }
