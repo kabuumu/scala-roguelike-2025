@@ -117,7 +117,7 @@ object Elements {
 
     val keySprites = for {(key, index) <- keys.zipWithIndex} yield {
       val itemX: Int = uiXOffset + index * uiItemScale
-      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + uiItemScale + borderSize
+      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + spriteScale + (borderSize * 2)
       val sprite = data.Sprites.itemSprites(key)
 
       Seq(
