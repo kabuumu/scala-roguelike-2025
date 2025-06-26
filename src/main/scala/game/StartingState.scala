@@ -10,7 +10,7 @@ import map.{Dungeon, MapGenerator}
 
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 10, lockedDoorCount = 2)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 40, lockedDoorCount = 5)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 2 == 0 =>

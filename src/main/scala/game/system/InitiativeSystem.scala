@@ -10,7 +10,9 @@ object InitiativeSystem extends GameSystem {
     val updatedGamestate = if (gameState.playerEntity.isReady) 
       gameState
     else
-      gameState.entities.foldLeft(gameState) {
+      gameState.entities
+        .filter(_.has[Initiative])
+        .foldLeft(gameState) {
         case (currentState, entity) =>
           currentState.updateEntity(entity.id, _.decreaseInitiative())
       }

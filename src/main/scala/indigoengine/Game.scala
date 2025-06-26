@@ -4,8 +4,7 @@ import data.Sprites
 import game.entity.Movement.position
 import game.entity.{Entity, SightMemory}
 import game.{LineOfSight, StartingState}
-import generated.PixelFontSmall
-import generated.PixelFont
+import generated.{PixelFont, PixelFontSmall}
 import indigo.*
 import indigo.Batch.toBatch
 import indigoengine.SpriteExtension.*
@@ -59,33 +58,27 @@ object Game extends IndigoSandbox[Unit, GameController] {
       Outcome(model.update(optInput, time))
 
   override def present(context: Context[Unit], model: GameController): Outcome[SceneUpdateFragment] = {
-    val spriteSheet: Graphic[Material.Bitmap] = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+    val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
     val player = model.gameState.playerEntity
     val game.Point(playerX, playerY) = player.position
     val visiblePoints = model.gameState.getVisiblePointsFor(player)
     val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
 
-    val tileSprites = model.gameState.dungeon.tiles
-      .filter {
-        case (tilePosition, _) => sightMemory.contains(tilePosition)
-      }.map {
-        case (tilePosition, tileType) =>
-          val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
-          if (visiblePoints.contains(tilePosition)) {
-            tileSprite
-          } else {
-            //darken sprite if not visible
-            tileSprite.asInstanceOf[Graphic[Material.Bitmap]]
-              .modifyMaterial(
-                _.toImageEffects.withTint(RGBA.SlateGray)
-              )
-          }
+    // Combine filtering and mapping for tileSprites
+    val tileSprites = model.gameState.dungeon.tiles.iterator.collect {
+      case (tilePosition, tileType) if sightMemory.contains(tilePosition) =>
+        val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
+        if (visiblePoints.contains(tilePosition)) tileSprite
+        else tileSprite.asInstanceOf[Graphic[Material.Bitmap]]
+          .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
     }.toSeq
 
-    val entitySprites = model.gameState.entities.filter {
-      entity => visiblePoints.contains(entity.position)
-    }.flatMap(spriteSheet.fromEntity)
-
+    // Filter and map entities in one pass
+    val entitySprites = model.gameState.entities.iterator
+      .filter(e => visiblePoints.contains(e.position))
+      .flatMap(spriteSheet.fromEntity)
+      .toSeq
+  
     val cursor = drawUIElements(spriteSheet, model)
 
     Outcome(
@@ -93,9 +86,9 @@ object Game extends IndigoSandbox[Unit, GameController] {
         Layer.Content((tileSprites ++ entitySprites ++ cursor).toBatch)
           .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
         Layer.Content(
-          healthBar(model) 
-            ++ experienceBar(model) 
-            ++ usableItems(model, spriteSheet) 
+          healthBar(model)
+            ++ experienceBar(model)
+            ++ usableItems(model, spriteSheet)
             ++ perkSelection(model)
             ++ keys(model, spriteSheet)
         )

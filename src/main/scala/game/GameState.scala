@@ -2,7 +2,7 @@ package game
 
 import game.Input.Wait
 import game.entity.*
-import game.entity.EntityType.LockedDoor
+import game.entity.EntityType.*
 import game.event.*
 import game.system.*
 import game.system.event.GameSystemEvent.GameSystemEvent
@@ -78,9 +78,6 @@ case class GameState(playerEntityId: String,
     copy(entities = entities.filterNot(_.id == entityId))
   }
 
-  lazy val playerVisiblePoints: Set[Point] = getVisiblePointsFor(playerEntity)
-
-
   //TODO - remove magic number
   def getVisiblePointsFor(entity: Entity): Set[Point] = for {
     entityPosition <- entity.get[Movement].map(_.position).toSet
@@ -91,23 +88,19 @@ case class GameState(playerEntityId: String,
     copy(messages = message +: messages)
   }
 
-  val lineOfSightBlockingPoints: Set[Point] = dungeon.walls ++
-      entities.collect {
-        case entity@Entity[Movement](movement)if entity.exists[EntityTypeComponent](_.entityType.isInstanceOf[EntityType.LockedDoor])=>
-        movement.position
-      }.toSet
+  lazy val lineOfSightBlockingPoints: Set[Point] = dungeon.walls ++
+    entities
+      .filter(_.entityType.isInstanceOf[LockedDoor])
+      .flatMap(_.get[Movement].map(_.position))
+      .toSet
 
-  val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.pits ++
-      entities.collect {
-        case entity@Entity[Movement
-        ] (movement)
-        if (entity.exists[Health](_.isAlive) && entity.exists[EntityTypeComponent](_.entityType == EntityType.Enemy)) ||(entity.exists[EntityTypeComponent](_.entityType.isInstanceOf[LockedDoor]))
-        =>
-        movement.position
-      }.toSet
-
-
-  val drawableChanges: Seq[Set[(Point, Sprite)]] = {
+  lazy val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.pits ++
+    entities
+      .filter(entity => entity.entityType == EntityType.Enemy || entity.entityType.isInstanceOf[LockedDoor])
+      .flatMap(_.get[Movement].map(_.position))
+      .toSet
+  
+  lazy val drawableChanges: Seq[Set[(Point, Sprite)]] = {
     import game.entity.Drawable.*
     entities.map(_.sprites)
   }

@@ -6,6 +6,7 @@ import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
+import game.entity.SightMemory.*
 import game.entity.{EntityType, Movement}
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent

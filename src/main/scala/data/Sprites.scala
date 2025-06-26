@@ -12,11 +12,14 @@ object Sprites {
   val uiLayer = 3
 
   val playerSprite: Sprite = Sprite(25, 0, entityLayer)
-  val wallSprite: Sprite = Sprite(10, 17, entityLayer)
   val enemySprite: Sprite = Sprite(26, 0, entityLayer)
+  
+  val wallSprite: Sprite = Sprite(10, 17, entityLayer)
   val floorSprite: Sprite = Sprite(2, 0, floorLayer)
   val maybeFloorSprite: Sprite = Sprite(1, 0, floorLayer)
   val waterSprite: Sprite = Sprite(8, 5, floorLayer)
+  val bridgeSprite: Sprite = Sprite(16, 5, floorLayer)
+  
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)
   val deadSprite: Sprite = Sprite(0, 15, backgroundLayer)

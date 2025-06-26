@@ -1,4 +1,4 @@
 package map
 
 enum TileType:
-  case Wall, Floor, MaybeFloor, Water
+  case Wall, Floor, MaybeFloor, Water, Bridge

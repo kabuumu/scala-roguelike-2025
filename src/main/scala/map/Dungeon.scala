@@ -90,16 +90,16 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
       }
       position -> LockedDoor(keyColour)
   }
-  
+
   lazy val noise: Map[(Int, Int), Int] = {
     val minX: Int = roomGrid.map(_.x).min * roomSize
     val maxX: Int = roomGrid.map(_.x).max * roomSize + roomSize
     val minY: Int = roomGrid.map(_.y).min * roomSize
     val maxY: Int = roomGrid.map(_.y).max * roomSize + roomSize
-    
+
     NoiseGenerator.getNoise(minX, maxX, minY, maxY)
   }
-  
+
   lazy val tiles: Map[Point, TileType] = roomGrid.flatMap {
     room =>
       val roomX = room.x * Dungeon.roomSize
@@ -129,20 +129,21 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
           pathY <- (Math.min(roomCentre.y, doorPoint.y)) to (Math.max(roomCentre.y, doorPoint.y))
           if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
         } yield Point(pathX, pathY)
-        
+
         roomPaths.contains(point)
       }
-      
+
       val roomTiles = for {
         x <- roomX to roomX + Dungeon.roomSize
         y <- roomY to roomY + Dungeon.roomSize
       } yield {
         val point = Point(x, y)
-        
+
         val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
-        
+
         if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
-          case 0 | 1 | 2 | 3 => (point, TileType.Floor)
+          case 0 | 1 => (point, TileType.Bridge)
+          case 2 | 3 => (point, TileType.Floor)
           case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
         else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
           case 0 | 1 | 2 | 3 => (point, TileType.Water)
@@ -160,7 +161,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
   }.toMap
 
   lazy val walls: Set[Point] = tiles.filter(_._2 == Wall).keySet
-  
+
   lazy val pits: Set[Point] = tiles.filter(_._2 == TileType.Water).keySet
 
   val lockedDoorCount: Int = roomConnections.count(_.isLocked)
@@ -206,7 +207,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
 
     roomConnectionsForWall.exists(_.isLocked) || roomConnectionsForWall.isEmpty
   }
-  
+
   def getRoomConnectionsForWall(wall: Point) = roomConnections.filter {
     case RoomConnection(originRoom, direction, destinationRoom, optLock) =>
       val originRoomX = originRoom.x * Dungeon.roomSize

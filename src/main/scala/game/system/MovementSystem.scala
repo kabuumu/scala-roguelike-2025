@@ -19,9 +19,6 @@ object MovementSystem extends GameSystem {
               .updateEntity(
                 entityId,
                 _.update[Movement](_.move(direction))
-                  .updateSightMemory(
-                    currentState
-                  )
                   .resetInitiative()
               )
           case _ =>
