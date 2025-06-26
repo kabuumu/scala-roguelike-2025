@@ -6,14 +6,6 @@ import scala.util.Random
 object NoiseGenerator {
   val enumLimit = 7
 
-  (for {
-    _ <- 1 to 1000
-    n = noisify(1)
-  } yield n).groupBy(identity).foreach {
-    case (n, occurrences) =>
-      println(s"Value: $n, Occurrences: ${occurrences.size}")
-  }
-
   def getNoise(minX: Int, maxX: Int, minY: Int, maxY: Int): Map[(Int, Int), Int] = {
     val totalSize = (maxX - minX + 1) * (maxY - minY + 1)
 

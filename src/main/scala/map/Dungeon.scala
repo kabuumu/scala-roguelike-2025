@@ -97,14 +97,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     val minY: Int = roomGrid.map(_.y).min * roomSize
     val maxY: Int = roomGrid.map(_.y).max * roomSize + roomSize
     
-    val noise = NoiseGenerator.getNoise(minX, maxX, minY, maxY)
-    
-    noise.values.groupBy(identity).foreach {
-      case (value, points) =>
-        println(s"Noise value $value has ${points.size} points")
-    }
-    
-    noise
+    NoiseGenerator.getNoise(minX, maxX, minY, maxY)
   }
   
   lazy val tiles: Map[Point, TileType] = roomGrid.flatMap {
@@ -146,12 +139,16 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
       } yield {
         val point = Point(x, y)
         
+        val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
+        
         if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
           case 0 | 1 | 2 | 3 => (point, TileType.Floor)
           case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
-        else if(isWall(point) && wallIsOnLockedConnection(point)) noise(x -> y) match
+        else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
           case 0 | 1 | 2 | 3 => (point, TileType.Water)
           case 4 | 5 | 6 | 7 => (point, TileType.Wall)
+        else if(isWall(point) && roomConnectionsForWall.isEmpty)
+          (point, TileType.Wall)
         else noise(x -> y) match
           case 0 | 1 => (point, TileType.Water)
           case 2 | 3 => (point, TileType.Floor)
@@ -208,6 +205,22 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     }
 
     roomConnectionsForWall.exists(_.isLocked) || roomConnectionsForWall.isEmpty
+  }
+  
+  def getRoomConnectionsForWall(wall: Point) = roomConnections.filter {
+    case RoomConnection(originRoom, direction, destinationRoom, optLock) =>
+      val originRoomX = originRoom.x * Dungeon.roomSize
+      val originRoomY = originRoom.y * Dungeon.roomSize
+
+      val isWithinXBounds = wall.x > originRoomX && wall.x < originRoomX + Dungeon.roomSize
+      val isWithinYBounds = wall.y > originRoomY && wall.y < originRoomY + Dungeon.roomSize
+
+      direction match {
+        case Direction.Up => wall.y == originRoomY && isWithinXBounds
+        case Direction.Down => wall.y == originRoomY + Dungeon.roomSize && isWithinXBounds
+        case Direction.Left => wall.x == originRoomX && isWithinYBounds
+        case Direction.Right => wall.x == originRoomX + Dungeon.roomSize && isWithinYBounds
+      }
   }
 }
 
