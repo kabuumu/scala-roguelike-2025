@@ -16,7 +16,7 @@ object Drawable {
       for {
         movement <- entity.get[Movement].toSet
         drawable <- entity.get[Drawable].toSet
-        (point, sprite) <- if (entity.isDead) Set((Point(0, 0), Sprites.deadSprite)) else drawable.sprites
+        (point, sprite) <- drawable.sprites
       } yield (point + movement.position, sprite)
     }
   }

@@ -7,6 +7,7 @@ import indigo.Batch.toBatch
 import indigoengine.SpriteExtension.*
 import ui.UIConfig.*
 import ui.{GameController, UIState}
+import game.status.StatusEffect
 
 object Elements {
   def text(text: String, x: Int, y: Int): SceneNode = Text(
@@ -130,15 +131,13 @@ object Elements {
 
 
   def perkSelection(model: GameController): Batch[SceneNode] = {
-    import game.perk.Perk
-
     model.uiState match {
-      case uiState@UIState.ListSelect(list, _, _) if list.head.isInstanceOf[Perk] =>
+      case uiState@UIState.ListSelect(list, _, _) if list.head.isInstanceOf[StatusEffect] =>
         val perkCardWidth = spriteScale * 4 // Width of the perk card
         val perkCardHeight = spriteScale * 6 // Height of the perk card
 
         // Get the possible perks for the player
-        val perks = uiState.list.asInstanceOf[Seq[Perk]]
+        val perks = uiState.list.asInstanceOf[Seq[StatusEffect]]
 
         val numPerks = perks.size
         val spacing = spriteScale * 2

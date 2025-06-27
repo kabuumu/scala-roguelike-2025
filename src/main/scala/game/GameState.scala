@@ -40,13 +40,15 @@ case class GameState(playerEntityId: String,
     SightMemorySystem,
   )
 
-  def updateWithSystems(events: Seq[GameSystemEvent]): GameState =
+  def updateWithSystems(events: Seq[GameSystemEvent]): GameState = {
+    println(events)
     systems.foldLeft((this, events)) {
       case ((currentState, currentEvents), system) =>
         val (newState, newEvents) = system.update(currentState, currentEvents)
         (newState, currentEvents ++ newEvents)
     }._1
-  
+  }
+
 
   @scala.annotation.tailrec
   @deprecated

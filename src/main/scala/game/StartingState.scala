@@ -21,8 +21,9 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Enemy),
-        Health(2),
+        Health(25),
         Initiative(12),
+        Inventory(Nil, Some(Weapon(12, Melee))),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>
@@ -42,9 +43,9 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Enemy),
-        Health(1),
+        Health(18),
         Initiative(25),
-        Inventory(Nil, Some(Weapon(1, Ranged(4)))),
+        Inventory(Nil, Some(Weapon(8, Ranged(4)))),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>
@@ -67,11 +68,11 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Player),
-        Health(12),
+        Health(100),
         Initiative(10),
         Inventory(
           items = Seq(Potion, Scroll, Bow) ++ Seq.fill(6)(Arrow),
-          primaryWeapon = Some(Weapon(2, Melee)),
+          primaryWeapon = Some(Weapon(10, Melee)),
           secondaryWeapon = None
         ),
         SightMemory(),

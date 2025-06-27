@@ -1,7 +1,9 @@
 package game.entity
 
 import game.Constants.DEFAULT_EXP
-import game.perk.{IncreaseMaxHealthPerk, Perk}
+import game.status.StatusEffect
+import game.status.StatusEffect.EffectType.IncreaseMaxHealth
+import game.perk.Perks.*
 
 case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) extends Component {
   final val LEVEL_CONSTANT: Int = (DEFAULT_EXP/5) 
@@ -43,10 +45,10 @@ object Experience {
     
     def nextLevelExperience: Int = entity.get[Experience].map(_.nextLevelExperience).getOrElse(0)
     
-    def getPossiblePerks: Seq[Perk] = if(canLevelUp) Seq(
-      IncreaseMaxHealthPerk(10),
-      IncreaseMaxHealthPerk(20), 
-      IncreaseMaxHealthPerk(30), 
+    def getPossiblePerks: Seq[StatusEffect] = if(canLevelUp) Seq(
+      IncreaseMaxHealthPerk,
+      IncreaseDamagePerk,
+      ReduceIncomingDamagePerk
     ) else Nil
   }
 }

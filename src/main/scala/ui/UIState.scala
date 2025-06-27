@@ -1,7 +1,6 @@
 package ui
 
 import game.Point
-import game.perk.Perk
 
 import scala.reflect.ClassTag
 

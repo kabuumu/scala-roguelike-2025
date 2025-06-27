@@ -12,7 +12,7 @@ import scala.util.Random
 
 
 object Item {
-  val potionValue = 5
+  val potionValue = 25
 
   //Types of item
   // Unusable (e.g. key, melee weapon, armour or ammo - has uses but not by direct use)
@@ -69,7 +69,7 @@ object Item {
       PointTargeted { target =>
         entity =>
           gameState => {
-            val scrollDamage = 3
+            val scrollDamage = 30
 
             val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
             val startingPosition = entity.position
@@ -119,7 +119,7 @@ object Item {
       target =>
         entity =>
           gameState => {
-            val bowDamage = 2
+            val bowDamage = 8
             val targetType = if (entity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
             val startingPosition = entity.position
             val projectileEntity =

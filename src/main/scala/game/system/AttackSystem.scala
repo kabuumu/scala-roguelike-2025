@@ -18,7 +18,7 @@ import game.entity.Initiative.*
 
 object AttackSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
-    events.foldLeft((gameState, events)) {
+    events.foldLeft((gameState, Nil)) {
       case ((currentState, currentEvents), GameSystemEvent.InputEvent(attackingEntityId, InputAction.Attack(target))) =>
         val optAttackingEntity = currentState.getEntity(attackingEntityId)
         val optWeapon = currentState.getEntity(attackingEntityId).flatMap(_.get[Inventory].flatMap(_.primaryWeapon))
