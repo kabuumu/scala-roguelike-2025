@@ -8,3 +8,7 @@ hs_err_pid*
 target/
 /.bsp/
 
+#Ignore generated files no matter which subdirectory
+**/target/
+**/generated/
+
