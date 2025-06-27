@@ -42,6 +42,7 @@ object SpriteExtension {
         case TileType.MaybeFloor => Sprites.maybeFloorSprite
         case TileType.Water => Sprites.waterSprite
         case TileType.Bridge => Sprites.bridgeSprite
+        case TileType.Rock => Sprites.rockSprite
       }
 
       spriteSheet

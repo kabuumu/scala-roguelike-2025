@@ -19,6 +19,7 @@ object Sprites {
   val maybeFloorSprite: Sprite = Sprite(1, 0, floorLayer)
   val waterSprite: Sprite = Sprite(8, 5, floorLayer)
   val bridgeSprite: Sprite = Sprite(16, 5, floorLayer)
+  val rockSprite: Sprite = Sprite(5, 2, floorLayer)
   
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)

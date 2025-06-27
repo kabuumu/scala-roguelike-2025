@@ -154,15 +154,17 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
           case 0 | 1 => (point, TileType.Water)
           case 2 | 3 => (point, TileType.Floor)
           case 4 | 5 => (point, TileType.MaybeFloor)
-          case 6 | 7 => (point, TileType.Wall)
+          case 6 | 7 => (point, TileType.Rock)
       }
 
       roomTiles.toMap
   }.toMap
 
-  lazy val walls: Set[Point] = tiles.filter(_._2 == Wall).keySet
+  lazy val walls: Set[Point] = tiles.filter(_._2 == TileType.Wall).keySet
+  
+  lazy val rocks: Set[Point] = tiles.filter(_._2 == TileType.Rock).keySet
 
-  lazy val pits: Set[Point] = tiles.filter(_._2 == TileType.Water).keySet
+  lazy val water: Set[Point] = tiles.filter(_._2 == TileType.Water).keySet
 
   val lockedDoorCount: Int = roomConnections.count(_.isLocked)
 

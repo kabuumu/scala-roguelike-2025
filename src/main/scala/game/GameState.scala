@@ -88,13 +88,13 @@ case class GameState(playerEntityId: String,
     copy(messages = message +: messages)
   }
 
-  lazy val lineOfSightBlockingPoints: Set[Point] = dungeon.walls ++
+  lazy val lineOfSightBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.rocks ++
     entities
       .filter(_.entityType.isInstanceOf[LockedDoor])
       .flatMap(_.get[Movement].map(_.position))
       .toSet
 
-  lazy val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.pits ++
+  lazy val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.water ++ dungeon.rocks ++
     entities
       .filter(entity => entity.entityType == EntityType.Enemy || entity.entityType.isInstanceOf[LockedDoor])
       .flatMap(_.get[Movement].map(_.position))
