@@ -7,15 +7,9 @@ import game.entity.Initiative.*
 
 object InitiativeSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent.GameSystemEvent]): (GameState, Seq[GameSystemEvent.GameSystemEvent]) = {
-    val updatedGamestate = if (gameState.playerEntity.isReady) 
-      gameState
-    else
-      gameState.entities
-        .filter(_.has[Initiative])
-        .foldLeft(gameState) {
-        case (currentState, entity) =>
-          currentState.updateEntity(entity.id, _.decreaseInitiative())
-      }
+    val updatedGamestate = if gameState.playerEntity.isReady then gameState
+    else gameState.copy(entities = gameState.entities.map(_.decreaseInitiative()))
+    
     (updatedGamestate, Nil)
   }
 }

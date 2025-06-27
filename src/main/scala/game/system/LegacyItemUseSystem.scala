@@ -4,7 +4,8 @@ import game.GameState
 import game.system.event.GameSystemEvent
 import ui.InputAction
 
-object ItemUseSystem extends GameSystem {
+@deprecated
+object LegacyItemUseSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent.GameSystemEvent]): (GameState, Seq[GameSystemEvent.GameSystemEvent]) =
     val updatedGameState = events.foldLeft(gameState) {
       case (currentState, GameSystemEvent.InputEvent(entityId, InputAction.UseItem(itemEffect))) =>

@@ -25,15 +25,16 @@ case class GameState(playerEntityId: String,
     MovementSystem,
     LegacyVelocitySystem,
     LegacyWaveSystem,
-    ItemUseSystem,
+    LegacyItemUseSystem,
     WaitSystem,
     OpenDoorSystem,
     CollisionCheckSystem,
-    LegacyAttackSystem,
+    AttackSystem,
     LegacyRangeCheckSystem,
     LegacyCollisionSystem,
+    DamageSystem,
     InventorySystem,
-    DeathHandlerSystem,
+    LegacyDeathHandlerSystem,
     InitiativeSystem,
     LevelUpSystem,
     SightMemorySystem,
@@ -96,7 +97,7 @@ case class GameState(playerEntityId: String,
 
   lazy val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.water ++ dungeon.rocks ++
     entities
-      .filter(entity => entity.entityType == EntityType.Enemy || entity.entityType.isInstanceOf[LockedDoor])
+      .filter(entity => entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player || entity.entityType.isInstanceOf[LockedDoor])
       .flatMap(_.get[Movement].map(_.position))
       .toSet
   

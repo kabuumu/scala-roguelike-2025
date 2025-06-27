@@ -1,6 +1,7 @@
 package game.system.event
 
 import game.Direction
+import game.entity.Entity
 import ui.InputAction
 
 object GameSystemEvent {
@@ -25,5 +26,15 @@ object GameSystemEvent {
     entityId: String,
     input: InputAction
   ) extends GameSystemEvent
+
+  case class DamageEvent(
+    targetId: String,
+    attackerId: String,
+    baseDamage: Int
+  ) extends GameSystemEvent
+  
+  case class SpawnEntityEvent(
+    newEntity: Entity
+  )
 }
 
