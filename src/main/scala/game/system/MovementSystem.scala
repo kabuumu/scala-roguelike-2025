@@ -14,7 +14,7 @@ object MovementSystem extends GameSystem {
     val updatedGamestate = events.foldLeft(gameState) {
       case (currentState, GameSystemEvent.InputEvent(entityId, InputAction.Move(direction))) =>
         currentState.getEntity(entityId) match {
-          case Some(entity) if entity.isReady && !gameState.movementBlockingPoints.contains(entity.position + direction) =>
+          case Some(entity) if entity.isReady && !currentState.movementBlockingPoints.contains(entity.position + direction) =>
             currentState
               .updateEntity(
                 entityId,
