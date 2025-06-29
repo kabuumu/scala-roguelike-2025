@@ -20,7 +20,7 @@ object DamageSystem extends GameSystem {
           case StatusEffect(ReduceIncomingDamage(resistance), _, _) => resistance
         }).sum
         
-        val damage = Math.max(baseDamage + damageMod - damageResistance, 0)
+        val damage = Math.max(baseDamage + damageMod - damageResistance, 1)
         
         currentState.updateEntity(entityId, _.damage(damage, attackerId))
       case (currentState, _) =>

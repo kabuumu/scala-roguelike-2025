@@ -26,14 +26,16 @@ object Health {
     def hasFullHealth: Boolean = currentHealth == maxHealth
 
     def damage(amount: Int, attackerId: String): Entity =
-      entity.update[Health](_.copy(baseCurrent = Math.max(currentHealth - amount, 0))) match {
+      entity.update[Health](health => health.copy(baseCurrent = Math.max(health.baseCurrent - amount, 0 - healthModifier))) match {
         case entity if entity.isDead =>
           entity.addComponent(MarkedForDeath(DeathDetails(entity, Some(attackerId))))
         case entity =>
           entity
       }
     
-    def heal(amount: Int): Entity = entity.update[Health](_.copy(baseCurrent = Math.min(currentHealth + amount, maxHealth)))
+    def heal(amount: Int): Entity = entity.update[Health](
+      health => health.copy(baseCurrent = Math.min(currentHealth + amount, maxHealth))
+    )
     
   }
 }
