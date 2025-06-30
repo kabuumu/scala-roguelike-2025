@@ -1,6 +1,5 @@
 package game
 
-import game.Input.Wait
 import game.entity.*
 import game.entity.EntityType.*
 import game.event.*
@@ -41,7 +40,6 @@ case class GameState(playerEntityId: String,
   )
 
   def updateWithSystems(events: Seq[GameSystemEvent]): GameState = {
-    println(events)
     systems.foldLeft((this, events)) {
       case ((currentState, currentEvents), system) =>
         val (newState, newEvents) = system.update(currentState, currentEvents)

@@ -11,11 +11,13 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    blockedRooms: Set[Point] = Set.empty, //Rooms to no longer add connections to
                    startPoint: Point = Point(0, 0),
                    endpoint: Option[Point] = None,
-                   items: Set[(Point, Item)] = Set.empty) {
+                   items: Set[(Point, Item)] = Set.empty,
+                   testMode: Boolean = false) {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
     copy(
       roomConnections = roomConnections - roomConnection + roomConnection.copy(
-        optLock = Some(lock))
+        optLock = Some(lock)
+      )
     )
   }
 
@@ -142,15 +144,18 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
         val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
 
         if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
+          case _ if testMode => (point, TileType.Floor)
           case 0 | 1 => (point, TileType.Bridge)
           case 2 | 3 => (point, TileType.Floor)
           case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
         else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
+          case _ if testMode => (point, TileType.Wall)
           case 0 | 1 | 2 | 3 => (point, TileType.Water)
           case 4 | 5 | 6 | 7 => (point, TileType.Wall)
         else if(isWall(point) && roomConnectionsForWall.isEmpty)
           (point, TileType.Wall)
         else noise(x -> y) match
+          case _ if testMode => (point, TileType.Floor)
           case 0 | 1 => (point, TileType.Water)
           case 2 | 3 => (point, TileType.Floor)
           case 4 | 5 => (point, TileType.MaybeFloor)

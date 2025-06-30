@@ -16,7 +16,6 @@ object StatusEffect {
   extension (entity: Entity) {
     def addStatusEffect(statusEffect: StatusEffect): Entity = {
       val updatedEffects = statusEffects :+ statusEffect
-      println(updatedEffects)
       entity.addComponent(StatusEffects(updatedEffects))
     }
 
