@@ -1,13 +1,14 @@
 package indigoengine.view
 
 import game.Item.Item
+import game.entity.Entity
+import game.status.StatusEffect
 import generated.{Assets, PixelFont, PixelFontSmall}
 import indigo.*
 import indigo.Batch.toBatch
 import indigoengine.SpriteExtension.*
 import ui.UIConfig.*
 import ui.{GameController, UIState}
-import game.status.StatusEffect
 
 object Elements {
   def text(text: String, x: Int, y: Int): SceneNode = Text(
@@ -47,7 +48,7 @@ object Elements {
       filledWidth,
       RGBA.Green,
       RGBA.Crimson,
-    ) :+ text(s"$currentHealth/$maxHealth", xOffset + barWidth + borderSize, yOffset)
+    ) :+ text(s"$currentHealth/$maxHealth", xOffset + barWidth + defaultBorderSize, yOffset)
   }
   
   def experienceBar(model: GameController): Batch[SceneNode] = {
@@ -77,7 +78,7 @@ object Elements {
       RGBA.Orange,
       RGBA.SlateGray,
     ) ++ (if(player.canLevelUp)
-      Some(text("Press 'L' to level up!", xOffset + barWidth + borderSize, yOffset - borderSize))
+      Some(text("Press 'L' to level up!", xOffset + barWidth + defaultBorderSize, yOffset - defaultBorderSize))
     else None).toSeq.toBatch
   }
 
@@ -88,7 +89,7 @@ object Elements {
 
     val itemSprites = for {((item, quantity), index) <- groupedItems.zipWithIndex} yield {
       val itemX: Int = uiXOffset + index * ((spriteScale * 3) / 2)
-      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + borderSize
+      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + defaultBorderSize
       val sprite = data.Sprites.itemSprites(item)
 
       Seq(
@@ -118,7 +119,7 @@ object Elements {
 
     val keySprites = for {(key, index) <- keys.zipWithIndex} yield {
       val itemX: Int = uiXOffset + index * uiItemScale
-      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + spriteScale + (borderSize * 2)
+      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + spriteScale + (defaultBorderSize * 2)
       val sprite = data.Sprites.itemSprites(key)
 
       Seq(
@@ -161,8 +162,8 @@ object Elements {
             ),
             Text(
               perk.name,
-              itemX + borderSize,
-              itemY + borderSize,
+              itemX + defaultBorderSize,
+              itemY + defaultBorderSize,
               PixelFont.fontKey,
               Assets.assets.generated.PixelFontMaterial
             ),
@@ -170,8 +171,8 @@ object Elements {
             Text(
               //Wrap the description text if full words are longer than 14 characters on a line
               wrapText(perk.description, 13).mkString("\n"),
-              itemX + borderSize,
-              itemY + spriteScale + borderSize,
+              itemX + defaultBorderSize,
+              itemY + spriteScale + defaultBorderSize,
               PixelFontSmall.fontKey,
               Assets.assets.generated.PixelFontSmallMaterial
             )
@@ -180,5 +181,33 @@ object Elements {
       case _ =>
         Batch.empty
     }
+  }
+
+  def enemyHealthBar(enemyEntity: Entity): Batch[SceneNode] = {
+    import game.entity.EntityType.*
+    import game.entity.Health.*
+    import game.entity.Movement.*
+
+    if (enemyEntity.entityType == game.entity.EntityType.Enemy) {
+      val game.Point(xPosition, yPosition) = enemyEntity.position
+      
+      val currentHealth = enemyEntity.currentHealth
+      val maxHealth = enemyEntity.maxHealth
+
+      val barWidth = spriteScale // Total width of the health bar
+      val barHeight = spriteScale / 5 // Height of the health bar
+      val xOffset = xPosition * spriteScale + uiXOffset - (spriteScale / 2) // X position of the bar
+      val yOffset = yPosition * spriteScale + uiYOffset + (spriteScale / 2)// Y position of the bar
+
+      val filledWidth = (currentHealth * barWidth) / maxHealth
+
+      BlockBar.attributeBar(
+        bounds = Rectangle(Point(xOffset, yOffset), Size(barWidth, barHeight)),
+        filledWidth = filledWidth,
+        fullColour = RGBA.Green,
+        emptyColour = RGBA.Crimson,
+        borderWidth = 1
+      )
+    } else Batch.empty
   }
 }

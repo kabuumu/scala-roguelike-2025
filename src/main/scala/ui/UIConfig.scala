@@ -12,7 +12,7 @@ object UIConfig {
   val xPixels: Int = canvasWidth * uiScale
   val yPixels: Int = canvasHeight * uiScale
   
-  val borderSize: Int = 2
+  val defaultBorderSize: Int = 2
   
   val uiXOffset: Int = spriteScale / 2
   val uiYOffset: Int = spriteScale / 2

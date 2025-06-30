@@ -74,16 +74,18 @@ object Game extends IndigoSandbox[Unit, GameController] {
     }.toSeq
 
     // Filter and map entities in one pass
-    val entitySprites = model.gameState.entities.iterator
+    val entitySprites: Batch[SceneNode] = model.gameState.entities
       .filter(e => visiblePoints.contains(e.position))
-      .flatMap(spriteSheet.fromEntity)
-      .toSeq
+      .toBatch
+      .flatMap(entity =>
+        spriteSheet.fromEntity(entity) ++ enemyHealthBar(entity)
+      )
   
     val cursor = drawUIElements(spriteSheet, model)
 
     Outcome(
       SceneUpdateFragment(
-        Layer.Content((tileSprites ++ entitySprites ++ cursor).toBatch)
+        Layer.Content((tileSprites ++ cursor).toBatch ++ entitySprites)
           .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
         Layer.Content(
           healthBar(model)

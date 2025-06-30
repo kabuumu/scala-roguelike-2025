@@ -12,7 +12,7 @@ import scala.util.Random
 
 
 object Item {
-  val potionValue = 25
+  val potionValue = 40
 
   //Types of item
   // Unusable (e.g. key, melee weapon, armour or ammo - has uses but not by direct use)

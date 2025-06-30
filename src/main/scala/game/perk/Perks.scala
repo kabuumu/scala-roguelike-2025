@@ -6,9 +6,9 @@ import game.status.StatusEffect.EffectType.IncreaseMaxHealth
 
 object Perks {
   final val IncreaseMaxHealthPerk = StatusEffect(
-    IncreaseMaxHealth(10),
+    IncreaseMaxHealth(20),
     name = "Hearty",
-    description = "Increases maximum health by 10."
+    description = "Increases maximum health by 20."
   )
   
   final val ReduceIncomingDamagePerk = StatusEffect(

@@ -1,21 +1,16 @@
 package game.entity
 
-import game.Constants.DEFAULT_EXP
-import game.status.StatusEffect
-import game.status.StatusEffect.EffectType.IncreaseMaxHealth
+import game.entity.Experience.*
 import game.perk.Perks.*
+import game.status.StatusEffect
 
 case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) extends Component {
-  final val LEVEL_CONSTANT: Int = (DEFAULT_EXP/5) 
-
   val currentLevel: Int = {
     val level = math.sqrt(currentExperience / LEVEL_CONSTANT).toInt
     if (level < 1) 1 else level
   }
   
-  def experienceForLevel(level: Int): Int = 
-    if(level <= 1) 0
-    else level * level * LEVEL_CONSTANT
+
 
   val nextLevel: Int = currentLevel + 1
 
@@ -30,6 +25,13 @@ case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) exte
 }
 
 object Experience {
+  final val LEVEL_CONSTANT: Int = 1000
+
+  // Calculate the experience required for a given level 
+  def experienceForLevel(level: Int): Int =
+    if (level <= 1) 0
+    else level * level * LEVEL_CONSTANT
+
   extension (entity: Entity) {
     def experience: Int = entity.get[Experience].map(_.currentExperience).getOrElse(0)
 
@@ -41,7 +43,7 @@ object Experience {
     
     def levelUp: Entity = entity.update[Experience](_.copy(levelUp = false))
     
-    def previousLevelExperience: Int = entity.get[Experience].map(_.experienceForLevel(entity.level)).getOrElse(0)
+    def previousLevelExperience: Int = entity.get[Experience].map(_ => experienceForLevel(entity.level)).getOrElse(0)
     
     def nextLevelExperience: Int = entity.get[Experience].map(_.nextLevelExperience).getOrElse(0)
     

@@ -1,10 +1,10 @@
 package game
 
 import data.Sprites
-import game.Constants.DEFAULT_EXP
 import game.EnemyAI.DefaultAI
 import game.Item.*
 import game.entity.*
+import game.entity.Experience.experienceForLevel
 import game.event.{AddExperienceEvent, NullEvent}
 import map.{Dungeon, MapGenerator}
 
@@ -29,7 +29,7 @@ object StartingState {
         DeathEvents(Seq(deathDetails =>
           deathDetails.killerId match {
             case Some(killerId) =>
-              AddExperienceEvent(killerId, DEFAULT_EXP)
+              AddExperienceEvent(killerId, experienceForLevel(2) / 4)
             case None =>
               NullEvent
           }
@@ -51,7 +51,7 @@ object StartingState {
         DeathEvents(Seq(deathDetails =>
           deathDetails.killerId match {
             case Some(killerId) =>
-              AddExperienceEvent(killerId, DEFAULT_EXP)
+              AddExperienceEvent(killerId, experienceForLevel(2) / 4)
             case None =>
               NullEvent
           }

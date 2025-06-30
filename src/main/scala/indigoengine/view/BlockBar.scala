@@ -3,7 +3,7 @@ package indigoengine.view
 import indigo.*
 import indigoengine.shaders.{CustomShader, RGBAData}
 import ui.UIConfig
-import ui.UIConfig.borderSize
+import ui.UIConfig.defaultBorderSize
 import ultraviolet.syntax.*
 
 object BlockBar {
@@ -17,12 +17,12 @@ object BlockBar {
       )
     )
 
-  def attributeBar(bounds: Rectangle, filledWidth: Int, fullColour: RGBA, emptyColour: RGBA): Batch[BlankEntity] = {
+  def attributeBar(bounds: Rectangle, filledWidth: Int, fullColour: RGBA, emptyColour: RGBA, borderWidth: Int = defaultBorderSize): Batch[BlankEntity] = {
     Batch(
       getBlockBar(
         bounds + Rectangle(
-          Point(-borderSize, -borderSize),
-          Size(borderSize * 2, borderSize * 2)
+          Point(-borderWidth, -borderWidth),
+          Size(borderWidth * 2, borderWidth * 2)
         ),
         RGBA.Black
       ),
@@ -32,7 +32,7 @@ object BlockBar {
       ),
       getBlockBar(
         bounds.withSize(
-          if(filledWidth == 0) 0 else filledWidth + borderSize,
+          if(filledWidth == 0) 0 else filledWidth + borderWidth,
           bounds.height
         ),
         RGBA.Black

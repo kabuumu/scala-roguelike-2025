@@ -6,6 +6,7 @@ import game.entity.Entity
 import map.TileType
 import ui.UIConfig.*
 import indigo.*
+import indigo.Batch.toBatch
 
 
 object SpriteExtension {
@@ -27,13 +28,13 @@ object SpriteExtension {
       )
     }
     
-    def fromEntity(entity: Entity): Seq[Graphic[?]] = (for {
+    def fromEntity(entity: Entity): Batch[Graphic[?]] = (for {
       (point, sprite) <- entity.sprites
     } yield {
       spriteSheet
         .fromSprite(sprite)
         .moveTo(point)
-    }).toSeq
+    }).toSeq.toBatch
 
     def fromTile(point: game.Point, tileType: TileType): Graphic[?] = {
       val sprite = tileType match {
