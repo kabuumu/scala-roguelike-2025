@@ -230,6 +230,10 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
         case Direction.Right => wall.x == originRoomX + Dungeon.roomSize && isWithinYBounds
       }
   }
+  
+  val nonKeyItems: Set[(Point, Item)] = items.filterNot {
+    case (_, item) => item.isInstanceOf[game.Item.Key]
+  }
 }
 
 

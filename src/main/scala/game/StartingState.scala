@@ -10,7 +10,7 @@ import map.{Dungeon, MapGenerator}
 
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 40, lockedDoorCount = 5)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 3)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 2 == 0 =>
@@ -23,7 +23,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(25),
         Initiative(12),
-        Inventory(Nil, Some(Weapon(12, Melee))),
+        Inventory(Nil, Some(Weapon(8, Melee))),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>
@@ -45,7 +45,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(18),
         Initiative(25),
-        Inventory(Nil, Some(Weapon(8, Ranged(4)))),
+        Inventory(Nil, Some(Weapon(6, Ranged(4)))),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
         DeathEvents(Seq(deathDetails =>

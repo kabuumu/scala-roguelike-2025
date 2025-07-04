@@ -1,42 +1,41 @@
 package map
 
-import game.Item.{Key, Potion}
+import game.Item.Key
 
 import scala.annotation.tailrec
 
 object MapGenerator {
-  def generateDungeon(dungeonSize: Int, lockedDoorCount: Int): Dungeon = {
+  def generateDungeon(dungeonSize: Int, lockedDoorCount: Int = 0, itemCount: Int = 0): Dungeon = {
     val startTime = System.currentTimeMillis()
-    val dungeonPathSize = dungeonSize / 2
 
     val mutators: Set[DungeonMutator] = Set(
-      new EndPointMutator(dungeonPathSize),
-      new KeyLockMutator(lockedDoorCount),
-      new TreasureRoomMutator(dungeonSize / 2, dungeonPathSize),
+      new EndPointMutator(dungeonSize),
+      new KeyLockMutator(lockedDoorCount, dungeonSize),
+      new TreasureRoomMutator(itemCount, dungeonSize),
     )
 
     @tailrec
     def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
-      println("Iterating through open dungeons:")
       val currentDungeon: Dungeon = openDungeons.find(_.endpoint.isDefined) match {
         case Some(dungeonWithEndpoint) => dungeonWithEndpoint
-        case None => openDungeons.maxBy(_.roomGrid.size)
+        case None => openDungeons.maxByOption(_.roomGrid.size) match {
+          case Some(openDungeon) => openDungeon
+          case None => throw new IllegalStateException("No open dungeons available")
+        }
       }
 
       val newOpenDungeons: Set[Dungeon] = for {
         mutator <- mutators
         possibleDungeon <- mutator.getPossibleMutations(currentDungeon)
       } yield possibleDungeon
-
+      
       newOpenDungeons.find(dungeon =>
-        dungeon.dungeonPath.size == dungeonPathSize
-          && dungeon.lockedDoorCount == lockedDoorCount
-          && dungeon.items.count(!_._2.isInstanceOf[Key]) == 3
-        //        && dungeon.roomGrid.size == dungeonSize
+        dungeon.lockedDoorCount == lockedDoorCount
+          && dungeon.nonKeyItems.size == itemCount
+//          && dungeon.dungeonPath.size == dungeonPathSize
+          && dungeon.roomGrid.size == dungeonSize
       ) match {
         case Some(completedDungeon) =>
-          println(s"Completed dungeon has locked doors at ${completedDungeon.lockedDoors}")
-          println(s"Completed dungeon has keys at ${completedDungeon.items}")
           println(s"Completed dungeon took ${System.currentTimeMillis() - startTime}ms")
 
           completedDungeon

@@ -9,6 +9,7 @@ name := "scala-roguelike"
 
 lazy val gameOptions: IndigoOptions =
   IndigoOptions.defaults
+    .withWindowSize(1152, 768)
     .withAssetDirectory("assets")
     .excludeAssets {
       case p if p.endsWith(os.RelPath.rel / ".gitkeep") => true

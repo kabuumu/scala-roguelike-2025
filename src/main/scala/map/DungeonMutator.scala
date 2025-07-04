@@ -1,21 +1,21 @@
 package map
 
-import game.Item.KeyColour.*
-import game.entity.EntityType.LockedDoor
 import game.Item
+import game.Item.KeyColour.*
 import game.Item.{Item, Key, KeyColour}
+import game.entity.EntityType.LockedDoor
 
 trait DungeonMutator {
   def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon]
 }
 
-class EndPointMutator(distanceToTargetRoom: Int) extends DungeonMutator {
+class EndPointMutator(targetRoomCount: Int) extends DungeonMutator {
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] =
     currentDungeon.endpoint match {
       case None => for {
         (originRoom, direction) <- currentDungeon.availableRooms
       } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(originRoom + direction))
-      case Some(endpoint) if currentDungeon.dungeonPath.size < distanceToTargetRoom => for {
+      case Some(endpoint) if currentDungeon.roomGrid.size < targetRoomCount => for {
         (originRoom, direction) <- currentDungeon.availableRooms(endpoint)
       } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(originRoom + direction))
       case _ =>
@@ -24,11 +24,14 @@ class EndPointMutator(distanceToTargetRoom: Int) extends DungeonMutator {
 }
 
 //TODO - Update this to have variable distance between key and lock
-class KeyLockMutator(lockedDoorCount: Int) extends DungeonMutator {
+class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends DungeonMutator {
   private val minRoomsPerLockedDoor: Int = 2
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
-    if (currentDungeon.lockedDoorCount >= lockedDoorCount || currentDungeon.roomGrid.size < minRoomsPerLockedDoor) {
+    if (currentDungeon.lockedDoorCount >= lockedDoorCount
+      || currentDungeon.roomGrid.size < minRoomsPerLockedDoor
+      || currentDungeon.roomGrid.size + 2 > targetRoomCount
+    ) {
       Set.empty
     } else {
       for {
@@ -54,11 +57,11 @@ class KeyLockMutator(lockedDoorCount: Int) extends DungeonMutator {
   }
 }
 
-class TreasureRoomMutator(targetTreasureRoomCount: Int, dungeonPathSize: Int) extends DungeonMutator {
+class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) extends DungeonMutator {
   val possibleItems: Set[Item] = Set(Item.Potion, Item.Scroll, Item.Arrow)
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
-    if (currentDungeon.items.count((_, item) => possibleItems.contains(item)) >= targetTreasureRoomCount || dungeonPathSize != currentDungeon.dungeonPath.size) {
+    if (currentDungeon.nonKeyItems.size >= targetTreasureRoomCount || currentDungeon.roomGrid.size + 1 >= targetRoomCount) {
       Set.empty
     } else {
       for {
