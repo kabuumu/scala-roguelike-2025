@@ -1,4 +1,6 @@
-package game
+package scala.util
+
+import game.{Direction, GameState, Point}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashSet

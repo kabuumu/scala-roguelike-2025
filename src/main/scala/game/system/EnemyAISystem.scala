@@ -5,8 +5,9 @@ import game.entity.Initiative.*
 import game.entity.Movement.position
 import game.entity.{EntityType, Inventory}
 import game.system.event.GameSystemEvent.{GameSystemEvent, InputEvent}
-import game.{GameState, Pathfinder}
+import game.GameState
 import ui.InputAction
+import util.Pathfinder
 
 object EnemyAISystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {

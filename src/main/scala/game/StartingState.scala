@@ -1,7 +1,6 @@
 package game
 
 import data.Sprites
-import game.EnemyAI.DefaultAI
 import game.Item.*
 import game.entity.*
 import game.entity.Experience.experienceForLevel

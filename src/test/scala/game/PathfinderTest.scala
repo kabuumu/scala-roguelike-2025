@@ -1,7 +1,8 @@
 package game
 
-import game.{Pathfinder, Point}
+import game.Point
 import org.scalatest.funsuite.AnyFunSuite
+import util.Pathfinder
 
 class PathfinderTest extends AnyFunSuite {
 

@@ -6,6 +6,7 @@ import game.event.*
 import game.system.*
 import game.system.event.GameSystemEvent.GameSystemEvent
 import map.Dungeon
+import util.LineOfSight
 
 import scala.annotation.tailrec
 

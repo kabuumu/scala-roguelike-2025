@@ -3,7 +3,7 @@ package indigoengine
 import data.Sprites
 import game.entity.Movement.position
 import game.entity.{Entity, SightMemory}
-import game.{LineOfSight, StartingState}
+import game.StartingState
 import generated.{PixelFont, PixelFontSmall}
 import indigo.*
 import indigo.Batch.toBatch
@@ -12,6 +12,7 @@ import indigoengine.shaders.{CustomShader, Darken}
 import indigoengine.view.Elements.*
 import ui.UIConfig.*
 import ui.{GameController, UIConfig, UIState}
+import util.LineOfSight
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 

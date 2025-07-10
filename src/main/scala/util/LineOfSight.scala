@@ -1,4 +1,6 @@
-package game
+package scala.util
+
+import game.Point
 
 object LineOfSight {
   // Create method to return visible points from a point, using bresenham's line algorithm
