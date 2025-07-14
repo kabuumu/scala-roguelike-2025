@@ -16,13 +16,9 @@ object MapGenerator {
 
     @tailrec
     def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
-      val currentDungeon: Dungeon = openDungeons.find(_.endpoint.isDefined) match {
-        case Some(dungeonWithEndpoint) => dungeonWithEndpoint
-        case None => openDungeons.maxByOption(_.roomGrid.size) match {
-          case Some(openDungeon) => openDungeon
-          case None => throw new IllegalStateException("No open dungeons available")
-        }
-      }
+      val currentDungeon: Dungeon = openDungeons.maxBy( dungeon =>
+        dungeon.roomGrid.size + dungeon.lockedDoorCount + dungeon.nonKeyItems.size
+      )
 
       val newOpenDungeons: Set[Dungeon] = for {
         mutator <- mutators
@@ -36,14 +32,22 @@ object MapGenerator {
           && dungeon.roomGrid.size == dungeonSize
       ) match {
         case Some(completedDungeon) =>
-          println(s"Completed dungeon took ${System.currentTimeMillis() - startTime}ms")
-
           completedDungeon
         case None =>
           recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon)
       }
     }
 
-    recursiveGenerator(Set(Dungeon()))
+    val dungeon = recursiveGenerator(Set(Dungeon()))
+
+    println("Generating Dungeon")
+    println(s"  Generated dungeon with ${dungeon.roomGrid.size} rooms, " +
+      s"${dungeon.roomConnections.size} connections, " +
+      s"${dungeon.lockedDoorCount} locked doors, " +
+      s"${dungeon.nonKeyItems.size} items, ")
+    
+    println(s"  Completed dungeon with config took ${System.currentTimeMillis() - startTime}ms")
+
+    dungeon
   }
 }
