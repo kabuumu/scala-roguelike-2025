@@ -34,7 +34,7 @@ object Health {
       }
     
     def heal(amount: Int): Entity = entity.update[Health](
-      health => health.copy(baseCurrent = Math.min(currentHealth + amount, maxHealth))
+      health => health.copy(baseCurrent = Math.min(health.baseCurrent + amount, health.baseMax))
     )
     
   }
