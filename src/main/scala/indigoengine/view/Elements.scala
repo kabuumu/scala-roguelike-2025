@@ -127,7 +127,7 @@ object Elements {
           .moveTo(itemX.toInt, itemY.toInt),
       )
     }
-    keySprites.flatten.toSeq.toBatch
+    keySprites.flatten.toBatch
   }
 
 

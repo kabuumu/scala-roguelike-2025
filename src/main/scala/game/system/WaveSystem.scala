@@ -12,7 +12,7 @@ object WaveSystem extends GameSystem {
         entity.get[Wave] match {
           case Some(wave) if wave.range > 0 =>
             currentState.updateEntity(entity.id, expandWave)
-          case Some(wave) =>
+          case Some(_) =>
             // If the wave has no range left, we can remove it
             currentState.remove(entity.id)
           case None =>
