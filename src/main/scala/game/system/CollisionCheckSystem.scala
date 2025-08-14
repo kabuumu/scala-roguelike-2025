@@ -2,29 +2,31 @@ package game.system
 
 import game.GameState
 import game.entity.Hitbox.*
+import game.entity.*
 import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget, GameSystemEvent}
 
 object CollisionCheckSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+    val collidableEntities = gameState.entities.filter(_.has[Hitbox])
+    
     val collisionEvents = for {
       //TODO - consolidate collision systems in the future
-//      entity <- gameState.entities
-      otherEntity <- gameState.entities
-      entity = gameState.playerEntity // For now, only check collisions for the player entity
+      entity <- collidableEntities
+      otherEntity <- collidableEntities
       if entity.id != otherEntity.id && entity.collidesWith(otherEntity)
     } yield CollisionEvent(
       entityId = entity.id,
       collidedWith = CollisionTarget.Entity(otherEntity.id)
     )
     
-//    val wallCollisionEvents = for {
-//      entity <- gameState.entities
-//      if entity.collidesWith(gameState.dungeon.walls)
-//    } yield CollisionEvent(
-//      entityId = entity.id,
-//      collidedWith = CollisionTarget.Wall
-//    )
+    val wallCollisionEvents = for {
+      entity <- collidableEntities
+      if entity.collidesWith(gameState.dungeon.walls)
+    } yield CollisionEvent(
+      entityId = entity.id,
+      collidedWith = CollisionTarget.Wall
+    )
 
-    (gameState, collisionEvents)
+    (gameState, collisionEvents ++ wallCollisionEvents)
   }
 }

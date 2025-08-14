@@ -7,10 +7,10 @@ case class Hitbox(points: Set[Point] = Set(Point(0, 0))) extends Component
 object Hitbox {
   extension (entity: Entity) {
     def collidesWith(points: Set[Point]): Boolean =
-      hitbox.intersect(points).nonEmpty
+      hitbox.nonEmpty && hitbox.intersect(points).nonEmpty
 
     def collidesWith(other: Entity): Boolean =
-      other.hitbox.intersect(hitbox).nonEmpty
+      hitbox.nonEmpty && hitbox.intersect(other.hitbox).nonEmpty
 
     def hitbox: Set[Point] =
       for {
