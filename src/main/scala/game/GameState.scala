@@ -23,7 +23,7 @@ case class GameState(playerEntityId: String,
   val systems: Seq[GameSystem] = Seq(
     EnemyAISystem,
     MovementSystem,
-    LegacyVelocitySystem,
+    VelocitySystem,
     WaveSystem,
     LegacyItemUseSystem,
     WaitSystem,

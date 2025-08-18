@@ -1,7 +1,7 @@
 package game.entity
 
 import game.entity.Health.*
-import game.event.{Event, UpdateProjectilePositionEvent, UpdateProjectileWorldPositionEvent}
+import game.event.Event
 import game.{GameState, Point}
 
 case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int, targetPoint: Point) extends Component {
@@ -38,16 +38,5 @@ object Projectile {
       damage,
       end
     )
-  }
-
-  extension (entity: Entity) {
-    def projectileUpdate(): Seq[Event] = Seq(
-      UpdateProjectilePositionEvent(entity.id),
-      UpdateProjectileWorldPositionEvent(entity.id)
-    )
-
-    def updateProjectilePosition(): Entity = {
-      entity.update[Projectile](_.updatePosition())
-    }
   }
 }
