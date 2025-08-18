@@ -39,7 +39,7 @@ object WaveSystem extends GameSystem {
         wave => wave.copy(range = wave.range - 1)
       }
   }
-  
+
   def expandPoints(points: Set[Point]): Set[Point] = {
     val minX = points.map(_.x).min
     val maxX = points.map(_.x).max
