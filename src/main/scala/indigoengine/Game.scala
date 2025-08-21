@@ -8,7 +8,7 @@ import generated.{PixelFont, PixelFontSmall}
 import indigo.*
 import indigo.Batch.toBatch
 import indigoengine.SpriteExtension.*
-import indigoengine.shaders.{CustomShader, Darken}
+import indigoengine.shaders.CustomShader
 import indigoengine.view.Elements.*
 import ui.UIConfig.*
 import ui.{GameController, UIConfig, UIState}
@@ -37,7 +37,6 @@ object Game extends IndigoSandbox[Unit, GameController] {
 
   override def shaders: Set[ShaderProgram] = Set(
     CustomShader.shader,
-    Darken.shader
   )
 
   override def setup(assetCollection: AssetCollection, dice: Dice): Outcome[Startup[Unit]] = Outcome(
