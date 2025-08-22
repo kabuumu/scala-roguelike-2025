@@ -47,18 +47,18 @@ object Item {
     override def chargeType: ChargeType = ChargeType.SingleUse
     override def itemEffect: ItemEffect =
       ItemEffect.NonTargeted {
-        entity =>
+        itemUser =>
           gameState =>
-            if (entity.hasFullHealth)
+            if (itemUser.hasFullHealth)
               Seq(
-                MessageEvent(s"${System.nanoTime()}: ${entity.entityType} is already at full health")
+                MessageEvent(s"${System.nanoTime()}: ${itemUser.entityType} is already at full health")
               )
             else
               Seq(
-                HealEvent(entity.id, Item.potionValue),
-                RemoveItemEvent(entity.id, this),
-                ResetInitiativeEvent(entity.id),
-                MessageEvent(s"${System.nanoTime()}: ${entity.entityType} used a potion to heal ${Item.potionValue} health")
+                HealEvent(itemUser.id, Item.potionValue),
+                RemoveItemEvent(itemUser.id, this),
+                ResetInitiativeEvent(itemUser.id),
+                MessageEvent(s"${System.nanoTime()}: ${itemUser.entityType} used a potion to heal ${Item.potionValue} health")
               )
       }
   }

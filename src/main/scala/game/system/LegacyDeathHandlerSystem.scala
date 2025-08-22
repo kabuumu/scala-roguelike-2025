@@ -5,6 +5,7 @@ import game.entity.{DeathEvents, MarkedForDeath}
 import game.event.{Event, RemoveEntityEvent}
 import game.system.event.GameSystemEvent.GameSystemEvent
 
+@deprecated
 object LegacyDeathHandlerSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
     val newGameState = gameState.entities.foldLeft(gameState) {

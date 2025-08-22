@@ -1,12 +1,11 @@
 package game.system
 
 import game.GameState
+import game.entity.Initiative.*
 import game.entity.Movement
 import game.entity.Movement.*
-import game.entity.SightMemory.*
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
-import game.entity.Initiative.*
 import ui.InputAction
 
 object MovementSystem extends GameSystem {
