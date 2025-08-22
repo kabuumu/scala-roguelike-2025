@@ -35,6 +35,11 @@ object GameSystemEvent {
   
   case class SpawnEntityEvent(
     newEntity: Entity
-  )
+  ) extends GameSystemEvent
+  
+  case class AddExperienceEvent(
+    entityId: String,
+    experience: Int
+  ) extends GameSystemEvent
 }
 

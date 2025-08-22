@@ -4,7 +4,7 @@ import data.Sprites
 import game.Item.*
 import game.entity.*
 import game.entity.Experience.experienceForLevel
-import game.event.{AddExperienceEvent, NullEvent}
+import game.system.event.GameSystemEvent.AddExperienceEvent
 import map.{Dungeon, MapGenerator}
 
 
@@ -25,14 +25,10 @@ object StartingState {
         Inventory(Nil, Some(Weapon(8, Melee))),
         Drawable(Sprites.ratSprite),
         Hitbox(),
-        DeathEvents(Seq(deathDetails =>
-          deathDetails.killerId match {
-            case Some(killerId) =>
-              AddExperienceEvent(killerId, experienceForLevel(2) / 4)
-            case None =>
-              NullEvent
-          }
-        ))
+        DeathEvents(deathDetails => deathDetails.killerId.map {
+          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
+        }.toSeq
+        )
       )
     case (point, index) =>
       Entity(
@@ -47,15 +43,13 @@ object StartingState {
         Inventory(Nil, Some(Weapon(6, Ranged(4)))),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
-        DeathEvents(Seq(deathDetails =>
-          deathDetails.killerId match {
-            case Some(killerId) =>
-              AddExperienceEvent(killerId, experienceForLevel(2) / 4)
-            case None =>
-              NullEvent
-          }
-        ))
+        DeathEvents(deathDetails =>
+          deathDetails.killerId.map {
+            killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
+          }.toSeq
+        )
       )
+      
   }
 
   val player: Entity = dungeon.startPoint match {

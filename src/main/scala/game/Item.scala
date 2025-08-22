@@ -7,6 +7,7 @@ import game.entity.EntityType.*
 import game.entity.Health.*
 import game.entity.Movement.*
 import game.event.*
+import game.system.event.GameSystemEvent.SpawnEntityEvent
 
 import scala.util.Random
 
@@ -93,11 +94,10 @@ object Item {
                 Collision(damage = scrollDamage, persistent = false, targetType, entity.id),
                 Hitbox(),
                 DeathEvents(
-                  Seq(
-                    deathDetails => {
-                      AddEntityEvent(explosionEntity(deathDetails.victim))
-                    }
-                  )
+                  deathDetails =>
+                    Seq(
+                      SpawnEntityEvent(explosionEntity(deathDetails.victim))
+                    )
                 )
               )
 

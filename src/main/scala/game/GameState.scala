@@ -21,6 +21,9 @@ case class GameState(playerEntityId: String,
   }
 
   val systems: Seq[GameSystem] = Seq(
+    DeathHandlerSystem,
+    SpawnEntitySystem,
+    ExperienceSystem,
     EnemyAISystem,
     MovementSystem,
     VelocitySystem,
@@ -34,7 +37,6 @@ case class GameState(playerEntityId: String,
     LegacyCollisionSystem,
     DamageSystem,
     InventorySystem,
-    LegacyDeathHandlerSystem,
     InitiativeSystem,
     LevelUpSystem,
     SightMemorySystem,

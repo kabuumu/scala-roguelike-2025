@@ -8,14 +8,13 @@ import game.entity.EntityType.*
 import game.entity.Experience.*
 import game.entity.Health.*
 import game.entity.Inventory.*
-import game.event.AddExperienceEvent
 import game.{GameState, Input, Point}
 import map.Dungeon
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import ui.GameController.frameTime
 import ui.UIState.{Move, ScrollSelect}
-import game.event.NullEvent
+import game.system.event.GameSystemEvent.AddExperienceEvent
 
 
 class GameControllerTest extends AnyFunSuiteLike with Matchers {
@@ -154,14 +153,11 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       SightMemory(),
       Drawable(Sprites.enemySprite),
       Hitbox(),
-      DeathEvents(Seq(deathDetails =>
-        deathDetails.killerId match {
-          case Some(killerId) =>
-            AddExperienceEvent(killerId, game.entity.Experience.experienceForLevel(2) / 2)
-          case None =>
-            NullEvent
-        }
-      ))
+      DeathEvents(deathDetails =>
+        deathDetails.killerId.map {
+          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
+        }.toSeq
+      )
     )
 
     val enemy2 = Entity(
@@ -174,14 +170,11 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       SightMemory(),
       Drawable(Sprites.enemySprite),
       Hitbox(),
-      DeathEvents(Seq(deathDetails =>
-        deathDetails.killerId match {
-          case Some(killerId) =>
-            AddExperienceEvent(killerId, game.entity.Experience.experienceForLevel(2) / 2)
-          case None =>
-            NullEvent
-        }
-      ))
+      DeathEvents(deathDetails =>
+        deathDetails.killerId.map {
+          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
+        }.toSeq
+      )
     )
 
     val gameState = GameState(
