@@ -155,7 +155,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       Hitbox(),
       DeathEvents(deathDetails =>
         deathDetails.killerId.map {
-          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
+          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 2)
         }.toSeq
       )
     )
@@ -172,7 +172,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       Hitbox(),
       DeathEvents(deathDetails =>
         deathDetails.killerId.map {
-          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
+          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 2)
         }.toSeq
       )
     )
@@ -215,7 +215,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
     afterCollision.gameState.entities.find(_.id == "enemy2") shouldBe empty
 
     // Player should have gained experience for both enemies
-    val expectedExp = game.entity.Experience.experienceForLevel(2)
+    val expectedExp = experienceForLevel(2)
     afterCollision.gameState.playerEntity.experience shouldBe expectedExp
     afterCollision.gameState.playerEntity.canLevelUp shouldBe true
   }
