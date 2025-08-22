@@ -10,5 +10,4 @@ target/
 
 #Ignore generated files no matter which subdirectory
 **/target/
-**/generated/
 
