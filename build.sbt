@@ -22,7 +22,7 @@ lazy val root = (project in file("."))
     indigoOptions := gameOptions,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
-      "io.indigoengine" %%% "indigo" % "0.21.2-SNAPSHOT"
+      "io.indigoengine" %%% "indigo" % "0.22.0"
     ),
     Compile / sourceGenerators += Def.task {
       IndigoGenerators("generated")
