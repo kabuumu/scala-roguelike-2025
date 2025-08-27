@@ -20,7 +20,7 @@ object CollisionHandlerSystem extends GameSystem {
               case (Some(collisionComponent), Some(collidingEntity)) if collidingEntity.get[EntityTypeComponent].exists(_.entityType == collisionComponent.target) && collidingEntity.isAlive =>
                 //if collision is hitting its target entity type, cause damage
                 //if colliding entity is not persistent, then mark it for death
-                val events = currentEvents :+ GameSystemEvent.DamageEvent(collidingEntity.id, entity.id, collisionComponent.damage)
+                val events = currentEvents :+ GameSystemEvent.DamageEvent(collidingEntity.id, collisionComponent.creatorId, collisionComponent.damage)
                 val updatedGameState = if (collisionComponent.persistent) currentGameState
                 else currentGameState.updateEntity(entity.id, _.addComponent(MarkedForDeath(DeathDetails(entity))))
 
