@@ -18,6 +18,7 @@ object UIState {
 
   case class ListSelect[T: ClassTag](list: Seq[T], index: Int = 0, effect: T => (UIState, Option[InputAction])) extends UIState {
     def iterate: ListSelect[T] = copy(index = (index + 1) % list.length)
+    def iterateDown: ListSelect[T] = copy(index = (index - 1 + list.length) % list.length)
 
     val action: (UIState, Option[InputAction]) = effect(list(index))
   }
