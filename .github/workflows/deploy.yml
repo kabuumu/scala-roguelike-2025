@@ -44,16 +44,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-sbt-
 
-    - name: Build Scala.js
-      run: sbt fastOptJS
+    - name: Build Indigo
+      run: sbt indigoBuild
 
     - name: Prepare deployment files
       run: |
         mkdir -p _site
-        cp -r target/scala-*/scalajs-bundler/main/* _site/ || true
-        cp -r target/scala-*/*-fastopt/* _site/ || true
-        find target -name "*.js" -path "*/fastopt/*" -exec cp {} _site/ \;
-        find target -name "*.html" -exec cp {} _site/ \;
+        cp -r target/indigoBuild/* _site/
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
