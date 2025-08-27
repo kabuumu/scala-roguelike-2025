@@ -132,7 +132,7 @@ object Item {
                 Collision(damage = bowDamage, persistent = false, targetType, entity.id),
                 Hitbox()
               )
-            
+
             Seq(
               AddEntityEvent(projectileEntity),
               RemoveItemEvent(entity.id, Arrow),

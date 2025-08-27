@@ -1,0 +1,63 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
+    - name: Cache SBT
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.ivy2/cache
+          ~/.sbt
+          ~/.coursier/cache
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt', 'project/**') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-
+
+    - name: Build Scala.js
+      run: sbt fastOptJS
+
+    - name: Prepare deployment files
+      run: |
+        mkdir -p _site
+        cp -r target/scala-*/scalajs-bundler/main/* _site/ || true
+        cp -r target/scala-*/*-fastopt/* _site/ || true
+        find target -name "*.js" -path "*/fastopt/*" -exec cp {} _site/ \;
+        find target -name "*.html" -exec cp {} _site/ \;
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
