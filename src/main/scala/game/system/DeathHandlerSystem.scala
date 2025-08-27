@@ -2,7 +2,6 @@ package game.system
 
 import game.GameState
 import game.entity.{DeathEvents, MarkedForDeath}
-import game.event.{Event, RemoveEntityEvent}
 import game.system.event.GameSystemEvent.GameSystemEvent
 
 object DeathHandlerSystem extends GameSystem {

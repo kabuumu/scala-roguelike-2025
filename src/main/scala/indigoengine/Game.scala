@@ -55,7 +55,14 @@ object Game extends IndigoSandbox[Unit, GameController] {
       val optInput = context.frame.input.mapInputsOption(InputMappings.inputMapping)
       val time = context.frame.time.running.toMillis.toLong * 1000000L
 
-      Outcome(model.update(optInput, time))
+      try {
+        Outcome(model.update(optInput, time))
+      } catch {
+        case e: Exception =>
+          println(s"Error during model update: ${e.getMessage}")
+          e.printStackTrace()
+          Outcome(model)
+      }
 
   override def present(context: Context[Unit], model: GameController): Outcome[SceneUpdateFragment] = {
     val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
