@@ -44,6 +44,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-sbt-
 
+    - name: Compile Scala.js
+      run: sbt fastOptJS
+
     - name: Build Indigo
       run: sbt indigoBuild
 
