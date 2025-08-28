@@ -11,3 +11,8 @@ target/
 #Ignore generated files no matter which subdirectory
 **/target/
 
+# Ignore SBT installation artifacts
+sbt/
+sbt-*.zip
+cs
+
