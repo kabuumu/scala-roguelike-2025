@@ -7,10 +7,14 @@ case class Equipment(
   armor: Option[EquippableItem] = None
 ) extends Component {
   
-  def equip(item: EquippableItem): Equipment = {
+  def equip(item: EquippableItem): (Equipment, Option[EquippableItem]) = {
     item.slot match {
-      case EquipmentSlot.Helmet => copy(helmet = Some(item))
-      case EquipmentSlot.Armor => copy(armor = Some(item))
+      case EquipmentSlot.Helmet => 
+        val previousItem = helmet
+        (copy(helmet = Some(item)), previousItem)
+      case EquipmentSlot.Armor => 
+        val previousItem = armor
+        (copy(armor = Some(item)), previousItem)
     }
   }
   
@@ -41,8 +45,11 @@ object Equipment {
   extension (entity: Entity) {
     def equipment: Equipment = entity.get[Equipment].getOrElse(Equipment())
     
-    def equipItem(item: EquippableItem): Entity = {
-      entity.update[Equipment](_.equip(item))
+    def equipItem(item: EquippableItem): (Entity, Option[EquippableItem]) = {
+      val currentEquipment = entity.equipment
+      val (newEquipment, previousItem) = currentEquipment.equip(item)
+      val updatedEntity = entity.update[Equipment](_ => newEquipment)
+      (updatedEntity, previousItem)
     }
     
     def unequipItem(slot: EquipmentSlot): Entity = {

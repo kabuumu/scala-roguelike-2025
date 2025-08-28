@@ -56,28 +56,31 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
 
   test("Equipment component should equip helmet correctly") {
     val emptyEquipment = Equipment()
-    val equippedHelmet = emptyEquipment.equip(IronHelmet)
+    val (equippedHelmet, previousItem) = emptyEquipment.equip(IronHelmet)
     
     equippedHelmet.helmet should be(Some(IronHelmet))
     equippedHelmet.armor should be(None)
     equippedHelmet.getTotalDamageReduction should be(4)
+    previousItem should be(None)
   }
 
   test("Equipment component should equip armor correctly") {
     val emptyEquipment = Equipment()
-    val equippedArmor = emptyEquipment.equip(PlateArmor)
+    val (equippedArmor, previousItem) = emptyEquipment.equip(PlateArmor)
     
     equippedArmor.helmet should be(None)
     equippedArmor.armor should be(Some(PlateArmor))
     equippedArmor.getTotalDamageReduction should be(8)
+    previousItem should be(None)
   }
 
   test("Equipment component should replace existing helmet when equipping new one") {
     val equipmentWithHelmet = Equipment(helmet = Some(LeatherHelmet))
-    val updatedEquipment = equipmentWithHelmet.equip(IronHelmet)
+    val (updatedEquipment, previousItem) = equipmentWithHelmet.equip(IronHelmet)
     
     updatedEquipment.helmet should be(Some(IronHelmet))
     updatedEquipment.getTotalDamageReduction should be(4) // Iron helmet damage reduction
+    previousItem should be(Some(LeatherHelmet)) // Should return previously equipped item
   }
 
   test("Equipment component should unequip helmet correctly") {
@@ -99,10 +102,11 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
   }
 
   test("Player entity should equip item correctly using extension method") {
-    val playerWithEquipment = basePlayerEntity.equipItem(LeatherHelmet)
+    val (playerWithEquipment, previousItem) = basePlayerEntity.equipItem(LeatherHelmet)
     
     playerWithEquipment.equipment.helmet should be(Some(LeatherHelmet))
     playerWithEquipment.getTotalDamageReduction should be(2)
+    previousItem should be(None)
   }
 
   test("EquipmentSystem should equip adjacent equipment item") {
@@ -157,9 +161,8 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
   }
 
   test("DamageSystem should reduce damage based on equipment") {
-    val playerWithArmor = basePlayerEntity
-      .equipItem(LeatherHelmet) // 2 DR
-      .equipItem(ChainmailArmor) // 5 DR
+    val (playerWithHelmet, _) = basePlayerEntity.equipItem(LeatherHelmet) // 2 DR
+    val (playerWithArmor, _) = playerWithHelmet.equipItem(ChainmailArmor) // 5 DR
     // Total DR: 7
 
     val attacker = Entity(
@@ -186,9 +189,8 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
   }
 
   test("DamageSystem should ensure minimum 1 damage even with high armor") {
-    val playerWithMaxArmor = basePlayerEntity
-      .equipItem(IronHelmet) // 4 DR
-      .equipItem(PlateArmor) // 8 DR
+    val (playerWithHelmet, _) = basePlayerEntity.equipItem(IronHelmet) // 4 DR
+    val (playerWithMaxArmor, _) = playerWithHelmet.equipItem(PlateArmor) // 8 DR
     // Total DR: 12
 
     val weakAttacker = Entity(
@@ -223,9 +225,8 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       description = "Reduces incoming damage by 3."
     )
 
-    val playerWithArmorAndPerk = basePlayerEntity
-      .equipItem(ChainmailArmor) // 5 DR from equipment
-      .addStatusEffect(fortifiedPerk) // 3 DR from perk
+    val (playerWithArmor, _) = basePlayerEntity.equipItem(ChainmailArmor) // 5 DR from equipment
+    val playerWithArmorAndPerk = playerWithArmor.addStatusEffect(fortifiedPerk) // 3 DR from perk
     // Total DR: 8
 
     val gameState = GameState(
@@ -345,5 +346,47 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     
     // Potion entity should be removed from the world
     updatedState.entities.find(_.id == "potion1") should be(None)
+  }
+
+  test("EquipmentSystem should drop currently equipped item when equipping new item to same slot") {
+    // Create a player with already equipped leather helmet
+    val (playerWithHelmet, _) = basePlayerEntity.equipItem(LeatherHelmet)
+    
+    // Create an iron helmet entity adjacent to player
+    val ironHelmetEntity = Entity(
+      id = "ironHelmet1",
+      Movement(position = Point(4, 3)), // Adjacent to player at (4,4)
+      EntityTypeComponent(EntityType.ItemEntity(IronHelmet)),
+      Inventory(Seq(IronHelmet)),
+      Hitbox(),
+      Drawable(Sprites.ironHelmetSprite)
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(playerWithHelmet, ironHelmetEntity),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    val equipEvent = EquipEvent(playerId)
+    val (updatedState, _) = EquipmentSystem.update(gameState, Seq(equipEvent))
+
+    // Player should now have the iron helmet equipped
+    updatedState.playerEntity.equipment.helmet should be(Some(IronHelmet))
+    updatedState.playerEntity.getTotalDamageReduction should be(4)
+    
+    // Iron helmet entity should be removed from the world
+    updatedState.entities.find(_.id == "ironHelmet1") should be(None)
+    
+    // Leather helmet should be dropped at the position where iron helmet was (4, 3)
+    val droppedHelmetEntity = updatedState.entities.find { e =>
+      e.position == Point(4, 3) && e.items.contains(LeatherHelmet)
+    }
+    droppedHelmetEntity should not be None
+    droppedHelmetEntity.get.items should contain(LeatherHelmet)
+    
+    // Success message should be added
+    updatedState.messages.head should include("Equipped Iron Helmet")
   }
 }
