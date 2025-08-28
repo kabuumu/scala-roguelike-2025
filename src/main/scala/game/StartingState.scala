@@ -3,7 +3,6 @@ package game
 import data.Sprites
 import game.Item.*
 import game.entity.*
-import game.entity.ItemWithId
 import game.entity.Experience.experienceForLevel
 import game.system.event.GameSystemEvent.AddExperienceEvent
 import map.{Dungeon, MapGenerator}
@@ -11,6 +10,29 @@ import map.{Dungeon, MapGenerator}
 
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
+
+  // Helper function to create item entities
+  def createItemEntity(item: Item, itemId: String): Entity = {
+    val baseEntity = Entity(
+      id = itemId,
+      ItemType(item),
+      CanPickUp(),
+      Hitbox()
+    )
+    
+    item match {
+      case equippable: EquippableItem =>
+        baseEntity.addComponent(Equippable.fromEquippableItem(equippable))
+      case _ => baseEntity
+    }
+  }
+
+  // Create player's starting inventory items as entities
+  val playerStartingItems: Set[Entity] = Set(
+    createItemEntity(Potion, "player-potion-1"),
+    createItemEntity(Scroll, "player-scroll-1"),
+    createItemEntity(Bow, "player-bow-1")
+  ) ++ (1 to 6).map(i => createItemEntity(Arrow, s"player-arrow-$i"))
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 2 == 0 =>
@@ -65,7 +87,7 @@ object StartingState {
         Health(100),
         Initiative(10),
         Inventory(
-          items = (Seq(Potion, Scroll, Bow) ++ Seq.fill(6)(Arrow)).map(ItemWithId(_)),
+          itemEntityIds = playerStartingItems.map(_.id).toSeq,
           primaryWeapon = Some(Weapon(10, Melee)),
           secondaryWeapon = None
         ),
@@ -78,14 +100,17 @@ object StartingState {
       )
   }
 
-  val items: Set[Entity] = dungeon.items.collect {
-    case (point, Item.Key(keyColour)) =>
+  val items: Set[Entity] = dungeon.items.zipWithIndex.collect {
+    case ((point, Item.Key(keyColour)), index) =>
       Entity(
+        id = s"key-$index",
         Movement(position = Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Key(keyColour)),
+        ItemType(Item.Key(keyColour)),
+        CanPickUp(),
         Hitbox(),
         keyColour match {
           case KeyColour.Yellow => Drawable(Sprites.yellowKeySprite)
@@ -93,37 +118,46 @@ object StartingState {
           case KeyColour.Red => Drawable(Sprites.redKeySprite)
         }
       )
-    case (point, Item.Potion) =>
+    case ((point, Item.Potion), index) =>
       Entity(
+        id = s"potion-$index",
         Movement(Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(Item.Potion)),
+        ItemType(Item.Potion),
+        CanPickUp(),
         Hitbox(),
         Drawable(Sprites.potionSprite)
       )
-    case (point, Item.Scroll) =>
+    case ((point, Item.Scroll), index) =>
       Entity(
+        id = s"scroll-$index",
         Movement(Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(Item.Scroll)),
+        ItemType(Item.Scroll),
+        CanPickUp(),
         Hitbox(),
         Drawable(Sprites.scrollSprite)
       )
-    case (point, Item.Arrow) =>
+    case ((point, Item.Arrow), index) =>
       Entity(
+        id = s"arrow-$index",
         Movement(Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(Item.Arrow)),
+        ItemType(Item.Arrow),
+        CanPickUp(),
         Hitbox(),
         Drawable(Sprites.arrowSprite)
       )
-    case (point, item: Item.EquippableItem) =>
+    case ((point, item: Item.EquippableItem), index) =>
       val sprite = item match {
         case Item.LeatherHelmet => Sprites.leatherHelmetSprite
         case Item.IronHelmet => Sprites.ironHelmetSprite
@@ -131,11 +165,15 @@ object StartingState {
         case Item.PlateArmor => Sprites.plateArmorSprite
       }
       Entity(
+        id = s"equipment-$index",
         Movement(Point(
           point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(item)),
+        ItemType(item),
+        CanPickUp(),
+        Equippable.fromEquippableItem(item),
         Hitbox(),
         Drawable(sprite)
       )
@@ -160,7 +198,7 @@ object StartingState {
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ items ++ enemies ++ lockedDoors,
+    entities = Vector(player) ++ playerStartingItems ++ items ++ enemies ++ lockedDoors,
     dungeon = dungeon
   )
 }

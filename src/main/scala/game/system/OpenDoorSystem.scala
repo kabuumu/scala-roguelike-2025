@@ -7,6 +7,7 @@ import game.entity.Initiative.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
 import game.entity.SightMemory.*
+import game.entity.ItemType.itemType
 import game.entity.{EntityType, Movement}
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
@@ -24,12 +25,19 @@ object OpenDoorSystem extends GameSystem {
               (entity, keyColour)
           }
           key = Key(keyColour)
-          if playerEntity.items.contains(key)
+          if playerEntity.items(currentState).contains(key)
         } yield {
-          // Remove the key and reset initiative
-          currentState
-            .updateEntity(playerEntity.id, _.removeItem(key).resetInitiative())
-            .remove(doorEntity.id)
+          // Find the key item entity to remove
+          val keyItemEntity = playerEntity.inventoryItems(currentState).find(_.itemType.contains(key))
+          keyItemEntity match {
+            case Some(keyEntity) =>
+              // Remove the key entity and reset initiative
+              currentState
+                .updateEntity(playerEntity.id, _.removeItemEntity(keyEntity.id).resetInitiative())
+                .remove(doorEntity.id)
+            case None =>
+              currentState // This shouldn't happen if the contains check passed
+          }
         }
         
         updatedState.getOrElse(currentState)

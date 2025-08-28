@@ -3,6 +3,9 @@ package game.system
 import game.entity.EntityType
 import game.entity.EntityType.*
 import game.entity.Inventory.*
+import game.entity.{CanPickUp, ItemType}
+import game.entity.CanPickUp.canPickUp
+import game.entity.ItemType.itemType
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{CollisionTarget, GameSystemEvent}
 import game.{GameState, Item}
@@ -14,21 +17,22 @@ object InventorySystem extends GameSystem {
     }.foldLeft(gameState) {
       case (currentState, GameSystemEvent.CollisionEvent(entityId, CollisionTarget.Entity(collidedWith))) =>
         (currentState.getEntity(entityId), currentState.getEntity(collidedWith)) match {
-          case (Some(entity@EntityType(Player)), Some(EntityType(ItemEntity(item)))) =>
-            // Only auto-pickup non-equippable items
-            item match {
-              case _: Item.EquippableItem =>
+          case (Some(entity@EntityType(Player)), Some(itemEntity)) if itemEntity.canPickUp =>
+            itemEntity.itemType match {
+              case Some(_: Item.EquippableItem) =>
                 // Don't auto-pickup equippable items - they need to be equipped with Q key
                 currentState
-              case _ =>
-                // Auto-pickup other items, tracking the entity ID for state preservation
+              case Some(_) =>
+                // Auto-pickup other items
                 currentState
-                  .updateEntity(entityId, entity.addItemWithEntityId(item, collidedWith))
+                  .updateEntity(entityId, entity.addItemEntity(collidedWith))
                   .remove(collidedWith)
+              case None =>
+                currentState
             }
           case (Some(entity@EntityType(Player)), Some(EntityType(Key(keyColour)))) =>
             currentState
-              .updateEntity(entityId, entity.addItemWithEntityId(Item.Key(keyColour), collidedWith))
+              .updateEntity(entityId, entity.addItemEntity(collidedWith))
               .remove(collidedWith)
           case _ =>
             // If not an item, do nothing

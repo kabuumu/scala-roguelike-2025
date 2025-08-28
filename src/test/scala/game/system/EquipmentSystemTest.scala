@@ -4,7 +4,6 @@ import data.Sprites
 import game.Direction.{Down, Up}
 import game.Item.*
 import game.entity.*
-import game.entity.ItemWithId
 import game.entity.EntityType.*
 import game.entity.Equipment.*
 import game.entity.Health.*
@@ -116,7 +115,9 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "helmet1",
       Movement(position = Point(4, 3)), // Adjacent to player at (4,4)
       EntityTypeComponent(EntityType.ItemEntity(LeatherHelmet)),
-      Inventory(Seq(ItemWithId(LeatherHelmet))),
+      ItemType(LeatherHelmet),
+      CanPickUp(),
+      Equippable.fromEquippableItem(LeatherHelmet),
       Hitbox(),
       Drawable(Sprites.leatherHelmetSprite)
     )
@@ -251,7 +252,9 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "armor1",
       Movement(position = Point(5, 4)), // Adjacent to player at (4,4)
       EntityTypeComponent(EntityType.ItemEntity(PlateArmor)),
-      Inventory(Seq(ItemWithId(PlateArmor))),
+      ItemType(PlateArmor),
+      CanPickUp(),
+      Equippable.fromEquippableItem(PlateArmor),
       Hitbox(),
       Drawable(Sprites.plateArmorSprite)
     )
@@ -297,7 +300,9 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "helmet1",
       Movement(position = Point(4, 4)), // Same position as player
       EntityTypeComponent(EntityType.ItemEntity(LeatherHelmet)),
-      Inventory(Seq(ItemWithId(LeatherHelmet))),
+      ItemType(LeatherHelmet),
+      CanPickUp(),
+      Equippable.fromEquippableItem(LeatherHelmet),
       Hitbox(),
       Drawable(Sprites.leatherHelmetSprite)
     )
@@ -314,7 +319,7 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     val (updatedState, _) = InventorySystem.update(gameState, Seq(collisionEvent))
 
     // Player should NOT have picked up the helmet
-    updatedState.playerEntity.items should not contain LeatherHelmet
+    updatedState.playerEntity.items(updatedState) should not contain LeatherHelmet
     updatedState.playerEntity.equipment.helmet should be(None)
     
     // Helmet entity should still exist in the world
@@ -327,6 +332,8 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "potion1",
       Movement(position = Point(4, 4)), // Same position as player
       EntityTypeComponent(EntityType.ItemEntity(Potion)),
+      ItemType(Potion),
+      CanPickUp(),
       Hitbox(),
       Drawable(Sprites.potionSprite)
     )
@@ -343,7 +350,7 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     val (updatedState, _) = InventorySystem.update(gameState, Seq(collisionEvent))
 
     // Player should have picked up the potion
-    updatedState.playerEntity.items should contain(Potion)
+    updatedState.playerEntity.items(updatedState) should contain(Potion)
     
     // Potion entity should be removed from the world
     updatedState.entities.find(_.id == "potion1") should be(None)
@@ -358,7 +365,9 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "ironHelmet1",
       Movement(position = Point(4, 3)), // Adjacent to player at (4,4)
       EntityTypeComponent(EntityType.ItemEntity(IronHelmet)),
-      Inventory(Seq(ItemWithId(IronHelmet))),
+      ItemType(IronHelmet),
+      CanPickUp(),
+      Equippable.fromEquippableItem(IronHelmet),
       Hitbox(),
       Drawable(Sprites.ironHelmetSprite)
     )
