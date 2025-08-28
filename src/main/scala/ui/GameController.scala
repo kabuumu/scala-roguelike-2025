@@ -10,6 +10,7 @@ import game.entity.Experience.*
 import game.entity.Health.*
 import game.entity.Initiative.*
 import game.entity.Inventory.*
+import game.entity.WeaponItem.weaponItem
 import game.entity.Movement.*
 import game.system.event.GameSystemEvent.InputEvent
 import game.{Item, *}
@@ -67,15 +68,12 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Input.Move(direction) =>
           (UIState.Move, Some(InputAction.Move(direction)))
         case Input.Attack(attackType) =>
-          val optWeapon = attackType match {
-            case Input.PrimaryAttack => gameState.playerEntity.get[Inventory].get.primaryWeapon
-            case Input.SecondaryAttack => gameState.playerEntity.get[Inventory].get.secondaryWeapon
+          val optWeaponEntity = attackType match {
+            case Input.PrimaryAttack => gameState.playerEntity.primaryWeapon(gameState)
+            case Input.SecondaryAttack => gameState.playerEntity.secondaryWeapon(gameState)
           }
 
-          val range = optWeapon match {
-            case Some(weapon) => weapon.range
-            case None => 1 //Default to melee range
-          }
+          val range = optWeaponEntity.flatMap(_.weaponItem.map(_.range)).getOrElse(1) //Default to melee range
 
           val enemies = enemiesWithinRange(range)
           if (enemies.nonEmpty) {
@@ -88,46 +86,9 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           } else {
             (UIState.Move, None)
           }
-        case Input.UseItem if gameState.playerEntity.groupedUsableItems(gameState).keys.nonEmpty =>
-          val items = gameState.playerEntity.groupedUsableItems(gameState).keys.toSeq
-          (UIState.ListSelect[UsableItem](
-            list = items,
-            effect = item => {
-              val canUseItem = item.chargeType match {
-                case SingleUse => true
-                case Ammo(ammoItem) if gameState.playerEntity.items(gameState).contains(ammoItem) => true
-                case _ => false
-              }
-
-              if (canUseItem) {
-                item.itemEffect match {
-                  case EntityTargeted(effect) =>
-                    val enemies = enemiesWithinRange(10) //TODO - default range for now
-                    if (enemies.nonEmpty) {
-                      (UIState.ListSelect(
-                        list = enemies,
-                        effect = target => (
-                          UIState.Move,
-                          Some(InputAction.UseItem(effect(target))))
-                      ), None)
-                    } else {
-                      (UIState.Move, None)
-                    }
-                  case PointTargeted(effect) =>
-                    (UIState.ScrollSelect(
-                      gameState.playerEntity.position,
-                      target => (
-                        UIState.Move,
-                        Some(InputAction.UseItem(effect(target))))
-                    ), None)
-                  case NonTargeted(effect) =>
-                    (UIState.Move, Some(InputAction.UseItem(effect)))
-                }
-              } else {
-                (UIState.Move, None)
-              }
-            }
-          ), None)
+        case Input.UseItem =>
+          // TODO: Implement new item usage system
+          (UIState.Move, None)
         case Input.LevelUp if gameState.playerEntity.canLevelUp =>
           val levelUpState = UIState.ListSelect(
             list = gameState.playerEntity.getPossiblePerks,

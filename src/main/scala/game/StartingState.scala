@@ -1,7 +1,6 @@
 package game
 
 import data.Sprites
-import game.Item.*
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.system.event.GameSystemEvent.AddExperienceEvent
@@ -11,28 +10,23 @@ import map.{Dungeon, MapGenerator}
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
 
-  // Helper function to create item entities
-  def createItemEntity(item: Item, itemId: String): Entity = {
-    val baseEntity = Entity(
-      id = itemId,
-      ItemType(item),
-      CanPickUp(),
-      Hitbox()
-    )
-    
-    item match {
-      case equippable: EquippableItem =>
-        baseEntity.addComponent(Equippable.fromEquippableItem(equippable))
-      case _ => baseEntity
-    }
-  }
-
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
-    createItemEntity(Potion, "player-potion-1"),
-    createItemEntity(Scroll, "player-scroll-1"),
-    createItemEntity(Bow, "player-bow-1")
-  ) ++ (1 to 6).map(i => createItemEntity(Arrow, s"player-arrow-$i"))
+    ItemFactory.createPotion("player-potion-1"),
+    ItemFactory.createScroll("player-scroll-1"),
+    ItemFactory.createBow("player-bow-1")
+  ) ++ (1 to 6).map(i => ItemFactory.createArrow(s"player-arrow-$i"))
+
+  // Create weapons as entities for enemies and player
+  val ratWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
+    case (_, index) if index % 2 == 0 => index -> ItemFactory.createWeapon(s"rat-weapon-$index", 8, Melee)
+  }.toMap
+  
+  val snakeWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
+    case (_, index) if index % 2 != 0 => index -> ItemFactory.createWeapon(s"snake-weapon-$index", 6, Ranged(4))
+  }.toMap
+  
+  val playerPrimaryWeapon: Entity = ItemFactory.createWeapon("player-primary-weapon", 10, Melee)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 2 == 0 =>
@@ -45,7 +39,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(25),
         Initiative(12),
-        Inventory(Nil, Some(Weapon(8, Melee))),
+        Inventory(Nil, Some(s"rat-weapon-$index")),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(deathDetails => deathDetails.killerId.map {
@@ -63,7 +57,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(18),
         Initiative(25),
-        Inventory(Nil, Some(Weapon(6, Ranged(4)))),
+        Inventory(Nil, Some(s"snake-weapon-$index")),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
         DeathEvents(deathDetails =>
@@ -88,8 +82,8 @@ object StartingState {
         Initiative(10),
         Inventory(
           itemEntityIds = playerStartingItems.map(_.id).toSeq,
-          primaryWeapon = Some(Weapon(10, Melee)),
-          secondaryWeapon = None
+          primaryWeaponId = Some("player-primary-weapon"),
+          secondaryWeaponId = None
         ),
         Equipment(),
         SightMemory(),
@@ -101,82 +95,79 @@ object StartingState {
   }
 
   val items: Set[Entity] = dungeon.items.zipWithIndex.collect {
-    case ((point, Item.Key(keyColour)), index) =>
-      Entity(
-        id = s"key-$index",
-        Movement(position = Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.Key(keyColour)),
-        ItemType(Item.Key(keyColour)),
-        CanPickUp(),
-        Hitbox(),
-        keyColour match {
-          case KeyColour.Yellow => Drawable(Sprites.yellowKeySprite)
-          case KeyColour.Blue => Drawable(Sprites.blueKeySprite)
-          case KeyColour.Red => Drawable(Sprites.redKeySprite)
-        }
+    case ((point, item), index) =>
+      val basePosition = Point(
+        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-    case ((point, Item.Potion), index) =>
-      Entity(
-        id = s"potion-$index",
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(Item.Potion)),
-        ItemType(Item.Potion),
-        CanPickUp(),
-        Hitbox(),
-        Drawable(Sprites.potionSprite)
-      )
-    case ((point, Item.Scroll), index) =>
-      Entity(
-        id = s"scroll-$index",
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(Item.Scroll)),
-        ItemType(Item.Scroll),
-        CanPickUp(),
-        Hitbox(),
-        Drawable(Sprites.scrollSprite)
-      )
-    case ((point, Item.Arrow), index) =>
-      Entity(
-        id = s"arrow-$index",
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(Item.Arrow)),
-        ItemType(Item.Arrow),
-        CanPickUp(),
-        Hitbox(),
-        Drawable(Sprites.arrowSprite)
-      )
-    case ((point, item: Item.EquippableItem), index) =>
-      val sprite = item match {
-        case Item.LeatherHelmet => Sprites.leatherHelmetSprite
-        case Item.IronHelmet => Sprites.ironHelmetSprite
-        case Item.ChainmailArmor => Sprites.chainmailArmorSprite
-        case Item.PlateArmor => Sprites.plateArmorSprite
+      
+      // Map old Item objects to new entity-based system
+      item match {
+        case keyItem if keyItem.isInstanceOf[game.Item.Key] =>
+          val key = keyItem.asInstanceOf[game.Item.Key]
+          val keyColour = key.keyColour match {
+            case game.Item.KeyColour.Yellow => KeyColour.Yellow
+            case game.Item.KeyColour.Blue => KeyColour.Blue  
+            case game.Item.KeyColour.Red => KeyColour.Red
+          }
+          val sprite = keyColour match {
+            case KeyColour.Yellow => Sprites.yellowKeySprite
+            case KeyColour.Blue => Sprites.blueKeySprite
+            case KeyColour.Red => Sprites.redKeySprite
+          }
+          ItemFactory.placeInWorld(
+            ItemFactory.createKey(s"key-$index", keyColour),
+            basePosition,
+            sprite
+          ).addComponent(EntityTypeComponent(EntityType.Key(key.keyColour)))
+          
+        case potionItem if potionItem == game.Item.Potion =>
+          ItemFactory.placeInWorld(
+            ItemFactory.createPotion(s"potion-$index"),
+            basePosition,
+            Sprites.potionSprite
+          ).addComponent(EntityTypeComponent(EntityType.ItemEntity(potionItem)))
+          
+        case scrollItem if scrollItem == game.Item.Scroll =>
+          ItemFactory.placeInWorld(
+            ItemFactory.createScroll(s"scroll-$index"),
+            basePosition,
+            Sprites.scrollSprite
+          ).addComponent(EntityTypeComponent(EntityType.ItemEntity(scrollItem)))
+          
+        case arrowItem if arrowItem == game.Item.Arrow =>
+          ItemFactory.placeInWorld(
+            ItemFactory.createArrow(s"arrow-$index"),
+            basePosition,
+            Sprites.arrowSprite
+          ).addComponent(EntityTypeComponent(EntityType.ItemEntity(arrowItem)))
+          
+        case equippableItem if equippableItem.isInstanceOf[game.Item.EquippableItem] =>
+          val equipItem = equippableItem.asInstanceOf[game.Item.EquippableItem]
+          val sprite = equipItem match {
+            case game.Item.LeatherHelmet => Sprites.leatherHelmetSprite
+            case game.Item.IronHelmet => Sprites.ironHelmetSprite
+            case game.Item.ChainmailArmor => Sprites.chainmailArmorSprite
+            case game.Item.PlateArmor => Sprites.plateArmorSprite
+          }
+          
+          Entity(
+            id = s"equipment-$index",
+            Movement(basePosition),
+            EntityTypeComponent(EntityType.ItemEntity(equipItem)),
+            CanPickUp(),
+            Equippable(
+              slot = equipItem.slot match {
+                case game.Item.EquipmentSlot.Helmet => EquipmentSlot.Helmet
+                case game.Item.EquipmentSlot.Armor => EquipmentSlot.Armor
+              },
+              damageReduction = equipItem.damageReduction,
+              itemName = equipItem.name
+            ),
+            Hitbox(),
+            Drawable(sprite)
+          )
       }
-      Entity(
-        id = s"equipment-$index",
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(item)),
-        ItemType(item),
-        CanPickUp(),
-        Equippable.fromEquippableItem(item),
-        Hitbox(),
-        Drawable(sprite)
-      )
   }
 
   val lockedDoors: Set[Entity] = dungeon.lockedDoors.map {
@@ -189,16 +180,17 @@ object StartingState {
         EntityTypeComponent(lockedDoor),
         Hitbox(),
         lockedDoor.keyColour match {
-          case KeyColour.Yellow => Drawable(Sprites.yellowDoorSprite)
-          case KeyColour.Blue => Drawable(Sprites.blueDoorSprite)
-          case KeyColour.Red => Drawable(Sprites.redDoorSprite)
+          case game.Item.KeyColour.Yellow => Drawable(Sprites.yellowDoorSprite)
+          case game.Item.KeyColour.Blue => Drawable(Sprites.blueDoorSprite)
+          case game.Item.KeyColour.Red => Drawable(Sprites.redDoorSprite)
         }
       )
   }
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ items ++ enemies ++ lockedDoors,
+    entities = Vector(player) ++ playerStartingItems ++ items ++ enemies ++ lockedDoors ++ 
+               ratWeapons.values ++ snakeWeapons.values ++ Seq(playerPrimaryWeapon),
     dungeon = dungeon
   )
 }

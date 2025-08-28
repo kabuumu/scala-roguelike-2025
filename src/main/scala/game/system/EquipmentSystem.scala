@@ -7,19 +7,26 @@ import game.entity.Equipment.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
 import game.entity.EntityType.*
-import game.entity.{Equippable, CanPickUp, ItemType}
+import game.entity.{Equippable, CanPickUp}
+import game.entity.Equippable.{isEquippable, equippable}
 import game.entity.Equippable.isEquippable
-import game.entity.ItemType.itemType
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.*
-import game.{Direction, Item, Point, Sprite}
+import game.{Direction, Point, Sprite}
 import data.Sprites
 import game.entity.{Entity, EntityType, EntityTypeComponent, Hitbox, Drawable}
 
 object EquipmentSystem extends GameSystem {
   
-  private def getEquipmentSprite(item: Item.EquippableItem): Sprite = {
-    Sprites.itemSprites.get(item).getOrElse(Sprites.defaultItemSprite)
+  // Get sprite for equippable item based on its properties
+  private def getEquipmentSprite(equippable: Equippable): Sprite = {
+    equippable.itemName match {
+      case "Leather Helmet" => Sprites.leatherHelmetSprite
+      case "Iron Helmet" => Sprites.ironHelmetSprite  
+      case "Chainmail Armor" => Sprites.chainmailArmorSprite
+      case "Plate Armor" => Sprites.plateArmorSprite
+      case _ => Sprites.defaultItemSprite
+    }
   }
   
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
@@ -37,14 +44,14 @@ object EquipmentSystem extends GameSystem {
             
             adjacentEquippableEntities.headOption match {
               case Some(equipmentEntity) =>
-                equipmentEntity.itemType match {
-                  case Some(equipItem: Item.EquippableItem) =>
+                equipmentEntity.equippable match {
+                  case Some(equippableComponent) =>
                     // Remove the item from the world and equip it
                     val entityWithEquipment = if (!entity.has[Equipment]) {
                       entity.addComponent(Equipment())
                     } else entity
                     
-                    val (entityWithNewEquipment, previouslyEquippedItem) = entityWithEquipment.equipItem(equipItem)
+                    val (entityWithNewEquipment, previouslyEquippedComponent) = entityWithEquipment.equipItemComponent(equippableComponent)
                     
                     // Add the equipment to inventory
                     val updatedEntity = entityWithNewEquipment.addItemEntity(equipmentEntity.id)
@@ -52,22 +59,21 @@ object EquipmentSystem extends GameSystem {
                     val updatedState = currentState
                       .updateEntity(entityId, _ => updatedEntity)
                       .updateEntity(equipmentEntity.id, _.removeComponent[Movement]) // Remove position instead of entity
-                      .copy(messages = s"Equipped ${equipItem.name}" +: currentState.messages)
+                      .copy(messages = s"Equipped ${equippableComponent.itemName}" +: currentState.messages)
                     
                     // If there was a previously equipped item, drop it at the position where the new equipment was found
-                    val finalState = previouslyEquippedItem match {
-                      case Some(droppedItem) =>
+                    val finalState = previouslyEquippedComponent match {
+                      case Some(droppedEquippable) =>
                         // Create a new entity for the dropped equipment
                         val dropPosition = equipmentEntity.position
                         val droppedEquipmentEntity = Entity(
-                          id = s"dropped-${droppedItem.name.replace(" ", "-")}-${System.nanoTime()}",
+                          id = s"dropped-${droppedEquippable.itemName.replace(" ", "-")}-${System.nanoTime()}",
                           Movement(position = dropPosition),
-                          EntityTypeComponent(EntityType.ItemEntity(droppedItem)),
-                          ItemType(droppedItem),
+                          EntityTypeComponent(EntityType.ItemEntity(game.Item.Potion)), // Temporary placeholder
                           CanPickUp(),
-                          Equippable.fromEquippableItem(droppedItem),
+                          droppedEquippable,
                           Hitbox(),
-                          Drawable(getEquipmentSprite(droppedItem))
+                          Drawable(getEquipmentSprite(droppedEquippable))
                         )
                         updatedState.add(droppedEquipmentEntity)
                       case None =>

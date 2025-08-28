@@ -1,19 +1,26 @@
 package game.system
 
 import game.GameState
-import game.Item.Key
 import game.entity.EntityType.LockedDoor
 import game.entity.Initiative.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
 import game.entity.SightMemory.*
-import game.entity.ItemType.itemType
-import game.entity.{EntityType, Movement}
+import game.entity.{EntityType, Movement, KeyColour}
+import game.entity.KeyItem.keyItem
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
 import ui.InputAction
 
 object OpenDoorSystem extends GameSystem {
+  
+  // Convert from old Item.KeyColour to new entity.KeyColour
+  private def convertKeyColour(itemKeyColour: game.Item.KeyColour): KeyColour = itemKeyColour match {
+    case game.Item.KeyColour.Yellow => KeyColour.Yellow
+    case game.Item.KeyColour.Blue => KeyColour.Blue
+    case game.Item.KeyColour.Red => KeyColour.Red
+  }
+  
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
     val updatedGamestate = events.foldLeft(gameState) {
       case (currentState, GameSystemEvent.InputEvent(entityId, InputAction.Move(direction))) =>
@@ -24,11 +31,10 @@ object OpenDoorSystem extends GameSystem {
             case entity@EntityType(LockedDoor(keyColour)) if entity.position == playerEntity.position + direction =>
               (entity, keyColour)
           }
-          key = Key(keyColour)
-          if playerEntity.items(currentState).contains(key)
+          if playerEntity.hasKey(currentState, convertKeyColour(keyColour))
         } yield {
           // Find the key item entity to remove
-          val keyItemEntity = playerEntity.inventoryItems(currentState).find(_.itemType.contains(key))
+          val keyItemEntity = playerEntity.keys(currentState).find(_.keyItem.exists(_.keyColour == convertKeyColour(keyColour)))
           keyItemEntity match {
             case Some(keyEntity) =>
               // Remove the key entity and reset initiative
@@ -36,7 +42,7 @@ object OpenDoorSystem extends GameSystem {
                 .updateEntity(playerEntity.id, _.removeItemEntity(keyEntity.id).resetInitiative())
                 .remove(doorEntity.id)
             case None =>
-              currentState // This shouldn't happen if the contains check passed
+              currentState // This shouldn't happen if the hasKey check passed
           }
         }
         
