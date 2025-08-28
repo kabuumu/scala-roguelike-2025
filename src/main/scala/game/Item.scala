@@ -159,4 +159,38 @@ object Item {
   enum KeyColour {
     case Yellow, Red, Blue
   }
+
+  enum EquipmentSlot {
+    case Helmet, Armor
+  }
+
+  sealed trait EquippableItem extends UnusableItem {
+    def slot: EquipmentSlot
+    def damageReduction: Int
+    def name: String
+  }
+
+  case object LeatherHelmet extends EquippableItem {
+    override def slot: EquipmentSlot = EquipmentSlot.Helmet
+    override def damageReduction: Int = 2
+    override def name: String = "Leather Helmet"
+  }
+
+  case object ChainmailArmor extends EquippableItem {
+    override def slot: EquipmentSlot = EquipmentSlot.Armor
+    override def damageReduction: Int = 5
+    override def name: String = "Chainmail Armor"
+  }
+
+  case object IronHelmet extends EquippableItem {
+    override def slot: EquipmentSlot = EquipmentSlot.Helmet
+    override def damageReduction: Int = 4
+    override def name: String = "Iron Helmet"
+  }
+
+  case object PlateArmor extends EquippableItem {
+    override def slot: EquipmentSlot = EquipmentSlot.Armor
+    override def damageReduction: Int = 8
+    override def name: String = "Plate Armor"
+  }
 }

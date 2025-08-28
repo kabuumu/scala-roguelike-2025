@@ -15,9 +15,17 @@ object InventorySystem extends GameSystem {
       case (currentState, GameSystemEvent.CollisionEvent(entityId, CollisionTarget.Entity(collidedWith))) =>
         (currentState.getEntity(entityId), currentState.getEntity(collidedWith)) match {
           case (Some(entity@EntityType(Player)), Some(EntityType(ItemEntity(item)))) =>
-            currentState
-              .updateEntity(entityId, entity.addItem(item))
-              .remove(collidedWith)
+            // Only auto-pickup non-equippable items
+            item match {
+              case _: Item.EquippableItem =>
+                // Don't auto-pickup equippable items - they need to be equipped with Q key
+                currentState
+              case _ =>
+                // Auto-pickup other items (potions, scrolls, arrows, etc.)
+                currentState
+                  .updateEntity(entityId, entity.addItem(item))
+                  .remove(collidedWith)
+            }
           case (Some(entity@EntityType(Player)), Some(EntityType(Key(keyColour)))) =>
             currentState
               .updateEntity(entityId, entity.addItem(Item.Key(keyColour)))

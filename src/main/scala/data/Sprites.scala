@@ -40,6 +40,13 @@ object Sprites {
   val arrowSprite: Sprite = Sprite(40, 5, entityLayer)
   val projectileSprite: Sprite = Sprite(28, 11, entityLayer)
 
+  // Equipment sprites
+  val leatherHelmetSprite: Sprite = Sprite(33, 0, uiLayer)
+  val ironHelmetSprite: Sprite = Sprite(36, 0, uiLayer)
+  val chainmailArmorSprite: Sprite = Sprite(32, 1, uiLayer)
+  val plateArmorSprite: Sprite = Sprite(33, 1, uiLayer)
+  val defaultItemSprite: Sprite = Sprite(37, 13, uiLayer)
+
   val errorSprite: Sprite = Sprite(35, 21, uiLayer)
 
   val itemSprites: Map[Item.Item, Sprite] = Map(
@@ -50,5 +57,9 @@ object Sprites {
     game.Item.Scroll -> scrollSprite,
     game.Item.Bow -> bowSprite,
     game.Item.Arrow -> arrowSprite,
+    game.Item.LeatherHelmet -> leatherHelmetSprite,
+    game.Item.IronHelmet -> ironHelmetSprite,
+    game.Item.ChainmailArmor -> chainmailArmorSprite,
+    game.Item.PlateArmor -> plateArmorSprite,
   )
 }

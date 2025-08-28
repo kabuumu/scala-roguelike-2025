@@ -100,6 +100,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
             ++ usableItems(model, spriteSheet)
             ++ perkSelection(model)
             ++ keys(model, spriteSheet)
+            ++ equipmentPaperdoll(model, spriteSheet)
         )
       )
     )
@@ -142,4 +143,4 @@ object Game extends IndigoSandbox[Unit, GameController] {
         line :+ sprite
     }
   }
-}  
+}

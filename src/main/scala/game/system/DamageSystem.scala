@@ -2,6 +2,8 @@ package game.system
 
 import game.GameState
 import game.entity.Health.*
+import game.entity.Equipment
+import game.entity.Equipment.*
 import game.system.event.GameSystemEvent.*
 import game.system.event.GameSystemEvent
 import game.status.StatusEffect.*
@@ -16,12 +18,15 @@ object DamageSystem extends GameSystem {
           case StatusEffect(IncreaseDamage(damageMod), _, _) => damageMod
         }).sum
         
-        val damageResistance: Int = currentState.getEntity(entityId).toSeq.flatMap(_.statusEffects.collect {
+        val statusDamageResistance: Int = currentState.getEntity(entityId).toSeq.flatMap(_.statusEffects.collect {
           case StatusEffect(ReduceIncomingDamage(resistance), _, _) => resistance
         }).sum
         
-        val damage = Math.max(baseDamage + damageMod - damageResistance, 1)
+        val equipmentDamageResistance: Int = currentState.getEntity(entityId).map(_.getTotalDamageReduction).getOrElse(0)
         
+        val totalDamageResistance = statusDamageResistance + equipmentDamageResistance
+        val damage = Math.max(baseDamage + damageMod - totalDamageResistance, 1)
+
         currentState.updateEntity(entityId, _.damage(damage, attackerId))
       case (currentState, _) =>
         currentState

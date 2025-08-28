@@ -3,7 +3,7 @@ package ui
 object UIConfig {
   val spriteScale = 16
   val uiScale = 3
-  val xTiles = 24
+  val xTiles = 32  // Increased from 24 to 32 for more room
   val yTiles = 16
 
   val canvasWidth: Int = xTiles * spriteScale

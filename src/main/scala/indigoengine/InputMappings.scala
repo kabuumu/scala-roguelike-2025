@@ -19,6 +19,7 @@ object InputMappings {
     KeyInputs(Key.KEY_X)        -> Attack(SecondaryAttack),
     KeyInputs(Key.KEY_E)        -> Interact,
     KeyInputs(Key.KEY_U)        -> UseItem,
+    KeyInputs(Key.KEY_Q)        -> Equip,
     KeyInputs(Key.KEY_C)        -> Cancel,
     KeyInputs(Key.ESCAPE)       -> Cancel,
     KeyInputs(Key.SPACE)        -> Confirm,

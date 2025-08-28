@@ -68,6 +68,7 @@ object StartingState {
           primaryWeapon = Some(Weapon(10, Melee)),
           secondaryWeapon = None
         ),
+        Equipment(),
         SightMemory(),
         Drawable(Sprites.playerSprite),
         Hitbox(),
@@ -120,6 +121,23 @@ object StartingState {
         EntityTypeComponent(EntityType.ItemEntity(Item.Arrow)),
         Hitbox(),
         Drawable(Sprites.arrowSprite)
+      )
+    case (point, item: Item.EquippableItem) =>
+      val sprite = item match {
+        case Item.LeatherHelmet => Sprites.leatherHelmetSprite
+        case Item.IronHelmet => Sprites.ironHelmetSprite
+        case Item.ChainmailArmor => Sprites.chainmailArmorSprite
+        case Item.PlateArmor => Sprites.plateArmorSprite
+      }
+      Entity(
+        Movement(Point(
+          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        )),
+        EntityTypeComponent(EntityType.ItemEntity(item)),
+        Inventory(Seq(item)),
+        Hitbox(),
+        Drawable(sprite)
       )
   }
 

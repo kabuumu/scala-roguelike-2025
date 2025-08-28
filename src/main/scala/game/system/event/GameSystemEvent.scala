@@ -41,5 +41,8 @@ object GameSystemEvent {
     entityId: String,
     experience: Int
   ) extends GameSystemEvent
+  
+  case class EquipEvent(
+    entityId: String
+  ) extends GameSystemEvent
 }
-

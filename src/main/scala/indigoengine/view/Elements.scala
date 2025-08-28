@@ -1,7 +1,8 @@
 package indigoengine.view
 
 import game.Item.Item
-import game.entity.Entity
+import game.entity.{Entity, Equipment}
+import game.entity.Equipment.*
 import game.status.StatusEffect
 import generated.{Assets, PixelFont, PixelFontSmall}
 import indigo.*
@@ -130,6 +131,65 @@ object Elements {
     keySprites.flatten.toBatch
   }
 
+  def equipmentPaperdoll(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
+    import game.entity.Equipment.*
+    import game.Item.*
+
+    val player = model.gameState.playerEntity
+    val equipment = player.equipment
+    
+    // Position paperdoll on the right side of the screen with more space
+    val paperdollWidth = spriteScale * 4
+    val paperdollHeight = spriteScale * 5
+    val paperdollX = canvasWidth - paperdollWidth - defaultBorderSize
+    val paperdollY = uiYOffset
+    
+    // Create background for paperdoll
+    val background = BlockBar.getBlockBar(
+      Rectangle(Point(paperdollX - defaultBorderSize, paperdollY - defaultBorderSize), 
+                Size(paperdollWidth + (defaultBorderSize * 2), paperdollHeight + (defaultBorderSize * 2))),
+      RGBA.SlateGray.withAlpha(0.3f)
+    )
+    
+    // Title
+    val title = text("Equipment", paperdollX, paperdollY - (defaultBorderSize * 3))
+    
+    // Helmet slot with better spacing
+    val helmetY = paperdollY + spriteScale
+    val helmetSlotX = paperdollX + spriteScale * 3
+    val helmetSlot = BlockBar.getBlockBar(
+      Rectangle(Point(helmetSlotX, helmetY), Size(spriteScale, spriteScale)),
+      RGBA.SlateGray.withAlpha(0.5f)
+    )
+    val helmetLabel = text("Helmet:", paperdollX + defaultBorderSize, helmetY + (spriteScale / 4))
+    
+    val helmetItem = equipment.helmet.map { helmet =>
+      val sprite = data.Sprites.itemSprites.getOrElse(helmet, data.Sprites.defaultItemSprite)
+      spriteSheet.fromSprite(sprite).moveTo(helmetSlotX, helmetY)
+    }.toSeq
+    
+    // Armor slot with better spacing  
+    val armorY = paperdollY + (spriteScale * 2) + defaultBorderSize
+    val armorSlotX = paperdollX + spriteScale * 3
+    val armorSlot = BlockBar.getBlockBar(
+      Rectangle(Point(armorSlotX, armorY), Size(spriteScale, spriteScale)),
+      RGBA.SlateGray.withAlpha(0.5f)
+    )
+    val armorLabel = text("Armor:", paperdollX + defaultBorderSize, armorY + (spriteScale / 4))
+    
+    val armorItem = equipment.armor.map { armor =>
+      val sprite = data.Sprites.itemSprites.getOrElse(armor, data.Sprites.defaultItemSprite)
+      spriteSheet.fromSprite(sprite).moveTo(armorSlotX, armorY)
+    }.toSeq
+    
+    // Equipment stats with better positioning
+    val totalDamageReduction = equipment.getTotalDamageReduction
+    val statsY = paperdollY + (spriteScale * 4)
+    val statsText = text(s"Total DR: $totalDamageReduction", paperdollX + defaultBorderSize, statsY)
+    
+    Seq(background, title, helmetSlot, helmetLabel, armorSlot, armorLabel, statsText).toBatch ++ 
+    helmetItem.toBatch ++ armorItem.toBatch
+  }
 
   def perkSelection(model: GameController): Batch[SceneNode] = {
     model.uiState match {

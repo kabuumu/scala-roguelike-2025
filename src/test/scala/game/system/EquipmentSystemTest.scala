@@ -1,0 +1,349 @@
+package game.system
+
+import data.Sprites
+import game.Direction.{Down, Up}
+import game.Item.*
+import game.entity.*
+import game.entity.EntityType.*
+import game.entity.Equipment.*
+import game.entity.Health.*
+import game.entity.Inventory.*
+import game.entity.Movement.*
+import game.system.event.GameSystemEvent.*
+import game.{GameState, Input, Point}
+import map.Dungeon
+import org.scalatest.funsuite.AnyFunSuiteLike
+import org.scalatest.matchers.should.Matchers
+import ui.GameController.frameTime
+import ui.{GameController, UIState}
+import game.status.StatusEffect.addStatusEffect
+
+
+class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
+  val playerId = "testPlayerId"
+  val testDungeon: Dungeon = Dungeon(testMode = true)
+
+  val basePlayerEntity: Entity = Entity(
+    id = playerId,
+    Movement(position = Point(4, 4)),
+    EntityTypeComponent(EntityType.Player),
+    Health(100),
+    Initiative(0),
+    Inventory(Seq(), Some(Weapon(10, Melee)), None),
+    Equipment(), // Start with empty equipment
+    SightMemory(),
+    Drawable(Sprites.playerSprite),
+    Hitbox(),
+    Experience(),
+  )
+
+  test("Player should start with empty equipment") {
+    val equipment = basePlayerEntity.equipment
+    
+    equipment.helmet should be(None)
+    equipment.armor should be(None)
+    equipment.getTotalDamageReduction should be(0)
+  }
+
+  test("Equipment component should calculate total damage reduction correctly") {
+    val equipment = Equipment(
+      helmet = Some(LeatherHelmet),
+      armor = Some(ChainmailArmor)
+    )
+    
+    equipment.getTotalDamageReduction should be(7) // 2 + 5
+  }
+
+  test("Equipment component should equip helmet correctly") {
+    val emptyEquipment = Equipment()
+    val equippedHelmet = emptyEquipment.equip(IronHelmet)
+    
+    equippedHelmet.helmet should be(Some(IronHelmet))
+    equippedHelmet.armor should be(None)
+    equippedHelmet.getTotalDamageReduction should be(4)
+  }
+
+  test("Equipment component should equip armor correctly") {
+    val emptyEquipment = Equipment()
+    val equippedArmor = emptyEquipment.equip(PlateArmor)
+    
+    equippedArmor.helmet should be(None)
+    equippedArmor.armor should be(Some(PlateArmor))
+    equippedArmor.getTotalDamageReduction should be(8)
+  }
+
+  test("Equipment component should replace existing helmet when equipping new one") {
+    val equipmentWithHelmet = Equipment(helmet = Some(LeatherHelmet))
+    val updatedEquipment = equipmentWithHelmet.equip(IronHelmet)
+    
+    updatedEquipment.helmet should be(Some(IronHelmet))
+    updatedEquipment.getTotalDamageReduction should be(4) // Iron helmet damage reduction
+  }
+
+  test("Equipment component should unequip helmet correctly") {
+    val equipmentWithHelmet = Equipment(helmet = Some(IronHelmet), armor = Some(ChainmailArmor))
+    val unequippedHelmet = equipmentWithHelmet.unequip(EquipmentSlot.Helmet)
+    
+    unequippedHelmet.helmet should be(None)
+    unequippedHelmet.armor should be(Some(ChainmailArmor))
+    unequippedHelmet.getTotalDamageReduction should be(5) // Only armor remains
+  }
+
+  test("Equipment component should unequip armor correctly") {
+    val equipmentWithArmor = Equipment(helmet = Some(IronHelmet), armor = Some(ChainmailArmor))
+    val unequippedArmor = equipmentWithArmor.unequip(EquipmentSlot.Armor)
+    
+    unequippedArmor.helmet should be(Some(IronHelmet))
+    unequippedArmor.armor should be(None)
+    unequippedArmor.getTotalDamageReduction should be(4) // Only helmet remains
+  }
+
+  test("Player entity should equip item correctly using extension method") {
+    val playerWithEquipment = basePlayerEntity.equipItem(LeatherHelmet)
+    
+    playerWithEquipment.equipment.helmet should be(Some(LeatherHelmet))
+    playerWithEquipment.getTotalDamageReduction should be(2)
+  }
+
+  test("EquipmentSystem should equip adjacent equipment item") {
+    // Create a helmet entity adjacent to the player
+    val helmetEntity = Entity(
+      id = "helmet1",
+      Movement(position = Point(4, 3)), // Adjacent to player at (4,4)
+      EntityTypeComponent(EntityType.ItemEntity(LeatherHelmet)),
+      Inventory(Seq(LeatherHelmet)),
+      Hitbox(),
+      Drawable(Sprites.leatherHelmetSprite)
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(basePlayerEntity, helmetEntity),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    val equipEvent = EquipEvent(playerId)
+    val (updatedState, _) = EquipmentSystem.update(gameState, Seq(equipEvent))
+
+    // Player should have equipped the helmet
+    updatedState.playerEntity.equipment.helmet should be(Some(LeatherHelmet))
+    updatedState.playerEntity.getTotalDamageReduction should be(2)
+    
+    // Helmet entity should be removed from the world
+    updatedState.entities.find(_.id == "helmet1") should be(None)
+    
+    // Success message should be added
+    updatedState.messages.head should include("Equipped Leather Helmet")
+  }
+
+  test("EquipmentSystem should show message when no equipment nearby") {
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(basePlayerEntity),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    val equipEvent = EquipEvent(playerId)
+    val (updatedState, _) = EquipmentSystem.update(gameState, Seq(equipEvent))
+
+    // Player equipment should remain unchanged
+    updatedState.playerEntity.equipment.helmet should be(None)
+    updatedState.playerEntity.equipment.armor should be(None)
+    
+    // Error message should be added
+    updatedState.messages.head should be("No equippable items nearby")
+  }
+
+  test("DamageSystem should reduce damage based on equipment") {
+    val playerWithArmor = basePlayerEntity
+      .equipItem(LeatherHelmet) // 2 DR
+      .equipItem(ChainmailArmor) // 5 DR
+    // Total DR: 7
+
+    val attacker = Entity(
+      id = "attacker1",
+      Movement(position = Point(3, 4)),
+      EntityTypeComponent(EntityType.Enemy),
+      Health(50),
+      Inventory(Seq(), Some(Weapon(15, Melee)), None)
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(playerWithArmor, attacker),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    val damageEvent = DamageEvent(playerId, "attacker1", 15) // 15 base damage
+    val (updatedState, _) = DamageSystem.update(gameState, Seq(damageEvent))
+
+    // Damage should be reduced: 15 - 7 = 8 damage dealt
+    // Player health: 100 - 8 = 92
+    updatedState.playerEntity.currentHealth should be(92)
+  }
+
+  test("DamageSystem should ensure minimum 1 damage even with high armor") {
+    val playerWithMaxArmor = basePlayerEntity
+      .equipItem(IronHelmet) // 4 DR
+      .equipItem(PlateArmor) // 8 DR
+    // Total DR: 12
+
+    val weakAttacker = Entity(
+      id = "weakAttacker",
+      Movement(position = Point(3, 4)),
+      EntityTypeComponent(EntityType.Enemy),
+      Health(50),
+      Inventory(Seq(), Some(Weapon(5, Melee)), None)
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(playerWithMaxArmor, weakAttacker),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    val damageEvent = DamageEvent(playerId, "weakAttacker", 5) // 5 base damage vs 12 DR
+    val (updatedState, _) = DamageSystem.update(gameState, Seq(damageEvent))
+
+    // Minimum 1 damage should be dealt: 100 - 1 = 99
+    updatedState.playerEntity.currentHealth should be(99)
+  }
+
+  test("DamageSystem should combine equipment and status effect damage reduction") {
+    import game.status.StatusEffect
+    import game.status.StatusEffect.EffectType.ReduceIncomingDamage
+
+    val fortifiedPerk = StatusEffect(
+      ReduceIncomingDamage(3),
+      name = "Fortified",
+      description = "Reduces incoming damage by 3."
+    )
+
+    val playerWithArmorAndPerk = basePlayerEntity
+      .equipItem(ChainmailArmor) // 5 DR from equipment
+      .addStatusEffect(fortifiedPerk) // 3 DR from perk
+    // Total DR: 8
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(playerWithArmorAndPerk),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    val damageEvent = DamageEvent(playerId, "attacker", 20) // 20 base damage
+    val (updatedState, _) = DamageSystem.update(gameState, Seq(damageEvent))
+
+    // Damage should be reduced: 20 - 8 = 12 damage dealt
+    // Player health: 100 - 12 = 88
+    updatedState.playerEntity.currentHealth should be(88)
+  }
+
+  test("Player should equip equipment via GameController using Q key") {
+    // Create armor entity adjacent to player
+    val armorEntity = Entity(
+      id = "armor1",
+      Movement(position = Point(5, 4)), // Adjacent to player at (4,4)
+      EntityTypeComponent(EntityType.ItemEntity(PlateArmor)),
+      Inventory(Seq(PlateArmor)),
+      Hitbox(),
+      Drawable(Sprites.plateArmorSprite)
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(basePlayerEntity, armorEntity),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    val gameController = GameController(UIState.Move, gameState)
+    val updatedController = gameController.update(Some(Input.Equip), frameTime)
+
+    // Player should have equipped the armor
+    updatedController.gameState.playerEntity.equipment.armor should be(Some(PlateArmor))
+    updatedController.gameState.playerEntity.getTotalDamageReduction should be(8)
+    
+    // Armor entity should be removed from the world
+    updatedController.gameState.entities.find(_.id == "armor1") should be(None)
+    
+    // Success message should be present
+    updatedController.gameState.messages.head should include("Equipped Plate Armor")
+  }
+
+  test("Equipment should provide different damage reduction values") {
+    LeatherHelmet.damageReduction should be(2)
+    IronHelmet.damageReduction should be(4)
+    ChainmailArmor.damageReduction should be(5)
+    PlateArmor.damageReduction should be(8)
+  }
+
+  test("Equipment should have correct slot assignments") {
+    LeatherHelmet.slot should be(EquipmentSlot.Helmet)
+    IronHelmet.slot should be(EquipmentSlot.Helmet)
+    ChainmailArmor.slot should be(EquipmentSlot.Armor)
+    PlateArmor.slot should be(EquipmentSlot.Armor)
+  }
+
+  test("InventorySystem should NOT auto-pickup equippable items when walked over") {
+    // Create a helmet entity at the same position as the player
+    val helmetEntity = Entity(
+      id = "helmet1",
+      Movement(position = Point(4, 4)), // Same position as player
+      EntityTypeComponent(EntityType.ItemEntity(LeatherHelmet)),
+      Inventory(Seq(LeatherHelmet)),
+      Hitbox(),
+      Drawable(Sprites.leatherHelmetSprite)
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(basePlayerEntity, helmetEntity),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    // Simulate collision event (player walking over equipment)
+    val collisionEvent = CollisionEvent(playerId, CollisionTarget.Entity("helmet1"))
+    val (updatedState, _) = InventorySystem.update(gameState, Seq(collisionEvent))
+
+    // Player should NOT have picked up the helmet
+    updatedState.playerEntity.items should not contain LeatherHelmet
+    updatedState.playerEntity.equipment.helmet should be(None)
+    
+    // Helmet entity should still exist in the world
+    updatedState.entities.find(_.id == "helmet1") should not be None
+  }
+
+  test("InventorySystem should still auto-pickup non-equippable items when walked over") {
+    // Create a potion entity at the same position as the player
+    val potionEntity = Entity(
+      id = "potion1",
+      Movement(position = Point(4, 4)), // Same position as player
+      EntityTypeComponent(EntityType.ItemEntity(Potion)),
+      Hitbox(),
+      Drawable(Sprites.potionSprite)
+    )
+
+    val gameState = GameState(
+      playerEntityId = playerId,
+      entities = Seq(basePlayerEntity, potionEntity),
+      messages = Nil,
+      dungeon = testDungeon
+    )
+
+    // Simulate collision event (player walking over potion)
+    val collisionEvent = CollisionEvent(playerId, CollisionTarget.Entity("potion1"))
+    val (updatedState, _) = InventorySystem.update(gameState, Seq(collisionEvent))
+
+    // Player should have picked up the potion
+    updatedState.playerEntity.items should contain(Potion)
+    
+    // Potion entity should be removed from the world
+    updatedState.entities.find(_.id == "potion1") should be(None)
+  }
+}

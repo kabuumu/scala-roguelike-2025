@@ -137,6 +137,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           )
           //Give player choice of level up perks
           (levelUpState, None)
+        case Input.Equip => (UIState.Move, Some(InputAction.Equip))
         case Input.Wait => (UIState.Move, Some(InputAction.Wait))
         case _ => (uiState, None)
       }

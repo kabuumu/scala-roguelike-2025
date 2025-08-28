@@ -58,7 +58,15 @@ class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends Dungeon
 }
 
 class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) extends DungeonMutator {
-  val possibleItems: Set[Item] = Set(Item.Potion, Item.Scroll, Item.Arrow)
+  val possibleItems: Set[Item] = Set(
+    Item.Potion, 
+    Item.Scroll, 
+    Item.Arrow,
+    Item.LeatherHelmet,
+    Item.ChainmailArmor,
+    Item.IronHelmet,
+    Item.PlateArmor
+  )
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
     if (currentDungeon.nonKeyItems.size >= targetTreasureRoomCount || currentDungeon.roomGrid.size + 1 >= targetRoomCount) {
