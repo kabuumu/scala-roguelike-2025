@@ -64,7 +64,7 @@ object StartingState {
         Health(100),
         Initiative(10),
         Inventory(
-          items = Seq(Potion, Scroll, Bow) ++ Seq.fill(6)(Arrow),
+          itemEntityIds = Seq(), // Will be populated with starting item entities
           primaryWeapon = Some(Weapon(10, Melee)),
           secondaryWeapon = None
         ),
@@ -135,7 +135,6 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.ItemEntity(item)),
-        Inventory(Seq(item)),
         Hitbox(),
         Drawable(sprite)
       )

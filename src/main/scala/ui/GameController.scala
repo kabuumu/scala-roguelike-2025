@@ -88,14 +88,14 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           } else {
             (UIState.Move, None)
           }
-        case Input.UseItem if gameState.playerEntity.groupedUsableItems.keys.nonEmpty =>
-          val items = gameState.playerEntity.groupedUsableItems.keys.toSeq
+        case Input.UseItem if gameState.playerEntity.groupedUsableItems(gameState).keys.nonEmpty =>
+          val items = gameState.playerEntity.groupedUsableItems(gameState).keys.toSeq
           (UIState.ListSelect[UsableItem](
             list = items,
             effect = item => {
               val canUseItem = item.chargeType match {
                 case SingleUse => true
-                case Ammo(ammoItem) if gameState.playerEntity.items.contains(ammoItem) => true
+                case Ammo(ammoItem) if gameState.playerEntity.items(gameState).contains(ammoItem) => true
                 case _ => false
               }
 
