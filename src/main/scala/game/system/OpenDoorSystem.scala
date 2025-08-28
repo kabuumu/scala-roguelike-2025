@@ -24,24 +24,11 @@ object OpenDoorSystem extends GameSystem {
               (entity, keyColour)
           }
           key = Key(keyColour)
-          if playerEntity.keys(currentState).contains(key)
+          if playerEntity.items.contains(key)
         } yield {
-          // Find the key entity ID and remove it from inventory
-          val keyEntityId = playerEntity.findItemEntityId(currentState, key)
-          val updatedPlayer = keyEntityId match {
-            case Some(entityId) => 
-              playerEntity.removeItem(entityId).resetInitiative()
-            case None => 
-              playerEntity.resetInitiative()
-          }
-          
-          val stateWithoutKey = keyEntityId match {
-            case Some(entityId) => currentState.remove(entityId)
-            case None => currentState
-          }
-          
-          stateWithoutKey
-            .updateEntity(playerEntity.id, _ => updatedPlayer)
+          // Remove the key and reset initiative
+          currentState
+            .updateEntity(playerEntity.id, _.removeItem(key).resetInitiative())
             .remove(doorEntity.id)
         }
         

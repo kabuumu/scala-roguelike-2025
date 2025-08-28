@@ -4,6 +4,7 @@ import data.Sprites
 import game.Direction.{Down, Up}
 import game.Item.*
 import game.entity.*
+import game.entity.ItemWithId
 import game.entity.EntityType.*
 import game.entity.Experience.*
 import game.entity.Health.*

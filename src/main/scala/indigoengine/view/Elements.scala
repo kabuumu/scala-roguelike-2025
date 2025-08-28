@@ -86,7 +86,7 @@ object Elements {
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
     import game.entity.Inventory.*
     // Group items and count their occurrences
-    val groupedItems = model.gameState.playerEntity.groupedUsableItems(model.gameState)
+    val groupedItems = model.gameState.playerEntity.groupedUsableItems
 
     val itemSprites = for {((item, quantity), index) <- groupedItems.zipWithIndex} yield {
       val itemX: Int = uiXOffset + index * ((spriteScale * 3) / 2)
@@ -116,7 +116,7 @@ object Elements {
     import game.entity.Inventory.*
 
     // Get the keys from the player's inventory
-    val keys = model.gameState.playerEntity.keys(model.gameState)
+    val keys = model.gameState.playerEntity.keys
 
     val keySprites = for {(key, index) <- keys.zipWithIndex} yield {
       val itemX: Int = uiXOffset + index * uiItemScale

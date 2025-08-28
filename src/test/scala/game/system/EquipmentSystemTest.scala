@@ -4,6 +4,7 @@ import data.Sprites
 import game.Direction.{Down, Up}
 import game.Item.*
 import game.entity.*
+import game.entity.ItemWithId
 import game.entity.EntityType.*
 import game.entity.Equipment.*
 import game.entity.Health.*
@@ -115,7 +116,7 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "helmet1",
       Movement(position = Point(4, 3)), // Adjacent to player at (4,4)
       EntityTypeComponent(EntityType.ItemEntity(LeatherHelmet)),
-      Inventory(Seq(LeatherHelmet)),
+      Inventory(Seq(ItemWithId(LeatherHelmet))),
       Hitbox(),
       Drawable(Sprites.leatherHelmetSprite)
     )
@@ -250,7 +251,7 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "armor1",
       Movement(position = Point(5, 4)), // Adjacent to player at (4,4)
       EntityTypeComponent(EntityType.ItemEntity(PlateArmor)),
-      Inventory(Seq(PlateArmor)),
+      Inventory(Seq(ItemWithId(PlateArmor))),
       Hitbox(),
       Drawable(Sprites.plateArmorSprite)
     )
@@ -296,7 +297,7 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "helmet1",
       Movement(position = Point(4, 4)), // Same position as player
       EntityTypeComponent(EntityType.ItemEntity(LeatherHelmet)),
-      Inventory(Seq(LeatherHelmet)),
+      Inventory(Seq(ItemWithId(LeatherHelmet))),
       Hitbox(),
       Drawable(Sprites.leatherHelmetSprite)
     )
@@ -357,7 +358,7 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
       id = "ironHelmet1",
       Movement(position = Point(4, 3)), // Adjacent to player at (4,4)
       EntityTypeComponent(EntityType.ItemEntity(IronHelmet)),
-      Inventory(Seq(IronHelmet)),
+      Inventory(Seq(ItemWithId(IronHelmet))),
       Hitbox(),
       Drawable(Sprites.ironHelmetSprite)
     )
@@ -381,10 +382,10 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     
     // Leather helmet should be dropped at the position where iron helmet was (4, 3)
     val droppedHelmetEntity = updatedState.entities.find { e =>
-      e.position == Point(4, 3) && e.items.contains(LeatherHelmet)
+      e.position == Point(4, 3) && e.entityType == EntityType.ItemEntity(LeatherHelmet)
     }
     droppedHelmetEntity should not be None
-    droppedHelmetEntity.get.items should contain(LeatherHelmet)
+    droppedHelmetEntity.get.entityType should be(EntityType.ItemEntity(LeatherHelmet))
     
     // Success message should be added
     updatedState.messages.head should include("Equipped Iron Helmet")

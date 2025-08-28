@@ -3,6 +3,7 @@ package game
 import data.Sprites
 import game.Item.*
 import game.entity.*
+import game.entity.ItemWithId
 import game.entity.Experience.experienceForLevel
 import game.system.event.GameSystemEvent.AddExperienceEvent
 import map.{Dungeon, MapGenerator}
@@ -64,7 +65,7 @@ object StartingState {
         Health(100),
         Initiative(10),
         Inventory(
-          itemEntityIds = Seq(), // Will be populated with starting item entities
+          items = (Seq(Potion, Scroll, Bow) ++ Seq.fill(6)(Arrow)).map(ItemWithId(_)),
           primaryWeapon = Some(Weapon(10, Melee)),
           secondaryWeapon = None
         ),

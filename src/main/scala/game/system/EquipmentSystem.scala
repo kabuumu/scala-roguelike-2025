@@ -2,10 +2,9 @@ package game.system
 
 import game.GameState
 import game.Input
-import game.entity.{Equipment, Inventory, Movement, InInventory}
+import game.entity.{Equipment, Inventory, Movement}
 import game.entity.Equipment.*
 import game.entity.Inventory.*
-import game.entity.InInventory.*
 import game.entity.Movement.*
 import game.entity.EntityType.*
 import game.system.event.GameSystemEvent
@@ -52,35 +51,33 @@ object EquipmentSystem extends GameSystem {
                 
                 val (entityWithNewEquipment, previouslyEquippedItem) = entityWithEquipment.equipItem(equipItem)
                 
-                // Add the equipment entity to inventory and mark as in inventory
-                val updatedEntity = entityWithNewEquipment.addItem(equipmentEntity.id)
-                val equipmentInInventory = equipmentEntity.putInInventory(entity.id)
+                // Add the equipment to inventory with entity ID tracking
+                val updatedEntity = entityWithNewEquipment.addItemWithEntityId(equipItem, equipmentEntity.id)
                 
                 val updatedState = currentState
                   .updateEntity(entityId, _ => updatedEntity)
-                  .updateEntity(equipmentEntity.id, _ => equipmentInInventory)
+                  .remove(equipmentEntity.id) // Remove the equipment entity from the world
                   .copy(messages = s"Equipped ${equipItem.name}" +: currentState.messages)
                 
                 // If there was a previously equipped item, drop it at the position where the new equipment was found
                 val finalState = previouslyEquippedItem match {
                   case Some(droppedItem) =>
-                    // Find the entity for the previously equipped item in the player's inventory
-                    val droppedItemEntityId = entity.findItemEntityId(currentState, droppedItem)
-                    droppedItemEntityId match {
-                      case Some(droppedEntityId) =>
-                        // Remove from player inventory and place at equipment position
-                        val playerWithoutDroppedItem = updatedEntity.removeItem(droppedEntityId)
-                        val droppedEntity = currentState.getEntity(droppedEntityId).get
+                    // Check if we have an entity ID for the previously equipped item
+                    entity.getItemEntityId(droppedItem) match {
+                      case Some(entityId) =>
+                        // We can restore the original entity with preserved state
+                        // For now, create a new entity (this could be enhanced to restore original entity)
                         val dropPosition = equipmentEntity.position
-                        val droppedEntityAtPosition = droppedEntity
-                          .removeFromInventory
-                          .update[Movement](_.copy(position = dropPosition))
-                          
-                        updatedState
-                          .updateEntity(entityId, _ => playerWithoutDroppedItem)
-                          .updateEntity(droppedEntityId, _ => droppedEntityAtPosition)
+                        val droppedEquipmentEntity = Entity(
+                          id = entityId, // Reuse the original entity ID to preserve state
+                          Movement(position = dropPosition),
+                          EntityTypeComponent(EntityType.ItemEntity(droppedItem)),
+                          Hitbox(),
+                          Drawable(getEquipmentSprite(droppedItem))
+                        )
+                        updatedState.add(droppedEquipmentEntity)
                       case None =>
-                        // Create a new entity for the dropped equipment if not found
+                        // Create a new entity for the dropped equipment
                         val dropPosition = equipmentEntity.position
                         val droppedEquipmentEntity = Entity(
                           id = s"dropped-${droppedItem.name.replace(" ", "-")}-${System.nanoTime()}",

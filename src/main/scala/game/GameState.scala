@@ -108,8 +108,6 @@ case class GameState(playerEntityId: String,
   
   lazy val drawableChanges: Seq[Set[(Point, Sprite)]] = {
     import game.entity.Drawable.*
-    import game.entity.InInventory.*
-    // Only render entities that are not in inventory
-    entities.filterNot(_.isInInventory).map(_.sprites)
+    entities.map(_.sprites)
   }
 }
