@@ -51,7 +51,7 @@ object EquipmentSystem extends GameSystem {
                     
                     val updatedState = currentState
                       .updateEntity(entityId, _ => updatedEntity)
-                      .remove(equipmentEntity.id) // Remove the equipment entity from the world
+                      .updateEntity(equipmentEntity.id, _.removeComponent[Movement]) // Remove position instead of entity
                       .copy(messages = s"Equipped ${equipItem.name}" +: currentState.messages)
                     
                     // If there was a previously equipped item, drop it at the position where the new equipment was found

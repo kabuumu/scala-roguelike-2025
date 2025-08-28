@@ -136,8 +136,10 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     updatedState.playerEntity.equipment.helmet should be(Some(LeatherHelmet))
     updatedState.playerEntity.getTotalDamageReduction should be(2)
     
-    // Helmet entity should be removed from the world
-    updatedState.entities.find(_.id == "helmet1") should be(None)
+    // Helmet entity should still exist but without position (not rendered)
+    val helmetEntityAfter = updatedState.entities.find(_.id == "helmet1")
+    helmetEntityAfter should not be None
+    helmetEntityAfter.get.has[Movement] shouldBe false // Should have no position
     
     // Success message should be added
     updatedState.messages.head should include("Equipped Leather Helmet")
@@ -273,8 +275,10 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     updatedController.gameState.playerEntity.equipment.armor should be(Some(PlateArmor))
     updatedController.gameState.playerEntity.getTotalDamageReduction should be(8)
     
-    // Armor entity should be removed from the world
-    updatedController.gameState.entities.find(_.id == "armor1") should be(None)
+    // Armor entity should still exist but without position (not rendered)
+    val armorEntityAfter = updatedController.gameState.entities.find(_.id == "armor1")
+    armorEntityAfter should not be None
+    armorEntityAfter.get.has[Movement] shouldBe false // Should have no position
     
     // Success message should be present
     updatedController.gameState.messages.head should include("Equipped Plate Armor")
@@ -352,8 +356,10 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     // Player should have picked up the potion
     updatedState.playerEntity.items(updatedState) should contain(Potion)
     
-    // Potion entity should be removed from the world
-    updatedState.entities.find(_.id == "potion1") should be(None)
+    // Potion entity should still exist but without position (not rendered)
+    val potionEntityAfter = updatedState.entities.find(_.id == "potion1")
+    potionEntityAfter should not be None
+    potionEntityAfter.get.has[Movement] shouldBe false // Should have no position
   }
 
   test("EquipmentSystem should drop currently equipped item when equipping new item to same slot") {
@@ -386,8 +392,10 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
     updatedState.playerEntity.equipment.helmet should be(Some(IronHelmet))
     updatedState.playerEntity.getTotalDamageReduction should be(4)
     
-    // Iron helmet entity should be removed from the world
-    updatedState.entities.find(_.id == "ironHelmet1") should be(None)
+    // Iron helmet entity should still exist but without position (not rendered)
+    val ironHelmetEntityAfter = updatedState.entities.find(_.id == "ironHelmet1")
+    ironHelmetEntityAfter should not be None
+    ironHelmetEntityAfter.get.has[Movement] shouldBe false // Should have no position
     
     // Leather helmet should be dropped at the position where iron helmet was (4, 3)
     val droppedHelmetEntity = updatedState.entities.find { e =>

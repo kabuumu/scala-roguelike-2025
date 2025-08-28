@@ -2,8 +2,8 @@ package game.system
 
 import game.entity.EntityType
 import game.entity.EntityType.*
+import game.entity.{Inventory, CanPickUp, ItemType, Movement}
 import game.entity.Inventory.*
-import game.entity.{CanPickUp, ItemType}
 import game.entity.CanPickUp.canPickUp
 import game.entity.ItemType.itemType
 import game.system.event.GameSystemEvent
@@ -19,21 +19,21 @@ object InventorySystem extends GameSystem {
         (currentState.getEntity(entityId), currentState.getEntity(collidedWith)) match {
           case (Some(entity@EntityType(Player)), Some(itemEntity)) if itemEntity.canPickUp =>
             itemEntity.itemType match {
-              case Some(_: Item.EquippableItem) =>
+              case Some(item: Item.EquippableItem) =>
                 // Don't auto-pickup equippable items - they need to be equipped with Q key
                 currentState
-              case Some(_) =>
-                // Auto-pickup other items
+              case Some(item) =>
+                // Auto-pickup other items (non-equippable) - remove position instead of entire entity
                 currentState
                   .updateEntity(entityId, entity.addItemEntity(collidedWith))
-                  .remove(collidedWith)
+                  .updateEntity(collidedWith, _.removeComponent[Movement]) // Remove position so it's not rendered
               case None =>
                 currentState
             }
           case (Some(entity@EntityType(Player)), Some(EntityType(Key(keyColour)))) =>
             currentState
               .updateEntity(entityId, entity.addItemEntity(collidedWith))
-              .remove(collidedWith)
+              .updateEntity(collidedWith, _.removeComponent[Movement]) // Remove position so it's not rendered
           case _ =>
             // If not an item, do nothing
             currentState
