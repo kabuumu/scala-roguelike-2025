@@ -16,3 +16,13 @@ sbt/
 sbt-*.zip
 cs
 
+# Coverage artifacts
+.scoverage/
+**/scoverage-data/
+**/scoverage-report/
+coverage-output.txt
+
+# Python cache
+__pycache__/
+*.pyc
+
