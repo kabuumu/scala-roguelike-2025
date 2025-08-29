@@ -83,8 +83,40 @@ object Elements {
   }
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
-    // TODO: Reimplement usable items display for new component system
-    Batch.empty
+    import game.entity.Inventory.*
+    import game.entity.{PotionItem, ScrollItem, BowItem}
+    import data.Sprites
+    
+    val player = model.gameState.playerEntity
+    val usableItems = player.usableItems(model.gameState)
+    
+    if (usableItems.isEmpty) {
+      Batch.empty
+    } else {
+      val startX = defaultBorderSize
+      val startY = uiYOffset + 150 // Position below health bar
+      val itemSize = spriteScale
+      val itemSpacing = itemSize + defaultBorderSize
+      
+      // Title
+      val title = text("Usable Items", startX, startY - defaultBorderSize * 2)
+      
+      // Display each usable item
+      val itemDisplays = usableItems.zipWithIndex.map { case (item, index) =>
+        val itemX = startX + (index * itemSpacing)
+        val itemY = startY
+        
+        // Determine sprite based on item type
+        val sprite = if (item.has[PotionItem]) Sprites.potionSprite
+                    else if (item.has[ScrollItem]) Sprites.scrollSprite  
+                    else if (item.has[BowItem]) Sprites.bowSprite
+                    else Sprites.defaultItemSprite
+        
+        spriteSheet.fromSprite(sprite).moveTo(itemX, itemY)
+      }
+      
+      Seq(title).toBatch ++ itemDisplays.toBatch
+    }
   }
   
   def keys(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {

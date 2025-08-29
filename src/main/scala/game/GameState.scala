@@ -103,7 +103,9 @@ case class GameState(playerEntityId: String,
 
   lazy val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.water ++ dungeon.rocks ++
     entities
-      .filter(entity => entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player || entity.entityType.isInstanceOf[LockedDoor])
+      .filter(entity => entity.get[EntityTypeComponent].exists(c => 
+        c.entityType == EntityType.Enemy || c.entityType == EntityType.Player || c.entityType.isInstanceOf[LockedDoor]
+      ))
       .flatMap(_.get[Movement].map(_.position))
       .toSet
   
