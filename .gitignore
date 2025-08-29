@@ -22,3 +22,7 @@ cs
 **/scoverage-report/
 coverage-output.txt
 
+# Python cache
+__pycache__/
+*.pyc
+
