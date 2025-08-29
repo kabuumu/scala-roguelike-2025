@@ -19,21 +19,24 @@ Always reference these instructions first and fallback to search or bash command
 - **Compile**: `sbt compile` -- takes 30 seconds. NEVER CANCEL. Set timeout to 60+ seconds.
 - **Run Tests**: `sbt test` -- takes 30 seconds, runs 57 tests. NEVER CANCEL. Set timeout to 60+ seconds.
 - **Build Web Version**: `sbt build` -- takes 40 seconds total. NEVER CANCEL. Set timeout to 90+ seconds.
+- **Coverage Analysis**: `python3 scripts/analyze_coverage.py` -- analyzes test coverage, takes 5 seconds.
+- **Coverage Report (Limited)**: `sbt testCoverage` -- limited due to ScalaJS compatibility issues.
 - **Build and Run (Web Only)**: `sbt runGame` -- builds and attempts to run via Electron. The Electron portion will fail in sandboxed environments, but the web build works perfectly.
 
 ### Manual Validation Steps
 After making changes, ALWAYS validate by running this complete scenario:
 1. `sbt compile` -- ensure compilation succeeds (some warnings are normal)
 2. `sbt test` -- ensure all 57 tests pass
-3. `sbt build` -- creates web version in `target/indigoBuild/`
-4. Serve and test the web game:
+3. `python3 scripts/analyze_coverage.py` -- check coverage hasn't decreased significantly
+4. `sbt build` -- creates web version in `target/indigoBuild/`
+5. Serve and test the web game:
    ```bash
    cd target/indigoBuild
    python3 -m http.server 8080
    ```
-5. Navigate to http://localhost:8080 in browser
-6. Test basic gameplay: arrow keys for movement, check UI elements (health bar, equipment panel, inventory)
-7. Verify game mechanics: player movement, enemy interaction, dungeon visibility
+6. Navigate to http://localhost:8080 in browser
+7. Test basic gameplay: arrow keys for movement, check UI elements (health bar, equipment panel, inventory)
+8. Verify game mechanics: player movement, enemy interaction, dungeon visibility
 
 ## Project Structure
 
@@ -46,8 +49,10 @@ After making changes, ALWAYS validate by running this complete scenario:
   - `util/` -- Utility functions (pathfinding, line of sight)
 - `src/test/scala/` -- Test suites (57 tests total)
 - `assets/` -- Game assets (sprites, fonts)
+- `scripts/` -- Coverage analysis and build tools
 - `target/indigoBuild/` -- Web build output
 - `build.sbt` -- Build configuration with custom commands
+- `COVERAGE.md` -- Detailed coverage documentation and metrics
 
 ### Important Files to Check After Changes
 - **Game Logic Changes**: Always test `GameControllerTest` and run a manual game session
@@ -66,11 +71,21 @@ After making changes, ALWAYS validate by running this complete scenario:
 - **Specific Test**: `sbt "testOnly ui.GameControllerTest"`
 - **Test Categories**: EntityTest, PathfinderTest, GameControllerTest, EquipmentSystemTest, MapGeneratorTest
 
+### Code Coverage
+- **Coverage Analysis**: `python3 scripts/analyze_coverage.py` -- comprehensive coverage report (5 seconds)
+- **Coverage Baseline**: Project maintains **49.0% estimated coverage** across 2,928 lines of source code
+- **Coverage Report (Limited)**: `sbt testCoverage` -- has ScalaJS compatibility issues, use Python script instead
+- **Coverage Documentation**: See `COVERAGE.md` for detailed metrics and improvement areas
+- **High Coverage Areas**: game/system (~100%), ui (~100%) - core game mechanics are well-tested  
+- **Low Coverage Areas**: util (0%), map (9%) - focus areas for improvement
+- **Coverage Goal**: Maintain 49%+ baseline, target critical paths and new features
+
 ### Common Build Issues
 - **Missing SBT**: Install SBT 1.10.2 manually as shown above
 - **Java Version**: Requires Java 17+, check with `java -version`
 - **Compilation Warnings**: Pattern matching and type inference warnings are normal and non-blocking
 - **Electron Failures**: Expected in sandboxed environments; web version always works
+- **Coverage Tool Limitations**: Standard coverage tools (scoverage, JaCoCo) have ScalaJS compatibility issues; use custom Python script
 
 ## Build Timing and Timeouts
 - **Compile**: ~30 seconds → Set 60+ second timeout
@@ -95,9 +110,10 @@ After making changes, ALWAYS validate by running this complete scenario:
 - **Dungeon**: Procedurally generated with rooms, corridors, locked doors
 
 ## CI/CD Information
-- **GitHub Actions**: `.github/workflows/scala.yml` runs tests
+- **GitHub Actions**: `.github/workflows/scala.yml` runs tests and coverage analysis
 - **Deployment**: `.github/workflows/deploy.yml` builds and deploys to GitHub Pages
 - **Build Requirements**: Java 11+ in CI, SBT installation handled automatically
+- **Coverage Integration**: CI runs custom coverage analysis script and validates baseline
 
 ## Troubleshooting
 - **Game Won't Load**: Check browser console for asset loading errors
@@ -107,12 +123,60 @@ After making changes, ALWAYS validate by running this complete scenario:
 
 ## Development Guidelines
 - **Always Build and Test**: Compile and test changes before committing
+- **Coverage Validation**: Run `python3 scripts/analyze_coverage.py` before PRs to ensure coverage doesn't decrease
 - **Manual Validation Required**: The web game MUST be tested manually after changes
 - **No Linting Tools**: Project does not use scalafmt or scalafix
-- **Test Coverage**: 57 comprehensive tests cover core game mechanics
+- **Test Coverage**: 57 comprehensive tests covering 49% of codebase with focus on core game mechanics
 - **Expected Warnings**: Some pattern matching and type warnings are normal
+- **Coverage Focus**: Prioritize testing critical paths and new features; existing high-coverage areas (systems, UI) set the standard
 
 Remember: This is a real-time rendered game with complex state management. Always validate changes by playing the actual game to ensure mechanics work correctly.
+
+## Code Coverage Tools and Validation
+
+### Coverage Analysis Commands
+The project uses a custom Python script for coverage analysis due to ScalaJS compatibility limitations:
+
+```bash
+# Primary coverage analysis (recommended)
+python3 scripts/analyze_coverage.py
+
+# Limited coverage via SBT (has ScalaJS issues)
+sbt testCoverage
+```
+
+### Current Coverage Metrics
+- **Overall Coverage**: 49.0% across 2,928 lines of source code
+- **Test-to-Source Ratio**: 0.21 (628 test lines / 2,928 source lines)
+- **Well-Covered Areas**: game/system (~100%), ui (~100%)
+- **Low-Coverage Areas**: util (0%), map (9%), game/entity (40%)
+
+### Coverage Validation Workflow
+When making changes, especially to low-coverage areas:
+
+1. **Before Changes**: Run `python3 scripts/analyze_coverage.py` to establish baseline
+2. **After Changes**: Re-run coverage analysis to ensure no significant decrease
+3. **Add Tests**: For new features in low-coverage areas (util, map, entity packages)
+4. **Focus on Critical Paths**: Prioritize testing game-breaking functionality
+
+### ScalaJS Coverage Limitations
+- **Standard Tools Don't Work**: JaCoCo, standard scoverage have JVM/bytecode dependency
+- **Custom Solution**: Python script analyzes source files and test coverage heuristically  
+- **CI Integration**: GitHub Actions runs coverage analysis and validates 49%+ baseline
+- **Known Issue**: `sbt testCoverage` may fail during ScalaJS linking phase
+
+### Coverage Expectations for Contributors
+- **Maintain Baseline**: Don't decrease overall coverage below 49%
+- **New Features**: Include appropriate tests, especially for core game logic
+- **High-Risk Areas**: Any changes to combat, movement, or entity systems must have tests
+- **Documentation**: Refer to `COVERAGE.md` for detailed area-specific metrics
+
+### Coverage Interpretation
+The custom analyzer provides estimates based on:
+- Lines of code analysis per package
+- Test file coverage mapping
+- Heuristic ratios (3:1 test-to-source coverage assumption)
+- Manual validation against known well-tested areas
 
 ## Validation
 
@@ -136,6 +200,7 @@ export PATH=$PATH:$(pwd)/sbt/bin
 # Build and test sequence (always run this for validation)
 sbt compile
 sbt test
+python3 scripts/analyze_coverage.py
 sbt build
 
 # Serve the web game for manual testing
@@ -175,14 +240,17 @@ This is expected and normal. The web version always works and is the recommended
 │   ├── copilot-instructions.md    # This file
 │   └── workflows/
 │       ├── deploy.yml             # GitHub Pages deployment
-│       └── scala.yml              # CI tests
+│       └── scala.yml              # CI tests and coverage
 ├── .gitignore
+├── COVERAGE.md                    # Detailed coverage metrics and goals
 ├── README.md                      # Project documentation
 ├── assets/                        # Game sprites and fonts
 │   ├── fonts/
 │   └── sprites/
 ├── build.sbt                      # SBT build configuration
 ├── project/                       # SBT plugins
+├── scripts/                       # Build and analysis tools
+│   └── analyze_coverage.py        # Custom coverage analysis script
 ├── src/
 │   ├── main/scala/                # Game source code
 │   │   ├── data/                  # Data definitions
