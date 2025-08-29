@@ -93,15 +93,12 @@ object Elements {
     if (usableItems.isEmpty) {
       Batch.empty
     } else {
-      val startX = defaultBorderSize
-      val startY = uiYOffset + 150 // Position below health bar
+      val startX = uiXOffset
+      val startY = uiYOffset + (spriteScale * 2) + defaultBorderSize // Position below experience bar
       val itemSize = spriteScale
-      val itemSpacing = itemSize + defaultBorderSize
+      val itemSpacing = itemSize + (defaultBorderSize / 2)
       
-      // Title
-      val title = text("Usable Items", startX, startY - defaultBorderSize * 2)
-      
-      // Display each usable item
+      // Display each usable item as an icon (no title needed)
       val itemDisplays = usableItems.zipWithIndex.map { case (item, index) =>
         val itemX = startX + (index * itemSpacing)
         val itemY = startY
@@ -115,7 +112,7 @@ object Elements {
         spriteSheet.fromSprite(sprite).moveTo(itemX, itemY)
       }
       
-      Seq(title).toBatch ++ itemDisplays.toBatch
+      itemDisplays.toBatch
     }
   }
   
