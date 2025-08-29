@@ -1,6 +1,5 @@
 package indigoengine.view
 
-import game.Item.Item
 import game.entity.{Entity, Equipment}
 import game.entity.Equipment.*
 import game.status.StatusEffect
@@ -95,7 +94,6 @@ object Elements {
 
   def equipmentPaperdoll(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
     import game.entity.Equipment.*
-    import game.Item.*
 
     val player = model.gameState.playerEntity
     val equipment = player.equipment

@@ -1,7 +1,6 @@
 package ui
 
 import game.{Direction, GameState}
-import game.Item.Item
 import game.entity.Entity
 import game.event.Event
 import game.status.StatusEffect

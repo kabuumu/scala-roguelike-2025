@@ -4,7 +4,7 @@ import data.Sprites
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.system.event.GameSystemEvent.AddExperienceEvent
-import map.{Dungeon, MapGenerator}
+import map.{Dungeon, MapGenerator, ItemDescriptor}
 
 
 object StartingState {
@@ -94,80 +94,26 @@ object StartingState {
       )
   }
 
-  val items: Set[Entity] = dungeon.items.zipWithIndex.collect {
-    case ((point, item), index) =>
+  val items: Set[Entity] = dungeon.items.zipWithIndex.map {
+    case ((point, itemDescriptor), index) =>
       val basePosition = Point(
         point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
       
-      // Map old Item objects to new entity-based system
-      item match {
-        case keyItem if keyItem.isInstanceOf[game.Item.Key] =>
-          val key = keyItem.asInstanceOf[game.Item.Key]
-          val keyColour = key.keyColour match {
-            case game.Item.KeyColour.Yellow => KeyColour.Yellow
-            case game.Item.KeyColour.Blue => KeyColour.Blue  
-            case game.Item.KeyColour.Red => KeyColour.Red
-          }
-          val sprite = keyColour match {
-            case KeyColour.Yellow => Sprites.yellowKeySprite
-            case KeyColour.Blue => Sprites.blueKeySprite
-            case KeyColour.Red => Sprites.redKeySprite
-          }
-          ItemFactory.placeInWorld(
-            ItemFactory.createKey(s"key-$index", keyColour),
-            basePosition,
-            sprite
-          ).addComponent(EntityTypeComponent(EntityType.Key(keyColour)))
-          
-        case potionItem if potionItem == game.Item.Potion =>
-          ItemFactory.placeInWorld(
-            ItemFactory.createPotion(s"potion-$index"),
-            basePosition,
-            Sprites.potionSprite
-          )
-          
-        case scrollItem if scrollItem == game.Item.Scroll =>
-          ItemFactory.placeInWorld(
-            ItemFactory.createScroll(s"scroll-$index"),
-            basePosition,
-            Sprites.scrollSprite
-          )
-          
-        case arrowItem if arrowItem == game.Item.Arrow =>
-          ItemFactory.placeInWorld(
-            ItemFactory.createArrow(s"arrow-$index"),
-            basePosition,
-            Sprites.arrowSprite
-          )
-          
-        case equippableItem if equippableItem.isInstanceOf[game.Item.EquippableItem] =>
-          val equipItem = equippableItem.asInstanceOf[game.Item.EquippableItem]
-          val sprite = equipItem match {
-            case game.Item.LeatherHelmet => Sprites.leatherHelmetSprite
-            case game.Item.IronHelmet => Sprites.ironHelmetSprite
-            case game.Item.ChainmailArmor => Sprites.chainmailArmorSprite
-            case game.Item.PlateArmor => Sprites.plateArmorSprite
-          }
-          
-          Entity(
-            id = s"equipment-$index",
-            Movement(basePosition),
-            CanPickUp(),
-            Equippable(
-              slot = equipItem.slot match {
-                case game.Item.EquipmentSlot.Helmet => EquipmentSlot.Helmet
-                case game.Item.EquipmentSlot.Armor => EquipmentSlot.Armor
-              },
-              damageReduction = equipItem.damageReduction,
-              itemName = equipItem.name
-            ),
-            Hitbox(),
-            Drawable(sprite)
-          )
+      // Create entity from descriptor and place in world
+      val itemEntity = itemDescriptor.createEntity(s"item-$index")
+      val sprite = itemDescriptor.getSprite
+      val placedEntity = ItemFactory.placeInWorld(itemEntity, basePosition, sprite)
+      
+      // Add EntityTypeComponent for keys
+      itemDescriptor match {
+        case ItemDescriptor.KeyDescriptor(keyColour) =>
+          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(keyColour)))
+        case _ =>
+          placedEntity
       }
-  }
+  }.toSet
 
   val lockedDoors: Set[Entity] = dungeon.lockedDoors.map {
     case (point, lockedDoor) =>
@@ -179,9 +125,9 @@ object StartingState {
         EntityTypeComponent(lockedDoor),
         Hitbox(),
         lockedDoor.keyColour match {
-          case game.Item.KeyColour.Yellow => Drawable(Sprites.yellowDoorSprite)
-          case game.Item.KeyColour.Blue => Drawable(Sprites.blueDoorSprite)
-          case game.Item.KeyColour.Red => Drawable(Sprites.redDoorSprite)
+          case KeyColour.Yellow => Drawable(Sprites.yellowDoorSprite)
+          case KeyColour.Blue => Drawable(Sprites.blueDoorSprite)
+          case KeyColour.Red => Drawable(Sprites.redDoorSprite)
         }
       )
   }

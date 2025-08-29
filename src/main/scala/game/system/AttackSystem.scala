@@ -14,7 +14,7 @@ import game.entity.Inventory.primaryWeapon
 import game.entity.WeaponItem.weaponItem
 import game.entity.WeaponItem.weaponItem
 import game.event.*
-import game.{Item, *}
+import game.*
 import game.entity.Initiative.*
 
 object AttackSystem extends GameSystem {

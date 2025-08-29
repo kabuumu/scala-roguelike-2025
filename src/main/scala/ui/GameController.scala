@@ -1,9 +1,6 @@
 package ui
 
 import game.Input.*
-import game.Item.*
-import game.Item.ChargeType.{Ammo, SingleUse}
-import game.Item.ItemEffect.{EntityTargeted, NonTargeted, PointTargeted}
 import game.entity.*
 import game.entity.EntityType.*
 import game.entity.Experience.*
@@ -13,7 +10,7 @@ import game.entity.Inventory.*
 import game.entity.WeaponItem.weaponItem
 import game.entity.Movement.*
 import game.system.event.GameSystemEvent.InputEvent
-import game.{Item, *}
+import game.*
 import ui.GameController.*
 import ui.UIState.UIState
 

@@ -1,6 +1,5 @@
 package map
 
-import game.Item
 import game.entity.KeyColour.*
 import game.entity.{KeyColour}
 import game.entity.EntityType.LockedDoor
@@ -50,7 +49,7 @@ class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends Dungeon
           .addRoom(originRoom, direction1)
           .addRoom(keyRoom1, direction2)
           .lockRoomConnection(roomConnection, LockedDoor(Red))
-          .addItem(keyRoom2, game.Item.Key(game.Item.KeyColour.Red))
+          .addItem(keyRoom2, ItemDescriptor.KeyDescriptor(KeyColour.Red))
           .blockRoom(keyRoom2)
       }
     }.toSet
@@ -58,14 +57,14 @@ class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends Dungeon
 }
 
 class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) extends DungeonMutator {
-  val possibleItems: Set[game.Item.Item] = Set(
-    game.Item.Potion, 
-    game.Item.Scroll, 
-    game.Item.Arrow,
-    game.Item.LeatherHelmet,
-    game.Item.ChainmailArmor,
-    game.Item.IronHelmet,
-    game.Item.PlateArmor
+  val possibleItems: Set[ItemDescriptor] = Set(
+    ItemDescriptor.PotionDescriptor, 
+    ItemDescriptor.ScrollDescriptor, 
+    ItemDescriptor.ArrowDescriptor,
+    ItemDescriptor.LeatherHelmetDescriptor,
+    ItemDescriptor.ChainmailArmorDescriptor,
+    ItemDescriptor.IronHelmetDescriptor,
+    ItemDescriptor.PlateArmorDescriptor
   )
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {

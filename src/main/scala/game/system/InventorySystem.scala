@@ -8,7 +8,7 @@ import game.entity.CanPickUp.canPickUp
 import game.entity.Equippable.isEquippable
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{CollisionTarget, GameSystemEvent}
-import game.{GameState, Item}
+import game.{GameState}
 
 object InventorySystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
