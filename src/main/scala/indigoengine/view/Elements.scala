@@ -87,10 +87,22 @@ object Elements {
     import game.entity.{PotionItem, ScrollItem, BowItem, ArrowItem}
     import game.entity.ArrowItem.isArrow
     import data.Sprites
+    import indigoengine.view.BlockBar
     
     val player = model.gameState.playerEntity
     val usableItems = player.usableItems(model.gameState)
     val allInventoryItems = player.inventoryItems(model.gameState)
+    
+    // Check if we're in item selection mode
+    val selectedItemIndex = model.uiState match {
+      case listSelect: UIState.ListSelect[?] if listSelect.list.nonEmpty && listSelect.list.head.isInstanceOf[Entity] =>
+        // Check if the list contains usable items (potions, scrolls, bows)
+        val entities = listSelect.list.asInstanceOf[Seq[Entity]]
+        if (entities.exists(e => e.has[PotionItem] || e.has[ScrollItem] || e.has[BowItem])) {
+          Some(listSelect.index)
+        } else None
+      case _ => None
+    }
     
     if (usableItems.isEmpty) {
       Batch.empty
@@ -98,7 +110,7 @@ object Elements {
       val startX = uiXOffset
       val startY = uiYOffset + (spriteScale * 2) + defaultBorderSize // Position below experience bar
       val itemSize = spriteScale
-      val itemSpacing = itemSize + (defaultBorderSize / 2)
+      val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
       
       // Group items by type and count them
       val potionCount = usableItems.count(_.has[PotionItem])
@@ -113,15 +125,42 @@ object Elements {
         if (bowCount > 0) Some((Sprites.bowSprite, arrowCount)) else None // Show arrow count for bows
       ).flatten
       
-      // Display each item type with count
-      val itemDisplays = itemTypesWithCounts.zipWithIndex.flatMap { case ((sprite, count), index) =>
-        val itemX = startX + (index * itemSpacing)
+      // Map usable items to their display type index for highlighting
+      val itemToDisplayIndex = usableItems.zipWithIndex.map { case (item, _) =>
+        if (item.has[PotionItem]) 0
+        else if (item.has[ScrollItem]) if (potionCount > 0) 1 else 0
+        else if (item.has[BowItem]) {
+          val offset = (if (potionCount > 0) 1 else 0) + (if (scrollCount > 0) 1 else 0)
+          offset
+        }
+        else -1 // Should not happen
+      }
+      
+      // Display each item type with count and optional highlighting
+      val itemDisplays = itemTypesWithCounts.zipWithIndex.flatMap { case ((sprite, count), displayIndex) =>
+        val itemX = startX + (displayIndex * itemSpacing)
         val itemY = startY
         
-        Seq(
+        // Check if this display item should be highlighted
+        val isHighlighted = selectedItemIndex.exists { selectedIndex =>
+          selectedIndex < itemToDisplayIndex.length && itemToDisplayIndex(selectedIndex) == displayIndex
+        }
+        
+        val baseElements = Seq(
           spriteSheet.fromSprite(sprite).moveTo(itemX, itemY),
-          text(count.toString, itemX + itemSize - (defaultBorderSize / 2), itemY - (defaultBorderSize / 2))
+          text(count.toString, itemX + itemSize - (defaultBorderSize / 2), itemY + itemSize - (defaultBorderSize / 2))
         )
+        
+        // Add highlight background if selected
+        if (isHighlighted) {
+          val highlight = BlockBar.getBlockBar(
+            Rectangle(Point(itemX - 2, itemY - 2), Size(itemSize + 4, itemSize + 4)),
+            RGBA.Orange.withAlpha(0.7f)
+          )
+          highlight +: baseElements
+        } else {
+          baseElements
+        }
       }
       
       itemDisplays.toBatch
@@ -143,7 +182,7 @@ object Elements {
       val startX = uiXOffset
       val startY = uiYOffset + (spriteScale * 3) + (defaultBorderSize * 2) // Position below usable items
       val itemSize = spriteScale
-      val itemSpacing = itemSize + (defaultBorderSize / 2)
+      val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
       
       // Group keys by color and count them
       val yellowKeyCount = playerKeys.count(_.keyItem.exists(_.keyColour == KeyColour.Yellow))
@@ -164,7 +203,7 @@ object Elements {
         
         Seq(
           spriteSheet.fromSprite(sprite).moveTo(keyX, keyY),
-          text(count.toString, keyX + itemSize - (defaultBorderSize / 2), keyY - (defaultBorderSize / 2))
+          text(count.toString, keyX + itemSize - (defaultBorderSize / 2), keyY + itemSize - (defaultBorderSize / 2))
         )
       }
       

@@ -111,8 +111,16 @@ object Game extends IndigoSandbox[Unit, GameController] {
       case UIState.ScrollSelect(cursor, _) =>
         Some(cursor)
       case list: UIState.ListSelect[Entity] if list.list.head.isInstanceOf[Entity] =>
-        val position = list.list(list.index).position
-        Some(position)
+        // Only show cursor for entities that have meaningful map positions (enemies, not inventory items)
+        val entity = list.list(list.index)
+        // Check if this is an enemy (has meaningful position) vs inventory item
+        import game.entity.{PotionItem, ScrollItem, BowItem}
+        val isInventoryItem = entity.has[PotionItem] || entity.has[ScrollItem] || entity.has[BowItem]
+        if (!isInventoryItem) {
+          Some(entity.position)
+        } else {
+          None
+        }
       case _ =>
         None
     }
