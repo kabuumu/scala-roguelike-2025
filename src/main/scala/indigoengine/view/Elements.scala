@@ -84,11 +84,13 @@ object Elements {
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
     import game.entity.Inventory.*
-    import game.entity.{PotionItem, ScrollItem, BowItem}
+    import game.entity.{PotionItem, ScrollItem, BowItem, ArrowItem}
+    import game.entity.ArrowItem.isArrow
     import data.Sprites
     
     val player = model.gameState.playerEntity
     val usableItems = player.usableItems(model.gameState)
+    val allInventoryItems = player.inventoryItems(model.gameState)
     
     if (usableItems.isEmpty) {
       Batch.empty
@@ -98,18 +100,28 @@ object Elements {
       val itemSize = spriteScale
       val itemSpacing = itemSize + (defaultBorderSize / 2)
       
-      // Display each usable item as an icon (no title needed)
-      val itemDisplays = usableItems.zipWithIndex.map { case (item, index) =>
+      // Group items by type and count them
+      val potionCount = usableItems.count(_.has[PotionItem])
+      val scrollCount = usableItems.count(_.has[ScrollItem])
+      val bowCount = usableItems.count(_.has[BowItem])
+      val arrowCount = allInventoryItems.count(_.isArrow)
+      
+      // Create list of unique item types with counts
+      val itemTypesWithCounts = Seq(
+        if (potionCount > 0) Some((Sprites.potionSprite, potionCount)) else None,
+        if (scrollCount > 0) Some((Sprites.scrollSprite, scrollCount)) else None,
+        if (bowCount > 0) Some((Sprites.bowSprite, arrowCount)) else None // Show arrow count for bows
+      ).flatten
+      
+      // Display each item type with count
+      val itemDisplays = itemTypesWithCounts.zipWithIndex.flatMap { case ((sprite, count), index) =>
         val itemX = startX + (index * itemSpacing)
         val itemY = startY
         
-        // Determine sprite based on item type
-        val sprite = if (item.has[PotionItem]) Sprites.potionSprite
-                    else if (item.has[ScrollItem]) Sprites.scrollSprite  
-                    else if (item.has[BowItem]) Sprites.bowSprite
-                    else Sprites.defaultItemSprite
-        
-        spriteSheet.fromSprite(sprite).moveTo(itemX, itemY)
+        Seq(
+          spriteSheet.fromSprite(sprite).moveTo(itemX, itemY),
+          text(count.toString, itemX + itemSize - (defaultBorderSize / 2), itemY - (defaultBorderSize / 2))
+        )
       }
       
       itemDisplays.toBatch
@@ -117,8 +129,47 @@ object Elements {
   }
   
   def keys(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
-    // TODO: Reimplement keys display for new component system  
-    Batch.empty
+    import game.entity.Inventory.*
+    import game.entity.KeyItem.*
+    import game.entity.KeyColour
+    import data.Sprites
+    
+    val player = model.gameState.playerEntity
+    val playerKeys = player.keys(model.gameState)
+    
+    if (playerKeys.isEmpty) {
+      Batch.empty
+    } else {
+      val startX = uiXOffset
+      val startY = uiYOffset + (spriteScale * 3) + (defaultBorderSize * 2) // Position below usable items
+      val itemSize = spriteScale
+      val itemSpacing = itemSize + (defaultBorderSize / 2)
+      
+      // Group keys by color and count them
+      val yellowKeyCount = playerKeys.count(_.keyItem.exists(_.keyColour == KeyColour.Yellow))
+      val blueKeyCount = playerKeys.count(_.keyItem.exists(_.keyColour == KeyColour.Blue))
+      val redKeyCount = playerKeys.count(_.keyItem.exists(_.keyColour == KeyColour.Red))
+      
+      // Create list of key types with counts
+      val keyTypesWithCounts = Seq(
+        if (yellowKeyCount > 0) Some((Sprites.yellowKeySprite, yellowKeyCount)) else None,
+        if (blueKeyCount > 0) Some((Sprites.blueKeySprite, blueKeyCount)) else None,
+        if (redKeyCount > 0) Some((Sprites.redKeySprite, redKeyCount)) else None
+      ).flatten
+      
+      // Display each key type with count
+      val keyDisplays = keyTypesWithCounts.zipWithIndex.flatMap { case ((sprite, count), index) =>
+        val keyX = startX + (index * itemSpacing)
+        val keyY = startY
+        
+        Seq(
+          spriteSheet.fromSprite(sprite).moveTo(keyX, keyY),
+          text(count.toString, keyX + itemSize - (defaultBorderSize / 2), keyY - (defaultBorderSize / 2))
+        )
+      }
+      
+      keyDisplays.toBatch
+    }
   }
 
   def equipmentPaperdoll(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
