@@ -52,7 +52,7 @@ def count_lines_of_code(file_path):
     
     return code_lines
 
-def analyze_test_coverage():
+def analyze_test_coverage(output_file=None):
     """Analyze test coverage by examining test files and their targets."""
     project_root = Path(__file__).parent.parent
     src_main = project_root / "src" / "main" / "scala"
@@ -120,13 +120,15 @@ def analyze_test_coverage():
                 tested_areas[area] += lines
                 break
     
-    print("=== Code Coverage Analysis ===")
-    print(f"Total main source lines: {total_main_lines}")
-    print(f"Total test lines: {total_test_lines}")
-    print(f"Test to source ratio: {total_test_lines / total_main_lines:.2f}")
-    print()
+    # Generate output content
+    output_content = []
+    output_content.append("=== Code Coverage Analysis ===")
+    output_content.append(f"Total main source lines: {total_main_lines}")
+    output_content.append(f"Total test lines: {total_test_lines}")
+    output_content.append(f"Test to source ratio: {total_test_lines / total_main_lines:.2f}")
+    output_content.append("")
     
-    print("=== Coverage by Area ===")
+    output_content.append("=== Coverage by Area ===")
     overall_coverage = 0
     total_weight = 0
     
@@ -142,16 +144,42 @@ def analyze_test_coverage():
         else:
             estimated_coverage = 0
         
-        print(f"{area:15}: {main_lines:4d} lines, {test_lines:3d} test lines, ~{estimated_coverage:5.1f}% coverage")
+        output_content.append(f"{area:15}: {main_lines:4d} lines, {test_lines:3d} test lines, ~{estimated_coverage:5.1f}% coverage")
     
     if total_weight > 0:
         overall_coverage = overall_coverage / total_weight
     
-    print(f"\nEstimated overall coverage: {overall_coverage:.1f}%")
-    print("\nNote: This is a heuristic estimate. Actual coverage may vary.")
-    print("Areas with comprehensive tests: game/entity, game/system, ui, map, util")
+    output_content.append(f"\nEstimated overall coverage: {overall_coverage:.1f}%")
+    output_content.append("\nNote: This is a heuristic estimate. Actual coverage may vary.")
+    output_content.append("Areas with comprehensive tests: game/entity, game/system, ui, map, util")
     
-    return overall_coverage
+    # Print to console
+    for line in output_content:
+        print(line)
+    
+    # Write to file if specified
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(output_content))
+        print(f"\nCoverage report saved to: {output_file}")
+    
+    # Add CI-friendly summary
+    print(f"\n::notice title=Code Coverage::Overall coverage: {overall_coverage:.1f}%")
+    
+    # Check coverage threshold (49% baseline, with small tolerance for rounding)
+    threshold = 48.5  # Allow for floating point precision and rounding
+    if overall_coverage < threshold:
+        print(f"::warning title=Coverage Below Threshold::Coverage {overall_coverage:.1f}% is below 49% baseline")
+        return overall_coverage, False
+    else:
+        print(f"::notice title=Coverage OK::Coverage {overall_coverage:.1f}% meets baseline requirement")
+        return overall_coverage, True
 
 if __name__ == "__main__":
-    analyze_test_coverage()
+    import sys
+    output_file = "coverage-output.txt" if len(sys.argv) == 1 else sys.argv[1] if sys.argv[1] != "--no-file" else None
+    coverage, meets_threshold = analyze_test_coverage(output_file)
+    
+    # Exit with non-zero status if coverage is critically low (below 40%)
+    if coverage < 40.0:
+        sys.exit(1)

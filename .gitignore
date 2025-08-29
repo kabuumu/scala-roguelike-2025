@@ -20,4 +20,5 @@ cs
 .scoverage/
 **/scoverage-data/
 **/scoverage-report/
+coverage-output.txt
 
