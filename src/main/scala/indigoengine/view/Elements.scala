@@ -83,8 +83,37 @@ object Elements {
   }
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
-    // TODO: Reimplement usable items display for new component system
-    Batch.empty
+    import game.entity.Inventory.*
+    import game.entity.{PotionItem, ScrollItem, BowItem}
+    import data.Sprites
+    
+    val player = model.gameState.playerEntity
+    val usableItems = player.usableItems(model.gameState)
+    
+    if (usableItems.isEmpty) {
+      Batch.empty
+    } else {
+      val startX = uiXOffset
+      val startY = uiYOffset + (spriteScale * 2) + defaultBorderSize // Position below experience bar
+      val itemSize = spriteScale
+      val itemSpacing = itemSize + (defaultBorderSize / 2)
+      
+      // Display each usable item as an icon (no title needed)
+      val itemDisplays = usableItems.zipWithIndex.map { case (item, index) =>
+        val itemX = startX + (index * itemSpacing)
+        val itemY = startY
+        
+        // Determine sprite based on item type
+        val sprite = if (item.has[PotionItem]) Sprites.potionSprite
+                    else if (item.has[ScrollItem]) Sprites.scrollSprite  
+                    else if (item.has[BowItem]) Sprites.bowSprite
+                    else Sprites.defaultItemSprite
+        
+        spriteSheet.fromSprite(sprite).moveTo(itemX, itemY)
+      }
+      
+      itemDisplays.toBatch
+    }
   }
   
   def keys(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
