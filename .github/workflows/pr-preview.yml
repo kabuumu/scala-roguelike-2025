@@ -26,7 +26,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '11'
+        java-version: '17'
 
     - name: Setup SBT
       uses: sbt/setup-sbt@v1
@@ -48,11 +48,8 @@ jobs:
     - name: Generate coverage report
       run: python3 scripts/analyze_coverage.py
 
-    - name: Compile Scala.js
-      run: sbt fastOptJS
-
-    - name: Build Indigo
-      run: sbt indigoBuild
+    - name: Build game
+      run: sbt build
 
     - name: Deploy PR Preview to Pages
       run: |
@@ -117,18 +114,18 @@ jobs:
           
           const comment = `## 🎮 PR Preview Ready!
 
-Your changes are live and ready for testing!
+          Your changes are live and ready for testing!
 
-### 🔗 **[Play the game directly →](${previewUrl})**
+          ### 🔗 **[Play the game directly →](${previewUrl})**
 
-**How to test:**
-1. Click the link above to play immediately in your browser
-2. Use arrow keys to move, Q to equip items
-3. Test the changes described in this PR
+          **How to test:**
+          1. Click the link above to play immediately in your browser
+          2. Use arrow keys to move, Q to equip items
+          3. Test the changes described in this PR
 
-**Changes in this PR:** ${context.payload.pull_request.title}
+          **Changes in this PR:** ${context.payload.pull_request.title}
 
-> **Note**: This preview is automatically updated when you push new commits. The preview will be removed when the PR is closed.`;
+          > **Note**: This preview is automatically updated when you push new commits. The preview will be removed when the PR is closed.`;
           
           // Check if we already commented
           const comments = await github.rest.issues.listComments({
