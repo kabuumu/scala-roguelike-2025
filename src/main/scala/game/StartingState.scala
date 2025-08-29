@@ -1,15 +1,32 @@
 package game
 
 import data.Sprites
-import game.Item.*
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.system.event.GameSystemEvent.AddExperienceEvent
-import map.{Dungeon, MapGenerator}
+import map.{Dungeon, MapGenerator, ItemDescriptor}
 
 
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
+
+  // Create player's starting inventory items as entities
+  val playerStartingItems: Set[Entity] = Set(
+    ItemFactory.createPotion("player-potion-1"),
+    ItemFactory.createScroll("player-scroll-1"),
+    ItemFactory.createBow("player-bow-1")
+  ) ++ (1 to 6).map(i => ItemFactory.createArrow(s"player-arrow-$i"))
+
+  // Create weapons as entities for enemies and player
+  val ratWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
+    case (_, index) if index % 2 == 0 => index -> ItemFactory.createWeapon(s"rat-weapon-$index", 8, Melee)
+  }.toMap
+  
+  val snakeWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
+    case (_, index) if index % 2 != 0 => index -> ItemFactory.createWeapon(s"snake-weapon-$index", 6, Ranged(4))
+  }.toMap
+  
+  val playerPrimaryWeapon: Entity = ItemFactory.createWeapon("player-primary-weapon", 10, Melee)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 2 == 0 =>
@@ -22,7 +39,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(25),
         Initiative(12),
-        Inventory(Nil, Some(Weapon(8, Melee))),
+        Inventory(Nil, Some(s"rat-weapon-$index")),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(deathDetails => deathDetails.killerId.map {
@@ -40,7 +57,7 @@ object StartingState {
         EntityTypeComponent(EntityType.Enemy),
         Health(18),
         Initiative(25),
-        Inventory(Nil, Some(Weapon(6, Ranged(4)))),
+        Inventory(Nil, Some(s"snake-weapon-$index")),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
         DeathEvents(deathDetails =>
@@ -64,9 +81,9 @@ object StartingState {
         Health(100),
         Initiative(10),
         Inventory(
-          items = Seq(Potion, Scroll, Bow) ++ Seq.fill(6)(Arrow),
-          primaryWeapon = Some(Weapon(10, Melee)),
-          secondaryWeapon = None
+          itemEntityIds = playerStartingItems.map(_.id).toSeq,
+          primaryWeaponId = Some("player-primary-weapon"),
+          secondaryWeaponId = None
         ),
         Equipment(),
         SightMemory(),
@@ -77,69 +94,26 @@ object StartingState {
       )
   }
 
-  val items: Set[Entity] = dungeon.items.collect {
-    case (point, Item.Key(keyColour)) =>
-      Entity(
-        Movement(position = Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.Key(keyColour)),
-        Hitbox(),
-        keyColour match {
-          case KeyColour.Yellow => Drawable(Sprites.yellowKeySprite)
-          case KeyColour.Blue => Drawable(Sprites.blueKeySprite)
-          case KeyColour.Red => Drawable(Sprites.redKeySprite)
-        }
+  val items: Set[Entity] = dungeon.items.zipWithIndex.map {
+    case ((point, itemDescriptor), index) =>
+      val basePosition = Point(
+        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-    case (point, Item.Potion) =>
-      Entity(
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(Item.Potion)),
-        Hitbox(),
-        Drawable(Sprites.potionSprite)
-      )
-    case (point, Item.Scroll) =>
-      Entity(
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(Item.Scroll)),
-        Hitbox(),
-        Drawable(Sprites.scrollSprite)
-      )
-    case (point, Item.Arrow) =>
-      Entity(
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(Item.Arrow)),
-        Hitbox(),
-        Drawable(Sprites.arrowSprite)
-      )
-    case (point, item: Item.EquippableItem) =>
-      val sprite = item match {
-        case Item.LeatherHelmet => Sprites.leatherHelmetSprite
-        case Item.IronHelmet => Sprites.ironHelmetSprite
-        case Item.ChainmailArmor => Sprites.chainmailArmorSprite
-        case Item.PlateArmor => Sprites.plateArmorSprite
+      
+      // Create entity from descriptor and place in world
+      val itemEntity = itemDescriptor.createEntity(s"item-$index")
+      val sprite = itemDescriptor.getSprite
+      val placedEntity = ItemFactory.placeInWorld(itemEntity, basePosition, sprite)
+      
+      // Add EntityTypeComponent for keys
+      itemDescriptor match {
+        case ItemDescriptor.KeyDescriptor(keyColour) =>
+          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(keyColour)))
+        case _ =>
+          placedEntity
       }
-      Entity(
-        Movement(Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.ItemEntity(item)),
-        Inventory(Seq(item)),
-        Hitbox(),
-        Drawable(sprite)
-      )
-  }
+  }.toSet
 
   val lockedDoors: Set[Entity] = dungeon.lockedDoors.map {
     case (point, lockedDoor) =>
@@ -160,7 +134,8 @@ object StartingState {
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ items ++ enemies ++ lockedDoors,
+    entities = Vector(player) ++ playerStartingItems ++ items ++ enemies ++ lockedDoors ++ 
+               ratWeapons.values ++ snakeWeapons.values ++ Seq(playerPrimaryWeapon),
     dungeon = dungeon
   )
 }

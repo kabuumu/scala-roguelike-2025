@@ -1,6 +1,5 @@
 package map
 
-import game.Item.Item
 import game.entity.EntityType.LockedDoor
 import game.{Direction, Point}
 import map.Dungeon.roomSize
@@ -11,7 +10,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    blockedRooms: Set[Point] = Set.empty, //Rooms to no longer add connections to
                    startPoint: Point = Point(0, 0),
                    endpoint: Option[Point] = None,
-                   items: Set[(Point, Item)] = Set.empty,
+                   items: Set[(Point, ItemDescriptor)] = Set.empty,
                    testMode: Boolean = false) {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
     copy(
@@ -21,7 +20,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     )
   }
 
-  def addItem(room: Point, item: Item): Dungeon = {
+  def addItem(room: Point, item: ItemDescriptor): Dungeon = {
     if (roomGrid.contains(room)) {
       copy(items = items + (room -> item))
     } else {
@@ -231,8 +230,9 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
       }
   }
   
-  val nonKeyItems: Set[(Point, Item)] = items.filterNot {
-    case (_, item) => item.isInstanceOf[game.Item.Key]
+  val nonKeyItems: Set[(Point, ItemDescriptor)] = items.filterNot {
+    case (_, ItemDescriptor.KeyDescriptor(_)) => true
+    case _ => false
   }
 }
 

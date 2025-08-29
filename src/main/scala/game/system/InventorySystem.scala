@@ -2,10 +2,13 @@ package game.system
 
 import game.entity.EntityType
 import game.entity.EntityType.*
+import game.entity.{Inventory, CanPickUp, Movement}
 import game.entity.Inventory.*
+import game.entity.CanPickUp.canPickUp
+import game.entity.Equippable.isEquippable
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{CollisionTarget, GameSystemEvent}
-import game.{GameState, Item}
+import game.{GameState}
 
 object InventorySystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
@@ -14,22 +17,21 @@ object InventorySystem extends GameSystem {
     }.foldLeft(gameState) {
       case (currentState, GameSystemEvent.CollisionEvent(entityId, CollisionTarget.Entity(collidedWith))) =>
         (currentState.getEntity(entityId), currentState.getEntity(collidedWith)) match {
-          case (Some(entity@EntityType(Player)), Some(EntityType(ItemEntity(item)))) =>
-            // Only auto-pickup non-equippable items
-            item match {
-              case _: Item.EquippableItem =>
-                // Don't auto-pickup equippable items - they need to be equipped with Q key
-                currentState
-              case _ =>
-                // Auto-pickup other items (potions, scrolls, arrows, etc.)
-                currentState
-                  .updateEntity(entityId, entity.addItem(item))
-                  .remove(collidedWith)
+          case (Some(entity@EntityType(Player)), Some(itemEntity)) if itemEntity.canPickUp =>
+            // Check if item is equippable (should not be auto-picked up)
+            if (itemEntity.isEquippable) {
+              // Don't auto-pickup equippable items - they need to be equipped with Q key
+              currentState
+            } else {
+              // Auto-pickup other items (non-equippable) - remove position instead of entire entity
+              currentState
+                .updateEntity(entityId, entity.addItemEntity(collidedWith))
+                .updateEntity(collidedWith, _.removeComponent[Movement]) // Remove position so it's not rendered
             }
           case (Some(entity@EntityType(Player)), Some(EntityType(Key(keyColour)))) =>
             currentState
-              .updateEntity(entityId, entity.addItem(Item.Key(keyColour)))
-              .remove(collidedWith)
+              .updateEntity(entityId, entity.addItemEntity(collidedWith))
+              .updateEntity(collidedWith, _.removeComponent[Movement]) // Remove position so it's not rendered
           case _ =>
             // If not an item, do nothing
             currentState

@@ -1,7 +1,5 @@
 package map
 
-import game.Item.Key
-
 import scala.annotation.tailrec
 
 object MapGenerator {

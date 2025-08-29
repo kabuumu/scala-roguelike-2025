@@ -1,13 +1,11 @@
 package game.entity
 
-import game.Item.*
-
 case class Equipment(
-  helmet: Option[EquippableItem] = None,
-  armor: Option[EquippableItem] = None
+  helmet: Option[Equippable] = None,
+  armor: Option[Equippable] = None
 ) extends Component {
   
-  def equip(item: EquippableItem): (Equipment, Option[EquippableItem]) = {
+  def equip(item: Equippable): (Equipment, Option[Equippable]) = {
     item.slot match {
       case EquipmentSlot.Helmet => 
         val previousItem = helmet
@@ -25,14 +23,14 @@ case class Equipment(
     }
   }
   
-  def getEquippedItem(slot: EquipmentSlot): Option[EquippableItem] = {
+  def getEquippedItem(slot: EquipmentSlot): Option[Equippable] = {
     slot match {
       case EquipmentSlot.Helmet => helmet
       case EquipmentSlot.Armor => armor
     }
   }
   
-  def getAllEquipped: Seq[EquippableItem] = {
+  def getAllEquipped: Seq[Equippable] = {
     Seq(helmet, armor).flatten
   }
   
@@ -45,7 +43,7 @@ object Equipment {
   extension (entity: Entity) {
     def equipment: Equipment = entity.get[Equipment].getOrElse(Equipment())
     
-    def equipItem(item: EquippableItem): (Entity, Option[EquippableItem]) = {
+    def equipItemComponent(item: Equippable): (Entity, Option[Equippable]) = {
       val currentEquipment = entity.equipment
       val (newEquipment, previousItem) = currentEquipment.equip(item)
       val updatedEntity = entity.update[Equipment](_ => newEquipment)

@@ -1,54 +1,56 @@
 package game.entity
 
-import game.Item
-import game.Item.ChargeType.{Ammo, SingleUse}
-import game.Item.{Item, UnusableItem, UsableItem, Weapon}
+import game.entity.KeyItem.{isKey, keyItem}
 
-case class Inventory(items: Seq[Item] = Nil, primaryWeapon: Option[Weapon] = None, secondaryWeapon: Option[Weapon] = None) extends Component {
-  def contains(item: Item): Boolean = items.contains(item)
-
-  def -(item: Item): Inventory = {
-    val index = items.indexOf(item)
-    if (index != -1) {
-      copy(items = items.patch(index, Nil, 1))
-    } else {
-      this
-    }
+case class Inventory(
+  itemEntityIds: Seq[String] = Nil, 
+  primaryWeaponId: Option[String] = None, 
+  secondaryWeaponId: Option[String] = None
+) extends Component {
+  
+  def addItemEntityId(entityId: String): Inventory = {
+    copy(itemEntityIds = itemEntityIds :+ entityId)
+  }
+  
+  def removeItemEntityId(entityId: String): Inventory = {
+    copy(itemEntityIds = itemEntityIds.filterNot(_ == entityId))
   }
 
-  def +(item: Item): Inventory = {
-    copy(items = items :+ item)
-  }
-
-  val isEmpty: Boolean = items.isEmpty
+  val isEmpty: Boolean = itemEntityIds.isEmpty
 }
 
 object Inventory {
   extension (entity: Entity) {
-    def items: Seq[Item] = entity.get[Inventory].toSeq.flatMap(_.items)
-
-    def keys: Seq[Item.Key] = items.collect {
-      case key: Item.Key => key
-    }
+    // Get actual item entities from the game state
+    def inventoryItems(gameState: game.GameState): Seq[Entity] = 
+      entity.get[Inventory].toSeq.flatMap(_.itemEntityIds.flatMap(gameState.getEntity))
     
-    def groupedUsableItems: Map[UsableItem, Int] = items.collect {
-      case usableItem: UsableItem => usableItem
-    }.groupBy(identity).view.map {
-      case (item, list) =>
-        item.chargeType match {
-          case SingleUse => item -> list.size
-          case Ammo(ammoType) =>
-            item -> items.count(_ == ammoType)
-        }
+    // Get primary weapon entity
+    def primaryWeapon(gameState: game.GameState): Option[Entity] = 
+      entity.get[Inventory].flatMap(_.primaryWeaponId.flatMap(gameState.getEntity))
+    
+    // Get secondary weapon entity  
+    def secondaryWeapon(gameState: game.GameState): Option[Entity] = 
+      entity.get[Inventory].flatMap(_.secondaryWeaponId.flatMap(gameState.getEntity))
 
-    }.toMap
+    // Get keys from inventory
+    def keys(gameState: game.GameState): Seq[Entity] = 
+      inventoryItems(gameState).filter(_.isKey)
+    
+    // Check if inventory contains a specific key color
+    def hasKey(gameState: game.GameState, keyColour: KeyColour): Boolean =
+      keys(gameState).exists(_.keyItem.exists(_.keyColour == keyColour))
 
-    def groupedUnusableItems: Map[UnusableItem, Int] = items.collect {
-      case unusableItem: UnusableItem => unusableItem
-    }.groupBy(identity).view.mapValues(_.size).toMap
+    // Get usable items (potions, scrolls, bows) from inventory
+    def usableItems(gameState: game.GameState): Seq[Entity] = 
+      inventoryItems(gameState).filter(item => 
+        item.has[PotionItem] || item.has[ScrollItem] || item.has[BowItem]
+      )
 
-    def addItem(item: Item): Entity = entity.update[Inventory](_ + item)
+    def addItemEntity(itemEntityId: String): Entity = 
+      entity.update[Inventory](_.addItemEntityId(itemEntityId))
 
-    def removeItem(item: Item): Entity = entity.update[Inventory](_ - item)
+    def removeItemEntity(itemEntityId: String): Entity = 
+      entity.update[Inventory](_.removeItemEntityId(itemEntityId))
   }
 }

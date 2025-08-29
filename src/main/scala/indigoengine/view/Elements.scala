@@ -1,6 +1,5 @@
 package indigoengine.view
 
-import game.Item.Item
 import game.entity.{Entity, Equipment}
 import game.entity.Equipment.*
 import game.status.StatusEffect
@@ -84,56 +83,17 @@ object Elements {
   }
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
-    import game.entity.Inventory.*
-    // Group items and count their occurrences
-    val groupedItems = model.gameState.playerEntity.groupedUsableItems
-
-    val itemSprites = for {((item, quantity), index) <- groupedItems.zipWithIndex} yield {
-      val itemX: Int = uiXOffset + index * ((spriteScale * 3) / 2)
-      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + defaultBorderSize
-      val sprite = data.Sprites.itemSprites(item)
-
-      Seq(
-        spriteSheet.fromSprite(sprite)
-        .moveTo(itemX.toInt, itemY.toInt),
-        text(s"$quantity", itemX + spriteScale, itemY + 8)
-      ) ++ (model.uiState match {
-        case UIState.ListSelect(list, selectedIndex, _) if selectedIndex == index && list.head.isInstanceOf[Item] =>
-          Some(
-            BlockBar.getBlockBar(
-              Rectangle(Point(itemX.toInt, itemY.toInt), Size(spriteScale, spriteScale)),
-              RGBA.Yellow.withAlpha(0.5f)
-            )
-          )
-        case _ =>
-          None
-      })
-    }
-    itemSprites.flatten.toSeq.toBatch
+    // TODO: Reimplement usable items display for new component system
+    Batch.empty
   }
   
   def keys(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
-    import game.entity.Inventory.*
-
-    // Get the keys from the player's inventory
-    val keys = model.gameState.playerEntity.keys
-
-    val keySprites = for {(key, index) <- keys.zipWithIndex} yield {
-      val itemX: Int = uiXOffset + index * uiItemScale
-      val itemY: Int = uiYOffset + (spriteScale / 2) + spriteScale + spriteScale + (defaultBorderSize * 2)
-      val sprite = data.Sprites.itemSprites(key)
-
-      Seq(
-        spriteSheet.fromSprite(sprite)
-          .moveTo(itemX.toInt, itemY.toInt),
-      )
-    }
-    keySprites.flatten.toBatch
+    // TODO: Reimplement keys display for new component system  
+    Batch.empty
   }
 
   def equipmentPaperdoll(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
     import game.entity.Equipment.*
-    import game.Item.*
 
     val player = model.gameState.playerEntity
     val equipment = player.equipment
@@ -164,7 +124,11 @@ object Elements {
     val helmetLabel = text("Helmet:", paperdollX + defaultBorderSize, helmetY + (spriteScale / 4))
     
     val helmetItem = equipment.helmet.map { helmet =>
-      val sprite = data.Sprites.itemSprites.getOrElse(helmet, data.Sprites.defaultItemSprite)
+      val sprite = helmet.itemName match {
+        case "Leather Helmet" => data.Sprites.leatherHelmetSprite
+        case "Iron Helmet" => data.Sprites.ironHelmetSprite
+        case _ => data.Sprites.defaultItemSprite
+      }
       spriteSheet.fromSprite(sprite).moveTo(helmetSlotX, helmetY)
     }.toSeq
     
@@ -178,7 +142,11 @@ object Elements {
     val armorLabel = text("Armor:", paperdollX + defaultBorderSize, armorY + (spriteScale / 4))
     
     val armorItem = equipment.armor.map { armor =>
-      val sprite = data.Sprites.itemSprites.getOrElse(armor, data.Sprites.defaultItemSprite)
+      val sprite = armor.itemName match {
+        case "Chainmail Armor" => data.Sprites.chainmailArmorSprite
+        case "Plate Armor" => data.Sprites.plateArmorSprite
+        case _ => data.Sprites.defaultItemSprite
+      }
       spriteSheet.fromSprite(sprite).moveTo(armorSlotX, armorY)
     }.toSeq
     
