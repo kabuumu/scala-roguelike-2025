@@ -1,9 +1,9 @@
 package data
 
-import game.Item.KeyColour.*
+import game.entity.KeyColour.*
 import game.entity.EntityType
 import game.entity.EntityType.*
-import game.{Item, Sprite}
+import game.Sprite
 
 object Sprites {
   val floorLayer = 0
@@ -48,18 +48,4 @@ object Sprites {
   val defaultItemSprite: Sprite = Sprite(37, 13, uiLayer)
 
   val errorSprite: Sprite = Sprite(35, 21, uiLayer)
-
-  val itemSprites: Map[Item.Item, Sprite] = Map(
-    game.Item.Potion -> potionSprite,
-    game.Item.Key(Yellow) -> yellowKeySprite,
-    game.Item.Key(Blue) -> blueKeySprite,
-    game.Item.Key(Red) -> redKeySprite,
-    game.Item.Scroll -> scrollSprite,
-    game.Item.Bow -> bowSprite,
-    game.Item.Arrow -> arrowSprite,
-    game.Item.LeatherHelmet -> leatherHelmetSprite,
-    game.Item.IronHelmet -> ironHelmetSprite,
-    game.Item.ChainmailArmor -> chainmailArmorSprite,
-    game.Item.PlateArmor -> plateArmorSprite,
-  )
 }
