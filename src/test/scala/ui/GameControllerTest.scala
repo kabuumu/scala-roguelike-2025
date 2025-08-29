@@ -2,7 +2,6 @@ package ui
 
 import data.Sprites
 import game.Direction.{Down, Up}
-import game.Item.*
 import game.entity.*
 import game.entity.EntityType.*
 import game.entity.Experience.*
@@ -22,29 +21,22 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
   
   val testDungeon: Dungeon = Dungeon(testMode = true)
   
-  // Helper function to create item entities
-  def createItemEntity(item: Item, itemId: String): Entity = {
-    val baseEntity = Entity(
-      id = itemId,
-      ItemType(item),
-      CanPickUp(),
-      Hitbox()
-    )
-    
-    item match {
-      case equippable: EquippableItem =>
-        baseEntity.addComponent(Equippable.fromEquippableItem(equippable))
-      case _ => baseEntity
-    }
+  // Helper to create weapon entities for testing
+  def createWeaponEntity(id: String, damage: Int, weaponType: WeaponType): Entity = {
+    ItemFactory.createWeapon(id, damage, weaponType)
   }
-  
+
+  // Create test weapon entities
+  val primaryWeapon = createWeaponEntity("primary-weapon", 2, Melee)
+  val secondaryWeapon = createWeaponEntity("secondary-weapon", 1, game.entity.Ranged(6))
+
   val playerEntity: Entity = Entity(
     id = playerId,
     Movement(position = Point(4, 4)),
     EntityTypeComponent(EntityType.Player),
     Health(10),
     Initiative(0),
-    Inventory(Seq(), Some(Weapon(2, Melee)), Some(Weapon(1, Ranged(6)))),
+    Inventory(Seq(), Some(primaryWeapon.id), Some(secondaryWeapon.id)),
     SightMemory(),
     Drawable(Sprites.playerSprite),
     Hitbox(),
@@ -54,7 +46,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
   test("Player initiative should decrease when not 0") {
     val unreadyPlayerEntity = playerEntity.update[Initiative](_.copy(maxInitiative = 1, currentInitiative = 1))
 
-    val gameState = GameState(playerEntityId = playerId, entities = Seq(unreadyPlayerEntity), messages = Nil, dungeon = testDungeon)
+    val gameState = GameState(playerEntityId = playerId, entities = Seq(unreadyPlayerEntity, primaryWeapon, secondaryWeapon), messages = Nil, dungeon = testDungeon)
     val gameController = GameController(Move, gameState)
 
     val updatedGameState = gameController.update(None, Long.MaxValue)
@@ -62,7 +54,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
   }
 
   test("Player should move when given a move action") {
-    val gameState = GameState(playerEntityId = playerId, entities = Seq(playerEntity), messages = Nil, dungeon = testDungeon)
+    val gameState = GameState(playerEntityId = playerId, entities = Seq(playerEntity, primaryWeapon, secondaryWeapon), messages = Nil, dungeon = testDungeon)
     val gameController = GameController(Move, gameState)
 
     val updatedGameState = gameController.update(Some(Input.Move(Up)), Long.MaxValue)
@@ -71,7 +63,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
   test("Player should heal when using a potion") {
     // Create a potion entity
-    val potionEntity = createItemEntity(Potion, "test-potion-1")
+    val potionEntity = ItemFactory.createPotion("test-potion-1")
     
     // Create wounded player with potion in inventory
     val woundedPlayer = playerEntity
@@ -80,7 +72,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
     val gameState = GameState(
       playerEntityId = playerId, 
-      entities = Seq(woundedPlayer, potionEntity), 
+      entities = Seq(woundedPlayer, potionEntity, primaryWeapon, secondaryWeapon), 
       messages = Nil, 
       dungeon = testDungeon
     )
@@ -98,14 +90,14 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
   test("Player using a scroll fireball scroll should create a projectile") {
     // Create a scroll entity
-    val scrollEntity = createItemEntity(Scroll, "test-scroll-1")
+    val scrollEntity = ItemFactory.createScroll("test-scroll-1")
     
     // Create player with scroll in inventory
     val playerWithScroll = playerEntity.update[Inventory](_.addItemEntityId(scrollEntity.id))
 
     val gameState = GameState(
       playerEntityId = playerId, 
-      entities = Seq(playerWithScroll, scrollEntity), 
+      entities = Seq(playerWithScroll, scrollEntity, primaryWeapon, secondaryWeapon), 
       messages = Nil, 
       dungeon = testDungeon
     )
@@ -130,13 +122,17 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
   test("Player firing an arrow at an enemy entity") {
     // Create bow and arrow entities
-    val bowEntity = createItemEntity(Bow, "test-bow-1")
-    val arrowEntity = createItemEntity(Arrow, "test-arrow-1")
+    val bowEntity = ItemFactory.createBow("test-bow-1")
+    val arrowEntity = ItemFactory.createArrow("test-arrow-1")
     
     // Create player with bow and arrow in inventory
     val playerWithBowAndArrow = playerEntity
       .update[Inventory](_.addItemEntityId(bowEntity.id).addItemEntityId(arrowEntity.id))
       .update[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
+
+    // Create weapon entities for enemy
+    val enemyPrimaryWeapon = createWeaponEntity("enemy-primary-weapon", 2, Melee)
+    val enemySecondaryWeapon = createWeaponEntity("enemy-secondary-weapon", 1, game.entity.Ranged(6))
 
     val enemyEntity = Entity(
       id = "enemyId",
@@ -144,7 +140,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       EntityTypeComponent(EntityType.Enemy),
       Health(10),
       Initiative(10),
-      Inventory(Seq(), Some(Weapon(2, Melee)), Some(Weapon(1, Ranged(6)))),
+      Inventory(Seq(), Some(enemyPrimaryWeapon.id), Some(enemySecondaryWeapon.id)),
       SightMemory(),
       Drawable(Sprites.enemySprite),
       Hitbox()
@@ -152,7 +148,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
     val gameState = GameState(
       playerEntityId = playerId, 
-      entities = Seq(playerWithBowAndArrow, bowEntity, arrowEntity, enemyEntity), 
+      entities = Seq(playerWithBowAndArrow, bowEntity, arrowEntity, enemyEntity, primaryWeapon, secondaryWeapon, enemyPrimaryWeapon, enemySecondaryWeapon), 
       messages = Nil, 
       dungeon = testDungeon
     )
@@ -184,7 +180,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
   test("Player fires a fireball that hits multiple enemies, removing them and granting experience") {
     // Create a scroll entity
-    val scrollEntity = createItemEntity(Scroll, "test-scroll-2")
+    val scrollEntity = ItemFactory.createScroll("test-scroll-2")
     
     // Create player with scroll in inventory
     val playerWithScroll = playerEntity
@@ -228,7 +224,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
 
     val gameState = GameState(
       playerEntityId = playerId,
-      entities = Seq(playerWithScroll, scrollEntity, enemy1, enemy2),
+      entities = Seq(playerWithScroll, scrollEntity, enemy1, enemy2, primaryWeapon, secondaryWeapon),
       messages = Nil,
       dungeon = testDungeon
     )

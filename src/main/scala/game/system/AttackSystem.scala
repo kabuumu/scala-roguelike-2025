@@ -6,13 +6,12 @@ import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{GameSystemEvent, SpawnEntityEvent}
 import ui.InputAction
 import game.entity.EntityType
-import game.Item.Weapon
 import data.Sprites
-import game.Item.*
 import game.entity.*
 import game.entity.EntityType.entityType
 import game.entity.Movement.*
 import game.entity.Inventory.primaryWeapon
+import game.entity.WeaponItem.weaponItem
 import game.entity.WeaponItem.weaponItem
 import game.event.*
 import game.{Item, *}

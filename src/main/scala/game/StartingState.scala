@@ -119,28 +119,28 @@ object StartingState {
             ItemFactory.createKey(s"key-$index", keyColour),
             basePosition,
             sprite
-          ).addComponent(EntityTypeComponent(EntityType.Key(key.keyColour)))
+          ).addComponent(EntityTypeComponent(EntityType.Key(keyColour)))
           
         case potionItem if potionItem == game.Item.Potion =>
           ItemFactory.placeInWorld(
             ItemFactory.createPotion(s"potion-$index"),
             basePosition,
             Sprites.potionSprite
-          ).addComponent(EntityTypeComponent(EntityType.ItemEntity(potionItem)))
+          )
           
         case scrollItem if scrollItem == game.Item.Scroll =>
           ItemFactory.placeInWorld(
             ItemFactory.createScroll(s"scroll-$index"),
             basePosition,
             Sprites.scrollSprite
-          ).addComponent(EntityTypeComponent(EntityType.ItemEntity(scrollItem)))
+          )
           
         case arrowItem if arrowItem == game.Item.Arrow =>
           ItemFactory.placeInWorld(
             ItemFactory.createArrow(s"arrow-$index"),
             basePosition,
             Sprites.arrowSprite
-          ).addComponent(EntityTypeComponent(EntityType.ItemEntity(arrowItem)))
+          )
           
         case equippableItem if equippableItem.isInstanceOf[game.Item.EquippableItem] =>
           val equipItem = equippableItem.asInstanceOf[game.Item.EquippableItem]
@@ -154,7 +154,6 @@ object StartingState {
           Entity(
             id = s"equipment-$index",
             Movement(basePosition),
-            EntityTypeComponent(EntityType.ItemEntity(equipItem)),
             CanPickUp(),
             Equippable(
               slot = equipItem.slot match {

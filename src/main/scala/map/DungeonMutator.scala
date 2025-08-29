@@ -1,8 +1,8 @@
 package map
 
 import game.Item
-import game.Item.KeyColour.*
-import game.Item.{Item, Key, KeyColour}
+import game.entity.KeyColour.*
+import game.entity.{KeyColour}
 import game.entity.EntityType.LockedDoor
 
 trait DungeonMutator {
@@ -44,13 +44,13 @@ class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends Dungeon
         (_, direction2) <- updatedDungeon.availableRooms(keyRoom1)
         keyRoom2 = keyRoom1 + direction2
       } yield {
-        val newRoomConnections = currentDungeon.roomConnections - roomConnection + roomConnection.copy(optLock = Some(LockedDoor(KeyColour.Red)))
+        val newRoomConnections = currentDungeon.roomConnections - roomConnection + roomConnection.copy(optLock = Some(LockedDoor(Red)))
 
         currentDungeon
           .addRoom(originRoom, direction1)
           .addRoom(keyRoom1, direction2)
           .lockRoomConnection(roomConnection, LockedDoor(Red))
-          .addItem(keyRoom2, Key(Red))
+          .addItem(keyRoom2, game.Item.Key(game.Item.KeyColour.Red))
           .blockRoom(keyRoom2)
       }
     }.toSet
@@ -58,14 +58,14 @@ class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends Dungeon
 }
 
 class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) extends DungeonMutator {
-  val possibleItems: Set[Item] = Set(
-    Item.Potion, 
-    Item.Scroll, 
-    Item.Arrow,
-    Item.LeatherHelmet,
-    Item.ChainmailArmor,
-    Item.IronHelmet,
-    Item.PlateArmor
+  val possibleItems: Set[game.Item.Item] = Set(
+    game.Item.Potion, 
+    game.Item.Scroll, 
+    game.Item.Arrow,
+    game.Item.LeatherHelmet,
+    game.Item.ChainmailArmor,
+    game.Item.IronHelmet,
+    game.Item.PlateArmor
   )
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {

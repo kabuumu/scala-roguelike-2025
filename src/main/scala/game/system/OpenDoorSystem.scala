@@ -14,13 +14,6 @@ import ui.InputAction
 
 object OpenDoorSystem extends GameSystem {
   
-  // Convert from old Item.KeyColour to new entity.KeyColour
-  private def convertKeyColour(itemKeyColour: game.Item.KeyColour): KeyColour = itemKeyColour match {
-    case game.Item.KeyColour.Yellow => KeyColour.Yellow
-    case game.Item.KeyColour.Blue => KeyColour.Blue
-    case game.Item.KeyColour.Red => KeyColour.Red
-  }
-  
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
     val updatedGamestate = events.foldLeft(gameState) {
       case (currentState, GameSystemEvent.InputEvent(entityId, InputAction.Move(direction))) =>
@@ -31,10 +24,10 @@ object OpenDoorSystem extends GameSystem {
             case entity@EntityType(LockedDoor(keyColour)) if entity.position == playerEntity.position + direction =>
               (entity, keyColour)
           }
-          if playerEntity.hasKey(currentState, convertKeyColour(keyColour))
+          if playerEntity.hasKey(currentState, keyColour)
         } yield {
           // Find the key item entity to remove
-          val keyItemEntity = playerEntity.keys(currentState).find(_.keyItem.exists(_.keyColour == convertKeyColour(keyColour)))
+          val keyItemEntity = playerEntity.keys(currentState).find(_.keyItem.exists(_.keyColour == keyColour))
           keyItemEntity match {
             case Some(keyEntity) =>
               // Remove the key entity and reset initiative

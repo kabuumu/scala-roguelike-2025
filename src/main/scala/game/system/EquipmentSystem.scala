@@ -69,7 +69,6 @@ object EquipmentSystem extends GameSystem {
                         val droppedEquipmentEntity = Entity(
                           id = s"dropped-${droppedEquippable.itemName.replace(" ", "-")}-${System.nanoTime()}",
                           Movement(position = dropPosition),
-                          EntityTypeComponent(EntityType.ItemEntity(game.Item.Potion)), // Temporary placeholder
                           CanPickUp(),
                           droppedEquippable,
                           Hitbox(),

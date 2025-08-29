@@ -1,8 +1,5 @@
 package game.entity
 
-import game.Item.KeyColour
-import game.Item.Item
-
 case class EntityTypeComponent(entityType: EntityType) extends Component
 
 object EntityType {
@@ -23,5 +20,4 @@ enum EntityType(val isStatic: Boolean, val blocksMovement: Boolean):
   case Floor extends EntityType(true, false)
   case LockedDoor(keyColour: KeyColour) extends EntityType(true, true)
   case Key(keyColour: KeyColour) extends EntityType(true, false)
-  case ItemEntity(itemType: Item) extends EntityType(true, false)
   case Projectile extends EntityType(false, false)
