@@ -16,3 +16,8 @@ sbt/
 sbt-*.zip
 cs
 
+# Coverage artifacts
+.scoverage/
+**/scoverage-data/
+**/scoverage-report/
+
