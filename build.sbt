@@ -24,6 +24,11 @@ lazy val root = (project in file("."))
       "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
       "io.indigoengine" %%% "indigo" % "0.22.0"
     ),
+    // Basic coverage settings (limited support with ScalaJS)
+    coverageMinimumStmtTotal := 49, // Set based on current measured coverage
+    coverageFailOnMinimum := false, // Don't fail builds due to ScalaJS limitation
+    coverageHighlighting := true,
+    coverageExcludedPackages := "generated.*",
     Compile / sourceGenerators += Def.task {
       IndigoGenerators("generated")
         .embedFont(
@@ -73,5 +78,15 @@ addCommandAlias(
     "compile",
     "fastLinkJS",
     "indigoBuild"
+  ).mkString(";", ";", "")
+)
+
+addCommandAlias(
+  "testCoverage",
+  List(
+    "clean",
+    "coverage",
+    "test",
+    "coverageReport"
   ).mkString(";", ";", "")
 )
