@@ -214,7 +214,17 @@ The project uses GitHub Actions for:
 2. **Pull Request Preview** (`.github/workflows/pr-preview.yml`):
    - Runs on every pull request
    - Builds playable preview version
-   - Uploads as downloadable artifact
+   - Deploys to GitHub Pages with PR-specific URL
+   - Automatically comments with direct link
+
+3. **Production Deployment** (`.github/workflows/deploy.yml`):
+   - Deploys main game to https://kabuumu.github.io/scala-roguelike-2025/
+   - Runs on merges to main branch
+   - Preserves PR preview deployments
+
+4. **Preview Cleanup** (`.github/workflows/pr-cleanup.yml`):
+   - Automatically removes PR previews when PRs are closed
+   - Keeps GitHub Pages clean and organized
    - Comments on PR with testing instructions
 
 3. **Continuous Deployment** (`.github/workflows/deploy.yml`):
@@ -283,11 +293,14 @@ The game uses a modern ECS architecture:
 When you submit a pull request:
 
 1. **Automatic Build**: GitHub Actions will automatically build your changes
-2. **Preview Artifact**: A playable version is uploaded as an artifact
-3. **Testing Instructions**: The bot will comment on your PR with download and testing instructions
-4. **Local Testing**: Download the artifact and serve it locally to test your changes
+2. **Live Preview**: Your changes are deployed to a unique URL: `https://kabuumu.github.io/scala-roguelike-2025/pr-{number}/`
+3. **Direct Access**: The bot will comment on your PR with a direct link to play the game immediately
+4. **Auto-updates**: Preview is updated automatically when you push new commits
+5. **Auto-cleanup**: Preview is removed when the PR is closed
 
-This ensures all changes are tested before merging and provides reviewers with a playable preview.
+**Example**: PR #123 → https://kabuumu.github.io/scala-roguelike-2025/pr-123/
+
+This enables instant testing of changes without any downloads or local setup required.
 
 ### Coverage Requirements
 
