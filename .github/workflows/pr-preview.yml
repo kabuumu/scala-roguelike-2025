@@ -1,0 +1,145 @@
+name: PR Preview Build
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
+    - name: Setup SBT
+      uses: sbt/setup-sbt@v1
+
+    - name: Cache SBT
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.ivy2/cache
+          ~/.sbt
+          ~/.coursier/cache
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt', 'project/**') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-
+
+    - name: Run tests
+      run: sbt test
+
+    - name: Generate coverage report
+      run: python3 scripts/analyze_coverage.py
+
+    - name: Compile Scala.js
+      run: sbt fastOptJS
+
+    - name: Build Indigo
+      run: sbt indigoBuild
+
+    - name: Prepare preview files
+      run: |
+        mkdir -p pr-preview
+        cp -r target/indigoBuild/* pr-preview/
+        
+        # Create a README for the preview
+        cat > pr-preview/README.md << 'EOF'
+        # PR Preview for Scala Roguelike 2025
+        
+        This is a preview build of the game for PR #${{ github.event.number }}.
+        
+        ## How to test:
+        
+        1. Download this artifact
+        2. Extract the files
+        3. Serve the files using a local web server:
+           ```bash
+           cd pr-preview
+           python3 -m http.server 8080
+           ```
+        4. Open http://localhost:8080 in your browser
+        5. Use arrow keys to move, Q to equip items
+        
+        ## Changes in this PR:
+        ${{ github.event.pull_request.title }}
+        
+        EOF
+
+    - name: Upload preview build
+      uses: actions/upload-artifact@v4
+      with:
+        name: pr-preview-${{ github.event.number }}
+        path: pr-preview/
+        retention-days: 30
+
+    - name: Comment PR with preview instructions
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const prNumber = context.payload.pull_request.number;
+          const runId = context.runId;
+          const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+          const artifactUrl = `${repoUrl}/actions/runs/${runId}`;
+          
+          const comment = `## 🎮 PR Preview Build Ready!
+          
+          Your changes have been built and are ready for testing!
+          
+          ### 📦 [Download Preview Build](${artifactUrl})
+          
+          **How to test:**
+          1. Click the link above and download the \`pr-preview-${prNumber}\` artifact
+          2. Extract the ZIP file
+          3. Serve the files locally:
+             \`\`\`bash
+             cd pr-preview
+             python3 -m http.server 8080
+             \`\`\`
+          4. Open http://localhost:8080 in your browser
+          5. Use arrow keys to move, Q to equip items
+          
+          **Changes in this PR:** ${context.payload.pull_request.title}
+          
+          > **Note**: This is a preview build separate from the main game. The build will be updated automatically when you push new commits.`;
+          
+          // Check if we already commented
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: prNumber,
+          });
+          
+          const existingComment = comments.data.find(comment => 
+            comment.user.login === 'github-actions[bot]' && 
+            comment.body.includes('🎮 PR Preview Build Ready!')
+          );
+          
+          if (existingComment) {
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existingComment.id,
+              body: comment
+            });
+          } else {
+            // Create new comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });
+          }

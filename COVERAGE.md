@@ -21,7 +21,7 @@ The project maintains **49.0% estimated code coverage** across 2,928 lines of ma
 
 ## Test Suites
 
-The project includes 57 tests across 5 test suites:
+The project includes 60 tests across 6 test suites:
 
 - **EntityTest** (10 tests): Component system functionality
 - **GameControllerTest** (6 tests): Game logic and player actions  

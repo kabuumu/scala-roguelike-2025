@@ -81,7 +81,7 @@ sbt runGame
 The project uses SBT (Scala Build Tool) with custom commands:
 
 - **`sbt compile`** - Compile the Scala code (~30 seconds)
-- **`sbt test`** - Run all tests (~30 seconds, 57 tests)
+- **`sbt test`** - Run all tests (~30 seconds, 60 tests)
 - **`sbt build`** - Build web version (~40 seconds)
 - **`sbt runGame`** - Build and run (web + attempt desktop)
 - **`sbt testCoverage`** - Run tests with coverage instrumentation
@@ -135,7 +135,7 @@ scala-roguelike-2025/
 │   │   ├── ui/               # User interface and input
 │   │   ├── map/              # Dungeon generation
 │   │   └── util/             # Utilities (pathfinding, line of sight)
-│   └── test/scala/           # Test suites (57 tests)
+│   └── test/scala/           # Test suites (60 tests)
 ├── assets/                   # Game assets
 │   ├── sprites/              # Sprite sheets
 │   └── fonts/                # Pixel fonts
@@ -159,7 +159,7 @@ The build system automatically:
 ### Running Tests
 
 ```bash
-# Run all tests (57 tests in 5 suites)
+# Run all tests (60 tests in 6 suites)
 sbt test
 
 # Run specific test suite
@@ -193,7 +193,7 @@ The project maintains **49.0% overall code coverage** with comprehensive test su
 
 The project maintains high code quality with:
 
-- Comprehensive test suite (57 tests)
+- Comprehensive test suite (60 tests)
 - Entity Component System architecture
 - Functional programming principles
 - Type-safe Scala 3 features
@@ -207,11 +207,17 @@ The project maintains high code quality with:
 The project uses GitHub Actions for:
 
 1. **Continuous Integration** (`.github/workflows/scala.yml`):
-   - Runs on every push and pull request
+   - Runs on every push to main branch
    - Tests with Java 11+ and SBT
    - Validates all tests pass
 
-2. **Continuous Deployment** (`.github/workflows/deploy.yml`):
+2. **Pull Request Preview** (`.github/workflows/pr-preview.yml`):
+   - Runs on every pull request
+   - Builds playable preview version
+   - Uploads as downloadable artifact
+   - Comments on PR with testing instructions
+
+3. **Continuous Deployment** (`.github/workflows/deploy.yml`):
    - Deploys to GitHub Pages on main branch pushes
    - Builds optimized JavaScript bundle
    - Serves the game at GitHub Pages URL
@@ -271,6 +277,17 @@ The game uses a modern ECS architecture:
 4. **Check coverage**: `python3 scripts/analyze_coverage.py`
 5. **Build web version**: `sbt build`
 6. **Test in browser**: Serve from `target/indigoBuild/`
+
+### Pull Request Previews
+
+When you submit a pull request:
+
+1. **Automatic Build**: GitHub Actions will automatically build your changes
+2. **Preview Artifact**: A playable version is uploaded as an artifact
+3. **Testing Instructions**: The bot will comment on your PR with download and testing instructions
+4. **Local Testing**: Download the artifact and serve it locally to test your changes
+
+This ensures all changes are tested before merging and provides reviewers with a playable preview.
 
 ### Coverage Requirements
 
