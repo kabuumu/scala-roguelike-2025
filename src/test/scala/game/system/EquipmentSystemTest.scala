@@ -22,13 +22,22 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
   val playerId = "testPlayerId"
   val testDungeon: Dungeon = Dungeon(testMode = true)
 
+  // Create test equipment objects  
+  val leatherHelmet = Equippable(EquipmentSlot.Helmet, 2, "Leather Helmet")
+  val ironHelmet = Equippable(EquipmentSlot.Helmet, 4, "Iron Helmet")
+  val chainmailArmor = Equippable(EquipmentSlot.Armor, 5, "Chainmail Armor")
+  val plateArmor = Equippable(EquipmentSlot.Armor, 8, "Plate Armor")
+
+  // Create test weapon entities
+  val primaryWeapon = ItemFactory.createWeapon("test-primary-weapon", 10, Melee)
+
   val basePlayerEntity: Entity = Entity(
     id = playerId,
     Movement(position = Point(4, 4)),
     EntityTypeComponent(EntityType.Player),
     Health(100),
     Initiative(0),
-    Inventory(Seq(), Some(Weapon(10, Melee)), None),
+    Inventory(Seq(), Some(primaryWeapon.id), None),
     Equipment(), // Start with empty equipment
     SightMemory(),
     Drawable(Sprites.playerSprite),
@@ -46,8 +55,8 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
 
   test("Equipment component should calculate total damage reduction correctly") {
     val equipment = Equipment(
-      helmet = Some(LeatherHelmet),
-      armor = Some(ChainmailArmor)
+      helmet = Some(leatherHelmet),
+      armor = Some(chainmailArmor)
     )
     
     equipment.getTotalDamageReduction should be(7) // 2 + 5
@@ -55,9 +64,9 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
 
   test("Equipment component should equip helmet correctly") {
     val emptyEquipment = Equipment()
-    val (equippedHelmet, previousItem) = emptyEquipment.equip(IronHelmet)
+    val (equippedHelmet, previousItem) = emptyEquipment.equip(ironHelmet)
     
-    equippedHelmet.helmet should be(Some(IronHelmet))
+    equippedHelmet.helmet should be(Some(ironHelmet))
     equippedHelmet.armor should be(None)
     equippedHelmet.getTotalDamageReduction should be(4)
     previousItem should be(None)
@@ -65,45 +74,45 @@ class EquipmentSystemTest extends AnyFunSuiteLike with Matchers {
 
   test("Equipment component should equip armor correctly") {
     val emptyEquipment = Equipment()
-    val (equippedArmor, previousItem) = emptyEquipment.equip(PlateArmor)
+    val (equippedArmor, previousItem) = emptyEquipment.equip(plateArmor)
     
     equippedArmor.helmet should be(None)
-    equippedArmor.armor should be(Some(PlateArmor))
+    equippedArmor.armor should be(Some(plateArmor))
     equippedArmor.getTotalDamageReduction should be(8)
     previousItem should be(None)
   }
 
   test("Equipment component should replace existing helmet when equipping new one") {
-    val equipmentWithHelmet = Equipment(helmet = Some(LeatherHelmet))
-    val (updatedEquipment, previousItem) = equipmentWithHelmet.equip(IronHelmet)
+    val equipmentWithHelmet = Equipment(helmet = Some(leatherHelmet))
+    val (updatedEquipment, previousItem) = equipmentWithHelmet.equip(ironHelmet)
     
-    updatedEquipment.helmet should be(Some(IronHelmet))
+    updatedEquipment.helmet should be(Some(ironHelmet))
     updatedEquipment.getTotalDamageReduction should be(4) // Iron helmet damage reduction
-    previousItem should be(Some(LeatherHelmet)) // Should return previously equipped item
+    previousItem should be(Some(leatherHelmet)) // Should return previously equipped item
   }
 
   test("Equipment component should unequip helmet correctly") {
-    val equipmentWithHelmet = Equipment(helmet = Some(IronHelmet), armor = Some(ChainmailArmor))
+    val equipmentWithHelmet = Equipment(helmet = Some(ironHelmet), armor = Some(chainmailArmor))
     val unequippedHelmet = equipmentWithHelmet.unequip(EquipmentSlot.Helmet)
     
     unequippedHelmet.helmet should be(None)
-    unequippedHelmet.armor should be(Some(ChainmailArmor))
+    unequippedHelmet.armor should be(Some(chainmailArmor))
     unequippedHelmet.getTotalDamageReduction should be(5) // Only armor remains
   }
 
   test("Equipment component should unequip armor correctly") {
-    val equipmentWithArmor = Equipment(helmet = Some(IronHelmet), armor = Some(ChainmailArmor))
+    val equipmentWithArmor = Equipment(helmet = Some(ironHelmet), armor = Some(chainmailArmor))
     val unequippedArmor = equipmentWithArmor.unequip(EquipmentSlot.Armor)
     
-    unequippedArmor.helmet should be(Some(IronHelmet))
+    unequippedArmor.helmet should be(Some(ironHelmet))
     unequippedArmor.armor should be(None)
     unequippedArmor.getTotalDamageReduction should be(4) // Only helmet remains
   }
 
   test("Player entity should equip item correctly using extension method") {
-    val (playerWithEquipment, previousItem) = basePlayerEntity.equipItem(LeatherHelmet)
+    val (playerWithEquipment, previousItem) = basePlayerEntity.equipItemComponent(leatherHelmet)
     
-    playerWithEquipment.equipment.helmet should be(Some(LeatherHelmet))
+    playerWithEquipment.equipment.helmet should be(Some(leatherHelmet))
     playerWithEquipment.getTotalDamageReduction should be(2)
     previousItem should be(None)
   }

@@ -41,6 +41,12 @@ object Inventory {
     def hasKey(gameState: game.GameState, keyColour: KeyColour): Boolean =
       keys(gameState).exists(_.keyItem.exists(_.keyColour == keyColour))
 
+    // Get usable items (potions, scrolls, bows) from inventory
+    def usableItems(gameState: game.GameState): Seq[Entity] = 
+      inventoryItems(gameState).filter(item => 
+        item.has[PotionItem] || item.has[ScrollItem] || item.has[BowItem]
+      )
+
     def addItemEntity(itemEntityId: String): Entity = 
       entity.update[Inventory](_.addItemEntityId(itemEntityId))
 

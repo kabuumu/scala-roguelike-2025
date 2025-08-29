@@ -87,8 +87,40 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.Move, None)
           }
         case Input.UseItem =>
-          // TODO: Implement new item usage system
-          (UIState.Move, None)
+          val usableItems = gameState.playerEntity.usableItems(gameState)
+          if (usableItems.nonEmpty) {
+            (UIState.ListSelect[Entity](
+              list = usableItems,
+              effect = itemEntity => {
+                // Handle different item types
+                if (itemEntity.has[PotionItem]) {
+                  // Potions are non-targeted
+                  (UIState.Move, Some(InputAction.UseComponentItem(itemEntity.id)))
+                } else if (itemEntity.has[ScrollItem]) {
+                  // Scrolls are point-targeted
+                  (UIState.ScrollSelect(
+                    cursor = gameState.playerEntity.position,
+                    effect = targetPoint => (UIState.Move, Some(InputAction.UseComponentItemAtPoint(itemEntity.id, targetPoint)))
+                  ), None)
+                } else if (itemEntity.has[BowItem]) {
+                  // Bows are entity-targeted
+                  val enemies = enemiesWithinRange(10)
+                  if (enemies.nonEmpty && gameState.playerEntity.inventoryItems(gameState).exists(_.has[ArrowItem])) {
+                    (UIState.ListSelect(
+                      list = enemies,
+                      effect = target => (UIState.Move, Some(InputAction.UseComponentItemOnEntity(itemEntity.id, target.id)))
+                    ), None)
+                  } else {
+                    (UIState.Move, None) // No enemies in range or no arrows
+                  }
+                } else {
+                  (UIState.Move, None)
+                }
+              }
+            ), None)
+          } else {
+            (UIState.Move, None)
+          }
         case Input.LevelUp if gameState.playerEntity.canLevelUp =>
           val levelUpState = UIState.ListSelect(
             list = gameState.playerEntity.getPossiblePerks,
