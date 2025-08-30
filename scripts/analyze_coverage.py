@@ -180,6 +180,6 @@ if __name__ == "__main__":
     output_file = "coverage-output.txt" if len(sys.argv) == 1 else sys.argv[1] if sys.argv[1] != "--no-file" else None
     coverage, meets_threshold = analyze_test_coverage(output_file)
     
-    # Exit with non-zero status if coverage is critically low (below 40%)
-    if coverage < 40.0:
+    # Exit with non-zero status if coverage is below baseline (49%)
+    if not meets_threshold:
         sys.exit(1)
