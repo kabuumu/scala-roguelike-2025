@@ -357,4 +357,17 @@ object Elements {
       )
     } else Batch.empty
   }
+
+  def versionInfo(model: GameController): Batch[SceneNode] = {
+    import generated.Version
+    
+    // Position at bottom-left of screen
+    val versionText = s"v${Version.gitCommit}"
+    val xOffset = uiXOffset
+    val yOffset = canvasHeight - (spriteScale / 2) - defaultBorderSize
+    
+    Batch(
+      text(versionText, xOffset, yOffset)
+    )
+  }
 }

@@ -8,8 +8,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  pages: write
-  id-token: write
 
 jobs:
   build-preview:
@@ -51,7 +49,7 @@ jobs:
     - name: Build game
       run: sbt build
 
-    - name: Deploy PR Preview to Pages
+    - name: Deploy PR Preview
       run: |
         # Store build files
         mkdir -p /tmp/build
@@ -69,8 +67,9 @@ jobs:
           git checkout --orphan gh-pages
           git rm -rf . 2>/dev/null || true
           
-          # Create index file for main site navigation
-          cat > index.html << 'EOF'
+          # Create a placeholder index for PR previews subdirectory
+          mkdir -p previews
+          cat > previews/index.html << 'EOF'
         <!DOCTYPE html>
         <html>
         <head>
@@ -94,11 +93,11 @@ jobs:
         EOF
         fi
         
-        # Create PR-specific directory
-        mkdir -p pr-${{ github.event.number }}
+        # Create PR-specific directory under previews
+        mkdir -p previews/pr-${{ github.event.number }}
         
         # Copy build files to PR directory
-        cp -r /tmp/build/* pr-${{ github.event.number }}/
+        cp -r /tmp/build/* previews/pr-${{ github.event.number }}/
         
         # Add and commit changes
         git add .
@@ -110,7 +109,7 @@ jobs:
       with:
         script: |
           const prNumber = context.payload.pull_request.number;
-          const previewUrl = `https://kabuumu.github.io/scala-roguelike-2025/pr-${prNumber}/`;
+          const previewUrl = `https://kabuumu.github.io/scala-roguelike-2025/previews/pr-${prNumber}/`;
           
           const comment = `## 🎮 PR Preview Ready!
 
@@ -125,7 +124,8 @@ jobs:
 
           **Changes in this PR:** ${context.payload.pull_request.title}
 
-          > **Note**: This preview is automatically updated when you push new commits. The preview will be removed when the PR is closed.`;
+          > **Note**: This preview is automatically updated when you push new commits. The preview will be removed when the PR is closed.
+          > **New**: Main site deployments now use GitHub Actions, while PR previews use a separate preview area.`;
           
           // Check if we already commented
           const comments = await github.rest.issues.listComments({
