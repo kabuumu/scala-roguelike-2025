@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="af7789d2-79df-47f8-8275-84f28a0b5ff7" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CompilerWorkspaceConfiguration">
+    <option name="MAKE_PROJECT_ON_SAVE" value="true" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="SBT">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="scala-roguelike" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Scala Object" />
+        <option value="Scala Class" />
+        <option value="Package Object" />
+        <option value="ScalaTest Class" />
+        <option value="Scala Worksheet" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;kabuumu&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:kabuumu/scala-roguelike-2025.git&quot;,
+    &quot;accountId&quot;: &quot;f893a1b3-cc27-442a-86b2-2da798067e38&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.14/scala-library-2.13.14-sources.jar!/scala/collection/Iterable.scala" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.14/scala-library-2.13.14-sources.jar!/scala/collection/Seq.scala" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.14/scala-library-2.13.14.jar!/scala/collection/IterableOnceOps.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.14/scala-library-2.13.14.jar!/scala/collection/SeqOps.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.14/scala-library-2.13.14.jar!/scala/collection/StrictOptimizedIterableOps.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalafx/scalafx_3/23.0.1-R34/scalafx_3-23.0.1-R34-sources.jar!/scalafx/scene/control/TextArea.scala" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="2" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2uGEctLQFGjUm3ZlFyARgWrLM8K" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.App.executor": "Run",
+    "Application.DesktopLauncher.executor": "Run",
+    "Application.Main.executor": "Run",
+    "Application.scalafx.App.executor": "Run",
+    "Compound.Run Indigo Game.executor": "Run",
+    "JavaScript Debug.index.html.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "ScalaTest.EntityTest.executor": "Run",
+    "ScalaTest.EntityTest.updating a non-existent component should not affect the entity.executor": "Run",
+    "ScalaTest.GameControllerTest.Player fires a fireball that hits multiple enemies, removing them and granting experience.executor": "Run",
+    "ScalaTest.GameControllerTest.Player firing an arrow at an enemy entity.executor": "Run",
+    "ScalaTest.GameControllerTest.Player initiative should decrease when not 0.executor": "Run",
+    "ScalaTest.GameControllerTest.Player should heal when using a potion.executor": "Run",
+    "ScalaTest.GameControllerTest.Player should move when given a move action.executor": "Run",
+    "ScalaTest.GameControllerTest.Player using a scroll fireball scroll should create a projectile.executor": "Run",
+    "ScalaTest.GameControllerTest.executor": "Run",
+    "ScalaTest.PathfinderTest (1).executor": "Run",
+    "ScalaTest.PathfinderTest.executor": "Run",
+    "ScalaTest.PathfinderTest.findPath returns no valid path when no path is possible.executor": "Run",
+    "ScalaTest.ScalaTests in 'scala'.executor": "Run",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "ScalaTest",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.ScalaTest": "org.scalatest.funsuite.AnyFunSuiteLike",
+    "kotlin-language-version-configured": "true",
+    "last_directory_selection": "/Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala",
+    "last_opened_file_path": "/Users/robhawkes/Documents/personal/scala-roguelike-2025/lib",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "sbt Task.Build Scala.js.executor": "Run",
+    "sbt Task.IndigoRun.executor": "Debug",
+    "settings.editor.selected.configurable": "project.propCompiler",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/lib" />
+      <recent name="$PROJECT_DIR$/src/main/scala" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/lib" />
+      <recent name="$PROJECT_DIR$/src/main/util" />
+      <recent name="$PROJECT_DIR$/assets" />
+      <recent name="$PROJECT_DIR$/project" />
+      <recent name="$PROJECT_DIR$/src/main/scala/game/action" />
+    </key>
+    <key name="CreateTestDialog.Recents.Supers">
+      <recent name="org.scalatest.funsuite.AnyFunSuiteLike" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="ui" />
+      <recent name="ui.uistate" />
+      <recent name="game.action" />
+      <recent name="game" />
+      <recent name="game.entity" />
+    </key>
+    <key name="CreateTestDialog.RecentsKey">
+      <recent name="game" />
+      <recent name="ui" />
+      <recent name="game.entity" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="game.system" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="JavascriptDebugType" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager" selected="sbt Task.IndigoRun">
+    <configuration name="index.html" type="JavascriptDebugType" nameIsGenerated="true" uri="http://localhost:63342/scala-roguelike/target/indigoBuild/index.html" useBuiltInWebServerPort="true">
+      <method v="2">
+        <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build Scala.js" run_configuration_type="SbtRunConfiguration" />
+      </method>
+    </configuration>
+    <configuration name="Build Scala.js" type="SbtRunConfiguration" factoryName="sbt Task" show_console_on_std_err="false" show_console_on_std_out="false">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="projectPathOnTarget" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <option name="tasks" value="build" />
+      <option name="useSbtShell" value="false" />
+      <option name="vmparams" value="-Xms512M -Xmx1024M -Xss1M" />
+      <option name="workingDir" value="$PROJECT_DIR$" />
+      <option name="envFilePaths" />
+      <method v="2" />
+    </configuration>
+    <configuration name="IndigoRun" type="SbtRunConfiguration" factoryName="sbt Task" show_console_on_std_err="false" show_console_on_std_out="false">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="projectPathOnTarget" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <option name="tasks" value="runGame" />
+      <option name="useSbtShell" value="true" />
+      <option name="vmparams" value="-Xms512M -Xmx1024M -Xss1M" />
+      <option name="workingDir" value="$PROJECT_DIR$" />
+      <option name="envFilePaths" />
+      <method v="2">
+        <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build Scala.js" run_configuration_type="SbtRunConfiguration" />
+      </method>
+    </configuration>
+    <configuration name="ScalaTests in 'map'" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true" nameIsGenerated="true" show_console_on_std_err="false" show_console_on_std_out="false">
+      <option name="VMParameters" value="" />
+      <option name="allowRunningInParallel" value="false" />
+      <option name="alternativeJrePath" />
+      <option name="alternativeJrePathEnabled" value="false" />
+      <option name="classpathModifications">
+        <list />
+      </option>
+      <option name="envFilePaths">
+        <list />
+      </option>
+      <option name="envs">
+        <map />
+      </option>
+      <option name="passParentEnvs" value="true" />
+      <option name="programParameters" value="" />
+      <option name="projectPathOnTarget" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <option name="testKind" value="All in package" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <option name="shortenClasspath" value="NONE" />
+      <option name="testPackagePath" value="map" />
+      <option name="useSbt" value="true" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ScalaTests in 'scala'" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true" nameIsGenerated="true" show_console_on_std_err="false" show_console_on_std_out="false">
+      <module name="scala-roguelike.test" />
+      <option name="VMParameters" value="" />
+      <option name="allowRunningInParallel" value="false" />
+      <option name="alternativeJrePath" />
+      <option name="alternativeJrePathEnabled" value="false" />
+      <option name="classpathModifications">
+        <list />
+      </option>
+      <option name="envFilePaths">
+        <list />
+      </option>
+      <option name="envs">
+        <map />
+      </option>
+      <option name="passParentEnvs" value="true" />
+      <option name="programParameters" value="" />
+      <option name="projectPathOnTarget" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <option name="testKind" value="All in package" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <option name="shortenClasspath" value="NONE" />
+      <option name="useSbt" value="true" />
+      <option name="useUiWithSbt" value="true" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="JavaScript Debug.index.html" />
+      <item itemvalue="sbt Task.IndigoRun" />
+      <item itemvalue="sbt Task.Build Scala.js" />
+      <item itemvalue="ScalaTest.ScalaTests in 'map'" />
+      <item itemvalue="ScalaTest.ScalaTests in 'scala'" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="ScalaTest.ScalaTests in 'scala'" />
+        <item itemvalue="ScalaTest.ScalaTests in 'map'" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ScalaProjectSettings">
+    <option name="migrateConfigurationsNotificationShown" value="true" />
+    <option name="scala3DisclaimerShown" value="true" />
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.23892.409" />
+        <option value="bundled-js-predefined-d6986cc7102b-e03c56caf84a-JavaScript-IU-252.23892.409" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="af7789d2-79df-47f8-8275-84f28a0b5ff7" name="Changes" comment="" />
+      <created>1741866594046</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1741866594046</updated>
+      <workItem from="1741866595045" duration="1101000" />
+      <workItem from="1741873177279" duration="67980000" />
+      <workItem from="1743280302721" duration="74442000" />
+      <workItem from="1744531437194" duration="47065000" />
+      <workItem from="1744799972042" duration="11208000" />
+      <workItem from="1744889739062" duration="2709000" />
+      <workItem from="1745074361099" duration="30015000" />
+      <workItem from="1745914238827" duration="602000" />
+      <workItem from="1746183033760" duration="33815000" />
+      <workItem from="1746715158416" duration="25718000" />
+      <workItem from="1747304214804" duration="15555000" />
+      <workItem from="1747424213385" duration="12397000" />
+      <workItem from="1747730740676" duration="10955000" />
+      <workItem from="1747834460436" duration="3649000" />
+      <workItem from="1747900911620" duration="1993000" />
+      <workItem from="1747902992627" duration="12441000" />
+      <workItem from="1748085890933" duration="321000" />
+      <workItem from="1748086214975" duration="31326000" />
+      <workItem from="1748687240948" duration="23192000" />
+      <workItem from="1749629881064" duration="29254000" />
+      <workItem from="1750079562077" duration="6503000" />
+      <workItem from="1750086862024" duration="23098000" />
+      <workItem from="1750430425497" duration="25241000" />
+      <workItem from="1750674770685" duration="66264000" />
+      <workItem from="1751031692617" duration="46066000" />
+      <workItem from="1754920735833" duration="4433000" />
+      <workItem from="1755027396680" duration="17230000" />
+      <workItem from="1755783965229" duration="16493000" />
+      <workItem from="1756302628233" duration="6511000" />
+      <workItem from="1756321139168" duration="3866000" />
+      <workItem from="1756485112364" duration="2073000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="OPEN_GENERIC_TABS">
+      <map>
+        <entry key="4f04d968-59b3-444d-8143-df909fe908b9" value="TOOL_WINDOW" />
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="4f04d968-59b3-444d-8143-df909fe908b9">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
+            </State>
+          </value>
+        </entry>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/src/test/scala/ui/GameControllerTest.scala</url>
+          <line>106</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/src/main/scala/game/action/MoveAction.scala</url>
+          <line>13</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/src/main/scala/gdx/GdxInputProcessor.scala</url>
+          <line>21</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="ScalaTestRunConfiguration">
+        <watch expression="fireballMoving" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/scala_roguelike$scalafx_App.ic" NAME="scalafx.App Coverage Results" MODIFIED="1744709941382" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true">
+      <FILTER>scalafx.*</FILTER>
+    </SUITE>
+    <SUITE FILE_PATH="coverage/scala_roguelike$index_html.dat" NAME="index.html Coverage Results" MODIFIED="1750936899299" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="WipCoverageRunner" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+  </component>
+</project>
