@@ -59,7 +59,24 @@ lazy val root = (project in file("."))
         )
         .generateConfig("Config", gameOptions)
         .listAssets("Assets", gameOptions.assets)
-        .toSourceFiles((Compile / sourceManaged).value)
+        .toSourceFiles((Compile / sourceManaged).value) ++ {
+          // Generate version info with current git commit
+          val gitCommit = try {
+            scala.sys.process.Process("git rev-parse --short HEAD").lineStream.headOption.getOrElse("unknown")
+          } catch {
+            case _: Exception => "unknown"
+          }
+          
+          val versionFile = (Compile / sourceManaged).value / "generated" / "Version.scala"
+          IO.write(versionFile, s"""package generated
+                                  |
+                                  |object Version {
+                                  |  val gitCommit: String = "$gitCommit"
+                                  |  val buildTime: String = "${java.time.Instant.now()}"
+                                  |}
+                                  |""".stripMargin)
+          Seq(versionFile)
+        }
     }
   )
 
