@@ -30,13 +30,24 @@ jobs:
           git fetch origin gh-pages:gh-pages
           git checkout gh-pages
           
-          # Remove PR directory if it exists
+          # Remove PR directory if it exists (check both old and new locations)
+          REMOVED=false
+          if [ -d "previews/pr-${{ github.event.number }}" ]; then
+            rm -rf "previews/pr-${{ github.event.number }}"
+            REMOVED=true
+            echo "Cleaned up new-style preview: previews/pr-${{ github.event.number }}"
+          fi
           if [ -d "pr-${{ github.event.number }}" ]; then
             rm -rf "pr-${{ github.event.number }}"
+            REMOVED=true
+            echo "Cleaned up old-style preview: pr-${{ github.event.number }}"
+          fi
+          
+          if [ "$REMOVED" = true ]; then
             git add .
             git commit -m "Remove PR #${{ github.event.number }} preview" || exit 0
             git push origin gh-pages
-            echo "Cleaned up PR #${{ github.event.number }} preview"
+            echo "Successfully cleaned up PR #${{ github.event.number }} preview"
           else
             echo "No preview found for PR #${{ github.event.number }}"
           fi
@@ -55,7 +66,7 @@ jobs:
           The preview for this PR has been automatically removed from GitHub Pages.
 
           **What was cleaned up:**
-          - Removed \`pr-${prNumber}/\` directory from gh-pages branch
+          - Removed \`previews/pr-${prNumber}/\` directory from gh-pages branch
           - Preview URL is no longer accessible
 
           Thank you for your contribution! 🎉`;

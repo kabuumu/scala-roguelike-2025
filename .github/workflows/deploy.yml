@@ -5,7 +5,9 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: "pages"
@@ -14,12 +16,14 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
     - name: Setup Java
@@ -45,33 +49,14 @@ jobs:
     - name: Build game
       run: sbt build
 
-    - name: Prepare deployment files
-      run: |
-        # Store build files
-        mkdir -p /tmp/build
-        cp -r target/indigoBuild/* /tmp/build/
-        
-        # Configure git
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        # Switch to gh-pages branch (create if doesn't exist)
-        if git ls-remote --exit-code --heads origin gh-pages; then
-          git fetch origin gh-pages:gh-pages
-          git checkout gh-pages
-        else
-          git checkout --orphan gh-pages
-          git rm -rf . 2>/dev/null || true
-        fi
-        
-        # Remove old main game files (but keep PR directories)
-        find . -maxdepth 1 -type f -not -name ".git*" -not -name "pr-*" -delete 2>/dev/null || true
-        find . -maxdepth 1 -type d -not -name ".git" -not -name "pr-*" -exec rm -rf {} + 2>/dev/null || true
-        
-        # Copy new game files to root
-        cp -r /tmp/build/* .
-        
-        # Commit and push
-        git add .
-        git commit -m "Deploy main game from commit ${{ github.sha }}" || exit 0
-        git push origin gh-pages
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: target/indigoBuild
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
