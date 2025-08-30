@@ -1,47 +1,67 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Scala CI
 
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    types: [opened, synchronize, reopened]
 
 permissions:
-  contents: write
-  actions: read
-  security-events: write
+  contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-        - uses: actions/checkout@v4
-        - name: Set up JDK 17
-          uses: actions/setup-java@v4
-          with:
-            java-version: '17'
-            distribution: 'temurin'
-            cache: 'sbt'
-        - name: Set up Python
-          uses: actions/setup-python@v4
-          with:
-            python-version: '3.9'
-        - name: Install sbt
-          uses: coursier/setup-action@v1
-          with:
-            apps: sbt
-        - name: Run tests
-          run: sbt test
-        - name: Generate coverage report
-          run: python3 scripts/analyze_coverage.py
-        - name: Upload coverage report
-          uses: actions/upload-artifact@v4
-          with:
-            name: coverage-report
-            path: coverage-output.txt
-          if: always()
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'sbt'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install sbt
+        uses: coursier/setup-action@v1
+        with:
+          apps: sbt
+
+      - name: Run tests
+        run: sbt test
+
+      - name: Run coverage analysis and enforce 49% baseline
+        run: |
+          set -o pipefail
+          python3 scripts/analyze_coverage.py --no-file | tee coverage-output.txt
+          if grep -q "Coverage Below Threshold" coverage-output.txt; then
+            echo "Coverage baseline (49%) not met."
+            exit 1
+          fi
+
+      - name: Append coverage summary to PR/job
+        if: always()
+        run: |
+          echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          ov=$(grep -m1 "Estimated overall coverage:" coverage-output.txt | sed 's/Estimated overall coverage: //')
+          echo "- Overall: $ov" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "<details><summary>Full report</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat coverage-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-output.txt

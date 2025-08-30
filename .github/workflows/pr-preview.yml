@@ -11,13 +11,14 @@ permissions:
 
 jobs:
   build-preview:
+    # Skip previews for forks (token is read-only on forked PRs)
+    if: ${{ github.event.pull_request.head.repo.fork == false }}
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
     - name: Setup Java
@@ -25,9 +26,6 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
-
-    - name: Setup SBT
-      uses: sbt/setup-sbt@v1
 
     - name: Cache SBT
       uses: actions/cache@v4
@@ -43,22 +41,44 @@ jobs:
     - name: Run tests
       run: sbt test
 
-    - name: Generate coverage report
-      run: python3 scripts/analyze_coverage.py
+    - name: Run coverage analysis and enforce 49% baseline
+      run: |
+        set -o pipefail
+        python3 scripts/analyze_coverage.py --no-file | tee coverage-output.txt
+        if grep -q "Coverage Below Threshold" coverage-output.txt; then
+          echo "Coverage baseline (49%) not met."
+          exit 1
+        fi
+
+    - name: Append coverage summary to PR
+      if: always()
+      run: |
+        echo "## Coverage Summary (PR Preview)" >> $GITHUB_STEP_SUMMARY
+        ov=$(grep -m1 "Estimated overall coverage:" coverage-output.txt | sed 's/Estimated overall coverage: //')
+        echo "- Overall: $ov" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "<details><summary>Full report</summary>" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cat coverage-output.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "</details>" >> $GITHUB_STEP_SUMMARY
 
     - name: Build game
       run: sbt build
 
-    - name: Deploy PR Preview
+    - name: Deploy PR Preview to gh-pages root pr-N and update pr-index
       run: |
+        set -euxo pipefail
+
         # Store build files
         mkdir -p /tmp/build
         cp -r target/indigoBuild/* /tmp/build/
-        
+
         # Configure git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        
+
         # Switch to gh-pages branch (create if doesn't exist)
         if git ls-remote --exit-code --heads origin gh-pages; then
           git fetch origin gh-pages:gh-pages
@@ -66,42 +86,40 @@ jobs:
         else
           git checkout --orphan gh-pages
           git rm -rf . 2>/dev/null || true
-          
-          # Create a placeholder index for PR previews subdirectory
-          mkdir -p previews
-          cat > previews/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Scala Roguelike 2025 - PR Previews</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 40px; }
-                .pr-link { display: block; margin: 10px 0; padding: 10px; 
-                          background: #f5f5f5; text-decoration: none; color: #333; }
-                .pr-link:hover { background: #e5e5e5; }
-            </style>
-        </head>
-        <body>
-            <h1>Scala Roguelike 2025 - PR Previews</h1>
-            <p>This page lists available PR preview builds.</p>
-            <p><a href="https://kabuumu.github.io/scala-roguelike-2025/">← Back to main game</a></p>
-            <div id="pr-list">
-                <!-- PR links will be updated by GitHub Actions -->
-            </div>
-        </body>
-        </html>
-        EOF
         fi
-        
-        # Create PR-specific directory under previews
-        mkdir -p previews/pr-${{ github.event.number }}
-        
+
+        # Create PR-specific directory at repo root (flat)
+        mkdir -p pr-${{ github.event.pull_request.number }}
+
         # Copy build files to PR directory
-        cp -r /tmp/build/* previews/pr-${{ github.event.number }}/
-        
-        # Add and commit changes
+        rsync -a --delete /tmp/build/ pr-${{ github.event.pull_request.number }}/
+
+        # Generate/update pr-index.html listing all pr-* folders
+        bash -c '
+        set -euo pipefail
+        shopt -s nullglob
+        {
+          echo "<!DOCTYPE html>"
+          echo "<html><head><meta charset=\"utf-8\"/>"
+          echo "<title>Scala Roguelike 2025 - PR Previews</title>"
+          echo "<style>body{font-family:Arial,sans-serif;margin:40px} .pr{margin:6px 0}</style>"
+          echo "</head><body>"
+          echo "<h1>PR Previews</h1>"
+          echo "<p><a href=\"./\">Back to main site</a></p>"
+          echo "<ul>"
+          for d in pr-*; do
+            if [ -d \"$d\" ]; then
+              echo "<li class=\\\"pr\\\"><a href=\\\"./$d/\\\">$d</a></li>"
+            fi
+          done
+          echo "</ul>"
+          echo "</body></html>"
+        } > pr-index.html
+        '
+
+        # Commit and push
         git add .
-        git commit -m "Deploy PR #${{ github.event.number }} preview" || exit 0
+        git commit -m "Deploy PR #${{ github.event.pull_request.number }} preview" || true
         git push origin gh-pages
 
     - name: Comment PR with preview link
@@ -109,13 +127,16 @@ jobs:
       with:
         script: |
           const prNumber = context.payload.pull_request.number;
-          const previewUrl = `https://kabuumu.github.io/scala-roguelike-2025/previews/pr-${prNumber}/`;
-          
+          const base = `https://${context.repo.owner}.github.io/${context.repo.repo}`;
+          const previewUrl = `${base}/pr-${prNumber}/`;
+          const indexUrl = `${base}/pr-index.html`;
+
           const comment = `## 🎮 PR Preview Ready!
 
           Your changes are live and ready for testing!
 
           ### 🔗 **[Play the game directly →](${previewUrl})**
+          Alternate index listing all previews: ${indexUrl}
 
           **How to test:**
           1. Click the link above to play immediately in your browser
@@ -124,23 +145,20 @@ jobs:
 
           **Changes in this PR:** ${context.payload.pull_request.title}
 
-          > **Note**: This preview is automatically updated when you push new commits. The preview will be removed when the PR is closed.
-          > **New**: Main site deployments now use GitHub Actions, while PR previews use a separate preview area.`;
-          
-          // Check if we already commented
+          > This preview updates on new commits and is removed when the PR is closed.`;
+
           const comments = await github.rest.issues.listComments({
             owner: context.repo.owner,
             repo: context.repo.repo,
             issue_number: prNumber,
           });
-          
-          const existingComment = comments.data.find(comment => 
-            comment.user.login === 'github-actions[bot]' && 
-            comment.body.includes('🎮 PR Preview Ready!')
+
+          const existingComment = comments.data.find(c =>
+            c.user?.login === 'github-actions[bot]' &&
+            c.body?.includes('🎮 PR Preview Ready!')
           );
-          
+
           if (existingComment) {
-            // Update existing comment
             await github.rest.issues.updateComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -148,7 +166,6 @@ jobs:
               body: comment
             });
           } else {
-            // Create new comment
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,

@@ -7,52 +7,63 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   cleanup-preview:
+    # Skip for forks
+    if: ${{ github.event.pull_request.head.repo.fork == false }}
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout gh-pages
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: gh-pages
         fetch-depth: 0
 
-    - name: Cleanup PR Preview
+    - name: Cleanup PR Preview and update pr-index
       run: |
+        set -euxo pipefail
+
         # Configure git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        
-        # Check if gh-pages branch exists
-        if git ls-remote --exit-code --heads origin gh-pages; then
-          git fetch origin gh-pages:gh-pages
-          git checkout gh-pages
-          
-          # Remove PR directory if it exists (check both old and new locations)
-          REMOVED=false
-          if [ -d "previews/pr-${{ github.event.number }}" ]; then
-            rm -rf "previews/pr-${{ github.event.number }}"
-            REMOVED=true
-            echo "Cleaned up new-style preview: previews/pr-${{ github.event.number }}"
-          fi
-          if [ -d "pr-${{ github.event.number }}" ]; then
-            rm -rf "pr-${{ github.event.number }}"
-            REMOVED=true
-            echo "Cleaned up old-style preview: pr-${{ github.event.number }}"
-          fi
-          
-          if [ "$REMOVED" = true ]; then
-            git add .
-            git commit -m "Remove PR #${{ github.event.number }} preview" || exit 0
-            git push origin gh-pages
-            echo "Successfully cleaned up PR #${{ github.event.number }} preview"
-          else
-            echo "No preview found for PR #${{ github.event.number }}"
-          fi
+
+        # Remove PR directory if it exists
+        if [ -d "pr-${{ github.event.pull_request.number }}" ]; then
+          rm -rf "pr-${{ github.event.pull_request.number }}"
+          echo "Removed pr-${{ github.event.pull_request.number }} directory"
+
+          # Regenerate pr-index.html
+          bash -c '
+          set -euo pipefail
+          shopt -s nullglob
+          {
+            echo "<!DOCTYPE html>"
+            echo "<html><head><meta charset=\"utf-8\"/>"
+            echo "<title>Scala Roguelike 2025 - PR Previews</title>"
+            echo "<style>body{font-family:Arial,sans-serif;margin:40px} .pr{margin:6px 0}</style>"
+            echo "</head><body>"
+            echo "<h1>PR Previews</h1>"
+            echo "<p><a href=\"./\">Back to main site</a></p>"
+            echo "<ul>"
+            for d in pr-*; do
+              if [ -d \"$d\" ]; then
+                echo "<li class=\\\"pr\\\"><a href=\\\"./$d/\\\">$d</a></li>"
+              fi
+            done
+            echo "</ul>"
+            echo "</body></html>"
+          } > pr-index.html
+          '
+
+          # Commit and push
+          git add .
+          git commit -m "Remove PR #${{ github.event.pull_request.number }} preview" || true
+          git push origin gh-pages
         else
-          echo "No gh-pages branch found, nothing to clean up"
+          echo "No preview found for PR #${{ github.event.pull_request.number }}"
         fi
 
     - name: Comment on PR about cleanup
@@ -66,7 +77,8 @@ jobs:
           The preview for this PR has been automatically removed from GitHub Pages.
 
           **What was cleaned up:**
-          - Removed \`previews/pr-${prNumber}/\` directory from gh-pages branch
+          - Removed \`pr-${prNumber}/\` directory from gh-pages branch
+          - Updated pr-index.html listing
           - Preview URL is no longer accessible
 
           Thank you for your contribution! 🎉`;
