@@ -11,6 +11,8 @@ import game.entity.Health.*
 import game.entity.Experience.*
 import game.system.event.GameSystemEvent.AddExperienceEvent
 import ui.UIState.Move
+import ui.GameController
+import ui.GameController.frameTime
 
 class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
 
@@ -44,9 +46,9 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
     damagedWorld
       .beginStory()
       .thePlayer.hasHealth(5)
-      .thePlayer.opensItems()
-      .thePlayer.confirmsSelection() // select the potion
-      .thePlayer.hasHealth(10) // should be fully healed
+      .thePlayer.opensItems()       // enter use-item state (ListSelect)
+      .thePlayer.confirmsSelection() // select the potion (immediately used)
+      .thePlayer.hasHealth(10)      // should be fully healed
   }
 
   test("Using a fireball scroll creates a projectile after targeting") {
@@ -56,13 +58,14 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
       .thePlayerAt(4, 4)
       .withItems(scroll)
       .beginStory()
-      .thePlayer.opensItems()
-      .thePlayer.confirmsSelection() // select the scroll
+      .thePlayer.opensItems()        // enter use-item state (ListSelect)
+      .uiIsListSelect()             // verify we're in item selection
+      .thePlayer.confirmsSelection() // select the scroll (enters ScrollSelect)
       .cursor.moves(Direction.Up, 3) // move target cursor up
-      .uiIsScrollTargetAt(4, 1)
-      .projectilesAre(0)
-      .cursor.confirm() // confirm target
-      .projectilesAre(1)
+      .uiIsScrollTargetAt(4, 1)     // verify cursor position
+      .projectilesAre(0)            // no projectile yet
+      .cursor.confirm()             // confirm target
+      .projectilesAre(1)            // projectile created
   }
 
   test("Firing an arrow damages an enemy") {
@@ -76,12 +79,14 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
       .withItems(bow, arrow)
       .withEntities(enemies*)
       .beginStory()
-      .thePlayer.opensItems()
-      .thePlayer.confirmsSelection() // select the bow
-      .projectilesAre(0)
-      .thePlayer.confirmsSelection() // confirm bow target (auto-targets enemy)
-      .projectilesAre(1)
-      .timePasses(3) // let projectile travel and hit
+      .thePlayer.opensItems()       // enter use-item state (ListSelect with items)
+      .uiIsListSelect()            // verify item selection state
+      .thePlayer.confirmsSelection() // select the bow (enters ListSelect with enemies)
+      .uiIsListSelect()            // verify enemy selection state  
+      .projectilesAre(0)           // no projectile yet
+      .thePlayer.confirmsSelection() // select target enemy
+      .projectilesAre(1)           // projectile created
+      .timePasses(3)               // let projectile travel and hit
       .enemy("enemyId").hasHealth(2) // bow does 8 damage, enemy had 10 health
   }
 
@@ -109,12 +114,13 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
       .withItems(scroll)
       .withEntities((enemy1Entities ++ enemy2Entities)*)
       .beginStory()
-      .thePlayer.opensItems()
-      .thePlayer.confirmsSelection() // select the scroll
+      .thePlayer.opensItems()       // enter use-item state (ListSelect)
+      .uiIsListSelect()            // verify item selection state
+      .thePlayer.confirmsSelection() // select the scroll (enters ScrollSelect)
       .cursor.moves(Direction.Down) // move target to (4, 5)
-      .uiIsScrollTargetAt(4, 5)
-      .cursor.confirm() // confirm fireball target
-      .timePasses(10) // process explosion, collisions, and experience
+      .uiIsScrollTargetAt(4, 5)    // verify cursor position
+      .cursor.confirm()            // confirm fireball target
+      .timePasses(15)              // process explosion, collisions, and experience
       .entityMissing("enemy1")
       .entityMissing("enemy2")
       .thePlayer.component[Experience].satisfies(

@@ -79,8 +79,7 @@ object Given {
 
   object enemies {
     def basic(id: String, x: Int, y: Int, health: Int = 10, withWeapons: Boolean = false, deathEvents: Option[DeathEvents] = None): Seq[Entity] = {
-      val base = Entity(
-        id = id,
+      val baseComponents = Seq(
         Movement(position = Point(x, y)),
         EntityTypeComponent(EntityType.Enemy),
         Health(health),
@@ -91,16 +90,18 @@ object Given {
         Hitbox()
       )
 
-      val withDeath = deathEvents match {
-        case Some(de) => base.update[DeathEvents](_ => de)
-        case None => base
+      val allComponents = deathEvents match {
+        case Some(de) => baseComponents :+ de
+        case None => baseComponents
       }
 
-      if (!withWeapons) Seq(withDeath)
+      val base = Entity(id, allComponents*)
+
+      if (!withWeapons) Seq(base)
       else {
         val p = ItemFactory.createWeapon(s"$id-primary-weapon", 2, Melee)
         val s = ItemFactory.createWeapon(s"$id-secondary-weapon", 1, game.entity.Ranged(6))
-        val withInv = withDeath.update[Inventory](_ => Inventory(Seq(), Some(p.id), Some(s.id)))
+        val withInv = base.update[Inventory](_ => Inventory(Seq(), Some(p.id), Some(s.id)))
         Seq(withInv, p, s)
       }
     }

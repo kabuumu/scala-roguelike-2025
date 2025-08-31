@@ -7,6 +7,7 @@ import game.Direction
 import game.entity.*
 import game.entity.EntityType
 import game.entity.Health.*
+import game.entity.Initiative.*
 import game.entity.EntityType.*
 import org.scalatest.Assertions.*
 import ui.GameController
@@ -23,8 +24,11 @@ final case class GameStory(controller: GameController, tick: Int) {
   def time: Long = tick.toLong * frameTime
 
   // Advance one frame with optional input, returning a NEW GameStory
-  def step(input: Option[Input]): GameStory =
-    copy(controller = controller.update(input, Long.MaxValue), tick = tick + 1)
+  def step(input: Option[Input]): GameStory = {
+    val newTick = tick + 1
+    val newTime = newTick.toLong * frameTime
+    copy(controller = controller.update(input, newTime), tick = newTick)
+  }
 
   // WHEN: Actions that modify the game state
   def timePasses(ticks: Int): GameStory =
@@ -76,6 +80,23 @@ final case class GameStory(controller: GameController, tick: Int) {
     val missing = gs.entities.forall(_.id != id)
     assert(missing, s"Expected entity '$id' to be missing")
     this
+  }
+
+  def debug(msg: String): GameStory = {
+    val playerReady = gs.playerEntity.isReady
+    val playerInit = gs.playerEntity.get[Initiative]
+    val entityCount = gs.entities.length
+    val enemyCount = gs.entities.count(_.entityType == EntityType.Enemy)
+    val enemiesWithDeath = gs.entities.filter(_.entityType == EntityType.Enemy).map(e => s"${e.id}:${e.has[DeathEvents]}")
+    println(s"DEBUG $msg: UI=${ui}, PlayerHealth=${gs.playerEntity.currentHealth}, Tick=$tick, Time=$time, Ready=$playerReady, Init=$playerInit, Entities=$entityCount, Enemies=$enemyCount, EnemyDeath=$enemiesWithDeath")
+    this
+  }
+
+  def uiIsListSelect(): GameStory = {
+    ui match {
+      case _: UIState.ListSelect[_] => this
+      case other => fail(s"Expected UI state ListSelect but was $other")
+    }
   }
 
   def uiIsScrollTargetAt(x: Int, y: Int): GameStory = {
