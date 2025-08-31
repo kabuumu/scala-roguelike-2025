@@ -1,0 +1,27 @@
+[0m[[0m[0minfo[0m] [0m[0mFast optimizing /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/target/scala-3.6.4/scala-roguelike-fastopt[0m
+[0m[[0m[0mdebug[0m] [0m[0mLinker: Compute reachability: 1339085 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mLinker: Assemble LinkedClasses: 89085 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mLinker: 1492806 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mDesugarer: Desugar: 73552 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mDesugarer: 74029 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mOptimizer: Batch mode: true[0m
+[0m[[0m[0mdebug[0m] [0m[0mOptimizer: Incremental part: 352934 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mOptimizer: Elidable constructors: 8395 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mOptimizer: Optimizing 18272 methods.[0m
+[0m[[0m[0mdebug[0m] [0m[0mOptimizer: Optimizer part: 3841552 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mOptimizer: 4223477 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mRefiner: Compute reachability: 372616 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mRefiner: Assemble LinkedClasses: 49973 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mRefiner: 425504 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mModule Splitter: Calculate Dependency Info: 3411 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mModule Splitter: Analyze Modules: 1259 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mModule Splitter: Assemble Modules: 9343 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mModule Splitter: 15281 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mEmitter: Generate Classes: 3005999 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mEmitter: Write trees: 40884 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mEmitter: Class tree cache stats: reused: 0 -- invalidated: 1811[0m
+[0m[[0m[0mdebug[0m] [0m[0mEmitter: Method tree cache stats: reused: 0 -- invalidated: 9638[0m
+[0m[[0m[0mdebug[0m] [0m[0mEmitter: Pre prints: 13718[0m
+[0m[[0m[0mdebug[0m] [0m[0mEmitter: 3113069 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mBasicBackend: Write result: 288390 us[0m
+[0m[[0m[0mdebug[0m] [0m[0mBasicBackend: total modules: 1; re-written: 1[0m

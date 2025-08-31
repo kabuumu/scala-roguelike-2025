@@ -1,0 +1,26 @@
+[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/target/scala-3.6.4/test-classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0mCreated transactional ClassFileManager with tempDir = /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/target/scala-3.6.4/test-classes.bak[0m
+[0m[[0m[0mdebug[0m] [0m[0mAbout to delete class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0mWe backup class files:[0m
+[0m[[0m[0mdebug[0m] [0m[0mRegistering generated classes:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TestComponent.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TestComponent$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	EquipmentSystemTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PathfinderTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AnotherTestComponent.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MapGeneratorTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	EntityTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TestItemFixes.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TestComponent.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TestComponent$.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	EquipmentSystemTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	PathfinderTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	AnotherTestComponent.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	MapGeneratorTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	EntityTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	GameControllerTest.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0m	TestItemFixes.tasty[0m
+[0m[[0m[0mdebug[0m] [0m[0mRemoving the temporary directory used for backing up class files: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/target/scala-3.6.4/test-classes.bak[0m

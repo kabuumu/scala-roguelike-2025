@@ -1,0 +1,84 @@
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(test.TestItemFixes, org.scalajs.testing.common.Serializer$FingerprintSerializer$$anon$5@77f57195, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(ui.GameControllerTest, org.scalajs.testing.common.Serializer$FingerprintSerializer$$anon$5@79f63127, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(game.system.EquipmentSystemTest, org.scalajs.testing.common.Serializer$FingerprintSerializer$$anon$5@4b6bdbf4, false, [SuiteSelector])[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(game.PathfinderTest, org.scalajs.testing.common.Serializer$FingerprintSerializer$$anon$5@7cef30b5, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mGameControllerTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player initiative should decrease when not 0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player should move when given a move action[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player should heal when using a potion[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player using a scroll fireball scroll should create a projectile[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player firing an arrow at an enemy entity[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player fires a fireball that hits multiple enemies, removing them and granting experience[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(game.entity.EntityTest, org.scalajs.testing.common.Serializer$FingerprintSerializer$$anon$5@1f5f8bfa, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mPathfinderTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- findPath returns a valid path when no blockers are present[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- findPath returns a path of only the start when start equals end[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- findPath returns no valid path when no path is possible[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- findPath avoids blockers and finds a valid alternative path[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mRunning TaskDef(map.MapGeneratorTest, org.scalajs.testing.common.Serializer$FingerprintSerializer$$anon$5@25ffca5b, false, [SuiteSelector])[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mEquipmentSystemTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player should start with empty equipment[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment component should calculate total damage reduction correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment component should equip helmet correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment component should equip armor correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment component should replace existing helmet when equipping new one[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment component should unequip helmet correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment component should unequip armor correctly[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player entity should equip item correctly using extension method[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- EquipmentSystem should equip adjacent equipment item[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- EquipmentSystem should show message when no equipment nearby[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- DamageSystem should reduce damage based on equipment[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- DamageSystem should ensure minimum 1 damage even with high armor[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- DamageSystem should combine equipment and status effect damage reduction[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player should equip equipment via GameController using Q key[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment should provide different damage reduction values[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Equipment should have correct slot assignments[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- InventorySystem should NOT auto-pickup equippable items when walked over[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- InventorySystem should still auto-pickup non-equippable items when walked over[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- EquipmentSystem should drop currently equipped item when equipping new item to same slot[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mEntityTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- adding a new component should store it in the components map[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- adding a component should not modify the original entity[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- adding multiple components of different types should store all of them[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- removing a component should remove it from the components map[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- removing a component should not modify the original entity[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- removing a non-existent component should not affect the entity[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- getting an existing component should return it[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- getting a non-existent component should return None[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- updating an existing component should modify it[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- updating a non-existent component should not affect the entity[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mTestItemFixes:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Items should not block movement[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player should be able to walk over and pick up non-equippable items[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- Player should have starting usable items[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mMapGeneratorTest:[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=0, itemCount=0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=0, itemCount=1[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=0, itemCount=2[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=1, itemCount=0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=1, itemCount=1[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=1, itemCount=2[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=2, itemCount=0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=2, itemCount=1[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=10, lockedDoors=2, itemCount=2[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=0, itemCount=0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=0, itemCount=1[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=0, itemCount=2[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=1, itemCount=0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=1, itemCount=1[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=1, itemCount=2[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=2, itemCount=0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=2, itemCount=1[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32m- generateMap creates a simple dungeon for roomSize=20, lockedDoors=2, itemCount=2[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mRun completed in 2 seconds, 46 milliseconds.[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mTotal number of tests run: 60[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mSuites: completed 6, aborted 0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[36mTests: succeeded 60, failed 0, canceled 0, ignored 0, pending 0[0m[0m
+[0m[[0m[0minfo[0m] [0m[0m[32mAll tests passed.[0m[0m
+[0m[[0m[0mdebug[0m] [0m[0mPassed tests:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	game.system.EquipmentSystemTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	map.MapGeneratorTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	game.PathfinderTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ui.GameControllerTest[0m
+[0m[[0m[0mdebug[0m] [0m[0m	test.TestItemFixes[0m
+[0m[[0m[0mdebug[0m] [0m[0m	game.entity.EntityTest[0m

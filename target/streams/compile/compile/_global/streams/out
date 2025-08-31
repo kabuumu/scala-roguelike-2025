@@ -1,0 +1,40 @@
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/game/system/AttackSystem.scala:30:12 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m30 |[0m            [33mval[0m [36mtargetType[0m = [33mif[0m (attackingEntity.entityType == EntityType.Player) EntityType.Enemy [33melse[0m EntityType.Player[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m            ^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m            Line is indented too far to the left, or a `}` is missing[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/game/system/AttackSystem.scala:31:12 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m31 |[0m            [33mval[0m [36mstartingPosition[0m = attackingEntity.position[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m            ^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m            Line is indented too far to the left, or a `}` is missing[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/game/system/AttackSystem.scala:32:12 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m32 |[0m            [33mval[0m [36mprojectileEntity[0m =[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m            ^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m            Line is indented too far to the left, or a `}` is missing[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/game/system/AttackSystem.scala:43:12 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m43 |[0m            [33mval[0m [36mnewGameState[0m = currentState[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m            ^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m            Line is indented too far to the left, or a `}` is missing[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/game/system/AttackSystem.scala:47:12 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m47 |[0m            (newGameState, currentEvents)[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m            ^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m            Line is indented too far to the left, or a `}` is missing[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- [E030] Match case Unreachable Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/game/system/AttackSystem.scala:56:15 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m56 |[0m          [33mcase[0m (Some(attackingEntity), Some(weaponEntity)) =>[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m               Unreachable case[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- [E029] Pattern Match Exhaustivity Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/game/system/InventorySystem.scala:18:6 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m18 |[0m      [33mcase[0m (currentState, GameSystemEvent.CollisionEvent(entityId, CollisionTarget.Entity(collidedWith))) =>[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m   |[0m      ^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m[33mmatch[0m may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0mIt would fail on pattern case: (game.GameState(_, _, _, _), game.system.event.GameSystemEvent.CollisionEvent(_, Wall))[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m   |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m-- [E092] Pattern Match Unchecked Warning: /home/runner/work/scala-roguelike-2025/scala-roguelike-2025/src/main/scala/indigoengine/Game.scala:114:11 [0m[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m114 |[0m      [33mcase[0m list: UIState.ListSelect[Entity] [33mif[0m list.list.head.isInstanceOf[Entity] =>[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m[33m    |[0m           ^[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m    |[0mthe type test for ui.UIState.ListSelect[game.entity.Entity] cannot be checked at runtime because its type arguments can't be determined from ui.UIState.UIState[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m    |[0m[0m
+[0m[[0m[33mwarn[0m] [0m[0m[33m    |[0m longer explanation available when compiling with `-explain`[0m
+[0m[[0m[33mwarn[0m] [0m[0mthere were 4 deprecation warnings; re-run with -deprecation for details[0m
+[0m[[0m[33mwarn[0m] [0m[0m9 warnings found[0m
