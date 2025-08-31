@@ -17,17 +17,17 @@ object Given {
     dungeon: Dungeon
   ) {
     // Generic, component-based player modification using ECS API
-    def modifyPlayer[C](f: C => C)(implicit ct: ClassTag[C]): World =
+    def modifyPlayer[C <: Component](f: C => C)(implicit ct: ClassTag[C]): World =
       copy(player = player.update[C](f))
 
-    def setPlayer[C](c: C)(implicit ct: ClassTag[C]): World =
+    def setPlayer[C <: Component](c: C)(implicit ct: ClassTag[C]): World =
       copy(player = player.update[C](_ => c))
 
     // Generic, component-based entity modification by id
-    def modifyEntity[C](id: String)(f: C => C)(implicit ct: ClassTag[C]): World =
+    def modifyEntity[C <: Component](id: String)(f: C => C)(implicit ct: ClassTag[C]): World =
       copy(entities = entities.map(e => if (e.id == id) e.update[C](f) else e))
 
-    def setEntityComponent[C](id: String, c: C)(implicit ct: ClassTag[C]): World =
+    def setEntityComponent[C <: Component](id: String, c: C)(implicit ct: ClassTag[C]): World =
       copy(entities = entities.map(e => if (e.id == id) e.update[C](_ => c) else e))
 
     // Inventory and population helpers
