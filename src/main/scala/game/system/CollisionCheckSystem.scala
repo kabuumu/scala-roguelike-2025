@@ -3,11 +3,14 @@ package game.system
 import game.GameState
 import game.entity.Hitbox.*
 import game.entity.*
+import game.entity.EntityType.entityType
+import game.entity.Movement.position
 import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget, GameSystemEvent}
 
 object CollisionCheckSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
-    val collidableEntities = gameState.entities.filter(_.has[Hitbox])
+    // Only check collisions for entities that are not marked for death
+    val collidableEntities = gameState.entities.filter(_.has[Hitbox]).filter(!_.has[MarkedForDeath])
     
     val collisionEvents = for {
       //TODO - consolidate collision systems in the future
