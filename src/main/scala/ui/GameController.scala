@@ -142,8 +142,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       }
     case listSelect: UIState.ListSelect[_] =>
       input match {
-        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
-        case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterateDown, None)
+        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterateDown, None)
+        case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterate, None)
         case Input.UseItem | Input.Attack(_) | Input.Confirm =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)
