@@ -52,15 +52,17 @@ case class GameState(playerEntityId: String,
     def processEvents(currentState: GameState, eventsToProcess: Seq[GameSystemEvent]): GameState = {
       // Always run all systems, even if there are no events to process
       // Some systems (like InitiativeSystem, EnemyAISystem) need to run every frame
-      val (newState, newEvents) = systems.foldLeft((currentState, eventsToProcess)) {
-        case ((state, events), system) =>
-          val (updatedState, generatedEvents) = system.update(state, events)
-          (updatedState, generatedEvents)
+      
+      // Pass the same events to all systems, accumulate generated events separately
+      val (newState, allGeneratedEvents) = systems.foldLeft((currentState, Seq.empty[GameSystemEvent])) {
+        case ((state, accumulatedEvents), system) =>
+          val (updatedState, generatedEvents) = system.update(state, eventsToProcess)
+          (updatedState, accumulatedEvents ++ generatedEvents)
       }
       
       // If new events were generated, process them in the next iteration
-      if (newEvents.nonEmpty) {
-        processEvents(newState, newEvents)
+      if (allGeneratedEvents.nonEmpty) {
+        processEvents(newState, allGeneratedEvents)
       } else {
         newState
       }
