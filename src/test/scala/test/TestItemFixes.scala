@@ -5,10 +5,11 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import game.*
 import game.entity.*
-import game.entity.{UsableItem, Targeting, ItemEffect} // New imports for item system
+import game.entity.{UsableItem, Targeting} // New imports for item system
 import game.entity.Inventory.* // Import extension methods
 import game.entity.Movement.* // Import position extension
 import game.entity.EntityType.LockedDoor // Import LockedDoor
+import game.event.{HealEvent, CreateProjectileEvent} // Import events used as effects
 import map.{Dungeon, TileType}
 import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget}
 import game.system.InventorySystem
@@ -101,7 +102,7 @@ class TestItemFixes extends AnyFunSuiteLike with Matchers {
     usableItems.exists(item => 
       item.get[UsableItem].exists(usable => 
         usable.targeting == Targeting.Self && 
-        usable.effects.exists(_.isInstanceOf[ItemEffect.Heal])
+        usable.effects.exists(_.isInstanceOf[HealEvent])
       )
     ) shouldBe true
     

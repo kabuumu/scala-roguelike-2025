@@ -14,8 +14,6 @@ import game.system.event.GameSystemEvent.SpawnEntityEvent
 import ui.InputAction
 import data.Sprites
 
-import scala.util.Random
-
 /**
  * New unified item use system that handles all usable items through the UsableItem component.
  * Replaces both LegacyItemUseSystem and ComponentItemUseSystem with a data-driven approach.
@@ -91,8 +89,8 @@ object ItemUseSystem extends GameSystem {
   }
 
   /**
-   * Apply the effects of a usable item. This is the core logic that converts
-   * item effects into the existing game event system.
+   * Apply the effects of a usable item. Now that UsableItem uses Events directly,
+   * we can apply them with proper parameterization for the current context.
    */
   private def applyItemEffects(
     gameState: GameState, 
@@ -113,9 +111,9 @@ object ItemUseSystem extends GameSystem {
       }
     }
 
-    // Convert item effects to game events
-    val effectEvents = usableItem.effects.flatMap { effect =>
-      convertEffectToEvents(effect, user, targetPoint, targetEntity)
+    // Parameterize the effects for the current usage context
+    val effectEvents = usableItem.effects.map { effect =>
+      parameterizeEffectForContext(effect, user, targetPoint, targetEntity)
     }
 
     // Add item consumption events if needed
@@ -147,81 +145,30 @@ object ItemUseSystem extends GameSystem {
   }
 
   /**
-   * Convert an ItemEffect into the appropriate game events.
-   * This maintains compatibility with the existing event system.
+   * Parameterize an Event template for the current usage context.
+   * This allows Events to be reused across different systems with different parameters.
    */
-  private def convertEffectToEvents(
-    effect: ItemEffect,
+  private def parameterizeEffectForContext(
+    effect: Event,
     user: Entity,
     targetPoint: Option[game.Point],
     targetEntity: Option[Entity]
-  ): Seq[Event] = {
+  ): Event = {
     effect match {
-      case ItemEffect.Heal(amount) =>
+      case HealEvent(_, amount) =>
         if (user.hasFullHealth) {
-          Seq(MessageEvent(s"${System.nanoTime()}: ${user.entityType} is already at full health"))
+          MessageEvent(s"${System.nanoTime()}: ${user.entityType} is already at full health")
         } else {
-          Seq(HealEvent(user.id, amount))
+          HealEvent(user.id, amount)
         }
 
-      case ItemEffect.CreateProjectile(collisionDamage, onDeathExplosion) =>
-        createProjectileEvents(user, collisionDamage, onDeathExplosion, targetPoint, targetEntity)
+      case CreateProjectileEvent(_, _, _, collisionDamage, onDeathExplosion) =>
+        val finalTargetPoint = targetEntity.map(_.position).orElse(targetPoint).getOrElse(user.position)
+        CreateProjectileEvent(user.id, finalTargetPoint, targetEntity, collisionDamage, onDeathExplosion)
+        
+      case other =>
+        // For other event types, return as-is (they may not need parameterization)
+        other
     }
-  }
-
-  /**
-   * Create projectile-related events. This replicates the existing projectile logic
-   * from ComponentItemUseSystem but in a data-driven way.
-   */
-  private def createProjectileEvents(
-    user: Entity,
-    collisionDamage: Int,
-    onDeathExplosion: Option[ExplosionEffect],
-    targetPoint: Option[game.Point],
-    targetEntity: Option[Entity]
-  ): Seq[Event] = {
-    val targetType = if (user.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-    val startingPosition = user.position
-    
-    // Determine the target position for the projectile
-    val finalTargetPoint = targetEntity.map(_.position).orElse(targetPoint).getOrElse(startingPosition)
-
-    // Create the projectile entity
-    val projectileEntity = Entity(
-      id = s"Projectile-${System.nanoTime()}",
-      Movement(position = startingPosition),
-      game.entity.Projectile(startingPosition, finalTargetPoint, targetType, collisionDamage),
-      EntityTypeComponent(EntityType.Projectile),
-      Drawable(Sprites.projectileSprite),
-      Collision(damage = collisionDamage, persistent = false, targetType, user.id),
-      Hitbox()
-    )
-
-    // Add explosion behavior if specified - reusing the OnDeath pattern from the original system
-    val finalProjectileEntity = onDeathExplosion match {
-      case Some(explosion) =>
-        projectileEntity.addComponent(DeathEvents(
-          deathDetails => Seq(SpawnEntityEvent(createExplosionEntity(deathDetails.victim, explosion, targetType, user.id)))
-        ))
-      case None =>
-        projectileEntity
-    }
-
-    Seq(AddEntityEvent(finalProjectileEntity))
-  }
-  
-  /** 
-   * Creates an explosion entity on projectile death - reuses the pattern from the original ComponentItemUseSystem
-   */
-  private def createExplosionEntity(parentEntity: Entity, explosion: ExplosionEffect, targetType: EntityType, creatorId: String): Entity = {
-    Entity(
-      s"explosion ${Random.nextInt()}",
-      Hitbox(Set(game.Point(0, 0))),
-      Collision(damage = explosion.damage, persistent = true, targetType, creatorId),
-      Movement(position = parentEntity.position),
-      Drawable(Sprites.projectileSprite),
-      Wave(explosion.radius),
-      EntityTypeComponent(EntityType.Projectile) // Consistent with original system
-    )
   }
 }

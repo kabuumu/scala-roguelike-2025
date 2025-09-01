@@ -84,9 +84,10 @@ object Elements {
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
     import game.entity.Inventory.*
-    import game.entity.{UsableItem, Ammo, Targeting, ItemEffect}
+    import game.entity.{UsableItem, Ammo, Targeting}
     import game.entity.UsableItem.isUsableItem
     import game.entity.Ammo.isAmmo
+    import game.event.{HealEvent, CreateProjectileEvent}
     import data.Sprites
     import indigoengine.view.BlockBar
     
@@ -120,7 +121,7 @@ object Elements {
             usableItem.targeting match {
               case Targeting.Self => 
                 // Check if it's a heal effect (potion)
-                if (usableItem.effects.exists(_.isInstanceOf[ItemEffect.Heal])) Some("potion") else None
+                if (usableItem.effects.exists(_.isInstanceOf[HealEvent])) Some("potion") else None
               case Targeting.TileInRange(_) => Some("scroll") // Tile-targeted items are scrolls
               case Targeting.EnemyActor => Some("bow") // Enemy-targeted items are bows
             }
