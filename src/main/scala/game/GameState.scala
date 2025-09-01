@@ -49,7 +49,15 @@ case class GameState(playerEntityId: String,
 
   def updateWithSystems(events: Seq[GameSystemEvent]): GameState = {
     @scala.annotation.tailrec
-    def processEvents(currentState: GameState, eventsToProcess: Seq[GameSystemEvent]): GameState = {
+    def processEvents(currentState: GameState, eventsToProcess: Seq[GameSystemEvent], iterationCount: Int): GameState = {
+      // Prevent infinite loops by limiting the number of event processing iterations
+      val maxIterations = 10
+      if (iterationCount >= maxIterations) {
+        // Log warning and return current state to prevent hanging
+        println(s"Warning: GameState.updateWithSystems hit maximum iterations ($maxIterations). Stopping to prevent infinite loop.")
+        return currentState
+      }
+      
       // Always run all systems, even if there are no events to process
       // Some systems (like InitiativeSystem, EnemyAISystem) need to run every frame
       
@@ -62,13 +70,13 @@ case class GameState(playerEntityId: String,
       
       // If new events were generated, process them in the next iteration
       if (allGeneratedEvents.nonEmpty) {
-        processEvents(newState, allGeneratedEvents)
+        processEvents(newState, allGeneratedEvents, iterationCount + 1)
       } else {
         newState
       }
     }
     
-    processEvents(this, events)
+    processEvents(this, events, 0)
   }
 
 
