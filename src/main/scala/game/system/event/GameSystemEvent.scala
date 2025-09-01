@@ -1,7 +1,7 @@
 package game.system.event
 
 import game.Direction
-import game.entity.Entity
+import game.entity.{Entity, ExplosionEffect}
 import ui.InputAction
 
 object GameSystemEvent {
@@ -43,6 +43,32 @@ object GameSystemEvent {
   ) extends GameSystemEvent
   
   case class EquipEvent(
+    entityId: String
+  ) extends GameSystemEvent
+  
+  case class HealEvent(
+    entityId: String,
+    healAmount: Int
+  ) extends GameSystemEvent
+  
+  case class CreateProjectileEvent(
+    creatorId: String,
+    targetPoint: game.Point,
+    targetEntityId: Option[String] = None,
+    collisionDamage: Int,
+    onDeathExplosion: Option[ExplosionEffect] = None
+  ) extends GameSystemEvent
+  
+  case class MessageEvent(
+    message: String
+  ) extends GameSystemEvent
+  
+  case class RemoveItemEntityEvent(
+    playerId: String,
+    itemEntityId: String
+  ) extends GameSystemEvent
+  
+  case class ResetInitiativeEvent(
     entityId: String
   ) extends GameSystemEvent
 }

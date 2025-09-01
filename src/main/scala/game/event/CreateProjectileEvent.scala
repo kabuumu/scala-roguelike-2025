@@ -13,12 +13,15 @@ import scala.util.Random
  * Event for creating projectiles with optional explosion on death.
  * Replaces ItemEffect.CreateProjectile to unify the effect system.
  * 
+ * @deprecated Use GameSystemEvent.CreateProjectileEvent instead for better integration with game systems
+ * 
  * @param creatorId The entity creating the projectile
  * @param targetPoint Where the projectile should go
  * @param targetEntity Optional target entity (takes precedence over targetPoint)
  * @param collisionDamage Damage dealt on collision
  * @param onDeathExplosion Optional explosion effect when projectile dies
  */
+@deprecated("Use GameSystemEvent.CreateProjectileEvent instead for better integration with game systems", "1.0")
 case class CreateProjectileEvent(
   creatorId: String,
   targetPoint: game.Point,

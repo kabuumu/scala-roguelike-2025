@@ -87,7 +87,7 @@ object Elements {
     import game.entity.{UsableItem, Ammo, Targeting}
     import game.entity.UsableItem.isUsableItem
     import game.entity.Ammo.isAmmo
-    import game.event.{HealEvent, CreateProjectileEvent}
+    import game.system.event.GameSystemEvent.{HealEvent, CreateProjectileEvent}
     import data.Sprites
     import indigoengine.view.BlockBar
     

@@ -29,6 +29,9 @@ case class GameState(playerEntityId: String,
     VelocitySystem,
     WaveSystem,
     ItemUseSystem, // New unified item system
+    HealingSystem, // Handles healing events
+    ProjectileCreationSystem, // Handles projectile creation events
+    MessageSystem, // Handles message events
     WaitSystem,
     OpenDoorSystem,
     CollisionCheckSystem,
@@ -45,11 +48,23 @@ case class GameState(playerEntityId: String,
   )
 
   def updateWithSystems(events: Seq[GameSystemEvent]): GameState = {
-    systems.foldLeft((this, events)) {
-      case ((currentState, currentEvents), system) =>
-        val (newState, newEvents) = system.update(currentState, currentEvents)
-        (newState, currentEvents ++ newEvents)
-    }._1
+    @scala.annotation.tailrec
+    def processEvents(currentState: GameState, eventsToProcess: Seq[GameSystemEvent]): GameState = {
+      if (eventsToProcess.isEmpty) {
+        currentState
+      } else {
+        val (newState, newEvents) = systems.foldLeft((currentState, eventsToProcess)) {
+          case ((state, events), system) =>
+            val (updatedState, generatedEvents) = system.update(state, events)
+            (updatedState, generatedEvents)
+        }
+        
+        // Process any newly generated events in the next iteration
+        processEvents(newState, newEvents)
+      }
+    }
+    
+    processEvents(this, events)
   }
 
 

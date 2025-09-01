@@ -12,9 +12,7 @@ import game.{GameState}
 
 object InventorySystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
-    val updatedGameState = events.collect {
-      case event: GameSystemEvent.CollisionEvent => event
-    }.foldLeft(gameState) {
+    val updatedGameState = events.foldLeft(gameState) {
       case (currentState, GameSystemEvent.CollisionEvent(entityId, CollisionTarget.Entity(collidedWith))) =>
         (currentState.getEntity(entityId), currentState.getEntity(collidedWith)) match {
           case (Some(entity@EntityType(Player)), Some(itemEntity)) if itemEntity.canPickUp =>
@@ -36,6 +34,18 @@ object InventorySystem extends GameSystem {
             // If not an item, do nothing
             currentState
         }
+      
+      case (currentState, GameSystemEvent.RemoveItemEntityEvent(playerId, itemEntityId)) =>
+        currentState.getEntity(playerId) match {
+          case Some(player) =>
+            val updatedPlayer = player.removeItemEntity(itemEntityId)
+            currentState.updateEntity(playerId, updatedPlayer)
+          case None =>
+            currentState
+        }
+      
+      case (currentState, _) =>
+        currentState
     }
     (updatedGameState, Nil)
   }

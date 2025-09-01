@@ -9,7 +9,7 @@ import game.entity.{UsableItem, Targeting} // New imports for item system
 import game.entity.Inventory.* // Import extension methods
 import game.entity.Movement.* // Import position extension
 import game.entity.EntityType.LockedDoor // Import LockedDoor
-import game.event.{HealEvent, CreateProjectileEvent} // Import events used as effects
+import game.system.event.GameSystemEvent.{HealEvent, CreateProjectileEvent} // Import GameSystemEvents used as effects
 import map.{Dungeon, TileType}
 import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget}
 import game.system.InventorySystem
