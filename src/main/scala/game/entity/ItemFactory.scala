@@ -3,33 +3,37 @@ package game.entity
 import data.Sprites
 import game.{Point, Sprite}
 
-// Helper object to create various item entities
+// Helper object to create various item entities using the new behavior-driven design
 object ItemFactory {
   
+  /** Create a healing potion using the new UsableItem component */
   def createPotion(id: String): Entity = Entity(
     id = id,
-    PotionItem(),
+    UsableItem.builders.healingPotion(), // Self-targeted Heal(40), consumeOnUse=true
     CanPickUp(),
     Hitbox()
   )
   
+  /** Create a fireball scroll using the new UsableItem component */
   def createScroll(id: String): Entity = Entity(
     id = id,
-    ScrollItem(),
+    UsableItem.builders.fireballScroll(), // TileInRange-targeted CreateProjectile with explosion
     CanPickUp(),
     Hitbox()
   )
   
+  /** Create an arrow using the new Ammo component (non-usable) */
   def createArrow(id: String): Entity = Entity(
     id = id,
-    ArrowItem(),
+    Ammo("Arrow"), // Ammo type, not directly usable
     CanPickUp(),
     Hitbox()
   )
   
+  /** Create a bow using the new UsableItem component */
   def createBow(id: String): Entity = Entity(
     id = id,
-    BowItem(),
+    UsableItem.builders.bow(), // EnemyActor-targeted CreateProjectile(8), ammo="Arrow", consumeOnUse=false
     CanPickUp(),
     Hitbox()
   )

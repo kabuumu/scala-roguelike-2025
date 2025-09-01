@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import game.*
 import game.entity.*
+import game.entity.{UsableItem, Targeting, ItemEffect} // New imports for item system
 import game.entity.Inventory.* // Import extension methods
 import game.entity.Movement.* // Import position extension
 import game.entity.EntityType.LockedDoor // Import LockedDoor
@@ -96,10 +97,25 @@ class TestItemFixes extends AnyFunSuiteLike with Matchers {
     // Check usable items
     val usableItems = player.usableItems(gameState)
     
-    // Player should start with potion, scroll, and bow
-    usableItems.exists(_.has[PotionItem]) shouldBe true
-    usableItems.exists(_.has[ScrollItem]) shouldBe true
-    usableItems.exists(_.has[BowItem]) shouldBe true
+    // Player should start with potion, scroll, and bow using new UsableItem components
+    usableItems.exists(item => 
+      item.get[UsableItem].exists(usable => 
+        usable.targeting == Targeting.Self && 
+        usable.effects.exists(_.isInstanceOf[ItemEffect.Heal])
+      )
+    ) shouldBe true
+    
+    usableItems.exists(item => 
+      item.get[UsableItem].exists(usable => 
+        usable.targeting.isInstanceOf[Targeting.TileInRange]
+      )
+    ) shouldBe true
+    
+    usableItems.exists(item => 
+      item.get[UsableItem].exists(usable => 
+        usable.targeting == Targeting.EnemyActor
+      )
+    ) shouldBe true
     
     usableItems.length should be >= 3
   }

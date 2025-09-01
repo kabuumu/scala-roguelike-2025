@@ -84,8 +84,9 @@ object Elements {
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
     import game.entity.Inventory.*
-    import game.entity.{PotionItem, ScrollItem, BowItem, ArrowItem}
-    import game.entity.ArrowItem.isArrow
+    import game.entity.{UsableItem, Ammo, Targeting, ItemEffect}
+    import game.entity.UsableItem.isUsableItem
+    import game.entity.Ammo.isAmmo
     import data.Sprites
     import indigoengine.view.BlockBar
     
@@ -96,9 +97,9 @@ object Elements {
     // Check if we're in item selection mode
     val selectedItemIndex = model.uiState match {
       case listSelect: UIState.ListSelect[?] if listSelect.list.nonEmpty && listSelect.list.head.isInstanceOf[Entity] =>
-        // Check if the list contains usable items (potions, scrolls, bows)
+        // Check if the list contains usable items
         val entities = listSelect.list.asInstanceOf[Seq[Entity]]
-        if (entities.exists(e => e.has[PotionItem] || e.has[ScrollItem] || e.has[BowItem])) {
+        if (entities.exists(_.isUsableItem)) {
           Some(listSelect.index)
         } else None
       case _ => None
@@ -112,11 +113,26 @@ object Elements {
       val itemSize = spriteScale
       val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
       
+      // Helper function to determine item type from UsableItem component
+      def getItemType(entity: Entity): Option[String] = {
+        entity.get[UsableItem] match {
+          case Some(usableItem) =>
+            usableItem.targeting match {
+              case Targeting.Self => 
+                // Check if it's a heal effect (potion)
+                if (usableItem.effects.exists(_.isInstanceOf[ItemEffect.Heal])) Some("potion") else None
+              case Targeting.TileInRange(_) => Some("scroll") // Tile-targeted items are scrolls
+              case Targeting.EnemyActor => Some("bow") // Enemy-targeted items are bows
+            }
+          case None => None
+        }
+      }
+      
       // Group items by type and count them
-      val potionCount = usableItems.count(_.has[PotionItem])
-      val scrollCount = usableItems.count(_.has[ScrollItem])
-      val bowCount = usableItems.count(_.has[BowItem])
-      val arrowCount = allInventoryItems.count(_.isArrow)
+      val potionCount = usableItems.count(getItemType(_) == Some("potion"))
+      val scrollCount = usableItems.count(getItemType(_) == Some("scroll"))
+      val bowCount = usableItems.count(getItemType(_) == Some("bow"))
+      val arrowCount = allInventoryItems.count(_.isAmmo)
       
       // Create list of unique item types with counts
       val itemTypesWithCounts = Seq(
@@ -127,13 +143,14 @@ object Elements {
       
       // Map usable items to their display type index for highlighting
       val itemToDisplayIndex = usableItems.zipWithIndex.map { case (item, _) =>
-        if (item.has[PotionItem]) 0
-        else if (item.has[ScrollItem]) if (potionCount > 0) 1 else 0
-        else if (item.has[BowItem]) {
-          val offset = (if (potionCount > 0) 1 else 0) + (if (scrollCount > 0) 1 else 0)
-          offset
+        getItemType(item) match {
+          case Some("potion") => 0
+          case Some("scroll") => if (potionCount > 0) 1 else 0
+          case Some("bow") => 
+            val offset = (if (potionCount > 0) 1 else 0) + (if (scrollCount > 0) 1 else 0)
+            offset
+          case _ => -1 // Should not happen with proper UsableItem components
         }
-        else -1 // Should not happen
       }
       
       // Display each item type with count and optional highlighting
