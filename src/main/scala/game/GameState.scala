@@ -50,17 +50,19 @@ case class GameState(playerEntityId: String,
   def updateWithSystems(events: Seq[GameSystemEvent]): GameState = {
     @scala.annotation.tailrec
     def processEvents(currentState: GameState, eventsToProcess: Seq[GameSystemEvent]): GameState = {
-      if (eventsToProcess.isEmpty) {
-        currentState
-      } else {
-        val (newState, newEvents) = systems.foldLeft((currentState, eventsToProcess)) {
-          case ((state, events), system) =>
-            val (updatedState, generatedEvents) = system.update(state, events)
-            (updatedState, generatedEvents)
-        }
-        
-        // Process any newly generated events in the next iteration
+      // Always run all systems, even if there are no events to process
+      // Some systems (like InitiativeSystem, EnemyAISystem) need to run every frame
+      val (newState, newEvents) = systems.foldLeft((currentState, eventsToProcess)) {
+        case ((state, events), system) =>
+          val (updatedState, generatedEvents) = system.update(state, events)
+          (updatedState, generatedEvents)
+      }
+      
+      // If new events were generated, process them in the next iteration
+      if (newEvents.nonEmpty) {
         processEvents(newState, newEvents)
+      } else {
+        newState
       }
     }
     
