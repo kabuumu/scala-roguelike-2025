@@ -3,7 +3,7 @@ package map
 import scala.annotation.tailrec
 
 object MapGenerator {
-  def generateDungeon(dungeonSize: Int, lockedDoorCount: Int = 0, itemCount: Int = 0): Dungeon = {
+  def generateDungeon(dungeonSize: Int, lockedDoorCount: Int = 0, itemCount: Int = 0, seed: Long = System.currentTimeMillis()): Dungeon = {
     val startTime = System.currentTimeMillis()
 
     val mutators: Set[DungeonMutator] = Set(
@@ -36,7 +36,7 @@ object MapGenerator {
       }
     }
 
-    val dungeon = recursiveGenerator(Set(Dungeon()))
+    val dungeon = recursiveGenerator(Set(Dungeon(seed = seed)))
 
     println("Generating Dungeon")
     println(s"  Generated dungeon with ${dungeon.roomGrid.size} rooms, " +
