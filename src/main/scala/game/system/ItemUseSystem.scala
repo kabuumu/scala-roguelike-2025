@@ -208,7 +208,7 @@ object ItemUseSystem extends GameSystem {
             Movement(position = deathDetails.victim.position),
             EntityTypeComponent(EntityType.Enemy), // Treated as enemy for collision purposes
             Wave(explosion.radius),
-            Drawable(Sprites.enemySprite)
+            Drawable(Sprites.projectileSprite)
           )))
         ))
       case None =>
