@@ -363,7 +363,7 @@ object Elements {
       val xOffset = xPosition * spriteScale + uiXOffset - (spriteScale / 2) // X position of the bar
       val yOffset = yPosition * spriteScale + uiYOffset + (spriteScale / 2)// Y position of the bar
 
-      val filledWidth = (currentHealth * barWidth) / maxHealth
+      val filledWidth = if (maxHealth > 0) (currentHealth * barWidth) / maxHealth else 0
 
       BlockBar.attributeBar(
         bounds = Rectangle(Point(xOffset, yOffset), Size(barWidth, barHeight)),
