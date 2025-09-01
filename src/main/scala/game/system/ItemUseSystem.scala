@@ -197,24 +197,31 @@ object ItemUseSystem extends GameSystem {
       Hitbox()
     )
 
-    // Add explosion behavior if specified
+    // Add explosion behavior if specified - reusing the OnDeath pattern from the original system
     val finalProjectileEntity = onDeathExplosion match {
       case Some(explosion) =>
         projectileEntity.addComponent(DeathEvents(
-          deathDetails => Seq(SpawnEntityEvent(Entity(
-            s"explosion ${Random.nextInt()}",
-            Hitbox(Set(game.Point(0, 0))),
-            Collision(damage = explosion.damage, persistent = true, targetType, user.id),
-            Movement(position = deathDetails.victim.position),
-            EntityTypeComponent(EntityType.Enemy), // Treated as enemy for collision purposes
-            Wave(explosion.radius),
-            Drawable(Sprites.projectileSprite)
-          )))
+          deathDetails => Seq(SpawnEntityEvent(createExplosionEntity(deathDetails.victim, explosion, targetType, user.id)))
         ))
       case None =>
         projectileEntity
     }
 
     Seq(AddEntityEvent(finalProjectileEntity))
+  }
+  
+  /** 
+   * Creates an explosion entity on projectile death - reuses the pattern from the original ComponentItemUseSystem
+   */
+  private def createExplosionEntity(parentEntity: Entity, explosion: ExplosionEffect, targetType: EntityType, creatorId: String): Entity = {
+    Entity(
+      s"explosion ${Random.nextInt()}",
+      Hitbox(Set(game.Point(0, 0))),
+      Collision(damage = explosion.damage, persistent = true, targetType, creatorId),
+      Movement(position = parentEntity.position),
+      Drawable(Sprites.projectileSprite),
+      Wave(explosion.radius),
+      EntityTypeComponent(EntityType.Projectile) // Consistent with original system
+    )
   }
 }
