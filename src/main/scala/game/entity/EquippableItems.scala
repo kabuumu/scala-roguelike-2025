@@ -9,7 +9,8 @@ object EquippableItems {
       id = id,
       CanPickUp(),
       Equippable(EquipmentSlot.Helmet, 2, "Leather Helmet"),
-      Hitbox()
+      Hitbox(),
+      Drawable(data.Sprites.leatherHelmetSprite)
     )
   }
   
@@ -18,7 +19,8 @@ object EquippableItems {
       id = id,
       CanPickUp(),
       Equippable(EquipmentSlot.Helmet, 4, "Iron Helmet"),
-      Hitbox()
+      Hitbox(),
+      Drawable(data.Sprites.ironHelmetSprite)
     )
   }
   
@@ -28,7 +30,8 @@ object EquippableItems {
       id = id,
       CanPickUp(),
       Equippable(EquipmentSlot.Armor, 5, "Chainmail Armor"),
-      Hitbox()
+      Hitbox(),
+      Drawable(data.Sprites.chainmailArmorSprite)
     )
   }
   
@@ -37,7 +40,8 @@ object EquippableItems {
       id = id,
       CanPickUp(),
       Equippable(EquipmentSlot.Armor, 8, "Plate Armor"),
-      Hitbox()
+      Hitbox(),
+      Drawable(data.Sprites.plateArmorSprite)
     )
   }
 }

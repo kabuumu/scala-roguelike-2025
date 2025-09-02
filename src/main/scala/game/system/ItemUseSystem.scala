@@ -7,7 +7,6 @@ import game.entity.Health.hasFullHealth
 import game.entity.Movement.position
 import game.entity.Inventory.inventoryItems
 import game.entity.UsableItem.isUsableItem
-import game.entity.Ammo.isAmmoType
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.*
 import ui.InputAction
@@ -102,15 +101,13 @@ object ItemUseSystem extends GameSystem {
     targetPoint: Option[game.Point] = None,
     targetEntity: Option[Entity] = None
   ): Seq[GameSystemEvent.GameSystemEvent] = {
-    
+
     // Check ammo requirements if this item needs ammo
-    if (usableItem.ammo.isDefined) {
-      val requiredAmmoType = usableItem.ammo.get
-      val availableAmmo = user.inventoryItems(gameState).find(_.isAmmoType(requiredAmmoType))
-      if (availableAmmo.isEmpty) {
-        // No ammo available, cannot use item
-        return Nil
-      }
+    val hasAmmo = usableItem.ammo match {
+      case Some(ammoType) =>
+        user.inventoryItems(gameState).exists(_.exists[Ammo](_.ammoType == ammoType))
+      case None =>
+        true // No ammo required
     }
 
     // Parameterize the effects for the current usage context
@@ -128,9 +125,11 @@ object ItemUseSystem extends GameSystem {
     // Add ammo consumption events if needed
     val ammoConsumptionEvents = usableItem.ammo match {
       case Some(ammoType) =>
-        user.inventoryItems(gameState).find(_.isAmmoType(ammoType)) match {
-          case Some(ammoEntity) => Seq(GameSystemEvent.RemoveItemEntityEvent(user.id, ammoEntity.id))
-          case None => Nil
+        user.inventoryItems(gameState).find(_.exists[Ammo](_.ammoType == ammoType)) match {
+          case Some(ammo) =>
+            Seq(GameSystemEvent.RemoveItemEntityEvent(user.id, ammo.id))
+          case None =>
+            Nil
         }
       case None => Nil
     }
@@ -142,7 +141,9 @@ object ItemUseSystem extends GameSystem {
     val messageEvents = Seq(GameSystemEvent.MessageEvent(s"${System.nanoTime()}: ${user.entityType} used ${itemEntity.id}"))
 
     // Return all events to be processed by the appropriate systems
-    effectEvents ++ consumptionEvents ++ ammoConsumptionEvents ++ initiativeEvents ++ messageEvents
+    if(hasAmmo) {
+      effectEvents ++ consumptionEvents ++ ammoConsumptionEvents ++ initiativeEvents ++ messageEvents
+    } else Nil
   }
 
   /**

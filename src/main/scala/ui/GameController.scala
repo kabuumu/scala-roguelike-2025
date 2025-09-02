@@ -85,7 +85,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.Move, None)
           }
         case Input.UseItem =>
-          val usableItems = gameState.playerEntity.usableItems(gameState)
+          val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(_.get[UsableItem])
+          usableItems.foreach(item => println(s"Usable item: ${item.get[UsableItem]}"))
           if (usableItems.nonEmpty) {
             (UIState.ListSelect[Entity](
               list = usableItems,
@@ -107,7 +108,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
                         // Entity-targeted items (bows)
                         val enemies = enemiesWithinRange(10)
                         val hasRequiredAmmo = usableItem.ammo match {
-                          case Some(ammoType) => gameState.playerEntity.inventoryItems(gameState).exists(_.get[Ammo].exists(_.tag == ammoType))
+                          case Some(ammoType) => gameState.playerEntity.inventoryItems(gameState).exists(_.exists[Ammo](_.ammoType == ammoType))
                           case None => true
                         }
                         if (enemies.nonEmpty && hasRequiredAmmo) {
@@ -142,8 +143,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       }
     case listSelect: UIState.ListSelect[_] =>
       input match {
-        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterateDown, None)
-        case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterate, None)
+        case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterateDown, None)
+        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
         case Input.UseItem | Input.Attack(_) | Input.Confirm =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)

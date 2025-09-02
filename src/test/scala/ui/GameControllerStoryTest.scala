@@ -86,7 +86,8 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
       .projectilesAre(0)           // no projectile yet
       .thePlayer.confirmsSelection() // select target enemy
       .projectilesAre(1)           // projectile created
-      .timePasses(3)               // let projectile travel and hit
+      .timePasses(10)               // let projectile travel and hit
+      .projectilesAre(0)
       .enemy("enemyId").hasHealth(2) // bow does 8 damage, enemy had 10 health
   }
 

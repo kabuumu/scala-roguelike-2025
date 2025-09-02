@@ -1,7 +1,8 @@
 package game.entity
 
+import game.entity.Ammo.AmmoType
 import game.system.event.GameSystemEvent
-import game.system.event.GameSystemEvent.{HealEvent, CreateProjectileEvent}
+import game.system.event.GameSystemEvent.{CreateProjectileEvent, HealEvent}
 
 /**
  * Universal usable item component that replaces type-specific item components.
@@ -17,7 +18,7 @@ case class UsableItem(
   targeting: Targeting,
   effects: Seq[GameSystemEvent.GameSystemEvent],
   consumeOnUse: Boolean = true,
-  ammo: Option[String] = None
+  ammo: Option[AmmoType] = None
 ) extends Component
 
 object UsableItem {
@@ -33,8 +34,8 @@ object UsableItem {
       UsableItem(Targeting.Self, Seq(HealEvent("", healAmount)), consumeOnUse = true)
     
     /** Create an enemy-targeting bow that requires arrows */
-    def bow(damage: Int = 8, ammoType: String = "Arrow"): UsableItem =
-      UsableItem(Targeting.EnemyActor, Seq(CreateProjectileEvent("", game.Point(0, 0), None, damage)), consumeOnUse = false, ammo = Some(ammoType))
+    def bow(damage: Int = 8): UsableItem =
+      UsableItem(Targeting.EnemyActor, Seq(CreateProjectileEvent("", game.Point(0, 0), None, damage)), consumeOnUse = false, ammo = Some(AmmoType.Arrow))
     
     /** Create a tile-targeting fireball scroll with explosion */
     def fireballScroll(explosionRadius: Int = 2, explosionDamage: Int = 30): UsableItem =

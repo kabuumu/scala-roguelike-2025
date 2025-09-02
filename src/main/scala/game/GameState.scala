@@ -21,7 +21,7 @@ case class GameState(playerEntityId: String,
   }
 
   val systems: Seq[GameSystem] = Seq(
-    SpawnEntitySystem,
+    DeathHandlerSystem, // Moved after collision processing to avoid removing entities before collision handling
     ExperienceSystem,
     EnemyAISystem,
     MovementSystem,
@@ -31,6 +31,7 @@ case class GameState(playerEntityId: String,
     HealingSystem, // Handles healing events
     ProjectileCreationSystem, // Handles projectile creation events
     MessageSystem, // Handles message events
+    SpawnEntitySystem,
     WaitSystem,
     OpenDoorSystem,
     CollisionCheckSystem,
@@ -38,7 +39,6 @@ case class GameState(playerEntityId: String,
     RangeCheckSystem,
     CollisionHandlerSystem,
     DamageSystem,
-    DeathHandlerSystem, // Moved after collision processing to avoid removing entities before collision handling
     EquipInputSystem,
     EquipmentSystem,
     InventorySystem,
@@ -48,35 +48,11 @@ case class GameState(playerEntityId: String,
   )
 
   def updateWithSystems(events: Seq[GameSystemEvent]): GameState = {
-    @scala.annotation.tailrec
-    def processEvents(currentState: GameState, eventsToProcess: Seq[GameSystemEvent], iterationCount: Int): GameState = {
-      // Prevent infinite loops by limiting the number of event processing iterations
-      val maxIterations = 10
-      if (iterationCount >= maxIterations) {
-        // Log warning and return current state to prevent hanging
-        println(s"Warning: GameState.updateWithSystems hit maximum iterations ($maxIterations). Stopping to prevent infinite loop.")
-        return currentState
-      }
-      
-      // Always run all systems, even if there are no events to process
-      // Some systems (like InitiativeSystem, EnemyAISystem) need to run every frame
-      
-      // Pass the same events to all systems, accumulate generated events separately
-      val (newState, allGeneratedEvents) = systems.foldLeft((currentState, Seq.empty[GameSystemEvent])) {
-        case ((state, accumulatedEvents), system) =>
-          val (updatedState, generatedEvents) = system.update(state, eventsToProcess)
-          (updatedState, accumulatedEvents ++ generatedEvents)
-      }
-      
-      // If new events were generated, process them in the next iteration
-      if (allGeneratedEvents.nonEmpty) {
-        processEvents(newState, allGeneratedEvents, iterationCount + 1)
-      } else {
-        newState
-      }
-    }
-    
-    processEvents(this, events, 0)
+    systems.foldLeft((this, events)) {
+      case ((currentState, currentEvents), system) =>
+        val (newState, newEvents) = system.update(currentState, currentEvents)
+        (newState, currentEvents ++ newEvents)
+    }._1
   }
 
 
