@@ -85,14 +85,14 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.Move, None)
           }
         case Input.UseItem =>
-          val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(_.get[UsableItem])
-          usableItems.foreach(item => println(s"Usable item: ${item.get[UsableItem]}"))
+          val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(UsableItem.getUsableItem)
+          usableItems.foreach(item => println(s"Usable item: ${UsableItem.getUsableItem(item)}"))
           if (usableItems.nonEmpty) {
             (UIState.ListSelect[Entity](
               list = usableItems,
               effect = itemEntity => {
                 // Handle different item types based on UsableItem component
-                itemEntity.get[UsableItem] match {
+                UsableItem.getUsableItem(itemEntity) match {
                   case Some(usableItem) =>
                     usableItem.targeting match {
                       case Targeting.Self =>

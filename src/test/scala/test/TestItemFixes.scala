@@ -18,6 +18,21 @@ class TestItemFixes extends AnyFunSuiteLike with Matchers {
   // Create a simple test dungeon
   val testDungeon = Dungeon(testMode = true)
 
+  // Helper function to check if a usable item has heal effects
+  private def checkHasHealEffect(usableItem: UsableItem[?]): Boolean = {
+    // For self-targeting items, we can safely create a dummy target to test the effects
+    usableItem.targeting match {
+      case Targeting.Self =>
+        // Create a dummy user entity to test with
+        val dummyUser = Entity("dummy", EntityTypeComponent(EntityType.Player), Health(10))
+        val dummyTarget = EntityTarget(dummyUser)
+        val effects = usableItem.asInstanceOf[UsableItem[EntityTarget]].effects(dummyUser, dummyTarget)
+        effects.exists(_.isInstanceOf[HealEvent])
+      case _ =>
+        false // Not a self-targeting heal item
+    }
+  }
+
   test("Items should not block movement") {
     // Use the actual starting state to get a proper dungeon
     val gameState = game.StartingState.startingGameState
@@ -100,20 +115,20 @@ class TestItemFixes extends AnyFunSuiteLike with Matchers {
     
     // Player should start with potion, scroll, and bow using new UsableItem components
     usableItems.exists(item => 
-      item.get[UsableItem].exists(usable => 
+      UsableItem.getUsableItem(item).exists(usable => 
         usable.targeting == Targeting.Self && 
-        usable.effects.exists(_.isInstanceOf[HealEvent])
+        checkHasHealEffect(usable)
       )
     ) shouldBe true
     
     usableItems.exists(item => 
-      item.get[UsableItem].exists(usable => 
+      UsableItem.getUsableItem(item).exists(usable => 
         usable.targeting.isInstanceOf[Targeting.TileInRange]
       )
     ) shouldBe true
     
     usableItems.exists(item => 
-      item.get[UsableItem].exists(usable => 
+      UsableItem.getUsableItem(item).exists(usable => 
         usable.targeting == Targeting.EnemyActor
       )
     ) shouldBe true

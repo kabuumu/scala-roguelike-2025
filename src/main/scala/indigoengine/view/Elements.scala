@@ -116,9 +116,9 @@ object Elements {
       val itemTypesWithCounts = usableItems.map {
         item =>
           val sprite = item.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite) //Temp code, need explicit way to set item sprite
-          val count = item.get[UsableItem].flatMap(_.ammo) match {
+          val count = UsableItem.getUsableItem(item).flatMap(_.ammo) match {
             case Some(requiredAmmo) => allInventoryItems.count(_.exists[Ammo](_.ammoType == requiredAmmo))
-            case None => usableItems.count(_.get[UsableItem] == item.get[UsableItem])
+            case None => usableItems.count(UsableItem.getUsableItem(_) == UsableItem.getUsableItem(item))
           }
 
           sprite -> count
