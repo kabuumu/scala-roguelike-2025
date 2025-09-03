@@ -1,5 +1,6 @@
 package game.entity
 
+import game.entity
 import game.entity.KeyItem.{isKey, keyItem}
 
 case class Inventory(
@@ -41,12 +42,10 @@ object Inventory {
     def hasKey(gameState: game.GameState, keyColour: KeyColour): Boolean =
       keys(gameState).exists(_.keyItem.exists(_.keyColour == keyColour))
 
-    // Get usable items (potions, scrolls, bows) from inventory
+    // Get usable items from inventory (items with UsableItem component)
     def usableItems(gameState: game.GameState): Seq[Entity] = 
-      inventoryItems(gameState).filter(item => 
-        item.has[PotionItem] || item.has[ScrollItem] || item.has[BowItem]
-      )
-
+      inventoryItems(gameState).filter(UsableItem.isUsableItemEntity)
+    
     def addItemEntity(itemEntityId: String): Entity = 
       entity.update[Inventory](_.addItemEntityId(itemEntityId))
 

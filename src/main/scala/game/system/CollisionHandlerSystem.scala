@@ -7,12 +7,14 @@ import game.{DeathDetails, GameState}
 import Health.*
 
 object CollisionHandlerSystem extends GameSystem {
-  override def update(gameState: GameState, events: Seq[GameSystemEvent.GameSystemEvent]): (GameState, Seq[GameSystemEvent.GameSystemEvent]) =
-    events.collect {
+  override def update(gameState: GameState, events: Seq[GameSystemEvent.GameSystemEvent]): (GameState, Seq[GameSystemEvent.GameSystemEvent]) = {
+    val collisionEvents = events.collect {
       case event: CollisionEvent => event
-    }.foldLeft((gameState, Nil)) {
+    }
+    
+    collisionEvents.foldLeft((gameState, Nil)) {
       case ((currentGameState, currentEvents), CollisionEvent(entityId, collisionTarget)) =>
-        (gameState.getEntity(entityId), collisionTarget) match {
+        (currentGameState.getEntity(entityId), collisionTarget) match {
           case (Some(entity), CollisionTarget.Wall) if entity.get[Collision].exists(_.persistent == false) =>
             (currentGameState.updateEntity(entityId, _.addComponent(MarkedForDeath(DeathDetails(entity)))), currentEvents)
           case (Some(entity), CollisionTarget.Entity(collidedEntityId)) =>
@@ -30,4 +32,5 @@ object CollisionHandlerSystem extends GameSystem {
           case _ => (currentGameState, currentEvents)
         }
     }
+  }
 }

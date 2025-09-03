@@ -1,14 +1,15 @@
 package game.system
 
 import game.GameState
-import game.entity.{DeathEvents, MarkedForDeath}
+import game.entity.{DeathEvents, MarkedForDeath, EntityType}
+import game.entity.EntityType.entityType
 import game.system.event.GameSystemEvent.GameSystemEvent
 
 object DeathHandlerSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
-    gameState.entities
-      .filter(_.has[MarkedForDeath])
-      .foldLeft((gameState, Seq.empty[GameSystemEvent])) {
+    val entitiesMarkedForDeath = gameState.entities.filter(_.has[MarkedForDeath])
+    
+    entitiesMarkedForDeath.foldLeft((gameState, Seq.empty[GameSystemEvent])) {
       case ((currentGameState, currentEvents), entity) =>
         (entity.get[DeathEvents], entity.get[MarkedForDeath]) match {
           case (optDeathEvents, Some(markedForDeath)) =>

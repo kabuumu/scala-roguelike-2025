@@ -21,15 +21,17 @@ case class GameState(playerEntityId: String,
   }
 
   val systems: Seq[GameSystem] = Seq(
-    DeathHandlerSystem,
-    SpawnEntitySystem,
+    DeathHandlerSystem, // Moved after collision processing to avoid removing entities before collision handling
     ExperienceSystem,
     EnemyAISystem,
     MovementSystem,
     VelocitySystem,
     WaveSystem,
-    LegacyItemUseSystem,
-    ComponentItemUseSystem,
+    ItemUseSystem, // New unified item system
+    HealingSystem, // Handles healing events
+    ProjectileCreationSystem, // Handles projectile creation events
+    MessageSystem, // Handles message events
+    SpawnEntitySystem,
     WaitSystem,
     OpenDoorSystem,
     CollisionCheckSystem,

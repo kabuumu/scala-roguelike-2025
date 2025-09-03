@@ -2,6 +2,7 @@ package ui
 
 import game.Input.*
 import game.entity.*
+import game.entity.{UsableItem, Targeting, Ammo} // New item system imports
 import game.entity.EntityType.*
 import game.entity.Experience.*
 import game.entity.Health.*
@@ -84,34 +85,43 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
             (UIState.Move, None)
           }
         case Input.UseItem =>
-          val usableItems = gameState.playerEntity.usableItems(gameState)
+          val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(UsableItem.getUsableItem)
+          usableItems.foreach(item => println(s"Usable item: ${UsableItem.getUsableItem(item)}"))
           if (usableItems.nonEmpty) {
             (UIState.ListSelect[Entity](
               list = usableItems,
               effect = itemEntity => {
-                // Handle different item types
-                if (itemEntity.has[PotionItem]) {
-                  // Potions are non-targeted
-                  (UIState.Move, Some(InputAction.UseComponentItem(itemEntity.id)))
-                } else if (itemEntity.has[ScrollItem]) {
-                  // Scrolls are point-targeted
-                  (UIState.ScrollSelect(
-                    cursor = gameState.playerEntity.position,
-                    effect = targetPoint => (UIState.Move, Some(InputAction.UseComponentItemAtPoint(itemEntity.id, targetPoint)))
-                  ), None)
-                } else if (itemEntity.has[BowItem]) {
-                  // Bows are entity-targeted
-                  val enemies = enemiesWithinRange(10)
-                  if (enemies.nonEmpty && gameState.playerEntity.inventoryItems(gameState).exists(_.has[ArrowItem])) {
-                    (UIState.ListSelect(
-                      list = enemies,
-                      effect = target => (UIState.Move, Some(InputAction.UseComponentItemOnEntity(itemEntity.id, target.id)))
-                    ), None)
-                  } else {
-                    (UIState.Move, None) // No enemies in range or no arrows
-                  }
-                } else {
-                  (UIState.Move, None)
+                // Handle different item types based on UsableItem component
+                UsableItem.getUsableItem(itemEntity) match {
+                  case Some(usableItem) =>
+                    usableItem.targeting match {
+                      case Targeting.Self =>
+                        // Self-targeted items (potions)
+                        (UIState.Move, Some(InputAction.UseComponentItem(itemEntity.id)))
+                      case Targeting.TileInRange(_) =>
+                        // Tile-targeted items (scrolls)
+                        (UIState.ScrollSelect(
+                          cursor = gameState.playerEntity.position,
+                          effect = targetPoint => (UIState.Move, Some(InputAction.UseComponentItemAtPoint(itemEntity.id, targetPoint)))
+                        ), None)
+                      case Targeting.EnemyActor =>
+                        // Entity-targeted items (bows)
+                        val enemies = enemiesWithinRange(10)
+                        val hasRequiredAmmo = usableItem.ammo match {
+                          case Some(ammoType) => gameState.playerEntity.inventoryItems(gameState).exists(_.exists[Ammo](_.ammoType == ammoType))
+                          case None => true
+                        }
+                        if (enemies.nonEmpty && hasRequiredAmmo) {
+                          (UIState.ListSelect(
+                            list = enemies,
+                            effect = target => (UIState.Move, Some(InputAction.UseComponentItemOnEntity(itemEntity.id, target.id)))
+                          ), None)
+                        } else {
+                          (UIState.Move, None) // No enemies in range or no required ammo
+                        }
+                    }
+                  case None =>
+                    (UIState.Move, None) // Item has no UsableItem component
                 }
               }
             ), None)
@@ -133,8 +143,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       }
     case listSelect: UIState.ListSelect[_] =>
       input match {
-        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
         case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterateDown, None)
+        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
         case Input.UseItem | Input.Attack(_) | Input.Confirm =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)

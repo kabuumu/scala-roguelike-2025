@@ -1,7 +1,7 @@
 package indigoengine.view
 
-import game.entity.{Entity, Equipment}
-import game.entity.Equipment.*
+import game.entity
+import game.entity.{Drawable, Entity, Equipment}
 import game.status.StatusEffect
 import generated.{Assets, PixelFont, PixelFontSmall}
 import indigo.*
@@ -83,11 +83,12 @@ object Elements {
   }
 
   def usableItems(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
-    import game.entity.Inventory.*
-    import game.entity.{PotionItem, ScrollItem, BowItem, ArrowItem}
-    import game.entity.ArrowItem.isArrow
     import data.Sprites
-    import indigoengine.view.BlockBar
+    import game.entity.Ammo.isAmmo
+    import game.entity.Inventory.*
+    import game.entity.UsableItem.isUsableItem
+    import game.entity.{Ammo, Targeting, UsableItem}
+    import game.system.event.GameSystemEvent.HealEvent
     
     val player = model.gameState.playerEntity
     val usableItems = player.usableItems(model.gameState)
@@ -96,9 +97,9 @@ object Elements {
     // Check if we're in item selection mode
     val selectedItemIndex = model.uiState match {
       case listSelect: UIState.ListSelect[?] if listSelect.list.nonEmpty && listSelect.list.head.isInstanceOf[Entity] =>
-        // Check if the list contains usable items (potions, scrolls, bows)
+        // Check if the list contains usable items
         val entities = listSelect.list.asInstanceOf[Seq[Entity]]
-        if (entities.exists(e => e.has[PotionItem] || e.has[ScrollItem] || e.has[BowItem])) {
+        if (entities.exists(_.isUsableItem)) {
           Some(listSelect.index)
         } else None
       case _ => None
@@ -112,55 +113,41 @@ object Elements {
       val itemSize = spriteScale
       val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
       
-      // Group items by type and count them
-      val potionCount = usableItems.count(_.has[PotionItem])
-      val scrollCount = usableItems.count(_.has[ScrollItem])
-      val bowCount = usableItems.count(_.has[BowItem])
-      val arrowCount = allInventoryItems.count(_.isArrow)
-      
-      // Create list of unique item types with counts
-      val itemTypesWithCounts = Seq(
-        if (potionCount > 0) Some((Sprites.potionSprite, potionCount)) else None,
-        if (scrollCount > 0) Some((Sprites.scrollSprite, scrollCount)) else None,
-        if (bowCount > 0) Some((Sprites.bowSprite, arrowCount)) else None // Show arrow count for bows
-      ).flatten
-      
-      // Map usable items to their display type index for highlighting
-      val itemToDisplayIndex = usableItems.zipWithIndex.map { case (item, _) =>
-        if (item.has[PotionItem]) 0
-        else if (item.has[ScrollItem]) if (potionCount > 0) 1 else 0
-        else if (item.has[BowItem]) {
-          val offset = (if (potionCount > 0) 1 else 0) + (if (scrollCount > 0) 1 else 0)
-          offset
-        }
-        else -1 // Should not happen
+      val itemTypesWithCounts = usableItems.map {
+        item =>
+          val sprite = item.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite) //Temp code, need explicit way to set item sprite
+          val count = UsableItem.getUsableItem(item).flatMap(_.ammo) match {
+            case Some(requiredAmmo) => allInventoryItems.count(_.exists[Ammo](_.ammoType == requiredAmmo))
+            case None => usableItems.count(UsableItem.getUsableItem(_) == UsableItem.getUsableItem(item))
+          }
+
+          sprite -> count
       }
       
       // Display each item type with count and optional highlighting
-      val itemDisplays = itemTypesWithCounts.zipWithIndex.flatMap { case ((sprite, count), displayIndex) =>
-        val itemX = startX + (displayIndex * itemSpacing)
-        val itemY = startY
-        
-        // Check if this display item should be highlighted
-        val isHighlighted = selectedItemIndex.exists { selectedIndex =>
-          selectedIndex < itemToDisplayIndex.length && itemToDisplayIndex(selectedIndex) == displayIndex
-        }
-        
-        val baseElements = Seq(
-          spriteSheet.fromSprite(sprite).moveTo(itemX, itemY),
-          text(count.toString, itemX + itemSize - (defaultBorderSize / 2), itemY + itemSize - (defaultBorderSize / 2))
-        )
-        
-        // Add highlight background if selected
-        if (isHighlighted) {
-          val highlight = BlockBar.getBlockBar(
-            Rectangle(Point(itemX - 2, itemY - 2), Size(itemSize + 4, itemSize + 4)),
-            RGBA.Orange.withAlpha(0.7f)
+      val itemDisplays = itemTypesWithCounts.zipWithIndex.flatMap {
+        case ((sprite, count), displayIndex) =>
+          val itemX = startX + (displayIndex * itemSpacing)
+          val itemY = startY
+          
+          // Check if this display item should be highlighted
+          val isHighlighted = selectedItemIndex.contains(displayIndex)
+          
+          val baseElements = Seq(
+            spriteSheet.fromSprite(sprite).moveTo(itemX, itemY),
+            text(count.toString, itemX + itemSize - (defaultBorderSize / 2), itemY + itemSize - (defaultBorderSize / 2))
           )
-          highlight +: baseElements
-        } else {
-          baseElements
-        }
+          
+          // Add highlight background if selected
+          if (isHighlighted) {
+            val highlight = BlockBar.getBlockBar(
+              Rectangle(Point(itemX - 2, itemY - 2), Size(itemSize + 4, itemSize + 4)),
+              RGBA.Orange.withAlpha(0.7f)
+            )
+            highlight +: baseElements
+          } else {
+            baseElements
+          }
       }
       
       itemDisplays.toBatch
@@ -168,10 +155,10 @@ object Elements {
   }
   
   def keys(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
-    import game.entity.Inventory.*
-    import game.entity.KeyItem.*
-    import game.entity.KeyColour
     import data.Sprites
+    import game.entity.Inventory.*
+    import game.entity.KeyColour
+    import game.entity.KeyItem.*
     
     val player = model.gameState.playerEntity
     val playerKeys = player.keys(model.gameState)
@@ -346,7 +333,7 @@ object Elements {
       val xOffset = xPosition * spriteScale + uiXOffset - (spriteScale / 2) // X position of the bar
       val yOffset = yPosition * spriteScale + uiYOffset + (spriteScale / 2)// Y position of the bar
 
-      val filledWidth = (currentHealth * barWidth) / maxHealth
+      val filledWidth = if (maxHealth > 0) (currentHealth * barWidth) / maxHealth else 0
 
       BlockBar.attributeBar(
         bounds = Rectangle(Point(xOffset, yOffset), Size(barWidth, barHeight)),

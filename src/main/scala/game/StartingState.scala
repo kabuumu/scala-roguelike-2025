@@ -17,6 +17,8 @@ object StartingState {
     ItemFactory.createBow("player-bow-1")
   ) ++ (1 to 6).map(i => ItemFactory.createArrow(s"player-arrow-$i"))
 
+  playerStartingItems.foreach(println)
+  
   // Create weapons as entities for enemies and player
   val ratWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
     case (_, index) if index % 2 == 0 => index -> ItemFactory.createWeapon(s"rat-weapon-$index", 8, Melee)
@@ -103,8 +105,7 @@ object StartingState {
       
       // Create entity from descriptor and place in world
       val itemEntity = itemDescriptor.createEntity(s"item-$index")
-      val sprite = itemDescriptor.getSprite
-      val placedEntity = ItemFactory.placeInWorld(itemEntity, basePosition, sprite)
+      val placedEntity = itemEntity.addComponent(Movement(position = basePosition))
       
       // Add EntityTypeComponent for keys
       itemDescriptor match {

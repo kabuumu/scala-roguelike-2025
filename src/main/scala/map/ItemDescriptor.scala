@@ -26,20 +26,4 @@ enum ItemDescriptor {
     case PlateArmorDescriptor => EquippableItems.PlateArmor.createEntity(id)
     case KeyDescriptor(keyColour) => ItemFactory.createKey(id, keyColour)
   }
-  
-  // Get sprite for this item type
-  def getSprite: Sprite = this match {
-    case PotionDescriptor => Sprites.potionSprite
-    case ScrollDescriptor => Sprites.scrollSprite
-    case ArrowDescriptor => Sprites.arrowSprite
-    case LeatherHelmetDescriptor => Sprites.leatherHelmetSprite
-    case ChainmailArmorDescriptor => Sprites.chainmailArmorSprite
-    case IronHelmetDescriptor => Sprites.ironHelmetSprite
-    case PlateArmorDescriptor => Sprites.plateArmorSprite
-    case KeyDescriptor(keyColour) => keyColour match {
-      case KeyColour.Yellow => Sprites.yellowKeySprite
-      case KeyColour.Blue => Sprites.blueKeySprite
-      case KeyColour.Red => Sprites.redKeySprite
-    }
-  }
 }

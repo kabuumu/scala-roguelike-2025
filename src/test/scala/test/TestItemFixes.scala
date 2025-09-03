@@ -8,6 +8,7 @@ import game.entity.*
 import game.entity.Inventory.* // Import extension methods
 import game.entity.Movement.* // Import position extension
 import game.entity.EntityType.LockedDoor // Import LockedDoor
+import game.system.event.GameSystemEvent.{HealEvent, CreateProjectileEvent} // Import GameSystemEvents used as effects
 import map.{Dungeon, TileType}
 import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget}
 import game.system.InventorySystem
@@ -15,6 +16,19 @@ import game.system.InventorySystem
 class TestItemFixes extends AnyFunSuiteLike with Matchers {
   // Create a simple test dungeon
   val testDungeon = Dungeon(testMode = true)
+
+  // Helper function to check if a usable item has heal effects
+  private def checkHasHealEffect(usableItem: UsableItem): Boolean = {
+    usableItem match {
+      case selfItem: SelfTargetingItem =>
+        // Create a dummy user entity to test with
+        val dummyUser = Entity("dummy", EntityTypeComponent(EntityType.Player), Health(10))
+        val effects = selfItem.effects(dummyUser)
+        effects.exists(_.isInstanceOf[HealEvent])
+      case _ =>
+        false // Not a self-targeting heal item
+    }
+  }
 
   test("Items should not block movement") {
     // Use the actual starting state to get a proper dungeon
@@ -96,10 +110,25 @@ class TestItemFixes extends AnyFunSuiteLike with Matchers {
     // Check usable items
     val usableItems = player.usableItems(gameState)
     
-    // Player should start with potion, scroll, and bow
-    usableItems.exists(_.has[PotionItem]) shouldBe true
-    usableItems.exists(_.has[ScrollItem]) shouldBe true
-    usableItems.exists(_.has[BowItem]) shouldBe true
+    // Player should start with potion, scroll, and bow using new UsableItem components
+    usableItems.exists(item => 
+      UsableItem.getUsableItem(item).exists(usable => 
+        usable.targeting == Targeting.Self && 
+        checkHasHealEffect(usable)
+      )
+    ) shouldBe true
+    
+    usableItems.exists(item => 
+      UsableItem.getUsableItem(item).exists(usable => 
+        usable.targeting.isInstanceOf[Targeting.TileInRange]
+      )
+    ) shouldBe true
+    
+    usableItems.exists(item => 
+      UsableItem.getUsableItem(item).exists(usable => 
+        usable.targeting == Targeting.EnemyActor
+      )
+    ) shouldBe true
     
     usableItems.length should be >= 3
   }

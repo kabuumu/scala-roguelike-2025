@@ -12,7 +12,7 @@ import game.status.StatusEffect.EffectType.{IncreaseDamage, ReduceIncomingDamage
 
 object DamageSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
-    events.foldLeft(gameState) {
+    val updatedState = events.foldLeft(gameState) {
       case (currentState, GameSystemEvent.DamageEvent(entityId, attackerId, baseDamage)) =>
         val damageMod: Int = currentState.getEntity(attackerId).toSeq.flatMap(_.statusEffects.collect {
           case StatusEffect(IncreaseDamage(damageMod), _, _) => damageMod
@@ -30,7 +30,9 @@ object DamageSystem extends GameSystem {
         currentState.updateEntity(entityId, _.damage(damage, attackerId))
       case (currentState, _) =>
         currentState
-    } -> Nil
+    }
+    
+    (updatedState, Nil)
   }
 
 }
