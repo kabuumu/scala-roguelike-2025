@@ -348,10 +348,10 @@ object Elements {
   def versionInfo(model: GameController): Batch[SceneNode] = {
     import generated.Version
     
-    // Position at bottom-left of screen
+    // Position version info above the message window
     val versionText = s"v${Version.gitCommit}"
     val xOffset = uiXOffset
-    val yOffset = canvasHeight - (spriteScale / 2) - defaultBorderSize
+    val yOffset = canvasHeight - (spriteScale * 3) - defaultBorderSize // Above message window
     
     Batch(
       text(versionText, xOffset, yOffset)
@@ -359,11 +359,14 @@ object Elements {
   }
 
   def messageWindow(model: GameController): Batch[SceneNode] = {
-    import game.entity.{UsableItem, Equippable, EntityType, Health}
+    import game.entity.{UsableItem, Equippable, EntityType, Health, NameComponent}
     import game.entity.EntityType.*
     import game.entity.Health.*
     import game.entity.Equippable.*
     import game.entity.UsableItem.*
+    import game.entity.NameComponent.*
+    import game.entity.Inventory.primaryWeapon
+    import game.entity.WeaponItem.weaponItem
     import game.Direction
     import game.entity.Movement.*
     
@@ -381,7 +384,23 @@ object Elements {
           case Some(equippable) =>
             s"Press Q to equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
           case None =>
-            "Use arrow keys to move, I to use items, Space to attack"
+            // Check if enemies are within attack range to determine if attack is available
+            val optWeaponEntity = model.gameState.playerEntity.primaryWeapon(model.gameState)
+            val range = optWeaponEntity.flatMap(_.weaponItem.map(_.range)).getOrElse(1)
+            val enemies = model.gameState.entities.filter { enemyEntity =>
+              enemyEntity.entityType == EntityType.Enemy &&
+              model.gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range) &&
+              model.gameState.getVisiblePointsFor(model.gameState.playerEntity).contains(enemyEntity.position) &&
+              enemyEntity.isAlive
+            }
+            
+            val moveKeys = "Arrow keys or WASD to move"
+            val useItems = "U to use items"
+            val attackKeys = if (enemies.nonEmpty) ", Z/X to attack" else ""
+            val interactKey = ", E to interact"
+            val equipKey = ", Q to equip"
+            
+            s"$moveKeys, $useItems$attackKeys$interactKey$equipKey"
         }
         
       case listSelect: UIState.ListSelect[_] =>
@@ -389,7 +408,8 @@ object Elements {
           val selectedItem = listSelect.list(listSelect.index)
           selectedItem match {
             case entity: Entity if entity.isUsableItem =>
-              // Show item description
+              // Show item name at top, then description
+              val itemName = entity.name.getOrElse("Unknown Item")
               entity.usableItem match {
                 case Some(usableItem) =>
                   val targetType = usableItem.targeting match {
@@ -399,8 +419,10 @@ object Elements {
                   }
                   val consumeText = if (usableItem.consumeOnUse) "consumed on use" else "reusable"
                   val ammoText = usableItem.ammo.map(ammo => s", requires ${ammo.toString}").getOrElse("")
-                  s"$targetType item, $consumeText$ammoText. Press Enter to use."
-                case None => "Unknown item. Press Enter to use."
+                  val description = entity.description.getOrElse("")
+                  val descriptionText = if (description.nonEmpty) s" - $description" else ""
+                  s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Enter to use."
+                case None => s"$itemName. Press Enter to use."
               }
             case entity: Entity =>
               // Show entity information
@@ -417,7 +439,7 @@ object Elements {
               // Show perk description
               s"${statusEffect.name}: ${statusEffect.description}. Press Enter to select."
             case _ =>
-              "Press Enter to select, Esc to cancel."
+              "Press Enter to select, Escape to cancel."
           }
         } else {
           "No items available."
@@ -429,9 +451,9 @@ object Elements {
         s"Target: [$x,$y]. Press Enter to confirm action at this location."
     }
     
-    // Position message window at bottom of screen, above version info
+    // Position message window at the very bottom of the visible canvas area
     val messageWindowHeight = spriteScale * 2
-    val messageY = canvasHeight - messageWindowHeight - (spriteScale / 2) - (defaultBorderSize * 2)
+    val messageY = canvasHeight - messageWindowHeight // Position at bottom of game canvas, visible
     val messageX = uiXOffset
     val messageWidth = canvasWidth - (uiXOffset * 2)
     

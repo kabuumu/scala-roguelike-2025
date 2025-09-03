@@ -10,6 +10,7 @@ object ItemFactory {
   /** Create a healing potion using the new UsableItem component */
   def createPotion(id: String): Entity = Entity(
     id = id,
+    NameComponent("Healing Potion", "Restores 40 health points when consumed"),
     UsableItem.builders.healingPotion(), // Self-targeted Heal(40), consumeOnUse=true
     CanPickUp(),
     Hitbox(),
@@ -19,6 +20,7 @@ object ItemFactory {
   /** Create a fireball scroll using the new UsableItem component */
   def createScroll(id: String): Entity = Entity(
     id = id,
+    NameComponent("Fireball Scroll", "Unleashes a fireball at target location with radius 2 explosion"),
     UsableItem.builders.fireballScroll(), // TileInRange-targeted CreateProjectile with explosion
     CanPickUp(),
     Hitbox(),
@@ -28,6 +30,7 @@ object ItemFactory {
   /** Create an arrow using the new Ammo component (non-usable) */
   def createArrow(id: String): Entity = Entity(
     id = id,
+    NameComponent("Arrow", "Ammunition for bows and crossbows"),
     Ammo(AmmoType.Arrow),
     CanPickUp(),
     Hitbox(),
@@ -37,6 +40,7 @@ object ItemFactory {
   /** Create a bow using the new UsableItem component */
   def createBow(id: String): Entity = Entity(
     id = id,
+    NameComponent("Bow", "Ranged weapon that fires arrows at enemies"),
     UsableItem.builders.bow(), // EnemyActor-targeted CreateProjectile(8), ammo="Arrow", consumeOnUse=false
     CanPickUp(),
     Hitbox(),
