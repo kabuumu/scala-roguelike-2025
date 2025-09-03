@@ -11,7 +11,8 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    startPoint: Point = Point(0, 0),
                    endpoint: Option[Point] = None,
                    items: Set[(Point, ItemDescriptor)] = Set.empty,
-                   testMode: Boolean = false) {
+                   testMode: Boolean = false,
+                   seed: Long = System.currentTimeMillis()) {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
     copy(
       roomConnections = roomConnections - roomConnection + roomConnection.copy(
@@ -98,7 +99,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     val minY: Int = roomGrid.map(_.y).min * roomSize
     val maxY: Int = roomGrid.map(_.y).max * roomSize + roomSize
 
-    NoiseGenerator.getNoise(minX, maxX, minY, maxY)
+    NoiseGenerator.getNoise(minX, maxX, minY, maxY, seed)
   }
 
   lazy val tiles: Map[Point, TileType] = roomGrid.flatMap {
