@@ -357,4 +357,97 @@ object Elements {
       text(versionText, xOffset, yOffset)
     )
   }
+
+  def messageWindow(model: GameController): Batch[SceneNode] = {
+    import game.entity.{UsableItem, Equippable, EntityType, Health}
+    import game.entity.EntityType.*
+    import game.entity.Health.*
+    import game.entity.Equippable.*
+    import game.entity.UsableItem.*
+    import game.Direction
+    import game.entity.Movement.*
+    
+    val messageContent = model.uiState match {
+      case UIState.Move =>
+        // Check for nearby equippable items
+        val playerPosition = model.gameState.playerEntity.position
+        val adjacentPositions = Direction.values.map(dir => playerPosition + Direction.asPoint(dir)).toSet
+        
+        val adjacentEquippableEntities = model.gameState.entities
+          .filter(e => adjacentPositions.contains(e.position))
+          .filter(_.isEquippable)
+        
+        adjacentEquippableEntities.headOption.flatMap(_.equippable) match {
+          case Some(equippable) =>
+            s"Press Q to equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
+          case None =>
+            "Use arrow keys to move, I to use items, Space to attack"
+        }
+        
+      case listSelect: UIState.ListSelect[_] =>
+        if (listSelect.list.nonEmpty) {
+          val selectedItem = listSelect.list(listSelect.index)
+          selectedItem match {
+            case entity: Entity if entity.isUsableItem =>
+              // Show item description
+              entity.usableItem match {
+                case Some(usableItem) =>
+                  val targetType = usableItem.targeting match {
+                    case game.entity.Targeting.Self => "Self-targeted"
+                    case game.entity.Targeting.EnemyActor => "Enemy-targeted"
+                    case game.entity.Targeting.TileInRange(range) => s"Tile-targeted (range: $range)"
+                  }
+                  val consumeText = if (usableItem.consumeOnUse) "consumed on use" else "reusable"
+                  val ammoText = usableItem.ammo.map(ammo => s", requires ${ammo.toString}").getOrElse("")
+                  s"$targetType item, $consumeText$ammoText. Press Enter to use."
+                case None => "Unknown item. Press Enter to use."
+              }
+            case entity: Entity =>
+              // Show entity information
+              val entityTypeName = entity.entityType match {
+                case Enemy => "Enemy"
+                case Player => "Player"
+                case _ => entity.entityType.toString
+              }
+              val healthText = if (entity.has[game.entity.Health]) {
+                s" (${entity.currentHealth}/${entity.maxHealth} HP)"
+              } else ""
+              s"$entityTypeName$healthText. Press Enter to target."
+            case statusEffect: game.status.StatusEffect =>
+              // Show perk description
+              s"${statusEffect.name}: ${statusEffect.description}. Press Enter to select."
+            case _ =>
+              "Press Enter to select, Esc to cancel."
+          }
+        } else {
+          "No items available."
+        }
+        
+      case scrollSelect: UIState.ScrollSelect =>
+        val x = scrollSelect.cursor.x
+        val y = scrollSelect.cursor.y
+        s"Target: [$x,$y]. Press Enter to confirm action at this location."
+    }
+    
+    // Position message window at bottom of screen, above version info
+    val messageWindowHeight = spriteScale * 2
+    val messageY = canvasHeight - messageWindowHeight - (spriteScale / 2) - (defaultBorderSize * 2)
+    val messageX = uiXOffset
+    val messageWidth = canvasWidth - (uiXOffset * 2)
+    
+    // Create background
+    val background = BlockBar.getBlockBar(
+      Rectangle(Point(messageX - defaultBorderSize, messageY - defaultBorderSize), 
+               Size(messageWidth + (defaultBorderSize * 2), messageWindowHeight + (defaultBorderSize * 2))),
+      RGBA.Black.withAlpha(0.8)
+    )
+    
+    // Wrap and display text
+    val wrappedLines = wrapText(messageContent, (messageWidth / 8)) // Approximate character width
+    val textElements = wrappedLines.zipWithIndex.map { case (line, index) =>
+      text(line, messageX, messageY + (index * (spriteScale / 2)))
+    }
+    
+    Batch(background) ++ textElements.toBatch
+  }
 }
