@@ -13,7 +13,7 @@ import ui.InputAction
 /**
  * New unified item use system that handles all usable items through the UsableItem component.
  * Replaces both LegacyItemUseSystem and ComponentItemUseSystem with a data-driven approach.
- * Now uses type-safe functions instead of placeholder strings and parameterization.
+ * Now uses type-safe functions without placeholder strings and with proper targeting context.
  */
 object ItemUseSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent.GameSystemEvent]): (GameState, Seq[GameSystemEvent.GameSystemEvent]) = {
@@ -35,17 +35,15 @@ object ItemUseSystem extends GameSystem {
   }
 
   /**
-   * Handle items that target the user themselves (Targeting.Self)
+   * Handle items that target the user themselves (Self-targeting)
    * Examples: healing potions
    */
   private def handleSelfTargetedItem(gameState: GameState, userId: String, itemEntityId: String): Seq[GameSystemEvent.GameSystemEvent] = {
     (gameState.getEntity(userId), gameState.getEntity(itemEntityId)) match {
       case (Some(user), Some(itemEntity)) =>
         UsableItem.getUsableItem(itemEntity) match {
-          case Some(usableItem) if isSelfTargeting(usableItem) =>
-            // We know this is a self-targeting item, so we can safely cast
-            val selfItem = usableItem.asInstanceOf[UsableItem[EntityTarget]]
-            generateItemUseEvents(gameState, user, itemEntity, selfItem, EntityTarget(user))
+          case Some(selfItem: SelfTargetingItem) =>
+            generateSelfTargetingEvents(gameState, user, itemEntity, selfItem)
           case _ =>
             Nil
         }
@@ -55,17 +53,15 @@ object ItemUseSystem extends GameSystem {
   }
 
   /**
-   * Handle items that target a specific point (Targeting.TileInRange)
+   * Handle items that target a specific point (Tile-targeting)
    * Examples: fireball scrolls
    */
   private def handlePointTargetedItem(gameState: GameState, userId: String, itemEntityId: String, targetPoint: game.Point): Seq[GameSystemEvent.GameSystemEvent] = {
     (gameState.getEntity(userId), gameState.getEntity(itemEntityId)) match {
       case (Some(user), Some(itemEntity)) =>
         UsableItem.getUsableItem(itemEntity) match {
-          case Some(usableItem) if isTileTargeting(usableItem) =>
-            // We know this is a tile-targeting item, so we can safely cast
-            val tileItem = usableItem.asInstanceOf[UsableItem[TileTarget]]
-            generateItemUseEvents(gameState, user, itemEntity, tileItem, TileTarget(targetPoint))
+          case Some(tileItem: TileTargetingItem) =>
+            generateTileTargetingEvents(gameState, user, itemEntity, tileItem, targetPoint)
           case _ =>
             Nil
         }
@@ -75,17 +71,15 @@ object ItemUseSystem extends GameSystem {
   }
 
   /**
-   * Handle items that target another entity (Targeting.EnemyActor)
+   * Handle items that target another entity (Entity-targeting)
    * Examples: bows targeting enemies
    */
   private def handleEntityTargetedItem(gameState: GameState, userId: String, itemEntityId: String, targetEntityId: String): Seq[GameSystemEvent.GameSystemEvent] = {
     (gameState.getEntity(userId), gameState.getEntity(itemEntityId), gameState.getEntity(targetEntityId)) match {
       case (Some(user), Some(itemEntity), Some(targetEntity)) =>
         UsableItem.getUsableItem(itemEntity) match {
-          case Some(usableItem) if isEnemyTargeting(usableItem) =>
-            // We know this is an enemy-targeting item, so we can safely cast
-            val enemyItem = usableItem.asInstanceOf[UsableItem[EntityTarget]]
-            generateItemUseEvents(gameState, user, itemEntity, enemyItem, EntityTarget(targetEntity))
+          case Some(entityItem: EntityTargetingItem) =>
+            generateEntityTargetingEvents(gameState, user, itemEntity, entityItem, targetEntity)
           case _ =>
             Nil
         }
@@ -95,42 +89,109 @@ object ItemUseSystem extends GameSystem {
   }
 
   /**
-   * Generate all events needed for using an item.
-   * Now uses the type-safe function approach instead of parameterization.
+   * Generate events for self-targeting items.
+   * No target parameter needed - cleaner than the old EntityTarget(user) approach.
    */
-  private def generateItemUseEvents[T <: TargetType](
+  private def generateSelfTargetingEvents(
     gameState: GameState,
     user: Entity,
     itemEntity: Entity,
-    usableItem: UsableItem[T],
-    target: T
+    usableItem: SelfTargetingItem
   ): Seq[GameSystemEvent.GameSystemEvent] = {
 
     // Check ammo requirements if this item needs ammo
-    val hasAmmo = usableItem.ammo match {
+    if (!hasRequiredAmmo(gameState, user, usableItem)) {
+      return Nil
+    }
+
+    // Handle special case for healing when already at full health
+    val effectEvents = if (user.hasFullHealth) {
+      // Check if this is a healing item by examining the effects
+      val sampleEvents = usableItem.effects(user)
+      if (sampleEvents.exists(_.isInstanceOf[HealEvent])) {
+        Seq(GameSystemEvent.MessageEvent(s"${System.nanoTime()}: ${user.entityType} is already at full health"))
+      } else {
+        sampleEvents
+      }
+    } else {
+      usableItem.effects(user)
+    }
+
+    // Generate common events (consumption, ammo, initiative, message)
+    effectEvents ++ generateCommonEvents(gameState, user, itemEntity, usableItem)
+  }
+
+  /**
+   * Generate events for entity-targeting items.
+   * Takes user and target entity directly - much cleaner.
+   */
+  private def generateEntityTargetingEvents(
+    gameState: GameState,
+    user: Entity,
+    itemEntity: Entity,
+    usableItem: EntityTargetingItem,
+    targetEntity: Entity
+  ): Seq[GameSystemEvent.GameSystemEvent] = {
+
+    // Check ammo requirements if this item needs ammo
+    if (!hasRequiredAmmo(gameState, user, usableItem)) {
+      return Nil
+    }
+
+    val effectEvents = usableItem.effects(user, targetEntity)
+
+    // Generate common events (consumption, ammo, initiative, message)
+    effectEvents ++ generateCommonEvents(gameState, user, itemEntity, usableItem)
+  }
+
+  /**
+   * Generate events for tile-targeting items.
+   * Takes user and target point directly - much cleaner.
+   */
+  private def generateTileTargetingEvents(
+    gameState: GameState,
+    user: Entity,
+    itemEntity: Entity,
+    usableItem: TileTargetingItem,
+    targetPoint: game.Point
+  ): Seq[GameSystemEvent.GameSystemEvent] = {
+
+    // Check ammo requirements if this item needs ammo
+    if (!hasRequiredAmmo(gameState, user, usableItem)) {
+      return Nil
+    }
+
+    val effectEvents = usableItem.effects(user, targetPoint)
+
+    // Generate common events (consumption, ammo, initiative, message)
+    effectEvents ++ generateCommonEvents(gameState, user, itemEntity, usableItem)
+  }
+
+  /**
+   * Check if the user has the required ammo for this item
+   */
+  private def hasRequiredAmmo(gameState: GameState, user: Entity, usableItem: UsableItem): Boolean = {
+    usableItem.ammo match {
       case Some(ammoType) =>
         user.inventoryItems(gameState).exists(_.exists[Ammo](_.ammoType == ammoType))
       case None =>
         true // No ammo required
     }
+  }
 
-    if (!hasAmmo) {
-      return Nil
-    }
-
-    // Handle special case for healing when already at full health
-    val effectEvents = target match {
-      case EntityTarget(entity) if entity == user && user.hasFullHealth =>
-        // Check if this is a healing item by examining the effects
-        val sampleEvents = usableItem.effects(user, target)
-        if (sampleEvents.exists(_.isInstanceOf[HealEvent])) {
-          Seq(GameSystemEvent.MessageEvent(s"${System.nanoTime()}: ${user.entityType} is already at full health"))
-        } else {
-          sampleEvents
-        }
-      case _ =>
-        usableItem.effects(user, target)
-    }
+  /**
+   * Generate common events that apply to all item usage:
+   * - Item consumption (if consumeOnUse = true)
+   * - Ammo consumption (if ammo is specified)
+   * - Initiative reset (turn-based behavior)
+   * - Usage message
+   */
+  private def generateCommonEvents(
+    gameState: GameState,
+    user: Entity,
+    itemEntity: Entity,
+    usableItem: UsableItem
+  ): Seq[GameSystemEvent.GameSystemEvent] = {
 
     // Add item consumption events if needed
     val consumptionEvents = if (usableItem.consumeOnUse) {
@@ -157,20 +218,6 @@ object ItemUseSystem extends GameSystem {
     // Create usage message
     val messageEvents = Seq(GameSystemEvent.MessageEvent(s"${System.nanoTime()}: ${user.entityType} used ${itemEntity.id}"))
 
-    // Return all events to be processed by the appropriate systems
-    effectEvents ++ consumptionEvents ++ ammoConsumptionEvents ++ initiativeEvents ++ messageEvents
-  }
-
-  // Helper methods to check targeting types safely
-  private def isSelfTargeting(usableItem: UsableItem[?]): Boolean = {
-    usableItem.targeting == Targeting.Self
-  }
-
-  private def isEnemyTargeting(usableItem: UsableItem[?]): Boolean = {
-    usableItem.targeting == Targeting.EnemyActor
-  }
-
-  private def isTileTargeting(usableItem: UsableItem[?]): Boolean = {
-    usableItem.targeting.isInstanceOf[Targeting.TileInRange]
+    consumptionEvents ++ ammoConsumptionEvents ++ initiativeEvents ++ messageEvents
   }
 }

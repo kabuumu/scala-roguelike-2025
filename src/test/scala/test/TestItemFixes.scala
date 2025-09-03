@@ -5,7 +5,6 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import game.*
 import game.entity.*
-import game.entity.{UsableItem, Targeting} // New imports for item system
 import game.entity.Inventory.* // Import extension methods
 import game.entity.Movement.* // Import position extension
 import game.entity.EntityType.LockedDoor // Import LockedDoor
@@ -19,14 +18,12 @@ class TestItemFixes extends AnyFunSuiteLike with Matchers {
   val testDungeon = Dungeon(testMode = true)
 
   // Helper function to check if a usable item has heal effects
-  private def checkHasHealEffect(usableItem: UsableItem[?]): Boolean = {
-    // For self-targeting items, we can safely create a dummy target to test the effects
-    usableItem.targeting match {
-      case Targeting.Self =>
+  private def checkHasHealEffect(usableItem: UsableItem): Boolean = {
+    usableItem match {
+      case selfItem: SelfTargetingItem =>
         // Create a dummy user entity to test with
         val dummyUser = Entity("dummy", EntityTypeComponent(EntityType.Player), Health(10))
-        val dummyTarget = EntityTarget(dummyUser)
-        val effects = usableItem.asInstanceOf[UsableItem[EntityTarget]].effects(dummyUser, dummyTarget)
+        val effects = selfItem.effects(dummyUser)
         effects.exists(_.isInstanceOf[HealEvent])
       case _ =>
         false // Not a self-targeting heal item
