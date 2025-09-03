@@ -1,7 +1,7 @@
 package indigoengine.view
 
 import game.entity
-import game.entity.{Drawable, Entity, Equipment}
+import game.entity.{Drawable, Entity, Equipment, NameComponent}
 import game.status.StatusEffect
 import generated.{Assets, PixelFont, PixelFontSmall}
 import indigo.*
@@ -113,12 +113,12 @@ object Elements {
       val itemSize = spriteScale
       val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
       
-      val itemTypesWithCounts = usableItems.map {
+      val itemTypesWithCounts = usableItems.distinctBy(_.get[NameComponent]).map {
         item =>
           val sprite = item.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite) //Temp code, need explicit way to set item sprite
           val count = UsableItem.getUsableItem(item).flatMap(_.ammo) match {
             case Some(requiredAmmo) => allInventoryItems.count(_.exists[Ammo](_.ammoType == requiredAmmo))
-            case None => usableItems.count(UsableItem.getUsableItem(_) == UsableItem.getUsableItem(item))
+            case None => usableItems.count(_.get[NameComponent] == item.get[NameComponent])
           }
 
           sprite -> count
@@ -465,7 +465,7 @@ object Elements {
     )
     
     // Wrap and display text
-    val wrappedLines = wrapText(messageContent, (messageWidth / 8)) // Approximate character width
+    val wrappedLines = wrapText(messageContent, messageWidth) // Approximate character width
     val textElements = wrappedLines.zipWithIndex.map { case (line, index) =>
       text(line, messageX, messageY + (index * (spriteScale / 2)))
     }
