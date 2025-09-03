@@ -1,7 +1,7 @@
 package indigoengine.view
 
 import game.entity
-import game.entity.{Drawable, Entity, Equipment}
+import game.entity.{Drawable, Entity, Equipment, NameComponent}
 import game.status.StatusEffect
 import generated.{Assets, PixelFont, PixelFontSmall}
 import indigo.*
@@ -113,12 +113,12 @@ object Elements {
       val itemSize = spriteScale
       val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
       
-      val itemTypesWithCounts = usableItems.map {
+      val itemTypesWithCounts = usableItems.distinctBy(_.get[NameComponent]).map {
         item =>
           val sprite = item.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite) //Temp code, need explicit way to set item sprite
           val count = UsableItem.getUsableItem(item).flatMap(_.ammo) match {
             case Some(requiredAmmo) => allInventoryItems.count(_.exists[Ammo](_.ammoType == requiredAmmo))
-            case None => usableItems.count(UsableItem.getUsableItem(_) == UsableItem.getUsableItem(item))
+            case None => usableItems.count(_.get[NameComponent] == item.get[NameComponent])
           }
 
           sprite -> count
@@ -348,13 +348,128 @@ object Elements {
   def versionInfo(model: GameController): Batch[SceneNode] = {
     import generated.Version
     
-    // Position at bottom-left of screen
+    // Position version info above the message window
     val versionText = s"v${Version.gitCommit}"
     val xOffset = uiXOffset
-    val yOffset = canvasHeight - (spriteScale / 2) - defaultBorderSize
+    val yOffset = canvasHeight - (spriteScale * 3) - defaultBorderSize // Above message window
     
     Batch(
       text(versionText, xOffset, yOffset)
     )
+  }
+
+  def messageWindow(model: GameController): Batch[SceneNode] = {
+    import game.entity.{UsableItem, Equippable, EntityType, Health, NameComponent}
+    import game.entity.EntityType.*
+    import game.entity.Health.*
+    import game.entity.Equippable.*
+    import game.entity.UsableItem.*
+    import game.entity.NameComponent.*
+    import game.entity.Inventory.primaryWeapon
+    import game.entity.WeaponItem.weaponItem
+    import game.Direction
+    import game.entity.Movement.*
+    
+    val messageContent = model.uiState match {
+      case UIState.Move =>
+        // Check for nearby equippable items
+        val playerPosition = model.gameState.playerEntity.position
+        val adjacentPositions = Direction.values.map(dir => playerPosition + Direction.asPoint(dir)).toSet
+        
+        val adjacentEquippableEntities = model.gameState.entities
+          .filter(e => adjacentPositions.contains(e.position))
+          .filter(_.isEquippable)
+        
+        adjacentEquippableEntities.headOption.flatMap(_.equippable) match {
+          case Some(equippable) =>
+            s"Press Q to equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
+          case None =>
+            // Check if enemies are within attack range to determine if attack is available
+            val optWeaponEntity = model.gameState.playerEntity.primaryWeapon(model.gameState)
+            val range = optWeaponEntity.flatMap(_.weaponItem.map(_.range)).getOrElse(1)
+            val enemies = model.gameState.entities.filter { enemyEntity =>
+              enemyEntity.entityType == EntityType.Enemy &&
+              model.gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range) &&
+              model.gameState.getVisiblePointsFor(model.gameState.playerEntity).contains(enemyEntity.position) &&
+              enemyEntity.isAlive
+            }
+            
+            val moveKeys = "Arrow keys or WASD to move"
+            val useItems = "U to use items"
+            val attackKeys = if (enemies.nonEmpty) ", Z/X to attack" else ""
+            val interactKey = ", E to interact"
+            val equipKey = ", Q to equip"
+            
+            s"$moveKeys, $useItems$attackKeys$interactKey$equipKey"
+        }
+        
+      case listSelect: UIState.ListSelect[_] =>
+        if (listSelect.list.nonEmpty) {
+          val selectedItem = listSelect.list(listSelect.index)
+          selectedItem match {
+            case entity: Entity if entity.isUsableItem =>
+              // Show item name at top, then description
+              val itemName = entity.name.getOrElse("Unknown Item")
+              entity.usableItem match {
+                case Some(usableItem) =>
+                  val targetType = usableItem.targeting match {
+                    case game.entity.Targeting.Self => "Self-targeted"
+                    case game.entity.Targeting.EnemyActor => "Enemy-targeted"
+                    case game.entity.Targeting.TileInRange(range) => s"Tile-targeted (range: $range)"
+                  }
+                  val consumeText = if (usableItem.consumeOnUse) "consumed on use" else "reusable"
+                  val ammoText = usableItem.ammo.map(ammo => s", requires ${ammo.toString}").getOrElse("")
+                  val description = entity.description.getOrElse("")
+                  val descriptionText = if (description.nonEmpty) s" - $description" else ""
+                  s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Enter to use."
+                case None => s"$itemName. Press Enter to use."
+              }
+            case entity: Entity =>
+              // Show entity information
+              val entityTypeName = entity.entityType match {
+                case Enemy => "Enemy"
+                case Player => "Player"
+                case _ => entity.entityType.toString
+              }
+              val healthText = if (entity.has[game.entity.Health]) {
+                s" (${entity.currentHealth}/${entity.maxHealth} HP)"
+              } else ""
+              s"$entityTypeName$healthText. Press Enter to target."
+            case statusEffect: game.status.StatusEffect =>
+              // Show perk description
+              s"${statusEffect.name}: ${statusEffect.description}. Press Enter to select."
+            case _ =>
+              "Press Enter to select, Escape to cancel."
+          }
+        } else {
+          "No items available."
+        }
+        
+      case scrollSelect: UIState.ScrollSelect =>
+        val x = scrollSelect.cursor.x
+        val y = scrollSelect.cursor.y
+        s"Target: [$x,$y]. Press Enter to confirm action at this location."
+    }
+    
+    // Position message window at the very bottom of the visible canvas area
+    val messageWindowHeight = spriteScale * 2
+    val messageY = canvasHeight - messageWindowHeight // Position at bottom of game canvas, visible
+    val messageX = uiXOffset
+    val messageWidth = canvasWidth - (uiXOffset * 2)
+    
+    // Create background
+    val background = BlockBar.getBlockBar(
+      Rectangle(Point(messageX - defaultBorderSize, messageY - defaultBorderSize), 
+               Size(messageWidth + (defaultBorderSize * 2), messageWindowHeight + (defaultBorderSize * 2))),
+      RGBA.Black.withAlpha(0.8)
+    )
+    
+    // Wrap and display text
+    val wrappedLines = wrapText(messageContent, messageWidth) // Approximate character width
+    val textElements = wrappedLines.zipWithIndex.map { case (line, index) =>
+      text(line, messageX, messageY + (index * (spriteScale / 2)))
+    }
+    
+    Batch(background) ++ textElements.toBatch
   }
 }

@@ -13,11 +13,11 @@ object StartingState {
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
     ItemFactory.createPotion("player-potion-1"),
+    ItemFactory.createPotion("player-potion-2"),
     ItemFactory.createScroll("player-scroll-1"),
+    ItemFactory.createScroll("player-scroll-2"),
     ItemFactory.createBow("player-bow-1")
   ) ++ (1 to 6).map(i => ItemFactory.createArrow(s"player-arrow-$i"))
-
-  playerStartingItems.foreach(println)
   
   // Create weapons as entities for enemies and player
   val ratWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
