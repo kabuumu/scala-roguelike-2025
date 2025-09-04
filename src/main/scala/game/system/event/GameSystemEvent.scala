@@ -37,6 +37,11 @@ object GameSystemEvent {
     newEntity: Entity
   ) extends GameSystemEvent
   
+  case class SpawnEntityWithCollisionCheckEvent(
+    entityTemplate: Entity,
+    preferredPositions: Seq[game.Point]
+  ) extends GameSystemEvent
+  
   case class AddExperienceEvent(
     entityId: String,
     experience: Int
@@ -70,10 +75,5 @@ object GameSystemEvent {
   
   case class ResetInitiativeEvent(
     entityId: String
-  ) extends GameSystemEvent
-  
-  case class SlimeSplitEvent(
-    slimePosition: game.Point,
-    killerId: Option[String]
   ) extends GameSystemEvent
 }

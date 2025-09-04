@@ -4,12 +4,40 @@ import data.Sprites
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
-import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityEvent, SlimeSplitEvent}
+import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
 import map.{Dungeon, MapGenerator, ItemDescriptor}
 
 
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
+
+  // Helper function to create slimelet spawn events when slime dies
+  private def createSlimeletEvents(slimePosition: Point, killerId: Option[String]): Seq[SpawnEntityWithCollisionCheckEvent] = {
+    // Get all adjacent positions as preferred spawn locations
+    val adjacentPositions = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
+      .map(dir => slimePosition + Direction.asPoint(dir))
+    
+    // Create 2 slimelet templates that will be spawned at available positions
+    (0 until 2).map { index =>
+      val slimeletId = s"Slimelet-${System.currentTimeMillis()}-$index"
+      
+      val slimeletTemplate = Entity(
+        id = slimeletId,
+        Movement(position = Point(0, 0)), // Position will be set by SpawnEntitySystem
+        EntityTypeComponent(EntityType.Enemy),
+        Health(10),
+        Initiative(8),
+        Inventory(Nil, None), // No weapon for slimelets, they use default 1 damage
+        Drawable(Sprites.slimeletSprite),
+        Hitbox(),
+        DeathEvents(deathDetails => deathDetails.killerId.map {
+          killerId => AddExperienceEvent(killerId, experienceForLevel(1) / 4)
+        }.toSeq)
+      )
+      
+      SpawnEntityWithCollisionCheckEvent(slimeletTemplate, adjacentPositions)
+    }
+  }
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
@@ -90,9 +118,9 @@ object StartingState {
           val experienceEvent = deathDetails.killerId.map {
             killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
           }.toSeq
-          // Use SlimeSplitEvent to handle splitting with empty position checking
-          val splitEvent = SlimeSplitEvent(deathDetails.victim.position, deathDetails.killerId)
-          experienceEvent :+ splitEvent
+          // Use collision-checked spawning to create slimelets
+          val slimeletEvents = createSlimeletEvents(deathDetails.victim.position, deathDetails.killerId)
+          experienceEvent ++ slimeletEvents
         })
       )
       

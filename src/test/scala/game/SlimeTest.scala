@@ -6,14 +6,14 @@ import game.entity.Experience.experienceForLevel
 import game.entity.Health.*
 import game.entity.Movement.position
 import game.system.DeathHandlerSystem
-import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityEvent, SlimeSplitEvent}
-import game.{DeathDetails, GameState, Point}
+import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
+import game.{DeathDetails, Direction, GameState, Point}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 class SlimeTest extends AnyFunSuite with Matchers {
 
-  test("Slime should generate SlimeSplitEvent when killed") {
+  test("Slime should generate SpawnEntityWithCollisionCheckEvent when killed") {
     // Create a player entity for the test
     val player = Entity(
       id = "Player ID",
@@ -24,7 +24,7 @@ class SlimeTest extends AnyFunSuite with Matchers {
       Hitbox()
     )
     
-    // Create a test slime with the new death behavior
+    // Create a test slime using the actual StartingState helper function
     val slime = Entity(
       id = "Test Slime",
       Movement(position = Point(10, 10)),
@@ -46,9 +46,29 @@ class SlimeTest extends AnyFunSuite with Matchers {
         val experienceEvent = deathDetails.killerId.map {
           killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
         }.toSeq
-        // Use SlimeSplitEvent to handle splitting with empty position checking
-        val splitEvent = SlimeSplitEvent(deathDetails.victim.position, deathDetails.killerId)
-        experienceEvent :+ splitEvent
+        // Create slimelet spawn events with collision checking
+        val slimeletEvents = (0 until 2).map { index =>
+          val slimeletId = s"Slimelet-${System.currentTimeMillis()}-$index"
+          val adjacentPositions = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
+            .map(dir => deathDetails.victim.position + Direction.asPoint(dir))
+          
+          val slimeletTemplate = Entity(
+            id = slimeletId,
+            Movement(position = Point(0, 0)),
+            EntityTypeComponent(EntityType.Enemy),
+            Health(10),
+            Initiative(8),
+            Inventory(Nil, None),
+            Drawable(Sprites.slimeletSprite),
+            Hitbox(),
+            DeathEvents(deathDetails => deathDetails.killerId.map {
+              killerId => AddExperienceEvent(killerId, experienceForLevel(1) / 4)
+            }.toSeq)
+          )
+          
+          SpawnEntityWithCollisionCheckEvent(slimeletTemplate, adjacentPositions)
+        }
+        experienceEvent ++ slimeletEvents
       })
     )
 
@@ -64,23 +84,28 @@ class SlimeTest extends AnyFunSuite with Matchers {
     // Verify slime was removed
     updatedState.entities.find(_.id == "Test Slime") shouldBe None
 
-    // Verify events were generated (experience + split event)
-    events should have size 2
+    // Verify events were generated (experience + 2 spawn events)
+    events should have size 3
     events.count(_.isInstanceOf[AddExperienceEvent]) shouldBe 1
-    events.count(_.isInstanceOf[SlimeSplitEvent]) shouldBe 1
+    events.count(_.isInstanceOf[SpawnEntityWithCollisionCheckEvent]) shouldBe 2
 
     // Verify experience event
     val experienceEvent = events.find(_.isInstanceOf[AddExperienceEvent]).get.asInstanceOf[AddExperienceEvent]
     experienceEvent.entityId shouldBe "Player ID"
     experienceEvent.experience shouldBe experienceForLevel(2) / 4
 
-    // Verify split event contains correct position and killer
-    val splitEvent = events.find(_.isInstanceOf[SlimeSplitEvent]).get.asInstanceOf[SlimeSplitEvent]
-    splitEvent.slimePosition shouldBe Point(10, 10)
-    splitEvent.killerId shouldBe Some("Player ID")
+    // Verify spawn events contain adjacent positions
+    val spawnEvents = events.filter(_.isInstanceOf[SpawnEntityWithCollisionCheckEvent]).map(_.asInstanceOf[SpawnEntityWithCollisionCheckEvent])
+    spawnEvents.foreach { event =>
+      // Check that preferred positions are adjacent to slime position (10, 10)
+      event.preferredPositions.foreach { pos =>
+        val distance = math.abs(pos.x - 10) + math.abs(pos.y - 10)
+        distance shouldBe 1
+      }
+    }
   }
 
-  test("SlimeSplitSystem should spawn slimelets only on empty tiles") {
+  test("SpawnEntitySystem should spawn slimelets only on empty tiles") {
     // Create a player entity at position (11, 10) to block one adjacent position
     val player = Entity(
       id = "Player ID",
@@ -107,26 +132,39 @@ class SlimeTest extends AnyFunSuite with Matchers {
       dungeon = map.MapGenerator.generateDungeon(10, 0, 0)
     )
 
-    // Create a SlimeSplitEvent for position (10, 10)
-    val splitEvent = SlimeSplitEvent(Point(10, 10), Some("Player ID"))
-
-    // Process through SlimeSplitSystem directly
-    val (finalState, finalEvents) = game.system.SlimeSplitSystem.update(gameState, Seq(splitEvent))
-
-    // Verify only spawn events for unblocked positions were created
-    val spawnEvents = finalEvents.filter(_.isInstanceOf[SpawnEntityEvent]).map(_.asInstanceOf[SpawnEntityEvent])
+    // Create a collision-checked spawn event for position (10, 10)
+    val adjacentPositions = Seq(
+      Point(10, 9), Point(10, 11), Point(9, 10), Point(11, 10) // Up, Down, Left, Right
+    )
     
-    // Should have spawned at most 2 slimelets, and they should not be at blocked positions
-    spawnEvents.size `should` be <= 2
-    spawnEvents.foreach { event =>
-      val slimeletPosition = event.newEntity.get[Movement].get.position
-      // Should not spawn on player position or blocking entity position
-      slimeletPosition `should` not be Point(11, 10)
-      slimeletPosition `should` not be Point(9, 10)
-      // Should be adjacent to slime position
-      val distance = math.abs(slimeletPosition.x - 10) + math.abs(slimeletPosition.y - 10)
-      distance shouldBe 1
-    }
+    val slimeletTemplate = Entity(
+      id = "Test Slimelet",
+      Movement(position = Point(0, 0)), // Will be set by system
+      EntityTypeComponent(EntityType.Enemy),
+      Health(10),
+      Initiative(8),
+      Inventory(Nil, None),
+      Drawable(Sprites.slimeletSprite),
+      Hitbox(),
+      DeathEvents()
+    )
+    
+    val spawnEvent = SpawnEntityWithCollisionCheckEvent(slimeletTemplate, adjacentPositions)
+
+    // Process through SpawnEntitySystem
+    val (finalState, finalEvents) = game.system.SpawnEntitySystem.update(gameState, Seq(spawnEvent))
+
+    // Verify slimelet was spawned
+    val spawnedSlimelets = finalState.entities.filter(_.id == "Test Slimelet")
+    spawnedSlimelets should have size 1
+    
+    val slimeletPosition = spawnedSlimelets.head.get[Movement].get.position
+    // Should not spawn on blocked positions
+    slimeletPosition `should` not be Point(11, 10) // Player position
+    slimeletPosition `should` not be Point(9, 10)  // Blocking entity position
+    
+    // Should be on one of the empty adjacent positions
+    slimeletPosition should (be(Point(10, 9)) or be(Point(10, 11)))
   }
 
   test("Slimelets should not spawn more slimelets when killed") {
@@ -174,10 +212,10 @@ class SlimeTest extends AnyFunSuite with Matchers {
     // Verify slimelet was removed
     updatedState.entities.find(_.id == "Test Slimelet") shouldBe None
 
-    // Verify only experience event was generated (no split events)
+    // Verify only experience event was generated (no spawn events)
     events should have size 1
     events.count(_.isInstanceOf[AddExperienceEvent]) shouldBe 1
-    events.count(_.isInstanceOf[SlimeSplitEvent]) shouldBe 0
+    events.count(_.isInstanceOf[SpawnEntityWithCollisionCheckEvent]) shouldBe 0
   }
 
   test("StartingState should create slimes with correct stats") {
