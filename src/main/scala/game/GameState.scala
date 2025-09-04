@@ -31,6 +31,7 @@ case class GameState(playerEntityId: String,
     HealingSystem, // Handles healing events
     ProjectileCreationSystem, // Handles projectile creation events
     MessageSystem, // Handles message events
+    SlimeSplitSystem, // Handle slime splitting with empty position checking
     SpawnEntitySystem,
     WaitSystem,
     OpenDoorSystem,

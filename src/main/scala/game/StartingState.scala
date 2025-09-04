@@ -4,41 +4,12 @@ import data.Sprites
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
-import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityEvent}
+import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityEvent, SlimeSplitEvent}
 import map.{Dungeon, MapGenerator, ItemDescriptor}
 
 
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
-
-  // Helper function to create slimelets when a slime dies
-  private def createSlimelets(deathDetails: DeathDetails): Seq[SpawnEntityEvent] = {
-    val slimePosition = deathDetails.victim.position
-    val availablePositions = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
-      .map(dir => slimePosition + Direction.asPoint(dir))
-    
-    // Create 2 slimelets at available adjacent positions
-    val slimeletPositions = availablePositions.take(2)
-    slimeletPositions.zipWithIndex.map { case (position, index) =>
-      val slimeletId = s"Slimelet-${System.currentTimeMillis()}-$index"
-      
-      val slimelet = Entity(
-        id = slimeletId,
-        Movement(position = position),
-        EntityTypeComponent(EntityType.Enemy),
-        Health(10),
-        Initiative(8),
-        Inventory(Nil, None), // No weapon for slimelets, they use default 1 damage
-        Drawable(Sprites.slimeletSprite),
-        Hitbox(),
-        DeathEvents(deathDetails => deathDetails.killerId.map {
-          killerId => AddExperienceEvent(killerId, experienceForLevel(1) / 4)
-        }.toSeq)
-      )
-      
-      SpawnEntityEvent(slimelet)
-    }
-  }
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
@@ -119,7 +90,9 @@ object StartingState {
           val experienceEvent = deathDetails.killerId.map {
             killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
           }.toSeq
-          experienceEvent ++ createSlimelets(deathDetails)
+          // Use SlimeSplitEvent to handle splitting with empty position checking
+          val splitEvent = SlimeSplitEvent(deathDetails.victim.position, deathDetails.killerId)
+          experienceEvent :+ splitEvent
         })
       )
       

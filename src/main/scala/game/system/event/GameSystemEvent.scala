@@ -71,4 +71,9 @@ object GameSystemEvent {
   case class ResetInitiativeEvent(
     entityId: String
   ) extends GameSystemEvent
+  
+  case class SlimeSplitEvent(
+    slimePosition: game.Point,
+    killerId: Option[String]
+  ) extends GameSystemEvent
 }
