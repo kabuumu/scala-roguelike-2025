@@ -24,8 +24,7 @@ case class GameState(playerEntityId: String,
   // This addresses ordering inconsistencies and enables event scoping
   // IMPORTANT: This preserves the exact original system ordering
   private val phases: Seq[Seq[GameSystem]] = Seq(
-    // Phase 1: Early processing and input handling
-    // InputEvent events are dropped after this phase
+    // Phase 1: Input processing and early systems
     Seq(
       DeathHandlerSystem, // Keep at original position - tests depend on this timing
       ExperienceSystem,
@@ -37,7 +36,7 @@ case class GameState(playerEntityId: String,
       HealingSystem,
       EquipInputSystem
     ),
-    // Phase 2: Creation
+    // Phase 2: Creation and spawning
     Seq(
       ProjectileCreationSystem,
       MessageSystem,
@@ -45,18 +44,18 @@ case class GameState(playerEntityId: String,
       WaitSystem,
       OpenDoorSystem
     ),
-    // Phase 3: Combat processing  
+    // Phase 3: Combat processing
     // CollisionEvent events are dropped after this phase
     Seq(
       CollisionCheckSystem,
       AttackSystem,
       RangeCheckSystem,
       CollisionHandlerSystem,
-      DamageSystem,
-      EquipmentSystem  // Keep EquipmentSystem here to process EquipEvent from Phase 1
+      DamageSystem
     ),
     // Phase 4: Equipment and progression
     Seq(
+      EquipmentSystem,
       InventorySystem,
       InitiativeSystem,
       LevelUpSystem,
@@ -84,11 +83,9 @@ case class GameState(playerEntityId: String,
 
         // Apply event scoping rules based on phase
         val carryOverEvents: Seq[GameSystemEvent] = phaseIndex match {
-          case 0 => // After Phase 1: drop InputEvent
-            allPhaseEvents.collect { case e if !e.isInstanceOf[game.system.event.GameSystemEvent.InputEvent] => e }
-          case 2 => // After Phase 3 (collision phase): drop CollisionEvent
+          case 2 => // After Phase 3 (collision phase): drop CollisionEvent only
             allPhaseEvents.collect { case e if !e.isInstanceOf[game.system.event.GameSystemEvent.CollisionEvent] => e }
-          case _ => // All other phases: carry over all events
+          case _ => // All other phases: carry over all events (including InputEvent)
             allPhaseEvents
         }
 
