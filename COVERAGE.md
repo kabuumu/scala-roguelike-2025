@@ -1,91 +1,85 @@
 # Code Coverage Report
 
-## Current Coverage: 49.0%
+## Current Coverage: 54.1%
 
-This document provides detailed information about code coverage in the Scala Roguelike 2025 project.
+This document provides detailed code coverage metrics and technical analysis for the Scala Roguelike 2025 project. For build and testing instructions, see the main [README.md](README.md#-build--test).
 
 ## Overview
 
-The project maintains **49.0% estimated code coverage** across 2,928 lines of main source code with 628 lines of test code, giving a test-to-source ratio of 0.21.
+The project maintains **54.1% estimated code coverage** across 3,426 lines of main source code with 2,252 lines of test code, providing a test-to-source ratio of 0.66.
 
-## Coverage by Area
+## Detailed Coverage Breakdown
 
 | Area | Main Lines | Test Lines | Estimated Coverage | Description |
 |------|------------|------------|-------------------|-------------|
-| **game/system** | 773 | 299 | ~100% | Combat, movement, equipment systems |
-| **ui** | 200 | 203 | ~100% | User interface and input handling |
-| **game/entity** | 521 | 70 | ~40% | Entity component system |
-| **map** | 478 | 15 | ~9% | Dungeon generation |
+| **game/system** | 924 | 1,436 | ~100% | Combat, movement, equipment systems |
+| **ui** | 209 | 316 | ~100% | User interface and input handling |
+| **map** | 466 | 83 | ~53% | Dungeon generation algorithms |
+| **game/entity** | 613 | 70 | ~34% | Entity component system |
 | **util** | 91 | 0 | ~0% | Pathfinding and utilities |
-| **indigoengine** | 445 | 0 | ~0% | Engine integration |
+| **indigoengine** | 640 | 0 | ~0% | Engine integration layer |
 
-## Test Suites
+## Test Suite Breakdown
 
-The project includes 60 tests across 6 test suites:
+The project includes **128 tests** across **14 test suites**:
 
+- **MovementSystemTest** (7 tests): Player movement and collision detection
+- **GameControllerStoryTest** (6 tests): High-level game interactions
 - **EntityTest** (10 tests): Component system functionality
-- **GameControllerTest** (6 tests): Game logic and player actions  
-- **PathfinderTest** (4 tests): A* pathfinding algorithm
+- **InitiativeSystemTest** (2 tests): Turn-based combat timing
 - **EquipmentSystemTest** (19 tests): Equipment and inventory mechanics
-- **MapGeneratorTest** (18 tests): Dungeon generation with various configurations
+- **MapGeneratorTest** (23 tests): Dungeon generation with various configurations
+- **Plus 8 additional suites**: Covering pathfinding, UI state management, combat systems, and more
 
-## Coverage Tools
+## Coverage Analysis Tools
 
-### Primary Tool: Custom Analysis Script
+### Technical Limitations with ScalaJS
 
-Due to ScalaJS compilation incompatibilities with standard coverage tools, the project uses a custom Python script:
+Standard JVM-based coverage tools have fundamental limitations with ScalaJS projects:
 
-```bash
-python3 scripts/analyze_coverage.py
-```
+- **Scoverage**: Instruments JVM bytecode, but ScalaJS compiles to JavaScript
+- **JaCoCo**: Requires JVM bytecode for instrumentation
+- **Standard tools**: Most coverage frameworks assume JVM execution environment
 
-This script analyzes source code and test files to provide coverage estimates based on:
-- Lines of code in each module
-- Corresponding test coverage
-- Heuristic estimation (3:1 test-to-source coverage ratio)
+### Custom Analysis Solution
 
-### Secondary Tool: sbt-scoverage
+This project uses a custom Python script (`scripts/analyze_coverage.py`) that provides reliable coverage estimates by:
 
-The project includes sbt-scoverage configuration, but it has limitations with ScalaJS:
+- Analyzing source code structure and test file correspondence
+- Using heuristic estimation based on test-to-source ratios
+- Accounting for ScalaJS compilation differences
+- Providing area-specific coverage breakdown
 
-```bash
-# Limited functionality due to ScalaJS compilation issues
-sbt testCoverage
-```
+The script is integrated into CI/CD and provides the coverage metrics shown above.
 
-**Known Issues:**
-- Scoverage instrumentation causes ScalaJS linking errors
-- Standard bytecode instrumentation doesn't work with JavaScript output
-- Coverage reports may not generate correctly
+## Coverage Goals and Improvement Areas
 
-## Coverage Goals
+### Current Baseline: 54%
 
-### Current Baseline: 49%
+The minimum coverage threshold is set to **54%** based on current measured coverage to prevent regression.
 
-The minimum coverage threshold is set to the current baseline of 49% to prevent regression.
+### High-Priority Improvement Areas
 
-### High-Priority Areas for Improvement
+1. **util package** (0% coverage):
+   - Add tests for A* pathfinding algorithm implementation
+   - Test line-of-sight calculation functions
+   - Validate geometric utility functions
 
-1. **util** package (0% coverage):
-   - Add tests for pathfinding algorithms
-   - Test line-of-sight calculations
-   - Validate utility functions
+2. **indigoengine package** (0% coverage):
+   - Add integration tests for game engine interactions
+   - Test rendering pipeline integration
+   - Validate input handling and event processing
 
-2. **map** package (9% coverage):
-   - Expand dungeon generation tests
-   - Test edge cases and error conditions
-   - Validate room placement algorithms
+3. **game/entity package** (34% coverage):
+   - Expand component system test coverage
+   - Test entity lifecycle management scenarios
+   - Add integration tests for entity interactions
 
-3. **game/entity** package (40% coverage):
-   - Increase component system test coverage
-   - Test entity lifecycle management
-   - Add integration tests
-
-### Well-Covered Areas
+### Well-Covered Areas (Maintain Current Standards)
 
 1. **game/system** (~100% coverage):
-   - Comprehensive system testing
-   - Combat mechanics validation
+   - Comprehensive testing of combat mechanics
+   - Movement system validation
    - Equipment system functionality
 
 2. **ui** (~100% coverage):
@@ -93,57 +87,67 @@ The minimum coverage threshold is set to the current baseline of 49% to prevent 
    - User interface state management
    - Controller logic testing
 
-## Technical Limitations
+3. **map** (~53% coverage):
+   - Good coverage of dungeon generation algorithms
+   - Room placement and corridor generation testing
 
-### ScalaJS Compatibility
+## Guidelines for Contributors
 
-Standard JVM-based coverage tools have limitations with ScalaJS projects:
+### Before Submitting Pull Requests
 
-- **Scoverage**: Instruments JVM bytecode, not JavaScript
-- **JaCoCo**: JVM-specific instrumentation
-- **Built-in tools**: Most require JVM execution
+1. **Run coverage analysis**: Use `python3 scripts/analyze_coverage.py` to verify coverage
+2. **Ensure new features include tests**: Especially for areas with low coverage
+3. **Target improvement areas**: Focus on util, indigoengine, and game/entity packages
+4. **Follow build workflow**: See [README.md Build & Test section](README.md#-build--test)
 
-### Workarounds Implemented
+### For Code Reviewers
 
-1. **Custom Analysis**: Python script provides reliable estimates
-2. **Manual Review**: Code review focuses on test coverage
-3. **Documentation**: Clear coverage requirements in contributing guidelines
+1. **Verify test inclusion**: New code should include appropriate tests
+2. **Check coverage impact**: Ensure overall coverage doesn't decrease below 54%
+3. **Focus on critical paths**: Prioritize testing for game-breaking functionality
+4. **Review test quality**: Tests should cover edge cases and error conditions
 
-## Maintaining Coverage
+## Technical Implementation Notes
 
-### For Contributors
+### Custom Coverage Script Methodology
 
-1. Run coverage analysis before submitting PRs:
-   ```bash
-   python3 scripts/analyze_coverage.py
-   ```
+The `analyze_coverage.py` script uses several heuristics:
 
-2. Ensure new features include appropriate tests
+- **File structure analysis**: Maps test files to corresponding source files
+- **Line counting**: Counts non-comment, non-empty lines in source and test files
+- **Ratio calculation**: Estimates coverage based on test-to-source line ratios
+- **Area categorization**: Groups files by package structure for detailed reporting
 
-3. Target areas with low coverage for improvement
+### Known Accuracy Limitations
 
-### For Reviewers
+- **Heuristic-based**: Estimates may not reflect actual runtime coverage
+- **Line-based metric**: Doesn't account for branch or path coverage
+- **Manual validation recommended**: Use alongside code review for accuracy
 
-1. Verify that new code includes tests
-2. Check that coverage doesn't decrease significantly
-3. Focus on critical path coverage
+### Integration with CI/CD
+
+- **Automated analysis**: Coverage script runs on every push and PR
+- **Baseline enforcement**: CI fails if coverage drops below 54%
+- **Reporting**: Coverage reports are generated and stored as artifacts
 
 ## Future Improvements
 
-### Potential Solutions
+### Potential Technical Solutions
 
-1. **Cross-compilation**: Separate JVM build for coverage collection
-2. **Alternative tools**: Research ScalaJS-compatible coverage tools
-3. **Enhanced analysis**: Improve custom script accuracy
+1. **Cross-compilation approach**: Maintain separate JVM build target for coverage collection
+2. **Alternative tools**: Research emerging ScalaJS-compatible coverage frameworks  
+3. **Enhanced analysis**: Improve custom script accuracy with AST parsing
+4. **Runtime instrumentation**: Explore JavaScript-based coverage collection
 
-### Monitoring
+### Monitoring and Process Improvements
 
-1. Regular coverage reviews in PRs
-2. Quarterly coverage improvement goals
-3. Integration with CI/CD pipeline
+1. **Regular coverage reviews**: Include coverage analysis in all PR reviews
+2. **Quarterly improvement goals**: Set specific targets for low-coverage areas
+3. **CI/CD enhancement**: Integrate coverage trending and historical analysis
+4. **Documentation updates**: Keep coverage goals aligned with project growth
 
 ---
 
-**Last Updated**: August 29, 2025  
-**Tool Version**: Custom analyzer v1.0  
-**Baseline Coverage**: 49.0%
+**Last Updated**: September 2025  
+**Analysis Tool**: Custom Python script v1.0  
+**Current Baseline**: 54.1% (128 tests across 14 suites)
