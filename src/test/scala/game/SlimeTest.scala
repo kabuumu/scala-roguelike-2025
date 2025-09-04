@@ -49,8 +49,18 @@ class SlimeTest extends AnyFunSuite with Matchers {
         // Create slimelet spawn events with collision checking
         val slimeletEvents = (0 until 2).map { index =>
           val slimeletId = s"Slimelet-${System.currentTimeMillis()}-$index"
-          val adjacentPositions = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
-            .map(dir => deathDetails.victim.position + Direction.asPoint(dir))
+          val adjacentPositions = Seq(
+            // Cardinal directions
+            deathDetails.victim.position + Point(0, -1),  // Up
+            deathDetails.victim.position + Point(0, 1),   // Down
+            deathDetails.victim.position + Point(-1, 0),  // Left
+            deathDetails.victim.position + Point(1, 0),   // Right
+            // Diagonal directions
+            deathDetails.victim.position + Point(-1, -1), // UpLeft
+            deathDetails.victim.position + Point(1, -1),  // UpRight
+            deathDetails.victim.position + Point(-1, 1),  // DownLeft
+            deathDetails.victim.position + Point(1, 1)    // DownRight
+          )
           
           val slimeletTemplate = Entity(
             id = slimeletId,
@@ -94,13 +104,18 @@ class SlimeTest extends AnyFunSuite with Matchers {
     experienceEvent.entityId shouldBe "Player ID"
     experienceEvent.experience shouldBe experienceForLevel(2) / 4
 
-    // Verify spawn events contain adjacent positions
+    // Verify spawn events contain adjacent positions (including diagonals)
     val spawnEvents = events.filter(_.isInstanceOf[SpawnEntityWithCollisionCheckEvent]).map(_.asInstanceOf[SpawnEntityWithCollisionCheckEvent])
     spawnEvents.foreach { event =>
-      // Check that preferred positions are adjacent to slime position (10, 10)
+      // Check that preferred positions are adjacent to slime position (10, 10) - including diagonals
       event.preferredPositions.foreach { pos =>
-        val distance = math.abs(pos.x - 10) + math.abs(pos.y - 10)
-        distance shouldBe 1
+        val xDistance = math.abs(pos.x - 10)
+        val yDistance = math.abs(pos.y - 10)
+        // Adjacent positions have max distance of 1 in both x and y (Chebyshev distance)
+        xDistance should be <= 1
+        yDistance should be <= 1
+        // Must be at least 1 unit away (not the same position)
+        (xDistance + yDistance) should be >= 1
       }
     }
   }
@@ -134,7 +149,10 @@ class SlimeTest extends AnyFunSuite with Matchers {
 
     // Create a collision-checked spawn event for position (10, 10)
     val adjacentPositions = Seq(
-      Point(10, 9), Point(10, 11), Point(9, 10), Point(11, 10) // Up, Down, Left, Right
+      // Cardinal directions
+      Point(10, 9), Point(10, 11), Point(9, 10), Point(11, 10), // Up, Down, Left, Right
+      // Diagonal directions  
+      Point(9, 9), Point(11, 9), Point(9, 11), Point(11, 11)   // UpLeft, UpRight, DownLeft, DownRight
     )
     
     val slimeletTemplate = Entity(
@@ -163,8 +181,10 @@ class SlimeTest extends AnyFunSuite with Matchers {
     slimeletPosition `should` not be Point(11, 10) // Player position
     slimeletPosition `should` not be Point(9, 10)  // Blocking entity position
     
-    // Should be on one of the empty adjacent positions
-    slimeletPosition should (be(Point(10, 9)) or be(Point(10, 11)))
+    // Should be on one of the empty adjacent positions (including diagonals)
+    slimeletPosition should (be(Point(10, 9)) or be(Point(10, 11)) or 
+                           be(Point(9, 9)) or be(Point(11, 9)) or 
+                           be(Point(9, 11)) or be(Point(11, 11)))
   }
 
   test("Slimelets should not spawn more slimelets when killed") {

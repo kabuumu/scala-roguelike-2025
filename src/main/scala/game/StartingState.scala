@@ -13,9 +13,19 @@ object StartingState {
 
   // Helper function to create slimelet spawn events when slime dies
   private def createSlimeletEvents(slimePosition: Point, killerId: Option[String]): Seq[SpawnEntityWithCollisionCheckEvent] = {
-    // Get all adjacent positions as preferred spawn locations
-    val adjacentPositions = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
-      .map(dir => slimePosition + Direction.asPoint(dir))
+    // Get all adjacent positions (including diagonals) as preferred spawn locations
+    val adjacentPositions = Seq(
+      // Cardinal directions
+      slimePosition + Point(0, -1),  // Up
+      slimePosition + Point(0, 1),   // Down
+      slimePosition + Point(-1, 0),  // Left
+      slimePosition + Point(1, 0),   // Right
+      // Diagonal directions
+      slimePosition + Point(-1, -1), // UpLeft
+      slimePosition + Point(1, -1),  // UpRight
+      slimePosition + Point(-1, 1),  // DownLeft
+      slimePosition + Point(1, 1)    // DownRight
+    )
     
     // Create 2 slimelet templates that will be spawned at available positions
     (0 until 2).map { index =>
