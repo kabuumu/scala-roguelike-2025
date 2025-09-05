@@ -22,4 +22,13 @@ object UIState {
 
     val action: (UIState, Option[InputAction]) = effect(list(index))
   }
+
+  case class MainMenu(selectedOption: Int = 0) extends UIState {
+    val options: Seq[String] = Seq("New Game")
+    
+    def selectNext: MainMenu = copy(selectedOption = (selectedOption + 1) % options.length)
+    def selectPrevious: MainMenu = copy(selectedOption = (selectedOption - 1 + options.length) % options.length)
+    
+    def getSelectedOption: String = options(selectedOption)
+  }
 }
