@@ -2,6 +2,7 @@ package game.save
 
 import scala.scalajs.js
 import scala.scalajs.js.JSON
+import scala.scalajs.js.JSConverters.JSRichOption
 import scala.util.{Try, Success, Failure}
 import game.*
 import game.entity.*
@@ -58,17 +59,25 @@ object SaveGameSerializer {
       val componentData = component match {
         case m: Movement => js.Dynamic.literal("x" -> m.position.x, "y" -> m.position.y)
         case h: Health => 
-          // Use reflection to access private fields or use a simplified approach for now
-          // For MVP, we'll just restore with default health values
+          // We need to access the health values through extension methods
+          // For now, we'll just store default values since baseCurrent/baseMax are private
           js.Dynamic.literal("stored" -> true)
         case i: Initiative => js.Dynamic.literal("max" -> i.maxInitiative, "current" -> i.currentInitiative)
         case e: Experience => js.Dynamic.literal("current" -> e.currentExperience, "levelUp" -> e.levelUp)
-        case _: EntityTypeComponent => js.Dynamic.literal("stored" -> true) // Will need entity type restoration
-        case _: Drawable => js.Dynamic.literal("stored" -> true) // Will use default sprites
+        case et: EntityTypeComponent => 
+          // Serialize the actual entity type
+          js.Dynamic.literal("entityType" -> et.entityType.toString)
+        case d: Drawable => 
+          // For now, just store a flag since we need to handle sprite serialization differently
+          js.Dynamic.literal("stored" -> true)
         case _: Hitbox => js.Dynamic.literal("stored" -> true) // Will use default hitbox
-        case _: SightMemory => js.Dynamic.literal("stored" -> true) // Will reset sight memory
-        case _: Equipment => js.Dynamic.literal("stored" -> true) // Will need equipment restoration
-        case _: Inventory => js.Dynamic.literal("stored" -> true) // Will need inventory restoration  
+        case _: SightMemory => js.Dynamic.literal("stored" -> true) // Will reset sight memory for now
+        case eq: Equipment => 
+          // Serialize equipment items
+          serializeEquipment(eq)
+        case inv: Inventory => 
+          // Serialize inventory items
+          serializeInventory(inv)
         case _ => js.Dynamic.literal() // Skip other components for now
       }
       result.updateDynamic(clazz.getSimpleName)(componentData)
@@ -97,7 +106,7 @@ object SaveGameSerializer {
       result(classOf[Movement]) = Movement(Point(data.x.asInstanceOf[Int], data.y.asInstanceOf[Int]))
     }
     if (js.Object.hasProperty(jsObj, "Health")) {
-      // For MVP, use default health values - will improve this later
+      // For now, use default health values since we simplified serialization
       result(classOf[Health]) = Health(100)
     }
     if (js.Object.hasProperty(jsObj, "Initiative")) {
@@ -108,12 +117,21 @@ object SaveGameSerializer {
       val data = componentsData.Experience.asInstanceOf[js.Dynamic]
       result(classOf[Experience]) = Experience(data.current.asInstanceOf[Int], data.levelUp.asInstanceOf[Boolean])
     }
-    // Add other components with default values for MVP
     if (js.Object.hasProperty(jsObj, "EntityTypeComponent")) {
-      result(classOf[EntityTypeComponent]) = EntityTypeComponent(EntityType.Player) // Will improve this
+      val data = componentsData.EntityTypeComponent.asInstanceOf[js.Dynamic]
+      // Restore actual entity type instead of defaulting to Player
+      if (js.Object.hasProperty(data.asInstanceOf[js.Object], "entityType")) {
+        val entityTypeString = data.entityType.asInstanceOf[String]
+        val entityType = parseEntityType(entityTypeString)
+        result(classOf[EntityTypeComponent]) = EntityTypeComponent(entityType)
+      } else {
+        // Fallback for old format
+        result(classOf[EntityTypeComponent]) = EntityTypeComponent(EntityType.Player)
+      }
     }
     if (js.Object.hasProperty(jsObj, "Drawable")) {
-      result(classOf[Drawable]) = Drawable(Set()) // Will use default sprites
+      // For now, use default drawable since we simplified serialization
+      result(classOf[Drawable]) = Drawable(Set())
     }
     if (js.Object.hasProperty(jsObj, "Hitbox")) {
       result(classOf[Hitbox]) = Hitbox()
@@ -122,10 +140,12 @@ object SaveGameSerializer {
       result(classOf[SightMemory]) = SightMemory()
     }
     if (js.Object.hasProperty(jsObj, "Equipment")) {
-      result(classOf[Equipment]) = Equipment()
+      val data = componentsData.Equipment.asInstanceOf[js.Dynamic]
+      result(classOf[Equipment]) = deserializeEquipment(data)
     }
     if (js.Object.hasProperty(jsObj, "Inventory")) {
-      result(classOf[Inventory]) = Inventory()
+      val data = componentsData.Inventory.asInstanceOf[js.Dynamic]
+      result(classOf[Inventory]) = deserializeInventory(data)
     }
     
     result.toMap
@@ -149,6 +169,97 @@ object SaveGameSerializer {
     } else {
       // Regenerate the dungeon from the seed
       map.MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6, seed = seed)
+    }
+  }
+  
+  private def serializeEquipment(equipment: Equipment): js.Dynamic = {
+    js.Dynamic.literal(
+      "helmet" -> equipment.helmet.map(serializeEquippable).orUndefined,
+      "armor" -> equipment.armor.map(serializeEquippable).orUndefined
+    )
+  }
+  
+  private def deserializeEquipment(data: js.Dynamic): Equipment = {
+    if (js.Object.hasProperty(data.asInstanceOf[js.Object], "helmet")) {
+      val helmet = if (js.isUndefined(data.helmet)) None else Some(deserializeEquippable(data.helmet.asInstanceOf[js.Dynamic]))
+      val armor = if (js.isUndefined(data.armor)) None else Some(deserializeEquippable(data.armor.asInstanceOf[js.Dynamic]))
+      Equipment(helmet, armor)
+    } else {
+      // Fallback for old format
+      Equipment()
+    }
+  }
+  
+  private def serializeEquippable(equippable: Equippable): js.Dynamic = {
+    js.Dynamic.literal(
+      "slot" -> equippable.slot.toString,
+      "damageReduction" -> equippable.damageReduction,
+      "itemName" -> equippable.itemName
+    )
+  }
+  
+  private def deserializeEquippable(data: js.Dynamic): Equippable = {
+    val slot = parseEquipmentSlot(data.slot.asInstanceOf[String])
+    val damageReduction = data.damageReduction.asInstanceOf[Int] 
+    val itemName = data.itemName.asInstanceOf[String]
+    Equippable(slot, damageReduction, itemName)
+  }
+  
+  private def serializeInventory(inventory: Inventory): js.Dynamic = {
+    js.Dynamic.literal(
+      "itemEntityIds" -> js.Array(inventory.itemEntityIds*),
+      "primaryWeaponId" -> inventory.primaryWeaponId.orUndefined,
+      "secondaryWeaponId" -> inventory.secondaryWeaponId.orUndefined
+    )
+  }
+  
+  private def deserializeInventory(data: js.Dynamic): Inventory = {
+    if (js.Object.hasProperty(data.asInstanceOf[js.Object], "itemEntityIds")) {
+      val itemEntityIds = data.itemEntityIds.asInstanceOf[js.Array[String]].toSeq
+      val primaryWeaponId = if (js.isUndefined(data.primaryWeaponId)) None else Some(data.primaryWeaponId.asInstanceOf[String])
+      val secondaryWeaponId = if (js.isUndefined(data.secondaryWeaponId)) None else Some(data.secondaryWeaponId.asInstanceOf[String])
+      Inventory(itemEntityIds, primaryWeaponId, secondaryWeaponId)
+    } else {
+      // Fallback for old format
+      Inventory()
+    }
+  }
+  
+  private def parseEntityType(entityTypeString: String): EntityType = {
+    entityTypeString match {
+      case "Player" => EntityType.Player
+      case "Enemy" => EntityType.Enemy
+      case "Wall" => EntityType.Wall
+      case "Floor" => EntityType.Floor
+      case s if s.startsWith("LockedDoor(") => 
+        // Parse LockedDoor(Red) format
+        val colorPart = s.substring(11, s.length - 1) // Extract "Red" from "LockedDoor(Red)"
+        val keyColour = parseKeyColour(colorPart)
+        EntityType.LockedDoor(keyColour)
+      case s if s.startsWith("Key(") =>
+        // Parse Key(Red) format
+        val colorPart = s.substring(4, s.length - 1) // Extract "Red" from "Key(Red)"
+        val keyColour = parseKeyColour(colorPart)
+        EntityType.Key(keyColour)
+      case "Projectile" => EntityType.Projectile
+      case _ => EntityType.Player // Fallback to Player if unknown
+    }
+  }
+  
+  private def parseKeyColour(colorString: String): KeyColour = {
+    colorString match {
+      case "Yellow" => KeyColour.Yellow
+      case "Red" => KeyColour.Red
+      case "Blue" => KeyColour.Blue
+      case _ => KeyColour.Yellow // Fallback
+    }
+  }
+  
+  private def parseEquipmentSlot(slotString: String): EquipmentSlot = {
+    slotString match {
+      case "Helmet" => EquipmentSlot.Helmet
+      case "Armor" => EquipmentSlot.Armor
+      case _ => EquipmentSlot.Helmet // Fallback
     }
   }
 }
