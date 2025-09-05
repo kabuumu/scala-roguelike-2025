@@ -101,6 +101,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
             ++ perkSelection(model)
             ++ keys(model, spriteSheet)
             ++ equipmentPaperdoll(model, spriteSheet)
+            ++ messageWindow(model)
             ++ versionInfo(model)
         )
       )

@@ -23,6 +23,8 @@ object Sprites {
   
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)
+  val slimeSprite: Sprite = Sprite(29, 8, entityLayer)
+  val slimeletSprite: Sprite = Sprite(30, 8, entityLayer)
   val deadSprite: Sprite = Sprite(0, 15, backgroundLayer)
   val fullHeartSprite: Sprite = Sprite(42, 10, uiLayer)
   val halfHeartSprite: Sprite = Sprite(41, 10, uiLayer)

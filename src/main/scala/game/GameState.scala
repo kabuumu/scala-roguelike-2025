@@ -20,27 +20,27 @@ case class GameState(playerEntityId: String,
     entities.find(_.id == entityId)
   }
 
-  // Phased system execution ordering for explicit lifecycle management
+  // Phased system execution ordering for explicit lifecycle management  
   // This addresses ordering inconsistencies and enables event scoping
-  // IMPORTANT: This preserves the exact original system ordering
+  // Updated to include new systems from main branch
   private val phases: Seq[Seq[GameSystem]] = Seq(
     // Phase 1: Input processing and early systems
     Seq(
-      DeathHandlerSystem, // Keep at original position - tests depend on this timing
+      DeathHandlerSystem,
       ExperienceSystem,
       EnemyAISystem,
       MovementSystem,
       VelocitySystem,
       WaveSystem,
-      ItemUseSystem,
-      HealingSystem,
+      ItemUseSystem, // New unified item system
+      HealingSystem, // Handles healing events
       EquipInputSystem
     ),
-    // Phase 2: Creation and spawning
+    // Phase 2: Creation and spawning  
     Seq(
-      ProjectileCreationSystem,
-      MessageSystem,
-      SpawnEntitySystem,
+      ProjectileCreationSystem, // Handles projectile creation events
+      MessageSystem, // Handles message events
+      SpawnEntitySystem, // Enhanced to handle collision-checked spawning
       WaitSystem,
       OpenDoorSystem
     ),
