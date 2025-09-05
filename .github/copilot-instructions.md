@@ -17,7 +17,7 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Build Commands (NEVER CANCEL - Wait for completion)
 - **Compile**: `sbt compile` -- takes 30 seconds. NEVER CANCEL. Set timeout to 60+ seconds.
-- **Run Tests**: `sbt test` -- takes 30 seconds, runs 57 tests. NEVER CANCEL. Set timeout to 60+ seconds.
+- **Run Tests**: `sbt test` -- takes 30 seconds, runs 132 tests. NEVER CANCEL. Set timeout to 60+ seconds.
 - **Build Web Version**: `sbt build` -- takes 40 seconds total. NEVER CANCEL. Set timeout to 90+ seconds.
 - **Coverage Analysis**: `python3 scripts/analyze_coverage.py` -- analyzes test coverage, takes 5 seconds.
 - **Coverage Report (Limited)**: `sbt testCoverage` -- limited due to ScalaJS compatibility issues.
@@ -26,7 +26,7 @@ Always reference these instructions first and fallback to search or bash command
 ### Manual Validation Steps
 After making changes, ALWAYS validate by running this complete scenario:
 1. `sbt compile` -- ensure compilation succeeds (some warnings are normal)
-2. `sbt test` -- ensure all 57 tests pass
+2. `sbt test` -- ensure all 132 tests pass
 3. `python3 scripts/analyze_coverage.py` -- check coverage hasn't decreased significantly
 4. `sbt build` -- creates web version in `target/indigoBuild/`
 5. Serve and test the web game:
@@ -38,6 +38,8 @@ After making changes, ALWAYS validate by running this complete scenario:
 7. Test basic gameplay: arrow keys for movement, check UI elements (health bar, equipment panel, inventory)
 8. Verify game mechanics: player movement, enemy interaction, dungeon visibility
 
+**For new features:** Follow TDD - write failing test first, then implement code to pass the test.
+
 ## Project Structure
 
 ### Key Directories
@@ -47,7 +49,7 @@ After making changes, ALWAYS validate by running this complete scenario:
   - `ui/` -- User interface and input handling
   - `map/` -- Dungeon generation and navigation
   - `util/` -- Utility functions (pathfinding, line of sight)
-- `src/test/scala/` -- Test suites (57 tests total)
+- `src/test/scala/` -- Test suites (132 tests total)
 - `assets/` -- Game assets (sprites, fonts)
 - `scripts/` -- Coverage analysis and build tools
 - `target/indigoBuild/` -- Web build output
@@ -67,9 +69,12 @@ After making changes, ALWAYS validate by running this complete scenario:
 - **Desktop Version**: `sbt runGame` will fail in sandboxed environments but works in local development
 
 ### Testing
-- **All Tests**: `sbt test` (30 seconds, 57 tests)
+- **All Tests**: `sbt test` (30 seconds, 132 tests)
 - **Specific Test**: `sbt "testOnly ui.GameControllerTest"`
 - **Test Categories**: EntityTest, PathfinderTest, GameControllerTest, EquipmentSystemTest, MapGeneratorTest
+- **TDD Cycle**: For new features, write failing test first (Red), implement minimal code (Green), refactor (Refactor)
+- **Game Story DSL**: Use `Given.thePlayerAt()...beginStory()` for readable integration tests
+- **Component Testing**: Use `.component[ComponentType].satisfies()` for ECS validation
 
 ### Code Coverage
 - **Coverage Analysis**: `python3 scripts/analyze_coverage.py` -- comprehensive coverage report (5 seconds)
@@ -126,9 +131,85 @@ After making changes, ALWAYS validate by running this complete scenario:
 - **Coverage Validation**: Run `python3 scripts/analyze_coverage.py` before PRs to ensure coverage doesn't decrease
 - **Manual Validation Required**: The web game MUST be tested manually after changes
 - **No Linting Tools**: Project does not use scalafmt or scalafix
-- **Test Coverage**: 57 comprehensive tests covering 49% of codebase with focus on core game mechanics
+- **Test Coverage**: 132 comprehensive tests covering 49% of codebase with focus on core game mechanics
 - **Expected Warnings**: Some pattern matching and type warnings are normal
 - **Coverage Focus**: Prioritize testing critical paths and new features; existing high-coverage areas (systems, UI) set the standard
+
+### Test-Driven Development (TDD) Workflow
+When writing new code, especially for core game features, follow the TDD cycle:
+
+#### 1. RED: Write a Failing Test First
+```scala
+// Example: Adding a new combat feature
+test("Player should gain experience when killing enemy with new weapon type") {
+  val magicWeapon = createWeaponEntity("magic-staff", 3, Magic) // New weapon type
+  val enemy = Given.enemies.basic("test-enemy", 5, 5, health = 1)
+  
+  Given
+    .thePlayerAt(4, 4)
+    .withItems(magicWeapon)
+    .withEntities(enemy)
+    .beginStory()
+    .thePlayer.component[Experience].satisfies(_.currentExperience == 0)
+    // This will fail initially - Magic weapon type doesn't exist yet
+    .thePlayer.moves(Direction.Right) // Attack enemy
+    .thePlayer.component[Experience].satisfies(_.currentExperience > 0)
+}
+```
+
+#### 2. GREEN: Write Minimal Code to Pass
+```scala
+// Add only what's needed to make the test pass
+object WeaponType extends Enumeration {
+  type WeaponType = Value
+  val Melee, Ranged, Magic = Value // Add Magic type
+}
+
+// Update combat system to handle Magic weapons
+// Implement minimal experience gain logic
+```
+
+#### 3. REFACTOR: Improve Code Without Breaking Tests
+- Extract common patterns
+- Improve naming and structure
+- Ensure all existing tests still pass
+
+#### When to Use TDD
+- **New Game Features**: Combat mechanics, item systems, player abilities
+- **Core System Changes**: Entity components, game state management
+- **Bug Fixes**: Write test reproducing the bug, then fix it
+- **Complex Logic**: Pathfinding, AI behavior, dungeon generation algorithms
+
+#### When to Use Existing Approaches
+- **UI Changes**: Use manual testing with web game validation
+- **Performance Optimizations**: Use existing benchmarks and profiling
+- **Documentation**: Direct updates without test-first approach
+- **Simple Refactoring**: Use existing comprehensive test suite for validation
+
+#### TDD with Game Story DSL
+Leverage the existing Game Story DSL for readable, maintainable TDD:
+
+```scala
+test("New potion type should provide temporary speed boost") {
+  val speedPotion = items.speedPotion("speed-boost-1") // Will fail - doesn't exist
+  
+  Given
+    .thePlayerAt(4, 4)
+    .withItems(speedPotion)
+    .beginStory()
+    .thePlayer.opensItems()
+    .thePlayer.confirmsSelection() // Use speed potion
+    .thePlayer.component[Movement].satisfies(_.speed > 1) // Enhanced speed
+    .timePasses(10) // Wait for effect to wear off  
+    .thePlayer.component[Movement].satisfies(_.speed == 1) // Back to normal
+}
+```
+
+#### TDD Validation Steps
+1. **Red**: Run `sbt "testOnly YourNewTest"` - should fail
+2. **Green**: Implement minimal code, run test again - should pass
+3. **Refactor**: Run `sbt test` - all 132+ tests should pass
+4. **Coverage**: Run `python3 scripts/analyze_coverage.py` - maintain 49%+ baseline
 
 Remember: This is a real-time rendered game with complex state management. Always validate changes by playing the actual game to ensure mechanics work correctly.
 
@@ -184,7 +265,7 @@ The custom analyzer provides estimates based on:
 All build commands have been validated and measured on this system:
 
 - **Compile**: `sbt compile` takes ~33 seconds (includes downloading dependencies on first run)
-- **Tests**: `sbt test` takes ~31 seconds and runs 57 tests (not 56 as previously documented)
+- **Tests**: `sbt test` takes ~31 seconds and runs 132 tests
 - **Build**: `sbt build` takes ~16 seconds (faster than documented estimate)
 - **Specific Tests**: `sbt "testOnly ui.GameControllerTest"` takes ~11 seconds
 
