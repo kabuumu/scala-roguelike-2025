@@ -54,8 +54,9 @@ class MainMenuTest extends AnyFunSpec with Matchers {
     it("should cycle through options correctly") {
       val mainMenu = MainMenu()
       val nextMenu = mainMenu.selectNext
-      // With only one option, should stay at 0
-      nextMenu.selectedOption shouldBe 0
+      // Now has two options, should move to second option
+      nextMenu.selectedOption shouldBe 1
+      nextMenu.getSelectedOption should (equal("Continue Game") or equal("Continue Game (No Save)"))
     }
 
     it("should handle navigation input") {
