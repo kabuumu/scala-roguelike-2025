@@ -38,6 +38,7 @@ object StartingState {
         Health(10),
         Initiative(8),
         Inventory(Nil, None), // No weapon for slimelets, they use default 1 damage
+        EventMemory(),
         Drawable(Sprites.slimeletSprite),
         Hitbox(),
         DeathEvents(deathDetails => deathDetails.killerId.map {
@@ -85,6 +86,7 @@ object StartingState {
         Health(25),
         Initiative(12),
         Inventory(Nil, Some(s"rat-weapon-$index")),
+        EventMemory(),
         Drawable(Sprites.ratSprite),
         Hitbox(),
         DeathEvents(deathDetails => deathDetails.killerId.map {
@@ -103,6 +105,7 @@ object StartingState {
         Health(18),
         Initiative(25),
         Inventory(Nil, Some(s"snake-weapon-$index")),
+        EventMemory(),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
         DeathEvents(deathDetails =>
@@ -122,6 +125,7 @@ object StartingState {
         Health(20),
         Initiative(15),
         Inventory(Nil, Some(s"slime-weapon-$index")),
+        EventMemory(),
         Drawable(Sprites.slimeSprite),
         Hitbox(),
         DeathEvents(deathDetails => {
@@ -154,6 +158,7 @@ object StartingState {
         ),
         Equipment(),
         SightMemory(),
+        EventMemory(),
         Drawable(Sprites.playerSprite),
         Hitbox(),
         Experience(),

@@ -60,7 +60,8 @@ case class GameState(playerEntityId: String,
       EquipmentSystem,
       InitiativeSystem,
       LevelUpSystem,
-      SightMemorySystem
+      SightMemorySystem,
+      EventMemorySystem
     )
   )
 
