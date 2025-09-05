@@ -44,19 +44,20 @@ case class GameState(playerEntityId: String,
       WaitSystem,
       OpenDoorSystem
     ),
-    // Phase 3: Combat processing
+    // Phase 3: Combat and collision processing
+    // InventorySystem moved here to handle CollisionEvent before it's dropped
     // CollisionEvent events are dropped after this phase
     Seq(
       CollisionCheckSystem,
       AttackSystem,
       RangeCheckSystem,
       CollisionHandlerSystem,
-      DamageSystem
+      DamageSystem,
+      InventorySystem // Moved from Phase 4 to handle CollisionEvent for pickup
     ),
     // Phase 4: Equipment and progression
     Seq(
       EquipmentSystem,
-      InventorySystem,
       InitiativeSystem,
       LevelUpSystem,
       SightMemorySystem

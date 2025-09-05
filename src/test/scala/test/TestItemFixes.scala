@@ -10,8 +10,9 @@ import game.entity.Movement.* // Import position extension
 import game.entity.EntityType.LockedDoor // Import LockedDoor
 import game.system.event.GameSystemEvent.{HealEvent, CreateProjectileEvent} // Import GameSystemEvents used as effects
 import map.{Dungeon, TileType}
-import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget}
+import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget, InputEvent}
 import game.system.InventorySystem
+import ui.InputAction
 
 class TestItemFixes extends AnyFunSuiteLike with Matchers {
   // Create a simple test dungeon
@@ -131,5 +132,46 @@ class TestItemFixes extends AnyFunSuiteLike with Matchers {
     ) shouldBe true
     
     usableItems.length should be >= 3
+  }
+
+  test("Key pickup should work with phased system execution") {
+    // Create a key item at position (1, 0)
+    val keyItem = ItemFactory.createKey("test-key", game.entity.KeyColour.Yellow)
+      .addComponent(Movement(position = Point(1, 0)))
+      .addComponent(Hitbox())
+    
+    // Create player with hitbox for collision detection at position (1, 0) - same as key
+    val player = Entity(
+      id = "player",
+      EntityTypeComponent(EntityType.Player),
+      Movement(position = Point(1, 0)), // Start at same position as key to force collision
+      Health(10),
+      Initiative(0),
+      Inventory(),
+      Hitbox()
+    )
+    
+    val gameState = GameState(
+      playerEntityId = "player",
+      entities = Seq(player, keyItem),
+      dungeon = testDungeon
+    )
+    
+    // Don't use movement - instead directly test collision handling
+    // This simulates what happens when player and key are at same position
+    val collisionEvent = CollisionEvent("player", CollisionTarget.Entity("test-key"))
+    
+    // Run the phased system execution with a collision event
+    val updatedState = gameState.updateWithSystems(Seq(collisionEvent))
+    
+    // Check that player picked up the key
+    val playerInventory = updatedState.playerEntity.get[Inventory].get
+    
+    playerInventory.itemEntityIds should contain("test-key")
+    
+    // Check that key lost its Movement component (no longer rendered)
+    val keyAfterPickup = updatedState.entities.find(_.id == "test-key")
+    keyAfterPickup shouldBe defined
+    keyAfterPickup.get.has[Movement] shouldBe false
   }
 }
