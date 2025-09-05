@@ -49,17 +49,15 @@ class FullSystemIntegrationTest extends AnyFunSuiteLike with Matchers {
 
   test("Full system: Item usage workflow through input pipeline") {
     val potion = Given.items.potion("test-potion")
-    val damagedWorld = Given.thePlayerAt(4, 4).withItems(potion)
-    val damagedPlayer = damagedWorld.player.damage(3, "test")
-    val finalWorld = damagedWorld.copy(player = damagedPlayer)
     
-    val gameController = ui.GameController(UIState.Move, finalWorld.buildGameState()).init()
-    
-    FullSystemTest(gameController)
+    scenarios.playerWithItems(4, 4, potion)
+      .damagePlayer(3) // Damage player for testing healing
       .assertions.playerHasHealth(7) // Should be damaged
       .userInput.usesItem() // Press 'U' to open items
       .assertions.uiStateIs[UIState.ListSelect[?]] // Should enter item selection
+      .waitUntilPlayerReady() // Wait for UI action to process
       .userInput.confirms() // Press Space to use potion
+      .waitUntilPlayerReady() // Wait for item to be used
       .assertions.playerHasHealth(10) // Should be healed
       .assertions.uiStateIs[UIState.Move.type] // Should return to move state
   }
@@ -109,10 +107,13 @@ class FullSystemIntegrationTest extends AnyFunSuiteLike with Matchers {
       // Test all major input mappings work through the pipeline
       .userInput.pressesKey(Key.KEY_W) // Alternative movement
       .assertions.playerIsAt(4, 3)
+      .waitUntilPlayerReady()
       .userInput.pressesKey(Key.KEY_S)
       .assertions.playerIsAt(4, 4)
+      .waitUntilPlayerReady()
       .userInput.pressesKey(Key.KEY_A)
       .assertions.playerIsAt(3, 4)
+      .waitUntilPlayerReady()
       .userInput.pressesKey(Key.KEY_D)
       .assertions.playerIsAt(4, 4)
   }

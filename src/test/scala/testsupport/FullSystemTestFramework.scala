@@ -3,7 +3,7 @@ package testsupport
 import game.Input
 import game.entity.*
 import game.entity.Movement.position
-import game.entity.Health.currentHealth
+import game.entity.Health.{currentHealth, damage}
 import game.entity.Initiative.isReady
 import ui.{GameController, UIState}
 import org.scalatest.Assertions.*
@@ -236,6 +236,17 @@ object FullSystemTestFramework {
         fail(s"Player never became ready after $attempts frames")
       }
       test
+    }
+    
+    /**
+     * Helper to damage the player for testing healing
+     */
+    def damagePlayer(damage: Int): FullSystemTest = {
+      val damagedGameState = gameState.updateEntity(
+        gameState.playerEntity.id,
+        gameState.playerEntity.damage(damage, "test")
+      )
+      copy(gameController = gameController.copy(gameState = damagedGameState))
     }
     
     /**
