@@ -74,50 +74,73 @@ sbt runGame
 
 *Note: Desktop version may not work in all environments; web version is recommended.*
 
-## 🛠 Build System
+## 🛠 Build & Test
 
-### SBT Commands
+### Prerequisites
 
-The project uses SBT (Scala Build Tool) with custom commands:
+- **Java 17+** (check with `java -version`)
+- **SBT 1.10.2** (install if needed):
+  ```bash
+  curl -fLo sbt-1.10.2.zip https://github.com/sbt/sbt/releases/download/v1.10.2/sbt-1.10.2.zip
+  unzip sbt-1.10.2.zip
+  export PATH=$PATH:$(pwd)/sbt/bin
+  ```
 
-- **`sbt compile`** - Compile the Scala code (~30 seconds)
-- **`sbt test`** - Run all tests (~30 seconds, 60 tests)
-- **`sbt build`** - Build web version (~40 seconds)
-- **`sbt runGame`** - Build and run (web + attempt desktop)
-- **`sbt testCoverage`** - Run tests with coverage instrumentation
+### Core Commands
 
-### Build Configuration
-
-The `build.sbt` file configures:
-
-- **Scala 3.6.4** with ScalaJS plugin
-- **Indigo 0.22.0** game engine
-- **Custom asset pipeline** for sprites and fonts
-- **ScalaTest 3.2.19** for testing
-- **sbt-scoverage 2.2.2** for code coverage
-
-### Code Coverage
-
-The project maintains **49.0% estimated code coverage** with comprehensive testing across core systems:
-
-#### Coverage by Area:
-- **game/system**: ~100% (773 lines, 299 test lines) - Combat, movement, equipment systems
-- **ui**: ~100% (200 lines, 203 test lines) - User interface and input handling
-- **game/entity**: ~40% (521 lines, 70 test lines) - Entity component system
-- **map**: ~9% (478 lines, 15 test lines) - Dungeon generation
-- **util**: ~0% (91 lines, 0 test lines) - Pathfinding and utilities
-- **indigoengine**: ~0% (445 lines, 0 test lines) - Engine integration
-
-#### Coverage Commands:
 ```bash
-# Run custom coverage analysis (works with ScalaJS)
+# Build and compilation
+sbt compile                    # Compile Scala code (~30 seconds)
+sbt build                      # Build web version (~40 seconds)
+sbt runGame                    # Build and run (web + attempt desktop)
+
+# Testing
+sbt test                       # Run all tests (~30 seconds, 128 tests)
+sbt "testOnly ui.GameControllerTest"  # Run specific test suite
+
+# Coverage analysis
+python3 scripts/analyze_coverage.py  # Custom coverage analysis (recommended)
+sbt testCoverage              # Standard scoverage (limited ScalaJS support)
+```
+
+### Test Coverage
+
+The project maintains **54.1% estimated code coverage** across **128 tests** in **14 test suites**:
+
+- **MovementSystemTest** (7 tests): Player movement and collision detection
+- **GameControllerStoryTest** (6 tests): Game logic and player actions  
+- **EntityTest** (10 tests): Entity component system functionality
+- **InitiativeSystemTest** (2 tests): Turn-based initiative system
+- **EquipmentSystemTest** (19 tests): Equipment and inventory mechanics
+- **MapGeneratorTest** (23 tests): Dungeon generation with various configurations
+- **And 8 additional test suites** covering pathfinding, combat, and UI systems
+
+#### Coverage Analysis
+
+Due to ScalaJS compilation limitations with standard coverage tools (scoverage, JaCoCo), this project uses a custom Python analysis script:
+
+```bash
+# Recommended: Custom analysis script (works reliably with ScalaJS)
 python3 scripts/analyze_coverage.py
 
-# Standard scoverage (limited ScalaJS support)
+# Limited: Standard scoverage (may fail during ScalaJS linking)
 sbt testCoverage
 ```
 
-*Note: Standard scoverage has limitations with ScalaJS compilation. The custom analysis script provides reliable coverage estimates for this project.*
+**Known Limitations:**
+- Standard scoverage instruments JVM bytecode, not JavaScript output
+- ScalaJS linking can fail with instrumentation enabled
+- Custom script provides reliable estimates based on test file analysis
+
+For detailed coverage metrics and improvement goals, see [`COVERAGE.md`](COVERAGE.md).
+
+### Build Configuration
+
+The `build.sbt` configures:
+- **Scala 3.6.4** with ScalaJS plugin for web compilation
+- **Indigo 0.22.0** game engine for rendering and input
+- **ScalaTest 3.2.19** for comprehensive testing framework
+- **Custom asset pipeline** for embedding fonts and processing sprites
 
 ### Project Structure
 
@@ -156,44 +179,22 @@ The build system automatically:
 
 ## 🧪 Development
 
-### Running Tests
+For complete build and testing instructions, see the [Build & Test](#-build--test) section above.
 
-```bash
-# Run all tests (60 tests in 6 suites)
-sbt test
+### Development Workflow
 
-# Run specific test suite
-sbt "testOnly ui.GameControllerTest"
-
-# Run coverage analysis
-python3 scripts/analyze_coverage.py
-
-# Attempt standard coverage (limited ScalaJS support)
-sbt testCoverage
-```
-
-### Test Coverage
-
-The project maintains **49.0% overall code coverage** with comprehensive test suites:
-
-- **EntityTest**: Component system tests (10 tests)
-- **GameControllerTest**: Game logic and player actions (6 tests)  
-- **PathfinderTest**: A* pathfinding algorithm (4 tests)
-- **EquipmentSystemTest**: Equipment and inventory mechanics (19 tests)
-- **MapGeneratorTest**: Dungeon generation with various configurations (18 tests)
-
-**Coverage Breakdown:**
-- Core game systems (game/system): ~100% coverage
-- User interface (ui): ~100% coverage  
-- Entity component system (game/entity): ~40% coverage
-- Map generation (map): ~9% coverage
-- Utilities and engine integration: Limited coverage
+1. **Make changes** to Scala source files
+2. **Test compilation**: `sbt compile`
+3. **Run tests**: `sbt test`
+4. **Check coverage**: `python3 scripts/analyze_coverage.py`
+5. **Build web version**: `sbt build`
+6. **Test in browser**: Serve from `target/indigoBuild/` with `python3 -m http.server 8080`
 
 ### Code Quality
 
 The project maintains high code quality with:
 
-- Comprehensive test suite (60 tests)
+- Comprehensive test suite (128 tests across 14 suites)
 - Entity Component System architecture
 - Functional programming principles
 - Type-safe Scala 3 features
@@ -204,7 +205,7 @@ The project maintains high code quality with:
 
 ### CI/CD Pipeline
 
-The project uses GitHub Actions for:
+The project uses GitHub Actions for automated deployment:
 
 1. **Continuous Integration** (`.github/workflows/scala.yml`):
    - Runs on every push to main branch
@@ -212,10 +213,9 @@ The project uses GitHub Actions for:
    - Validates all tests pass
 
 2. **Pull Request Preview** (`.github/workflows/pr-preview.yml`):
-   - Runs on every pull request
-   - Builds playable preview version
-   - Deploys to GitHub Pages with PR-specific URL
-   - Automatically comments with direct link
+   - Builds playable preview for every pull request
+   - Deploys to GitHub Pages with PR-specific URL pattern
+   - Automatically comments with direct preview link
 
 3. **Production Deployment** (`.github/workflows/deploy.yml`):
    - Deploys main game to https://kabuumu.github.io/scala-roguelike-2025/
@@ -225,12 +225,6 @@ The project uses GitHub Actions for:
 4. **Preview Cleanup** (`.github/workflows/pr-cleanup.yml`):
    - Automatically removes PR previews when PRs are closed
    - Keeps GitHub Pages clean and organized
-   - Comments on PR with testing instructions
-
-3. **Continuous Deployment** (`.github/workflows/deploy.yml`):
-   - Deploys to GitHub Pages on main branch pushes
-   - Builds optimized JavaScript bundle
-   - Serves the game at GitHub Pages URL
 
 ### Manual Deployment
 
@@ -274,19 +268,8 @@ The game uses a modern ECS architecture:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run tests: `sbt test`
-5. Check coverage: `python3 scripts/analyze_coverage.py`
-6. Build and test web version: `sbt build`
-7. Submit a pull request
-
-### Development Workflow
-
-1. **Make changes** to Scala source files
-2. **Test compilation**: `sbt compile`
-3. **Run tests**: `sbt test`
-4. **Check coverage**: `python3 scripts/analyze_coverage.py`
-5. **Build web version**: `sbt build`
-6. **Test in browser**: Serve from `target/indigoBuild/`
+4. Follow the [Development Workflow](#development-workflow) to test changes
+5. Submit a pull request
 
 ### Pull Request Previews
 
@@ -304,7 +287,7 @@ This enables instant testing of changes without any downloads or local setup req
 
 ### Coverage Requirements
 
-- Maintain minimum **49% overall coverage** (current baseline)
+- Maintain minimum **54% overall coverage** (current baseline)
 - New features should include appropriate tests
 - Critical systems (game/system, ui) should maintain high coverage
 - Use `python3 scripts/analyze_coverage.py` to verify coverage levels
