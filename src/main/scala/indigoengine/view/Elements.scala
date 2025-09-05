@@ -449,6 +449,8 @@ object Elements {
         val x = scrollSelect.cursor.x
         val y = scrollSelect.cursor.y
         s"Target: [$x,$y]. Press Enter to confirm action at this location."
+      case _: UIState.MainMenu =>
+        "" // No message window content for main menu
     }
     
     // Position message window at the very bottom of the visible canvas area
@@ -471,5 +473,31 @@ object Elements {
     }
     
     Batch(background) ++ textElements.toBatch
+  }
+
+  def mainMenu(model: GameController): Batch[SceneNode] = {
+    model.uiState match {
+      case mainMenu: UIState.MainMenu =>
+        val titleText = "Scala Roguelike 2025"
+        val titleX = (canvasWidth - (titleText.length * 8)) / 2 // Center title roughly
+        val titleY = canvasHeight / 3
+        
+        val title = text(titleText, titleX, titleY)
+        
+        val menuOptions = mainMenu.options.zipWithIndex.map { case (option, index) =>
+          val optionY = titleY + (spriteScale * 3) + (index * spriteScale * 2)
+          val optionX = (canvasWidth - (option.length * 8)) / 2 // Center options roughly
+          val isSelected = index == mainMenu.selectedOption
+          
+          val optionText = if (isSelected) s"> $option <" else s"  $option  "
+          text(optionText, optionX - 16, optionY)
+        }
+        
+        val instructions = text("Use Arrow Keys and Enter", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
+        
+        Batch(title) ++ menuOptions.toBatch ++ Batch(instructions)
+      case _ =>
+        Batch.empty
+    }
   }
 }

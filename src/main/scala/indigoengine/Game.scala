@@ -44,10 +44,40 @@ object Game extends IndigoSandbox[Unit, GameController] {
   )
 
   override def initialModel(startupData: Unit): Outcome[GameController] = {
+    // Create a minimal dummy game state for the main menu (it won't be used until New Game is selected)
+    val dummyDungeon = map.Dungeon(
+      roomGrid = Set(game.Point(0, 0)),
+      roomConnections = Set.empty,
+      blockedRooms = Set.empty,
+      startPoint = game.Point(0, 0),
+      endpoint = None,
+      items = Set.empty,
+      testMode = true,
+      seed = 0L
+    )
+    
+    val dummyPlayer = game.entity.Entity(
+      id = "dummy",
+      game.entity.Movement(position = game.Point(0, 0)),
+      game.entity.EntityTypeComponent(game.entity.EntityType.Player),
+      game.entity.Health(100),
+      game.entity.Initiative(10),
+      game.entity.Inventory(Nil, None),
+      game.entity.Drawable(data.Sprites.playerSprite),
+      game.entity.Hitbox(),
+      game.entity.DeathEvents()
+    )
+    
+    val dummyGameState = game.GameState(
+      playerEntityId = "dummy",
+      entities = Vector(dummyPlayer),
+      dungeon = dummyDungeon
+    )
+    
     Outcome(GameController(
-      UIState.Move,
-      StartingState.startingGameState
-    ).init())
+      UIState.MainMenu(),
+      dummyGameState
+    ))
   }
 
   override def updateModel(context: Context[Unit], model: GameController): GlobalEvent => Outcome[GameController] =
@@ -65,47 +95,58 @@ object Game extends IndigoSandbox[Unit, GameController] {
       }
 
   override def present(context: Context[Unit], model: GameController): Outcome[SceneUpdateFragment] = {
-    val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
-    val player = model.gameState.playerEntity
-    val game.Point(playerX, playerY) = player.position
-    val visiblePoints = model.gameState.getVisiblePointsFor(player)
-    val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
-
-    // Combine filtering and mapping for tileSprites
-    val tileSprites = model.gameState.dungeon.tiles.iterator.collect {
-      case (tilePosition, tileType) if sightMemory.contains(tilePosition) =>
-        val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
-        if (visiblePoints.contains(tilePosition)) tileSprite
-        else tileSprite.asInstanceOf[Graphic[Material.Bitmap]]
-          .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
-    }.toSeq
-
-    // Filter and map entities in one pass
-    val entitySprites: Batch[SceneNode] = model.gameState.entities
-      .filter(e => visiblePoints.contains(e.position))
-      .toBatch
-      .flatMap(entity =>
-        spriteSheet.fromEntity(entity) ++ enemyHealthBar(entity)
-      )
-  
-    val cursor = drawUIElements(spriteSheet, model)
-
-    Outcome(
-      SceneUpdateFragment(
-        Layer.Content((tileSprites ++ cursor).toBatch ++ entitySprites)
-          .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
-        Layer.Content(
-          healthBar(model)
-            ++ experienceBar(model)
-            ++ usableItems(model, spriteSheet)
-            ++ perkSelection(model)
-            ++ keys(model, spriteSheet)
-            ++ equipmentPaperdoll(model, spriteSheet)
-            ++ messageWindow(model)
-            ++ versionInfo(model)
+    model.uiState match {
+      case _: UIState.MainMenu =>
+        // Render main menu screen
+        Outcome(
+          SceneUpdateFragment(
+            Layer.Content(mainMenu(model))
+          )
         )
-      )
-    )
+      case _ =>
+        // Render normal game
+        val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+        val player = model.gameState.playerEntity
+        val game.Point(playerX, playerY) = player.position
+        val visiblePoints = model.gameState.getVisiblePointsFor(player)
+        val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
+
+        // Combine filtering and mapping for tileSprites
+        val tileSprites = model.gameState.dungeon.tiles.iterator.collect {
+          case (tilePosition, tileType) if sightMemory.contains(tilePosition) =>
+            val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
+            if (visiblePoints.contains(tilePosition)) tileSprite
+            else tileSprite.asInstanceOf[Graphic[Material.Bitmap]]
+              .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
+        }.toSeq
+
+        // Filter and map entities in one pass
+        val entitySprites: Batch[SceneNode] = model.gameState.entities
+          .filter(e => visiblePoints.contains(e.position))
+          .toBatch
+          .flatMap(entity =>
+            spriteSheet.fromEntity(entity) ++ enemyHealthBar(entity)
+          )
+    
+        val cursor = drawUIElements(spriteSheet, model)
+
+        Outcome(
+          SceneUpdateFragment(
+            Layer.Content((tileSprites ++ cursor).toBatch ++ entitySprites)
+              .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
+            Layer.Content(
+              healthBar(model)
+                ++ experienceBar(model)
+                ++ usableItems(model, spriteSheet)
+                ++ perkSelection(model)
+                ++ keys(model, spriteSheet)
+                ++ equipmentPaperdoll(model, spriteSheet)
+                ++ messageWindow(model)
+                ++ versionInfo(model)
+            )
+          )
+        )
+    }
   }
 
   private def drawUIElements(spriteSheet: Graphic[?], model: GameController): Seq[SceneNode] = {

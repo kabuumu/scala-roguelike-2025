@@ -38,10 +38,31 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
     //To ensure updates only happen at a certain rate
     if (delta >= ticksPerSecond / framesPerSecond) {
       val (newUiState, optAction) = optInput match {
-        case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond && gameState.playerEntity.isReady =>
-          handleInput(input)
+        case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond =>
+          uiState match {
+            case _: UIState.MainMenu => handleInput(input)  // MainMenu doesn't need ready check
+            case _ if gameState.playerEntity.isReady => handleInput(input)  // Other states need ready check
+            case _ => (uiState, None)
+          }
         case _ =>
           (uiState, None)
+      }
+      
+      // Handle special case for MainMenu transitions
+      (newUiState, optAction) match {
+        case (newState, None) if newState != uiState =>
+          // This is likely a MainMenu -> NewGame transition
+          uiState match {
+            case _: UIState.MainMenu =>
+              newState match {
+                case UIState.Move =>
+                  // Starting a new game, return a fresh GameController
+                  return GameController(UIState.Move, StartingState.startingGameState, currentTime).init()
+                case _ => // Continue with normal flow
+              }
+            case _ => // Continue with normal flow
+          }
+        case _ => // Continue with normal flow
       }
       
       val newGameState = gameState.updateWithSystems(optAction.map(
@@ -61,6 +82,17 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
   }
 
   private def handleInput(input: Input): (UIState, Option[InputAction]) = uiState match {
+    case mainMenu: UIState.MainMenu =>
+      input match {
+        case Input.Move(Direction.Up) => (mainMenu.selectPrevious, None)
+        case Input.Move(Direction.Down) => (mainMenu.selectNext, None)
+        case Input.UseItem | Input.Attack(_) | Input.Confirm =>
+          mainMenu.getSelectedOption match {
+            case "New Game" => (UIState.Move, None)  // Just transition to Move, update() will handle creating new game
+            case _ => (mainMenu, None)
+          }
+        case _ => (mainMenu, None)
+      }
     case UIState.Move =>
       input match {
         case Input.Move(direction) =>
