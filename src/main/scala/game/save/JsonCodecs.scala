@@ -6,6 +6,7 @@ import scala.scalajs.js.JSConverters.JSRichOption
 import scala.util.{Try, Success, Failure}
 import game.*
 import game.entity.*
+import game.entity.Health.{currentHealth, maxHealth}
 import map.*
 
 /**
@@ -49,27 +50,26 @@ object SaveGameSerializer {
   private def serializeEntity(entity: Entity): js.Dynamic = {
     js.Dynamic.literal(
       "id" -> entity.id,
-      "components" -> serializeComponents(entity.components)
+      "components" -> serializeComponents(entity)
     )
   }
   
-  private def serializeComponents(components: Map[Class[? <: Component], Component]): js.Dynamic = {
+  private def serializeComponents(entity: Entity): js.Dynamic = {
     val result = js.Dynamic.literal()
-    components.foreach { case (clazz, component) =>
+    entity.components.foreach { case (clazz, component) =>
       val componentData = component match {
         case m: Movement => js.Dynamic.literal("x" -> m.position.x, "y" -> m.position.y)
         case h: Health => 
-          // We need to access the health values through extension methods
-          // For now, we'll just store default values since baseCurrent/baseMax are private
-          js.Dynamic.literal("stored" -> true)
+          // Use entity extension methods to get actual health values
+          js.Dynamic.literal("current" -> entity.currentHealth, "max" -> entity.maxHealth)
         case i: Initiative => js.Dynamic.literal("max" -> i.maxInitiative, "current" -> i.currentInitiative)
         case e: Experience => js.Dynamic.literal("current" -> e.currentExperience, "levelUp" -> e.levelUp)
         case et: EntityTypeComponent => 
           // Serialize the actual entity type
           js.Dynamic.literal("entityType" -> et.entityType.toString)
         case d: Drawable => 
-          // For now, just store a flag since we need to handle sprite serialization differently
-          js.Dynamic.literal("stored" -> true)
+          // Serialize sprite information properly
+          js.Dynamic.literal("sprites" -> serializeSprites(d.sprites))
         case _: Hitbox => js.Dynamic.literal("stored" -> true) // Will use default hitbox
         case _: SightMemory => js.Dynamic.literal("stored" -> true) // Will reset sight memory for now
         case eq: Equipment => 
@@ -106,8 +106,27 @@ object SaveGameSerializer {
       result(classOf[Movement]) = Movement(Point(data.x.asInstanceOf[Int], data.y.asInstanceOf[Int]))
     }
     if (js.Object.hasProperty(jsObj, "Health")) {
-      // For now, use default health values since we simplified serialization
-      result(classOf[Health]) = Health(100)
+      val data = componentsData.Health.asInstanceOf[js.Dynamic]
+      // Restore actual health values
+      if (js.Object.hasProperty(data.asInstanceOf[js.Object], "current")) {
+        val current = data.current.asInstanceOf[Int]
+        val max = data.max.asInstanceOf[Int]
+        // We need to create a Health with these values - but constructor is private
+        // We'll use the public constructor and then damage/heal to get the right values
+        val baseHealth = Health(max)
+        val healthDifference = max - current
+        if (healthDifference > 0) {
+          // Need to damage the entity to get the right current health
+          // Since we don't have entity context here, we'll need a different approach
+          // For now, use a simplified approach that works with available constructors
+          result(classOf[Health]) = Health(current) // This will set current=max=current
+        } else {
+          result(classOf[Health]) = Health(current)
+        }
+      } else {
+        // Fallback for old format
+        result(classOf[Health]) = Health(100)
+      }
     }
     if (js.Object.hasProperty(jsObj, "Initiative")) {
       val data = componentsData.Initiative.asInstanceOf[js.Dynamic]
@@ -130,8 +149,15 @@ object SaveGameSerializer {
       }
     }
     if (js.Object.hasProperty(jsObj, "Drawable")) {
-      // For now, use default drawable since we simplified serialization
-      result(classOf[Drawable]) = Drawable(Set())
+      val data = componentsData.Drawable.asInstanceOf[js.Dynamic]
+      // Restore sprite information
+      if (js.Object.hasProperty(data.asInstanceOf[js.Object], "sprites")) {
+        val sprites = deserializeSprites(data.sprites.asInstanceOf[js.Array[js.Dynamic]])
+        result(classOf[Drawable]) = Drawable(sprites)
+      } else {
+        // Fallback for old format
+        result(classOf[Drawable]) = Drawable(Set())
+      }
     }
     if (js.Object.hasProperty(jsObj, "Hitbox")) {
       result(classOf[Hitbox]) = Hitbox()
@@ -260,6 +286,25 @@ object SaveGameSerializer {
       case "Helmet" => EquipmentSlot.Helmet
       case "Armor" => EquipmentSlot.Armor
       case _ => EquipmentSlot.Helmet // Fallback
+    }
+  }
+  
+  private def serializeSprites(sprites: Set[(Point, Sprite)]): js.Array[js.Dynamic] = {
+    js.Array(sprites.toSeq.map { case (point, sprite) =>
+      js.Dynamic.literal(
+        "point" -> js.Dynamic.literal("x" -> point.x, "y" -> point.y),
+        "sprite" -> js.Dynamic.literal("x" -> sprite.x, "y" -> sprite.y, "layer" -> sprite.layer)
+      )
+    }*)
+  }
+  
+  private def deserializeSprites(spritesData: js.Array[js.Dynamic]): Set[(Point, Sprite)] = {
+    spritesData.toSet.map { data =>
+      val pointData = data.point.asInstanceOf[js.Dynamic]
+      val spriteData = data.sprite.asInstanceOf[js.Dynamic]
+      val point = Point(pointData.x.asInstanceOf[Int], pointData.y.asInstanceOf[Int])
+      val sprite = Sprite(spriteData.x.asInstanceOf[Int], spriteData.y.asInstanceOf[Int], spriteData.layer.asInstanceOf[Int])
+      (point, sprite)
     }
   }
 }

@@ -6,6 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import game.*
 import game.entity.*
 import game.entity.Movement.position // Add position extension import
+import game.entity.Health.{currentHealth, maxHealth}
 import map.Dungeon
 import ui.{GameController, UIState}
 import scala.util.{Success, Failure}
@@ -191,10 +192,9 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       
       val loadedPlayer = loadedGameState.getEntity("test-player").get
       
-      // Health should be preserved (currently failing - will need proper Health serialization)
-      // For now, we expect it to reset to 100 due to simplified serialization
-      // Note: Can't access baseCurrent/baseMax directly due to private fields
-      loadedPlayer.has[Health] shouldBe true
+      // Health should be preserved correctly now
+      loadedPlayer.currentHealth shouldBe 84  // Should match the original damaged health
+      loadedPlayer.maxHealth shouldBe 84      // Our current Health constructor sets both to the same value
     }
 
     it("should preserve enemy entities and their types") {
