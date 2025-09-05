@@ -1,0 +1,123 @@
+package game.system
+
+import game.GameState
+import game.entity.{EventMemory, EntityType, Equipment}
+import game.entity.EventMemory.*
+import game.entity.MemoryEvent
+import game.entity.Movement.position
+import game.entity.EntityType.entityType
+import game.entity.Health.{currentHealth, damage}
+import game.system.event.GameSystemEvent
+import game.system.event.GameSystemEvent.GameSystemEvent
+
+object EventMemorySystem extends GameSystem {
+  override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+    val currentTime = System.nanoTime()
+    
+    val updatedState = events.foldLeft(gameState) {
+      case (currentState, GameSystemEvent.DamageEvent(targetId, attackerId, baseDamage)) =>
+        // Record damage taken by target
+        val targetState = currentState.getEntity(targetId) match {
+          case Some(target) =>
+            val equipment = target.get[Equipment].getOrElse(Equipment())
+            val damageReduction = equipment.getTotalDamageReduction
+            val actualDamage = Math.max(1, baseDamage - damageReduction)
+            val modifier = damageReduction
+            
+            val memoryEvent = MemoryEvent.DamageTaken(
+              timestamp = currentTime,
+              damage = actualDamage,
+              baseDamage = baseDamage,
+              modifier = modifier,
+              source = attackerId
+            )
+            
+            currentState.updateEntity(targetId, _.addMemoryEvent(memoryEvent))
+          case None => currentState
+        }
+        
+        // Record damage dealt by attacker - only if target exists
+        (targetState.getEntity(attackerId), targetState.getEntity(targetId)) match {
+          case (Some(attacker), Some(target)) =>
+            val equipment = target.get[Equipment].getOrElse(Equipment())
+            val damageReduction = equipment.getTotalDamageReduction
+            val actualDamage = Math.max(1, baseDamage - damageReduction)
+            val modifier = damageReduction
+            
+            val memoryEvent = MemoryEvent.DamageDealt(
+              timestamp = currentTime,
+              damage = actualDamage,
+              baseDamage = baseDamage,
+              modifier = modifier,
+              target = targetId
+            )
+            
+            targetState.updateEntity(attackerId, _.addMemoryEvent(memoryEvent))
+          case _ => targetState
+        }
+      
+      case (currentState, GameSystemEvent.InputEvent(entityId, ui.InputAction.Move(direction))) =>
+        currentState.getEntity(entityId) match {
+          case Some(entity) =>
+            val oldPosition = entity.position
+            val newPosition = oldPosition + direction
+            
+            val memoryEvent = MemoryEvent.MovementStep(
+              timestamp = currentTime,
+              direction = direction,
+              fromPosition = oldPosition,
+              toPosition = newPosition
+            )
+            
+            currentState.updateEntity(entityId, _.addMemoryEvent(memoryEvent))
+          case None => currentState
+        }
+      
+      case (currentState, GameSystemEvent.RemoveItemEntityEvent(playerId, itemEntityId)) =>
+        // Record item usage
+        currentState.getEntity(playerId) match {
+          case Some(player) =>
+            currentState.getEntity(itemEntityId) match {
+              case Some(itemEntity) =>
+                val itemType = itemEntity.entityType.toString
+                
+                val memoryEvent = MemoryEvent.ItemUsed(
+                  timestamp = currentTime,
+                  itemType = itemType,
+                  target = None // Could be enhanced to track targets if needed
+                )
+                
+                currentState.updateEntity(playerId, _.addMemoryEvent(memoryEvent))
+              case None => currentState
+            }
+          case None => currentState
+        }
+      
+      case (currentState, _) =>
+        currentState
+    }
+    
+    // Check for defeated enemies (entities marked for death that were enemies)
+    val stateWithDefeats = gameState.entities
+      .filter(entity => entity.has[game.entity.MarkedForDeath] && entity.entityType == EntityType.Enemy)
+      .foldLeft(updatedState) { (state, defeatedEnemy) =>
+        defeatedEnemy.get[game.entity.MarkedForDeath] match {
+          case Some(markedForDeath) =>
+            markedForDeath.deathDetails.killerId match {
+              case Some(killerEntityId) =>
+                val memoryEvent = MemoryEvent.EnemyDefeated(
+                  timestamp = currentTime,
+                  enemyType = defeatedEnemy.entityType.toString,
+                  method = "combat" // Could be enhanced to track specific methods
+                )
+                
+                state.updateEntity(killerEntityId, _.addMemoryEvent(memoryEvent))
+              case None => state
+            }
+          case None => state
+        }
+      }
+    
+    (stateWithDefeats, Nil)
+  }
+}
