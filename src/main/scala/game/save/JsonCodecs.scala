@@ -111,18 +111,8 @@ object SaveGameSerializer {
       if (js.Object.hasProperty(data.asInstanceOf[js.Object], "current")) {
         val current = data.current.asInstanceOf[Int]
         val max = data.max.asInstanceOf[Int]
-        // We need to create a Health with these values - but constructor is private
-        // We'll use the public constructor and then damage/heal to get the right values
-        val baseHealth = Health(max)
-        val healthDifference = max - current
-        if (healthDifference > 0) {
-          // Need to damage the entity to get the right current health
-          // Since we don't have entity context here, we'll need a different approach
-          // For now, use a simplified approach that works with available constructors
-          result(classOf[Health]) = Health(current) // This will set current=max=current
-        } else {
-          result(classOf[Health]) = Health(current)
-        }
+        // Use the private constructor directly to set different current and max values
+        result(classOf[Health]) = new Health(current, max)
       } else {
         // Fallback for old format
         result(classOf[Health]) = Health(100)
@@ -180,8 +170,14 @@ object SaveGameSerializer {
   private def serializeDungeon(dungeon: Dungeon): js.Dynamic = {
     js.Dynamic.literal(
       "seed" -> dungeon.seed,
-      "testMode" -> dungeon.testMode
-      // We'll reconstruct the dungeon from seed rather than serialize all data
+      "testMode" -> dungeon.testMode,
+      // Store the actual dungeon structure to ensure exact reproduction
+      "roomGrid" -> serializePointSet(dungeon.roomGrid),
+      "roomConnections" -> serializeRoomConnections(dungeon.roomConnections),
+      "blockedRooms" -> serializePointSet(dungeon.blockedRooms),
+      "startPoint" -> serializePoint(dungeon.startPoint),
+      "endpoint" -> dungeon.endpoint.map(serializePoint).orUndefined,
+      "items" -> serializeItems(dungeon.items)
     )
   }
   
@@ -189,12 +185,23 @@ object SaveGameSerializer {
     val seed = dungeonData.seed.asInstanceOf[Double].toLong
     val testMode = dungeonData.testMode.asInstanceOf[Boolean]
     
-    // For now, create a simple dungeon - we may need to store more dungeon state later
-    if (testMode) {
-      Dungeon(testMode = true, seed = seed)
+    // Try to restore from stored structure if available, otherwise regenerate from seed
+    if (js.Object.hasProperty(dungeonData.asInstanceOf[js.Object], "roomGrid")) {
+      val roomGrid = deserializePointSet(dungeonData.roomGrid.asInstanceOf[js.Array[js.Dynamic]])
+      val roomConnections = deserializeRoomConnections(dungeonData.roomConnections.asInstanceOf[js.Array[js.Dynamic]])
+      val blockedRooms = deserializePointSet(dungeonData.blockedRooms.asInstanceOf[js.Array[js.Dynamic]])
+      val startPoint = deserializePoint(dungeonData.startPoint.asInstanceOf[js.Dynamic])
+      val endpoint = if (js.isUndefined(dungeonData.endpoint)) None else Some(deserializePoint(dungeonData.endpoint.asInstanceOf[js.Dynamic]))
+      val items = deserializeItems(dungeonData.items.asInstanceOf[js.Array[js.Dynamic]])
+      
+      Dungeon(roomGrid, roomConnections, blockedRooms, startPoint, endpoint, items, testMode, seed)
     } else {
-      // Regenerate the dungeon from the seed
-      map.MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6, seed = seed)
+      // Fallback for old format - regenerate from seed
+      if (testMode) {
+        Dungeon(testMode = true, seed = seed)
+      } else {
+        map.MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6, seed = seed)
+      }
     }
   }
   
@@ -305,6 +312,109 @@ object SaveGameSerializer {
       val point = Point(pointData.x.asInstanceOf[Int], pointData.y.asInstanceOf[Int])
       val sprite = Sprite(spriteData.x.asInstanceOf[Int], spriteData.y.asInstanceOf[Int], spriteData.layer.asInstanceOf[Int])
       (point, sprite)
+    }
+  }
+  
+  // Helper functions for dungeon serialization
+  private def serializePointSet(points: Set[Point]): js.Array[js.Dynamic] = {
+    js.Array(points.toSeq.map(serializePoint)*)
+  }
+  
+  private def deserializePointSet(pointsData: js.Array[js.Dynamic]): Set[Point] = {
+    pointsData.toSet.map(deserializePoint)
+  }
+  
+  private def serializePoint(point: Point): js.Dynamic = {
+    js.Dynamic.literal("x" -> point.x, "y" -> point.y)
+  }
+  
+  private def deserializePoint(pointData: js.Dynamic): Point = {
+    Point(pointData.x.asInstanceOf[Int], pointData.y.asInstanceOf[Int])
+  }
+  
+  private def serializeRoomConnections(connections: Set[RoomConnection]): js.Array[js.Dynamic] = {
+    js.Array(connections.toSeq.map { connection =>
+      js.Dynamic.literal(
+        "originRoom" -> serializePoint(connection.originRoom),
+        "direction" -> connection.direction.toString,
+        "destinationRoom" -> serializePoint(connection.destinationRoom),
+        "optLock" -> connection.optLock.map(lock => js.Dynamic.literal("entityType" -> lock.toString)).orUndefined
+      )
+    }*)
+  }
+  
+  private def deserializeRoomConnections(connectionsData: js.Array[js.Dynamic]): Set[RoomConnection] = {
+    connectionsData.toSet.map { data =>
+      val originRoom = deserializePoint(data.originRoom.asInstanceOf[js.Dynamic])
+      val direction = parseDirection(data.direction.asInstanceOf[String])
+      val destinationRoom = deserializePoint(data.destinationRoom.asInstanceOf[js.Dynamic])
+      val optLock = if (js.isUndefined(data.optLock)) None else {
+        val lockData = data.optLock.asInstanceOf[js.Dynamic]
+        val lockString = lockData.entityType.asInstanceOf[String]
+        parseEntityType(lockString) match {
+          case lock: EntityType.LockedDoor => Some(lock)
+          case _ => None
+        }
+      }
+      RoomConnection(originRoom, direction, destinationRoom, optLock)
+    }
+  }
+  
+  private def serializeItems(items: Set[(Point, ItemDescriptor)]): js.Array[js.Dynamic] = {
+    js.Array(items.toSeq.map { case (point, itemDesc) =>
+      js.Dynamic.literal(
+        "point" -> serializePoint(point),
+        "item" -> serializeItemDescriptor(itemDesc)
+      )
+    }*)
+  }
+  
+  private def deserializeItems(itemsData: js.Array[js.Dynamic]): Set[(Point, ItemDescriptor)] = {
+    itemsData.toSet.map { data =>
+      val point = deserializePoint(data.point.asInstanceOf[js.Dynamic])
+      val itemDesc = deserializeItemDescriptor(data.item.asInstanceOf[js.Dynamic])
+      (point, itemDesc)
+    }
+  }
+  
+  private def serializeItemDescriptor(item: ItemDescriptor): js.Dynamic = {
+    item match {
+      case ItemDescriptor.PotionDescriptor => js.Dynamic.literal("type" -> "Potion")
+      case ItemDescriptor.ScrollDescriptor => js.Dynamic.literal("type" -> "Scroll")
+      case ItemDescriptor.ArrowDescriptor => js.Dynamic.literal("type" -> "Arrow")
+      case ItemDescriptor.LeatherHelmetDescriptor => js.Dynamic.literal("type" -> "LeatherHelmet")
+      case ItemDescriptor.ChainmailArmorDescriptor => js.Dynamic.literal("type" -> "ChainmailArmor")
+      case ItemDescriptor.IronHelmetDescriptor => js.Dynamic.literal("type" -> "IronHelmet")
+      case ItemDescriptor.PlateArmorDescriptor => js.Dynamic.literal("type" -> "PlateArmor")
+      case ItemDescriptor.KeyDescriptor(keyColour) => js.Dynamic.literal("type" -> "Key", "color" -> keyColour.toString)
+    }
+  }
+  
+  private def deserializeItemDescriptor(itemData: js.Dynamic): ItemDescriptor = {
+    val itemType = itemData.`type`.asInstanceOf[String]
+    itemType match {
+      case "Potion" => ItemDescriptor.PotionDescriptor
+      case "Scroll" => ItemDescriptor.ScrollDescriptor  
+      case "Arrow" => ItemDescriptor.ArrowDescriptor
+      case "LeatherHelmet" => ItemDescriptor.LeatherHelmetDescriptor
+      case "ChainmailArmor" => ItemDescriptor.ChainmailArmorDescriptor
+      case "IronHelmet" => ItemDescriptor.IronHelmetDescriptor
+      case "PlateArmor" => ItemDescriptor.PlateArmorDescriptor
+      case "Key" => 
+        val colorString = itemData.color.asInstanceOf[String]
+        val keyColour = parseKeyColour(colorString)
+        ItemDescriptor.KeyDescriptor(keyColour)
+      case _ => ItemDescriptor.PotionDescriptor // Fallback
+    }
+  }
+  
+  private def parseDirection(directionString: String): Direction = {
+    directionString match {
+      case "Up" => Direction.Up
+      case "Down" => Direction.Down
+      case "Left" => Direction.Left
+      case "Right" => Direction.Right
+      case _ => Direction.Up // Fallback
     }
   }
 }
