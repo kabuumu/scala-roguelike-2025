@@ -357,7 +357,9 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
     TestSaveGameSystem.saveGame(story.controller.gameState)
     val loadedGameState = TestSaveGameSystem.loadGame().get
     val loadedStory = GameStory.begin(UIState.Move, loadedGameState)
-    
+
+    loadedStory.gameState shouldBe story.controller.gameState
+
     // Verify ALL state preserved perfectly
     loadedStory
       .thePlayer.hasHealth(75) // CRITICAL: Health must be exactly 75, not 100
