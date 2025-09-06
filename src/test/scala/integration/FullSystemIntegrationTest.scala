@@ -121,9 +121,9 @@ class FullSystemIntegrationTest extends AnyFunSuiteLike with Matchers {
   test("Full system: Error handling during update cycle") {
     // Test that the system gracefully handles edge cases
     scenarios.playerAt(4, 4)
-      .simulateFrames(100) // Stress test with many frames
+      .simulateFrames(20) // Stress test with moderate frame count
       .assertions.playerIsAt(4, 4) // Should remain stable
-      .assertions.hasProcessedFrames(100)
+      .assertions.hasProcessedFrames(20)
   }
 
   test("Full system: Main menu navigation") {

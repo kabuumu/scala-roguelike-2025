@@ -49,9 +49,11 @@ object FullSystemTestFramework {
         val baseTimeNanos = frameCount.toLong * deltaMs * 1000000L
         val timeNanos = if (input.isDefined) {
           // For input frames, ensure we meet the allowedActionsPerSecond threshold
-          baseTimeNanos + (1000000000L / ui.GameController.allowedActionsPerSecond)
+          val actionsPerSecond = math.max(1, ui.GameController.allowedActionsPerSecond)
+          baseTimeNanos + (1000000000L / actionsPerSecond)
         } else {
-          baseTimeNanos + (1000000000L / ui.GameController.framesPerSecond)
+          val framesPerSecond = math.max(1, ui.GameController.framesPerSecond)
+          baseTimeNanos + (1000000000L / framesPerSecond)
         }
         
         val updatedController = gameController.update(input, timeNanos)
@@ -149,8 +151,8 @@ object FullSystemTestFramework {
     def validateRenderableState(): FullSystemTest = {
       try {
         assert(gameState.entities.nonEmpty, "Game state should have entities for rendering")
-        assert(gameState.playerEntity != null, "Player entity should exist for rendering")
-        assert(gameState.dungeon != null, "Dungeon should exist for rendering")
+        assert(gameState.entities.exists(_.id == gameState.playerEntityId), "Player entity should exist for rendering")
+        assert(Option(gameState.dungeon).isDefined, "Dungeon should exist for rendering")
         
         // Validate player has required components for rendering
         assert(gameState.playerEntity.get[Movement].isDefined, "Player should have Movement component for rendering")
@@ -226,16 +228,14 @@ object FullSystemTestFramework {
      * Wait until the player is ready to act again
      */
     def waitUntilPlayerReady(): FullSystemTest = {
-      var test = this
-      var attempts = 0
-      while (!test.gameState.playerEntity.isReady && attempts < 20) {
-        test = test.simulateFrame()
-        attempts += 1
-      }
-      if (!test.gameState.playerEntity.isReady) {
-        fail(s"Player never became ready after $attempts frames")
-      }
-      test
+      val maxAttempts = 20
+      val attemptsStream = Iterator.iterate(this)(_.simulateFrame()).zipWithIndex
+      attemptsStream
+        .find { case (test, _) => test.gameState.playerEntity.isReady }
+        .map(_._1)
+        .getOrElse {
+          fail(s"Player never became ready after $maxAttempts frames")
+        }
     }
     
     /**
