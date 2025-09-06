@@ -38,7 +38,7 @@ object SaveGameSerializer {
       GameState(
         playerEntityId = data.playerEntityId.asInstanceOf[String],
         entities = deserializeEntities(data.entities.asInstanceOf[js.Array[js.Dynamic]]),
-        messages = data.messages.asInstanceOf[js.Array[String]].toSeq,
+        messages = data.messages.asInstanceOf[js.Array[String]].toList,
         dungeon = deserializeDungeon(data.dungeon.asInstanceOf[js.Dynamic])
       )
     }
