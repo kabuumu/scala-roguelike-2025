@@ -30,6 +30,20 @@ case class SelfTargetingItem(
   ammo: Option[AmmoType] = None
 ) extends UsableItem {
   override def targeting: Targeting = Targeting.Self
+  
+  // Custom equality that ignores the function object
+  override def equals(other: Any): Boolean = other match {
+    case that: SelfTargetingItem =>
+      this.consumeOnUse == that.consumeOnUse &&
+      this.ammo == that.ammo &&
+      this.targeting == that.targeting
+    case _ => false
+  }
+  
+  override def hashCode(): Int = {
+    val state = Seq(consumeOnUse, ammo, targeting)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 /**
@@ -41,6 +55,20 @@ case class EntityTargetingItem(
   ammo: Option[AmmoType] = None
 ) extends UsableItem {
   override def targeting: Targeting = Targeting.EnemyActor
+  
+  // Custom equality that ignores the function object
+  override def equals(other: Any): Boolean = other match {
+    case that: EntityTargetingItem =>
+      this.consumeOnUse == that.consumeOnUse &&
+      this.ammo == that.ammo &&
+      this.targeting == that.targeting
+    case _ => false
+  }
+  
+  override def hashCode(): Int = {
+    val state = Seq(consumeOnUse, ammo, targeting)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 /**
@@ -53,6 +81,21 @@ case class TileTargetingItem(
   ammo: Option[AmmoType] = None
 ) extends UsableItem {
   override def targeting: Targeting = Targeting.TileInRange(range)
+  
+  // Custom equality that ignores the function object
+  override def equals(other: Any): Boolean = other match {
+    case that: TileTargetingItem =>
+      this.range == that.range &&
+      this.consumeOnUse == that.consumeOnUse &&
+      this.ammo == that.ammo &&
+      this.targeting == that.targeting
+    case _ => false
+  }
+  
+  override def hashCode(): Int = {
+    val state = Seq(range, consumeOnUse, ammo, targeting)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
 
 object UsableItem {

@@ -19,8 +19,8 @@ import scala.reflect.ClassTag
 
 // Immutable scenario object that supports both When and Then operations
 final case class GameStory(controller: GameController, tick: Int) {
-  def gs: GameState = controller.gameState
-  def ui: UIState = controller.uiState
+  def gameState: GameState = controller.gameState
+  def uiState: UIState = controller.uiState
   def time: Long = tick.toLong * frameTime
 
   // Advance one frame with optional input, returning a NEW GameStory
@@ -46,19 +46,19 @@ final case class GameStory(controller: GameController, tick: Int) {
 
     // THEN: Player assertions
     def isAt(x: Int, y: Int): GameStory = {
-      val pos = gs.playerEntity.get[Movement].map(_.position)
+      val pos = gameState.playerEntity.get[Movement].map(_.position)
       assert(pos.contains(Point(x, y)), s"Expected player at ($x,$y) but was $pos")
       GameStory.this
     }
 
     def hasHealth(hp: Int): GameStory = {
-      val actual = gs.playerEntity.currentHealth
+      val actual = gameState.playerEntity.currentHealth
       assert(actual == hp, s"Expected player health $hp but was $actual")
       GameStory.this
     }
 
     def component[C <: Component](implicit ct: ClassTag[C]): ComponentExpect[C] =
-      new ComponentExpect[C]("player", gs.playerEntity.get[C])
+      new ComponentExpect[C]("player", gameState.playerEntity.get[C])
   }
 
   object cursor {
@@ -71,36 +71,36 @@ final case class GameStory(controller: GameController, tick: Int) {
 
   // THEN: General assertions
   def projectilesAre(count: Int): GameStory = {
-    val actual = gs.entities.count(_.entityType == EntityType.Projectile)
+    val actual = gameState.entities.count(_.entityType == EntityType.Projectile)
     assert(actual == count, s"Expected $count projectiles but found $actual")
     this
   }
 
   def entityMissing(id: String): GameStory = {
-    val missing = gs.entities.forall(_.id != id)
+    val missing = gameState.entities.forall(_.id != id)
     assert(missing, s"Expected entity '$id' to be missing")
     this
   }
 
   def debug(msg: String): GameStory = {
-    val playerReady = gs.playerEntity.isReady
-    val playerInit = gs.playerEntity.get[Initiative]
-    val entityCount = gs.entities.length
-    val enemyCount = gs.entities.count(_.entityType == EntityType.Enemy)
-    val enemiesWithDeath = gs.entities.filter(_.entityType == EntityType.Enemy).map(e => s"${e.id}:${e.has[DeathEvents]}")
-    println(s"DEBUG $msg: UI=${ui}, PlayerHealth=${gs.playerEntity.currentHealth}, Tick=$tick, Time=$time, Ready=$playerReady, Init=$playerInit, Entities=$entityCount, Enemies=$enemyCount, EnemyDeath=$enemiesWithDeath")
+    val playerReady = gameState.playerEntity.isReady
+    val playerInit = gameState.playerEntity.get[Initiative]
+    val entityCount = gameState.entities.length
+    val enemyCount = gameState.entities.count(_.entityType == EntityType.Enemy)
+    val enemiesWithDeath = gameState.entities.filter(_.entityType == EntityType.Enemy).map(e => s"${e.id}:${e.has[DeathEvents]}")
+    println(s"DEBUG $msg: UI=${uiState}, PlayerHealth=${gameState.playerEntity.currentHealth}, Tick=$tick, Time=$time, Ready=$playerReady, Init=$playerInit, Entities=$entityCount, Enemies=$enemyCount, EnemyDeath=$enemiesWithDeath")
     this
   }
 
   def uiIsListSelect(): GameStory = {
-    ui match {
+    uiState match {
       case _: UIState.ListSelect[_] => this
       case other => fail(s"Expected UI state ListSelect but was $other")
     }
   }
 
   def uiIsScrollTargetAt(x: Int, y: Int): GameStory = {
-    ui match {
+    uiState match {
       case ss: UIState.ScrollSelect =>
         assert(ss.cursor == Point(x, y), s"Expected scroll target at ($x,$y) but was ${ss.cursor}")
       case other =>
@@ -142,7 +142,7 @@ final case class GameStory(controller: GameController, tick: Int) {
 
   // Subject for entity by id
   final class EntityExpect(private val id: String) {
-    private def targetOpt: Option[Entity] = gs.entities.find(_.id == id)
+    private def targetOpt: Option[Entity] = gameState.entities.find(_.id == id)
     private def target: Entity = targetOpt.getOrElse(fail(s"Entity '$id' not found"))
 
     def hasHealth(hp: Int): GameStory = {
