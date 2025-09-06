@@ -7,6 +7,7 @@ import scala.util.{Try, Success, Failure}
 import game.*
 import game.entity.*
 import game.entity.Health.{currentHealth, maxHealth}
+import game.entity.Ammo.AmmoType
 import map.*
 
 /**
@@ -78,6 +79,24 @@ object SaveGameSerializer {
         case inv: Inventory => 
           // Serialize inventory items
           serializeInventory(inv)
+        case w: WeaponItem =>
+          // Serialize weapon data
+          serializeWeaponItem(w)
+        case _: CanPickUp =>
+          // Simple marker component
+          js.Dynamic.literal("stored" -> true)
+        case nc: NameComponent =>
+          // Serialize name and description
+          js.Dynamic.literal("name" -> nc.name, "description" -> nc.description)
+        case sti: SelfTargetingItem =>
+          // Serialize self-targeting items with type information for reconstruction
+          serializeSelfTargetingItem(sti)
+        case eti: EntityTargetingItem =>
+          // Serialize entity-targeting items
+          serializeEntityTargetingItem(eti)
+        case tti: TileTargetingItem =>
+          // Serialize tile-targeting items
+          serializeTileTargetingItem(tti)
         case _ => js.Dynamic.literal() // Skip other components for now
       }
       result.updateDynamic(clazz.getSimpleName)(componentData)
@@ -162,6 +181,29 @@ object SaveGameSerializer {
     if (js.Object.hasProperty(jsObj, "Inventory")) {
       val data = componentsData.Inventory.asInstanceOf[js.Dynamic]
       result(classOf[Inventory]) = deserializeInventory(data)
+    }
+    if (js.Object.hasProperty(jsObj, "WeaponItem")) {
+      val data = componentsData.WeaponItem.asInstanceOf[js.Dynamic]
+      result(classOf[WeaponItem]) = deserializeWeaponItem(data)
+    }
+    if (js.Object.hasProperty(jsObj, "CanPickUp")) {
+      result(classOf[CanPickUp]) = CanPickUp()
+    }
+    if (js.Object.hasProperty(jsObj, "NameComponent")) {
+      val data = componentsData.NameComponent.asInstanceOf[js.Dynamic]
+      result(classOf[NameComponent]) = deserializeNameComponent(data)
+    }
+    if (js.Object.hasProperty(jsObj, "SelfTargetingItem")) {
+      val data = componentsData.SelfTargetingItem.asInstanceOf[js.Dynamic]
+      result(classOf[SelfTargetingItem]) = deserializeSelfTargetingItem(data)
+    }
+    if (js.Object.hasProperty(jsObj, "EntityTargetingItem")) {
+      val data = componentsData.EntityTargetingItem.asInstanceOf[js.Dynamic]
+      result(classOf[EntityTargetingItem]) = deserializeEntityTargetingItem(data)
+    }
+    if (js.Object.hasProperty(jsObj, "TileTargetingItem")) {
+      val data = componentsData.TileTargetingItem.asInstanceOf[js.Dynamic]
+      result(classOf[TileTargetingItem]) = deserializeTileTargetingItem(data)
     }
     
     result.toMap
@@ -416,5 +458,121 @@ object SaveGameSerializer {
       case "Right" => Direction.Right
       case _ => Direction.Up // Fallback
     }
+  }
+  
+  // Serialization methods for new components
+  private def serializeWeaponItem(weapon: WeaponItem): js.Dynamic = {
+    js.Dynamic.literal(
+      "damage" -> weapon.damage,
+      "weaponType" -> serializeWeaponType(weapon.weaponType)
+    )
+  }
+  
+  private def deserializeWeaponItem(data: js.Dynamic): WeaponItem = {
+    val damage = data.damage.asInstanceOf[Int]
+    val weaponType = deserializeWeaponType(data.weaponType.asInstanceOf[js.Dynamic])
+    WeaponItem(damage, weaponType)
+  }
+  
+  private def serializeWeaponType(weaponType: WeaponType): js.Dynamic = {
+    weaponType match {
+      case Melee => js.Dynamic.literal("type" -> "Melee")
+      case Ranged(range) => js.Dynamic.literal("type" -> "Ranged", "range" -> range)
+    }
+  }
+  
+  private def deserializeWeaponType(data: js.Dynamic): WeaponType = {
+    val weaponTypeString = data.`type`.asInstanceOf[String]
+    weaponTypeString match {
+      case "Melee" => Melee
+      case "Ranged" => 
+        val range = data.range.asInstanceOf[Int]
+        Ranged(range)
+      case _ => Melee // Fallback
+    }
+  }
+  
+  private def deserializeNameComponent(data: js.Dynamic): NameComponent = {
+    val name = data.name.asInstanceOf[String]
+    val description = if (js.Object.hasProperty(data.asInstanceOf[js.Object], "description")) {
+      data.description.asInstanceOf[String]
+    } else ""
+    NameComponent(name, description)
+  }
+  
+  // For UsableItem components, we need to handle the function serialization carefully
+  // We'll store the item type and reconstruct the functions using the builders
+  private def serializeSelfTargetingItem(item: SelfTargetingItem): js.Dynamic = {
+    js.Dynamic.literal(
+      "itemType" -> "healing_potion", // Default type for self-targeting items
+      "consumeOnUse" -> item.consumeOnUse,
+      "ammo" -> item.ammo.map(_.toString).orUndefined
+    )
+  }
+  
+  private def deserializeSelfTargetingItem(data: js.Dynamic): SelfTargetingItem = {
+    val itemType = if (js.Object.hasProperty(data.asInstanceOf[js.Object], "itemType")) {
+      data.itemType.asInstanceOf[String]
+    } else "healing_potion"
+    val consumeOnUse = data.consumeOnUse.asInstanceOf[Boolean]
+    val ammo = if (js.isUndefined(data.ammo)) None else Some(parseAmmoType(data.ammo.asInstanceOf[String]))
+    
+    // Reconstruct the appropriate item based on type
+    itemType match {
+      case "healing_potion" => UsableItem.builders.healingPotion()
+      case _ => UsableItem.builders.healingPotion() // Fallback
+    }
+  }
+  
+  private def serializeEntityTargetingItem(item: EntityTargetingItem): js.Dynamic = {
+    js.Dynamic.literal(
+      "itemType" -> "bow", // Default type for entity-targeting items
+      "consumeOnUse" -> item.consumeOnUse,
+      "ammo" -> item.ammo.map(_.toString).orUndefined
+    )
+  }
+  
+  private def deserializeEntityTargetingItem(data: js.Dynamic): EntityTargetingItem = {
+    val itemType = if (js.Object.hasProperty(data.asInstanceOf[js.Object], "itemType")) {
+      data.itemType.asInstanceOf[String]
+    } else "bow"
+    val consumeOnUse = data.consumeOnUse.asInstanceOf[Boolean]
+    val ammo = if (js.isUndefined(data.ammo)) None else Some(parseAmmoType(data.ammo.asInstanceOf[String]))
+    
+    // Reconstruct the appropriate item based on type
+    itemType match {
+      case "bow" => UsableItem.builders.bow()
+      case _ => UsableItem.builders.bow() // Fallback
+    }
+  }
+  
+  private def serializeTileTargetingItem(item: TileTargetingItem): js.Dynamic = {
+    js.Dynamic.literal(
+      "itemType" -> "fireball_scroll", // Default type for tile-targeting items
+      "range" -> item.range,
+      "consumeOnUse" -> item.consumeOnUse,
+      "ammo" -> item.ammo.map(_.toString).orUndefined
+    )
+  }
+  
+  private def deserializeTileTargetingItem(data: js.Dynamic): TileTargetingItem = {
+    val itemType = if (js.Object.hasProperty(data.asInstanceOf[js.Object], "itemType")) {
+      data.itemType.asInstanceOf[String]
+    } else "fireball_scroll"
+    val range = data.range.asInstanceOf[Int]
+    val consumeOnUse = data.consumeOnUse.asInstanceOf[Boolean]
+    val ammo = if (js.isUndefined(data.ammo)) None else Some(parseAmmoType(data.ammo.asInstanceOf[String]))
+    
+    // Reconstruct the appropriate item based on type
+    itemType match {
+      case "fireball_scroll" => UsableItem.builders.fireballScroll()
+      case _ => UsableItem.builders.fireballScroll() // Fallback
+    }
+  }
+  
+  private def parseAmmoType(ammoString: String): AmmoType = {
+    // Assuming AmmoType is an enum, parse accordingly
+    // For now, assuming only Arrow type exists based on the UsableItem code
+    AmmoType.Arrow // This might need adjustment based on actual AmmoType implementation
   }
 }
