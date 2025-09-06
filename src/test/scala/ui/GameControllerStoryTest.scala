@@ -357,7 +357,9 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
     TestSaveGameSystem.saveGame(story.controller.gameState)
     val loadedGameState = TestSaveGameSystem.loadGame().get
     val loadedStory = GameStory.begin(UIState.Move, loadedGameState)
-    
+    loadedStory.gameState shouldBe story.controller.gameState
+
+
     // Verify ALL state preserved perfectly
     loadedStory
       .thePlayer.hasHealth(75) // CRITICAL: Health must be exactly 75, not 100
@@ -376,7 +378,7 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
         .entity(s"complex-enemy-$i").component[EntityTypeComponent].satisfies(_.entityType == EntityType.Enemy, s"enemy $i should remain enemy")
         .entity(s"complex-enemy-$i").hasHealth(20 + i * 5) // Health preserved
     }
-    
+
     TestSaveGameSystem.clearStorage()
   }
 }

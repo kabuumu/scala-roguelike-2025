@@ -59,10 +59,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       loadResult shouldBe a[Success[?]]
       
       val loadedGameState = loadResult.get
-      loadedGameState.playerEntityId shouldBe "test-player"
-      loadedGameState.entities.length shouldBe 1
-      loadedGameState.entities.head.id shouldBe "test-player"
-      loadedGameState.messages should contain("Test message")
+      loadedGameState shouldBe testGameState // Should match exactly
     }
 
     it("should handle loading when no save exists") {
@@ -191,10 +188,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       val loadedGameState = TestSaveGameSystem.loadGame().get
       
       val loadedPlayer = loadedGameState.getEntity("test-player").get
-      
-      // Health should be preserved correctly now
-      loadedPlayer.currentHealth shouldBe 84  // Should match the original damaged health
-      loadedPlayer.maxHealth shouldBe 84      // Our current Health constructor sets both to the same value
+      loadedGameState shouldBe testGameState // Should match exactly
     }
 
     it("should preserve enemy entities and their types") {
@@ -228,20 +222,8 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       // Save and load
       TestSaveGameSystem.saveGame(testGameState)
       val loadedGameState = TestSaveGameSystem.loadGame().get
-      
-      // All entities should be preserved
-      loadedGameState.entities.length shouldBe 3
-      
-      // Player should still be player
-      val loadedPlayer = loadedGameState.getEntity("test-player").get
-      loadedPlayer.get[EntityTypeComponent].map(_.entityType) shouldBe Some(EntityType.Player)
-      
-      // Enemies should still be enemies (not converted to players)
-      val loadedEnemy1 = loadedGameState.getEntity("enemy-1").get
-      loadedEnemy1.get[EntityTypeComponent].map(_.entityType) shouldBe Some(EntityType.Enemy)
-      
-      val loadedEnemy2 = loadedGameState.getEntity("enemy-2").get  
-      loadedEnemy2.get[EntityTypeComponent].map(_.entityType) shouldBe Some(EntityType.Enemy)
+
+      loadedGameState shouldBe testGameState // Should match exactly
     }
 
     it("should preserve equipment correctly") {
@@ -265,14 +247,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       // Save and load
       TestSaveGameSystem.saveGame(testGameState)
       val loadedGameState = TestSaveGameSystem.loadGame().get
-      
-      val loadedPlayer = loadedGameState.getEntity("test-player").get
-      val loadedEquipment = loadedPlayer.get[Equipment].get
-      
-      // Equipment should be preserved
-      loadedEquipment.helmet shouldBe Some(helmet)
-      loadedEquipment.armor shouldBe Some(armor)
-      loadedEquipment.getTotalDamageReduction shouldBe 5
+      loadedGameState shouldBe testGameState // Should match exactly
     }
 
     it("should preserve inventory correctly") {
@@ -299,14 +274,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       // Save and load
       TestSaveGameSystem.saveGame(testGameState)
       val loadedGameState = TestSaveGameSystem.loadGame().get
-      
-      val loadedPlayer = loadedGameState.getEntity("test-player").get
-      val loadedInventory = loadedPlayer.get[Inventory].get
-      
-      // Inventory should be preserved
-      loadedInventory.itemEntityIds shouldBe Seq("item-1", "item-2", "potion-1")
-      loadedInventory.primaryWeaponId shouldBe Some("weapon-primary")
-      loadedInventory.secondaryWeaponId shouldBe Some("weapon-secondary")
+      loadedGameState shouldBe testGameState // Should match exactly
     }
 
     it("should ensure player remains visible after loading") {
@@ -327,11 +295,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       // Save and load
       TestSaveGameSystem.saveGame(testGameState)
       val loadedGameState = TestSaveGameSystem.loadGame().get
-      
-      val loadedPlayer = loadedGameState.getEntity("test-player").get
-      
-      // Player should have a Drawable component (even if sprites are reset)
-      loadedPlayer.has[Drawable] shouldBe true
+      loadedGameState shouldBe testGameState // Should match exactly
     }
 
     it("should preserve complex entity with all components") {
@@ -358,28 +322,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
       // Save and load
       TestSaveGameSystem.saveGame(testGameState)
       val loadedGameState = TestSaveGameSystem.loadGame().get
-      
-      val loadedPlayer = loadedGameState.getEntity("complex-player").get
-      
-      // All component types should be preserved
-      loadedPlayer.has[Movement] shouldBe true
-      loadedPlayer.has[Health] shouldBe true  
-      loadedPlayer.has[Initiative] shouldBe true
-      loadedPlayer.has[Experience] shouldBe true
-      loadedPlayer.has[EntityTypeComponent] shouldBe true
-      loadedPlayer.has[Equipment] shouldBe true
-      loadedPlayer.has[Inventory] shouldBe true
-      loadedPlayer.has[Drawable] shouldBe true
-      loadedPlayer.has[Hitbox] shouldBe true
-      loadedPlayer.has[SightMemory] shouldBe true
-      
-      // Specific values should be preserved where implemented
-      loadedPlayer.get[Movement].map(_.position) shouldBe Some(Point(7, 8))
-      loadedPlayer.get[Initiative].map(_.maxInitiative) shouldBe Some(15)
-      loadedPlayer.get[Initiative].map(_.currentInitiative) shouldBe Some(3)
-      loadedPlayer.get[Experience].map(_.currentExperience) shouldBe Some(150)
-      loadedPlayer.get[Experience].map(_.levelUp) shouldBe Some(true)
-      loadedPlayer.get[EntityTypeComponent].map(_.entityType) shouldBe Some(EntityType.Player)
+      loadedGameState shouldBe testGameState // Should match exactly
     }
   }
 }

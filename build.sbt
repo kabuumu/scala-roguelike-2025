@@ -13,6 +13,7 @@ lazy val gameOptions: IndigoOptions =
     .withAssetDirectory("assets")
     .excludeAssets {
       case p if p.endsWith(os.RelPath.rel / ".gitkeep") => true
+      case p if p.segments.last.startsWith(".")          => true
       case _                                            => false
     }
 
