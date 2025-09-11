@@ -158,8 +158,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
         val entity = list.list(list.index)
         // Check if this is an enemy (has meaningful position) vs inventory item
         import game.entity.UsableItem
-        val isInventoryItem = UsableItem.isUsableItemEntity(entity)
-        if (!isInventoryItem) {
+        if (!entity.has[UsableItem]) {
           Some(entity.position)
         } else {
           None

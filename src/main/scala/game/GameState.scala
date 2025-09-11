@@ -2,7 +2,6 @@ package game
 
 import game.entity.*
 import game.entity.EntityType.*
-import game.event.*
 import game.system.*
 import game.system.event.GameSystemEvent.GameSystemEvent
 import map.Dungeon
@@ -38,7 +37,6 @@ case class GameState(playerEntityId: String,
     ),
     // Phase 2: Creation and spawning  
     Seq(
-      ProjectileCreationSystem, // Handles projectile creation events
       MessageSystem, // Handles message events
       SpawnEntitySystem, // Enhanced to handle collision-checked spawning
       WaitSystem,
@@ -94,17 +92,6 @@ case class GameState(playerEntityId: String,
         (carryOverEvents, stateAfterPhase)
     }
     finalState
-  }
-
-
-  @scala.annotation.tailrec
-  @deprecated
-  final def handleEvents(events: Seq[Event]): GameState = {
-    if (events.isEmpty) this
-    else {
-      val (newGameState, newEvents) = events.head.apply(this)
-      newGameState.handleEvents(newEvents ++ events.tail)
-    }
   }
 
   def updateEntity(entityId: String, newEntity: Entity): GameState =
