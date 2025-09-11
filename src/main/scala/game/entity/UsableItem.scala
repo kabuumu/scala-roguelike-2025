@@ -29,4 +29,3 @@ enum GameEffect {
   case Heal(amount: Int)
   case CreateProjectile(entityReference: EntityReference)
 }
-}
