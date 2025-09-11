@@ -12,8 +12,8 @@ lazy val gameOptions: IndigoOptions =
     .withWindowSize(1536, 768)
     .withAssetDirectory("assets")
     .excludeAssets {
-      case p if p.endsWith(os.RelPath.rel / ".gitkeep") => true
-      case p if p.segments.last.startsWith(".")          => true
+      //ignore hidden files
+      case p if p.last.startsWith(".") => true
       case _                                            => false
     }
 

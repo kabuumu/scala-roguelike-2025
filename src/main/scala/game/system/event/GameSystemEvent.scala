@@ -56,14 +56,6 @@ object GameSystemEvent {
     healAmount: Int
   ) extends GameSystemEvent
   
-  case class CreateProjectileEvent(
-    creatorId: String,
-    targetPoint: game.Point,
-    targetEntityId: Option[String] = None,
-    collisionDamage: Int,
-    onDeathExplosion: Option[ExplosionEffect] = None
-  ) extends GameSystemEvent
-  
   case class MessageEvent(
     message: String
   ) extends GameSystemEvent

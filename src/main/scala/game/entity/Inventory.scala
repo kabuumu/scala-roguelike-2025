@@ -44,7 +44,7 @@ object Inventory {
 
     // Get usable items from inventory (items with UsableItem component)
     def usableItems(gameState: game.GameState): Seq[Entity] = 
-      inventoryItems(gameState).filter(UsableItem.isUsableItemEntity)
+      inventoryItems(gameState).filter(_.has[UsableItem])
     
     def addItemEntity(itemEntityId: String): Entity = 
       entity.update[Inventory](_.addItemEntityId(itemEntityId))

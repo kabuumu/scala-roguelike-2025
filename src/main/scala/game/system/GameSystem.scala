@@ -1,7 +1,6 @@
 package game.system
 
 import game.GameState
-import game.event.Event
 import game.system.event.GameSystemEvent.GameSystemEvent
 
 trait GameSystem {
