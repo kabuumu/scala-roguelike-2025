@@ -1,10 +1,9 @@
 package game.entity
 
 import game.entity.Health.*
-import game.event.Event
 import game.{GameState, Point}
 
-case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetType: EntityType, damage: Int, targetPoint: Point) extends Component {
+case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVelocity: Double, targetPoint: Point) extends Component {
   val position: Point = {
     val (x, y) = precisePosition
     Point(x.round.toInt, y.round.toInt)
@@ -24,7 +23,7 @@ case class Projectile(precisePosition: (Double, Double), xVelocity: Double, yVel
 object Projectile {
   private val projectileSpeed: Double = 1
 
-  def apply(start: Point, end: Point, targetType: EntityType, damage: Int): Projectile = {
+  def apply(start: Point, end: Point): Projectile = {
     val dx = end.x - start.x
     val dy = end.y - start.y
     val magnitude = Math.sqrt(dx * dx + dy * dy)
@@ -34,8 +33,6 @@ object Projectile {
       (start.x.toDouble, start.y.toDouble),
       xVelocity,
       yVelocity,
-      targetType,
-      damage,
       end
     )
   }
