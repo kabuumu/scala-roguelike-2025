@@ -2,9 +2,9 @@ package game.system
 
 import data.Sprites
 import game.*
+import game.entity.*
 import game.entity.EntityType.entityType
 import game.entity.Initiative.*
-import game.entity.*
 import game.entity.Inventory.primaryWeapon
 import game.entity.Movement.*
 import game.entity.WeaponItem.weaponItem

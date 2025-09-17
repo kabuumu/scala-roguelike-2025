@@ -1,5 +1,6 @@
 package ui
 
+import data.DeathEvents.DeathEventReference.GiveExperience
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 
@@ -97,16 +98,8 @@ class GameControllerStoryTest extends AnyFunSuiteLike with Matchers {
     val scroll = items.scroll("test-scroll-2")
     
     // Create enemies with death events that award experience
-    val enemy1DeathEvents = DeathEvents(deathDetails =>
-      deathDetails.killerId.map {
-        killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 2)
-      }.toSeq
-    )
-    val enemy2DeathEvents = DeathEvents(deathDetails =>
-      deathDetails.killerId.map {
-        killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 2)
-      }.toSeq
-    )
+    val enemy1DeathEvents = DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 2)))
+    val enemy2DeathEvents = DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 2)))
     
     val enemy1Entities = Given.enemies.basic("enemy1", 4, 7, health = 2, deathEvents = Some(enemy1DeathEvents))
     val enemy2Entities = Given.enemies.basic("enemy2", 5, 7, health = 2, deathEvents = Some(enemy2DeathEvents))

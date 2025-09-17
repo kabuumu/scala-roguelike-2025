@@ -1,6 +1,7 @@
 package game.entity
 
 import data.Entities.EntityReference
+import data.Projectiles.ProjectileReference
 import game.entity.Ammo.AmmoType
 import game.system.event.GameSystemEvent
 import game.entity.Movement.position
@@ -27,5 +28,5 @@ case class UseContext[T](userId: String, target: Option[T])
 
 enum GameEffect {
   case Heal(amount: Int)
-  case CreateProjectile(entityReference: EntityReference)
+  case CreateProjectile(projectileReference: ProjectileReference)
 }

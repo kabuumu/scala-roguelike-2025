@@ -39,6 +39,7 @@ case class GameState(playerEntityId: String,
     Seq(
       MessageSystem, // Handles message events
       SpawnEntitySystem, // Enhanced to handle collision-checked spawning
+      SpawnProjectileSystem,
       WaitSystem,
       OpenDoorSystem
     ),

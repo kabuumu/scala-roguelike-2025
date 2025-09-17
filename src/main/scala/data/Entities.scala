@@ -1,54 +1,40 @@
 package data
 
-import data.Sprites
-import game.GameState
+import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
 import game.entity.*
-import game.entity.EntityType.entityType
+import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
-import game.system.event.GameSystemEvent.SpawnEntityEvent
 
 object Entities {
   enum EntityReference:
-    case Arrow, Fireball
+    case Explosion(damage: Int, size: Int)
+    case Slimelet
 
-  def arrowProjectile(creatorId: String, startingPosition: game.Point, targetPoint: game.Point, targetType: EntityType) = {
-    Entity(
-      id = s"Projectile-${System.nanoTime()}",
-      Movement(position = startingPosition),
-      game.entity.Projectile(startingPosition, targetPoint),
-      EntityTypeComponent(EntityType.Projectile),
-      Drawable(Sprites.projectileSprite),
-      Collision(damage = 8, persistent = false, targetType, creatorId),
-      Hitbox()
-    )
-  }
-
-  def fireballProjectile(creatorId: String, startingPosition: game.Point, targetPoint: game.Point, targetType: EntityType) = {
-    val id = s"Projectile-${System.nanoTime()}"
-
-    Entity(
-      id = id,
-      Movement(position = startingPosition),
-      game.entity.Projectile(startingPosition, targetPoint),
-      EntityTypeComponent(EntityType.Projectile),
-      Drawable(Sprites.projectileSprite),
-      Collision(damage = 0, persistent = false, targetType, creatorId),
-      DeathEvents(deathDetails => Seq(
-        SpawnEntityEvent(explosionEffect(creatorId, deathDetails.victim.position, targetType))
-      )),
-      Hitbox()
-    )
-  }
-
-  def explosionEffect(creatorId: String, position: game.Point, targetType: EntityType) = {
+  def explosionEffect(creatorId: String, position: game.Point, targetType: EntityType, damage: Int = 10, size: Int = 2): Entity = {
     Entity(
       s"Explosion ($creatorId)",
       Hitbox(),
-      Collision(damage = 12, persistent = true, targetType, creatorId),
+      Collision(damage = damage, persistent = true, targetType, creatorId),
       Movement(position = position),
       Drawable(Sprites.projectileSprite),
-      Wave(2),
-      EntityTypeComponent(EntityType.Projectile) // Consistent with original system
+      Wave(size),
+      EntityTypeComponent(EntityType.Projectile),
+    )
+  }
+  
+  def slimelet(position: game.Point): Entity = {
+    val health = 5 
+    val damage = 1
+    Entity(
+      Movement(position = position), // Position will be set by SpawnEntitySystem
+      EntityTypeComponent(EntityType.Enemy),
+      Health(10),
+      Initiative(8),
+      Inventory(Nil, None), // No weapon for slimelets, they use default 1 damage
+      EventMemory(),
+      Drawable(Sprites.slimeletSprite),
+      Hitbox(),
+      DeathEvents(Seq(GiveExperience(10))) //TODO - fix slimes
     )
   }
 }
