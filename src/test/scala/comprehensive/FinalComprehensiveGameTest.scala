@@ -260,6 +260,94 @@ class FinalComprehensiveGameTest extends AnyFunSuiteLike with Matchers {
   }
 
   // =============================================================================
+  // EQUIPMENT SYSTEM TESTS
+  // =============================================================================
+
+  test("Equipment system: equipping armor provides damage reduction") {
+    val chainmailArmor = game.entity.EquippableItems.ChainmailArmor.createEntity("test-armor")
+    
+    // Place armor adjacent to player
+    val armorWithPosition = chainmailArmor.addComponent(Movement(position = Point(5, 4)))
+    
+    Given
+      .thePlayerAt(4, 4)
+      .modifyPlayer[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
+      .withEntities(armorWithPosition)
+      .beginStory()
+      // Move to armor and equip it using the Equip input
+      .thePlayer.moves(Direction.Right)
+      .thePlayer.isAt(5, 4)
+      .step(Some(Input.Equip))
+      .timePasses(3) // Allow time for equipment to process
+      // After equipping, player should have equipment component and damage reduction
+      .thePlayer.component[Equipment].exists()
+      .thePlayer.component[Equipment].satisfies(_.armor.isDefined, "should have equipped armor")
+      .thePlayer.component[Equipment].satisfies(_.getTotalDamageReduction > 0, "should have damage reduction")
+  }
+
+  test("Item pickup and usage workflow: find potion, pick it up, then use it") {
+    val potion = Given.items.potion("pickup-potion")
+    
+    // Place potion in the world at a specific location
+    val potionWithPosition = potion.addComponent(Movement(position = Point(5, 4)))
+    
+    Given
+      .thePlayerAt(4, 4)
+      .modifyPlayer[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
+      .modifyPlayer[Health](_.copy(baseCurrent = 5, baseMax = 10)) // Start damaged
+      .withEntities(potionWithPosition)
+      .beginStory()
+      // Verify starting state
+      .thePlayer.hasHealth(5)
+      .thePlayer.component[Inventory].satisfies(_.itemEntityIds.length == 0, "should start with only weapons in inventory")
+      // Move to potion location to pick it up
+      .thePlayer.moves(Direction.Right)
+      .thePlayer.isAt(5, 4)
+      .timePasses(3) // Allow time for pickup mechanics
+      .thePlayer.component[Inventory].satisfies(_.itemEntityIds.contains("pickup-potion"), "should have picked up potion")
+      // Now use the picked up potion
+      .thePlayer.opensItems()
+      .uiIsListSelect() // Should be in item selection mode
+      .thePlayer.confirmsSelection() // Select and use the potion
+      .thePlayer.hasHealth(10) // Should be fully healed
+  }
+
+  test("Complex equipment and item workflow: equip armor then use healing item") {
+    val plateArmor = game.entity.EquippableItems.PlateArmor.createEntity("plate-armor")
+    val healingPotion = Given.items.potion("healing-potion")
+    
+    // Place items in the world
+    val armorWithPosition = plateArmor.addComponent(Movement(position = Point(5, 4)))
+    val potionWithPosition = healingPotion.addComponent(Movement(position = Point(6, 4)))
+    
+    Given
+      .thePlayerAt(4, 4)
+      .modifyPlayer[Initiative](_.copy(maxInitiative = 10, currentInitiative = 0))
+      .modifyPlayer[Health](_.copy(baseCurrent = 3, baseMax = 10)) // Start very damaged
+      .withEntities(armorWithPosition, potionWithPosition)
+      .beginStory()
+      // Phase 1: Verify starting state
+      .thePlayer.hasHealth(3)
+      // Phase 2: Move to armor and equip it
+      .thePlayer.moves(Direction.Right)
+      .thePlayer.isAt(5, 4)
+      .step(Some(Input.Equip))
+      .timePasses(3)
+      .thePlayer.component[Equipment].exists() // Should now have equipment component
+      // Phase 3: Move to potion and pick it up
+      .thePlayer.moves(Direction.Right)
+      .thePlayer.isAt(6, 4)
+      .timePasses(3)
+      .thePlayer.component[Inventory].satisfies(_.itemEntityIds.contains("healing-potion"), "should have picked up potion")
+      // Phase 4: Use the picked up potion
+      .thePlayer.opensItems()
+      .thePlayer.confirmsSelection()
+      .thePlayer.hasHealth(10) // Should be fully healed
+      // Verify armor is still equipped
+      .thePlayer.component[Equipment].satisfies(_.armor.isDefined, "should still have armor equipped")
+  }
+
+  // =============================================================================
   // COMPLEX INTEGRATION SCENARIOS
   // =============================================================================
 
