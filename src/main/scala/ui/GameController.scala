@@ -12,7 +12,7 @@ import game.entity.WeaponItem.weaponItem
 import game.entity.Movement.*
 import game.system.event.GameSystemEvent.InputEvent
 import game.*
-import game.save.SaveGameSystem // Add save system import
+import game.save.{SaveService, BrowserSaveService} // Add save system import
 import ui.GameController.*
 import ui.UIState.UIState
 
@@ -23,7 +23,7 @@ object GameController {
   val frameTime: Long = ticksPerSecond / allowedActionsPerSecond
 }
 
-case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
+case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0, saveService: SaveService = BrowserSaveService) {
   def init(): GameController = {
     copy(gameState =
       gameState.updateEntity(
@@ -58,20 +58,20 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
               newState match {
                 case UIState.Move =>
                   // Starting a new game, return a fresh GameController
-                  return GameController(UIState.Move, StartingState.startingGameState, currentTime).init()
+                  return GameController(UIState.Move, StartingState.startingGameState, currentTime, saveService).init()
                 case _ => // Continue with normal flow
               }
             case _ => // Continue with normal flow
           }
         case (UIState.Move, Some(InputAction.LoadGame)) =>
           // Handle loading saved game
-          SaveGameSystem.loadGame() match {
+          saveService.loadGame() match {
             case scala.util.Success(savedGameState) =>
-              return GameController(UIState.Move, savedGameState, currentTime).init()
+              return GameController(UIState.Move, savedGameState, currentTime, saveService).init()
             case scala.util.Failure(exception) =>
               // Load failed, stay in current state with error message
               val errorGameState = gameState.addMessage(s"Failed to load save game: ${exception.getMessage}")
-              return GameController(uiState, errorGameState, currentTime)
+              return GameController(uiState, errorGameState, currentTime, saveService)
           }
         case _ => // Continue with normal flow
       }
@@ -82,7 +82,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case _ =>
           optAction match {
             case Some(InputAction.LoadGame) => // Don't autosave when loading
-            case Some(_) => SaveGameSystem.autoSave(gameState) // Autosave before any other player action
+            case Some(_) => saveService.autoSave(gameState) // Autosave before any other player action
             case None => // No action, no autosave needed
           }
       }
@@ -99,7 +99,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         currentTime
       } else lastUpdateTime
 
-      GameController(newUiState, newGameState, newUpdateTime)
+      GameController(newUiState, newGameState, newUpdateTime, saveService)
     } else this
   }
 

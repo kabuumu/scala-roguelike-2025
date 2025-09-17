@@ -23,12 +23,12 @@ object UIState {
     val action: (UIState, Option[InputAction]) = effect(list(index))
   }
 
-  case class MainMenu(selectedOption: Int = 0) extends UIState {
-    import game.save.SaveGameSystem
+  case class MainMenu(selectedOption: Int = 0, saveService: game.save.SaveService = game.save.BrowserSaveService) extends UIState {
+    import game.save.SaveService
     
     val options: Seq[String] = {
       val baseOptions = Seq("New Game")
-      if (SaveGameSystem.hasSaveGame()) {
+      if (saveService.hasSaveGame()) {
         baseOptions :+ "Continue Game"
       } else {
         baseOptions :+ "Continue Game (No Save)"
@@ -43,7 +43,7 @@ object UIState {
     def isOptionEnabled(index: Int): Boolean = {
       index match {
         case 0 => true // New Game is always enabled
-        case 1 => SaveGameSystem.hasSaveGame() // Continue Game only enabled if save exists
+        case 1 => saveService.hasSaveGame() // Continue Game only enabled if save exists
         case _ => false
       }
     }

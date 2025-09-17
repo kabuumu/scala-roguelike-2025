@@ -157,6 +157,8 @@ final case class GameStory(controller: GameController, tick: Int) {
 }
 
 object GameStory {
+  import game.save.TestSaveGameSystem
+  
   def begin(initialUI: UIState, initialGame: GameState, startTick: Int = 0): GameStory =
-    GameStory(GameController(initialUI, initialGame), startTick)
+    GameStory(GameController(initialUI, initialGame, saveService = TestSaveGameSystem), startTick)
 }

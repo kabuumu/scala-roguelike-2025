@@ -45,14 +45,14 @@ class MainMenuTest extends AnyFunSpec with Matchers {
 
   describe("MainMenu") {
     it("should initialize with 'New Game' as the first option") {
-      val mainMenu = MainMenu()
+      val mainMenu = MainMenu(saveService = game.save.TestSaveGameSystem)
       mainMenu.options should contain("New Game")
       mainMenu.selectedOption shouldBe 0
       mainMenu.getSelectedOption shouldBe "New Game"
     }
 
     it("should cycle through options correctly") {
-      val mainMenu = MainMenu()
+      val mainMenu = MainMenu(saveService = game.save.TestSaveGameSystem)
       val nextMenu = mainMenu.selectNext
       // Now has two options, should move to second option
       nextMenu.selectedOption shouldBe 1

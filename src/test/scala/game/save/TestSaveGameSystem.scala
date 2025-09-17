@@ -8,7 +8,7 @@ import game.GameState
  * Test-friendly version of SaveGameSystem that uses in-memory storage
  * instead of browser localStorage for unit testing.
  */
-object TestSaveGameSystem {
+object TestSaveGameSystem extends SaveService {
   private val storage = mutable.Map[String, String]()
   private val SAVE_KEY = "scala-roguelike-save-game"
   

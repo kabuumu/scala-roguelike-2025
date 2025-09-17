@@ -86,7 +86,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
 
   describe("MainMenu integration with save system - basic structure") {
     it("should have Continue Game option in menu") {
-      val mainMenu = UIState.MainMenu()
+      val mainMenu = UIState.MainMenu(saveService = TestSaveGameSystem)
       // Should have at least 2 options: New Game and Continue Game (or Continue Game No Save)
       mainMenu.options.length shouldBe 2
       mainMenu.options should contain("New Game")
@@ -94,7 +94,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
     }
 
     it("should allow navigation between menu options") {
-      val mainMenu = UIState.MainMenu()
+      val mainMenu = UIState.MainMenu(saveService = TestSaveGameSystem)
       
       // Should start on New Game
       mainMenu.selectedOption shouldBe 0
@@ -127,7 +127,7 @@ class SaveGameSystemTest extends AnyFunSpec with Matchers with BeforeAndAfterEac
         dungeon = Dungeon(testMode = true)
       )
 
-      val gameController = GameController(UIState.Move, testGameState)
+      val gameController = GameController(UIState.Move, testGameState, saveService = TestSaveGameSystem)
       
       // Should be able to handle input without crashing (autosave will fail but shouldn't break game)
       val updatedController = gameController.update(Some(Input.Move(Direction.Up)), System.nanoTime())
