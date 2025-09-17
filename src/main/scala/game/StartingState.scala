@@ -1,54 +1,17 @@
 package game
 
+import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
+import data.Entities.EntityReference.Slimelet
 import data.Sprites
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
 import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
-import map.{Dungeon, MapGenerator, ItemDescriptor}
+import map.{Dungeon, ItemDescriptor, MapGenerator}
 
 
 object StartingState {
   val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
-
-  // Helper function to create slimelet spawn events when slime dies
-  private def createSlimeletEvents(slimePosition: Point, killerId: Option[String]): Seq[SpawnEntityWithCollisionCheckEvent] = {
-    // Get all adjacent positions (including diagonals) as preferred spawn locations
-    val adjacentPositions = Seq(
-      // Cardinal directions
-      slimePosition + Point(0, -1),  // Up
-      slimePosition + Point(0, 1),   // Down
-      slimePosition + Point(-1, 0),  // Left
-      slimePosition + Point(1, 0),   // Right
-      // Diagonal directions
-      slimePosition + Point(-1, -1), // UpLeft
-      slimePosition + Point(1, -1),  // UpRight
-      slimePosition + Point(-1, 1),  // DownLeft
-      slimePosition + Point(1, 1)    // DownRight
-    )
-    
-    // Create 2 slimelet templates that will be spawned at available positions
-    (0 until 2).map { index =>
-      val slimeletId = s"Slimelet-${System.currentTimeMillis()}-$index"
-      
-      val slimeletTemplate = Entity(
-        id = slimeletId,
-        Movement(position = Point(0, 0)), // Position will be set by SpawnEntitySystem
-        EntityTypeComponent(EntityType.Enemy),
-        Health(10),
-        Initiative(8),
-        Inventory(Nil, None), // No weapon for slimelets, they use default 1 damage
-        EventMemory(),
-        Drawable(Sprites.slimeletSprite),
-        Hitbox(),
-        DeathEvents(deathDetails => deathDetails.killerId.map {
-          killerId => AddExperienceEvent(killerId, experienceForLevel(1) / 4)
-        }.toSeq)
-      )
-      
-      SpawnEntityWithCollisionCheckEvent(slimeletTemplate, adjacentPositions)
-    }
-  }
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
@@ -89,10 +52,7 @@ object StartingState {
         EventMemory(),
         Drawable(Sprites.ratSprite),
         Hitbox(),
-        DeathEvents(deathDetails => deathDetails.killerId.map {
-          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
-        }.toSeq
-        )
+        DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 4)))
       )
     case (point, index) if index % 3 == 1 =>
       Entity(
@@ -108,11 +68,7 @@ object StartingState {
         EventMemory(),
         Drawable(Sprites.snakeSprite),
         Hitbox(),
-        DeathEvents(deathDetails =>
-          deathDetails.killerId.map {
-            killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
-          }.toSeq
-        )
+        DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 4)))
       )
     case (point, index) =>
       Entity(
@@ -128,14 +84,11 @@ object StartingState {
         EventMemory(),
         Drawable(Sprites.slimeSprite),
         Hitbox(),
-        DeathEvents(deathDetails => {
-          val experienceEvent = deathDetails.killerId.map {
-            killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 4)
-          }.toSeq
-          // Use collision-checked spawning to create slimelets
-          val slimeletEvents = createSlimeletEvents(deathDetails.victim.position, deathDetails.killerId)
-          experienceEvent ++ slimeletEvents
-        })
+        DeathEvents(Seq(
+          GiveExperience(experienceForLevel(2) / 4),
+          SpawnEntity(Slimelet, forceSpawn = false),
+          SpawnEntity(Slimelet, forceSpawn = false)
+        ))
       )
       
   }

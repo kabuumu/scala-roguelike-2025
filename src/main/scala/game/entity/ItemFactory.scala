@@ -1,6 +1,8 @@
 package game.entity
 
 import data.Entities.EntityReference
+import data.Projectiles.ProjectileReference
+import data.Projectiles.ProjectileReference.Fireball
 import data.Sprites
 import game.entity.Ammo.AmmoType
 import game.entity.Ammo.AmmoType.Arrow
@@ -26,7 +28,7 @@ object ItemFactory {
   def createScroll(id: String): Entity = Entity(
     id = id,
     NameComponent("Fireball Scroll", "Unleashes a fireball at target location with radius 2 explosion"),
-    UsableItem(TileInRange(10), SingleUse, GameEffect.CreateProjectile(EntityReference.Fireball)), 
+    UsableItem(TileInRange(10), SingleUse, GameEffect.CreateProjectile(Fireball)), 
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.scrollSprite)
@@ -46,7 +48,7 @@ object ItemFactory {
   def createBow(id: String): Entity = Entity(
     id = id,
     NameComponent("Bow", "Ranged weapon that fires arrows at enemies"),
-    UsableItem(EnemyActor(10), ChargeType.Ammo(Arrow), GameEffect.CreateProjectile(EntityReference.Arrow)),
+    UsableItem(EnemyActor(10), ChargeType.Ammo(Arrow), GameEffect.CreateProjectile(ProjectileReference.Arrow)),
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.bowSprite)
@@ -74,10 +76,4 @@ object ItemFactory {
       case Ranged(_) => Sprites.bowSprite
     })
   )
-  
-  // Helper to add position and sprite to an item entity when placing in world
-  def placeInWorld(entity: Entity, position: Point): Entity = {
-    entity
-      .addComponent(Movement(position = position))
-  }
 }

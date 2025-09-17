@@ -545,16 +545,7 @@ object SaveGameSerializer {
   private def deserializeGameEffect(data: js.Dynamic): game.entity.GameEffect = {
     data.`type`.asInstanceOf[String] match {
       case "Heal" => game.entity.GameEffect.Heal(data.amount.asInstanceOf[Int])
-      case "CreateProjectile" => game.entity.GameEffect.CreateProjectile(parseEntityReference(data.entityReference.asInstanceOf[String]))
       case _ => game.entity.GameEffect.Heal(40) // Fallback to healing potion
-    }
-  }
-  
-  private def parseEntityReference(refString: String): data.Entities.EntityReference = {
-    refString match {
-      case "Arrow" => data.Entities.EntityReference.Arrow
-      case "Fireball" => data.Entities.EntityReference.Fireball
-      case _ => data.Entities.EntityReference.Arrow // Fallback
     }
   }
   
