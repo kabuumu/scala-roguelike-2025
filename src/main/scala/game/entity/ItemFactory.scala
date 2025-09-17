@@ -1,7 +1,14 @@
 package game.entity
 
+import data.Entities.EntityReference
+import data.Projectiles.ProjectileReference
+import data.Projectiles.ProjectileReference.Fireball
 import data.Sprites
 import game.entity.Ammo.AmmoType
+import game.entity.Ammo.AmmoType.Arrow
+import game.entity.ChargeType.SingleUse
+import game.entity.GameEffect.Heal
+import game.entity.Targeting.{EnemyActor, Self, TileInRange}
 import game.{Point, Sprite}
 import map.ItemDescriptor
 
@@ -11,7 +18,7 @@ object ItemFactory {
   def createPotion(id: String): Entity = Entity(
     id = id,
     NameComponent("Healing Potion", "Restores 40 health points when consumed"),
-    UsableItem.builders.healingPotion(), // Self-targeted Heal(40), consumeOnUse=true
+    UsableItem(Self, SingleUse, Heal(40)),
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.potionSprite) 
@@ -21,7 +28,7 @@ object ItemFactory {
   def createScroll(id: String): Entity = Entity(
     id = id,
     NameComponent("Fireball Scroll", "Unleashes a fireball at target location with radius 2 explosion"),
-    UsableItem.builders.fireballScroll(), // TileInRange-targeted CreateProjectile with explosion
+    UsableItem(TileInRange(10), SingleUse, GameEffect.CreateProjectile(Fireball)), 
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.scrollSprite)
@@ -41,7 +48,7 @@ object ItemFactory {
   def createBow(id: String): Entity = Entity(
     id = id,
     NameComponent("Bow", "Ranged weapon that fires arrows at enemies"),
-    UsableItem.builders.bow(), // EnemyActor-targeted CreateProjectile(8), ammo="Arrow", consumeOnUse=false
+    UsableItem(EnemyActor(10), ChargeType.Ammo(Arrow), GameEffect.CreateProjectile(ProjectileReference.Arrow)),
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.bowSprite)
@@ -69,10 +76,4 @@ object ItemFactory {
       case Ranged(_) => Sprites.bowSprite
     })
   )
-  
-  // Helper to add position and sprite to an item entity when placing in world
-  def placeInWorld(entity: Entity, position: Point): Entity = {
-    entity
-      .addComponent(Movement(position = position))
-  }
 }

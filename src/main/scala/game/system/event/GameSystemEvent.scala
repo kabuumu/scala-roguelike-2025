@@ -1,7 +1,9 @@
 package game.system.event
 
+import data.Entities.EntityReference
+import data.Projectiles.ProjectileReference
 import game.Direction
-import game.entity.{Entity, ExplosionEffect}
+import game.entity.Entity
 import ui.InputAction
 
 object GameSystemEvent {
@@ -32,9 +34,12 @@ object GameSystemEvent {
     attackerId: String,
     baseDamage: Int
   ) extends GameSystemEvent
-  
+
   case class SpawnEntityEvent(
-    newEntity: Entity
+    newEntity: EntityReference,
+    creator: Entity,                         
+    spawnPosition: game.Point,
+    forceSpawn: Boolean = true
   ) extends GameSystemEvent
   
   case class SpawnEntityWithCollisionCheckEvent(
@@ -56,14 +61,6 @@ object GameSystemEvent {
     healAmount: Int
   ) extends GameSystemEvent
   
-  case class CreateProjectileEvent(
-    creatorId: String,
-    targetPoint: game.Point,
-    targetEntityId: Option[String] = None,
-    collisionDamage: Int,
-    onDeathExplosion: Option[ExplosionEffect] = None
-  ) extends GameSystemEvent
-  
   case class MessageEvent(
     message: String
   ) extends GameSystemEvent
@@ -76,4 +73,10 @@ object GameSystemEvent {
   case class ResetInitiativeEvent(
     entityId: String
   ) extends GameSystemEvent
+
+  case class SpawnProjectileEvent(
+                                   projectile: ProjectileReference,
+                                   creator: Entity,
+                                   targetPoint: game.Point
+                                 ) extends GameSystemEvent
 }

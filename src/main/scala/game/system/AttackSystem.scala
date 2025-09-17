@@ -1,21 +1,16 @@
 package game.system
 
-import game.GameState
-import game.entity.Inventory
+import data.Sprites
+import game.*
+import game.entity.*
+import game.entity.EntityType.entityType
+import game.entity.Initiative.*
+import game.entity.Inventory.primaryWeapon
+import game.entity.Movement.*
+import game.entity.WeaponItem.weaponItem
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{GameSystemEvent, SpawnEntityEvent}
 import ui.InputAction
-import game.entity.EntityType
-import data.Sprites
-import game.entity.*
-import game.entity.EntityType.entityType
-import game.entity.Movement.*
-import game.entity.Inventory.primaryWeapon
-import game.entity.WeaponItem.weaponItem
-import game.entity.WeaponItem.weaponItem
-import game.event.*
-import game.*
-import game.entity.Initiative.*
 
 object AttackSystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
@@ -33,7 +28,7 @@ object AttackSystem extends GameSystem {
               Entity(
                 id = s"Projectile-${System.nanoTime()}",
                 Movement(position = startingPosition),
-                Projectile(startingPosition, target.position, targetType, weapon.damage),
+                Projectile(startingPosition, target.position),
                 EntityTypeComponent(EntityType.Projectile),
                 Drawable(Sprites.projectileSprite),
                 Collision(damage = weapon.damage, persistent = false, targetType, ""),

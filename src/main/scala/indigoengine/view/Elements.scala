@@ -1,14 +1,17 @@
 package indigoengine.view
 
 import game.entity
-import game.entity.{Drawable, Entity, Equipment, NameComponent}
+import game.entity.ChargeType.SingleUse
+import game.entity.{ChargeType, Drawable, Entity, Equipment, NameComponent}
 import game.status.StatusEffect
-import generated.{Assets, PixelFont, PixelFontSmall}
 import indigo.*
 import indigo.Batch.toBatch
 import indigoengine.SpriteExtension.*
 import ui.UIConfig.*
 import ui.{GameController, UIState}
+import generated.PixelFont
+import generated.Assets
+import generated.PixelFontSmall
 
 object Elements {
   def text(text: String, x: Int, y: Int): SceneNode = Text(
@@ -86,7 +89,6 @@ object Elements {
     import data.Sprites
     import game.entity.Ammo.isAmmo
     import game.entity.Inventory.*
-    import game.entity.UsableItem.isUsableItem
     import game.entity.{Ammo, Targeting, UsableItem}
     import game.system.event.GameSystemEvent.HealEvent
     
@@ -99,7 +101,7 @@ object Elements {
       case listSelect: UIState.ListSelect[?] if listSelect.list.nonEmpty && listSelect.list.head.isInstanceOf[Entity] =>
         // Check if the list contains usable items
         val entities = listSelect.list.asInstanceOf[Seq[Entity]]
-        if (entities.exists(_.isUsableItem)) {
+        if (entities.exists(_.has[UsableItem])) {
           Some(listSelect.index)
         } else None
       case _ => None
@@ -114,11 +116,11 @@ object Elements {
       val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
       
       val itemTypesWithCounts = usableItems.distinctBy(_.get[NameComponent]).map {
-        item =>
-          val sprite = item.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite) //Temp code, need explicit way to set item sprite
-          val count = UsableItem.getUsableItem(item).flatMap(_.ammo) match {
-            case Some(requiredAmmo) => allInventoryItems.count(_.exists[Ammo](_.ammoType == requiredAmmo))
-            case None => usableItems.count(_.get[NameComponent] == item.get[NameComponent])
+        itemEntity =>
+          val sprite = itemEntity.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite) //Temp code, need explicit way to set item sprite
+          val count = itemEntity.get[UsableItem].map(_.chargeType) match {
+            case Some(ChargeType.Ammo(requiredAmmo)) => allInventoryItems.count(_.exists[Ammo](_.ammoType == requiredAmmo))
+            case _ => usableItems.count(_.get[NameComponent] == itemEntity.get[NameComponent])
           }
 
           sprite -> count
@@ -407,18 +409,21 @@ object Elements {
         if (listSelect.list.nonEmpty) {
           val selectedItem = listSelect.list(listSelect.index)
           selectedItem match {
-            case entity: Entity if entity.isUsableItem =>
+            case entity: Entity if entity.has[UsableItem] =>
               // Show item name at top, then description
               val itemName = entity.name.getOrElse("Unknown Item")
-              entity.usableItem match {
+              entity.get[UsableItem] match {
                 case Some(usableItem) =>
                   val targetType = usableItem.targeting match {
                     case game.entity.Targeting.Self => "Self-targeted"
-                    case game.entity.Targeting.EnemyActor => "Enemy-targeted"
+                    case game.entity.Targeting.EnemyActor(range) => s"Enemy-targeted (range: $range)"
                     case game.entity.Targeting.TileInRange(range) => s"Tile-targeted (range: $range)"
                   }
-                  val consumeText = if (usableItem.consumeOnUse) "consumed on use" else "reusable"
-                  val ammoText = usableItem.ammo.map(ammo => s", requires ${ammo.toString}").getOrElse("")
+                  val consumeText = if (usableItem.chargeType == SingleUse) "consumed on use" else "reusable"
+                  val ammoText = usableItem.chargeType match {
+                    case ChargeType.Ammo(ammo) => s", requires ${ammo.toString}"
+                    case _ => ""
+                  }
                   val description = entity.description.getOrElse("")
                   val descriptionText = if (description.nonEmpty) s" - $description" else ""
                   s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Enter to use."

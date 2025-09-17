@@ -12,6 +12,7 @@ import game.entity.WeaponItem.weaponItem
 import game.entity.Movement.*
 import game.system.event.GameSystemEvent.InputEvent
 import game.*
+import game.save.SaveGameSystem // Add save system import
 import ui.GameController.*
 import ui.UIState.UIState
 
@@ -62,7 +63,28 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
               }
             case _ => // Continue with normal flow
           }
+        case (UIState.Move, Some(InputAction.LoadGame)) =>
+          // Handle loading saved game
+          SaveGameSystem.loadGame() match {
+            case scala.util.Success(savedGameState) =>
+              return GameController(UIState.Move, savedGameState, currentTime).init()
+            case scala.util.Failure(exception) =>
+              // Load failed, stay in current state with error message
+              val errorGameState = gameState.addMessage(s"Failed to load save game: ${exception.getMessage}")
+              return GameController(uiState, errorGameState, currentTime)
+          }
         case _ => // Continue with normal flow
+      }
+      
+      // Autosave before processing player actions (except for MainMenu and special actions)
+      uiState match {
+        case _: UIState.MainMenu => // Don't autosave in main menu
+        case _ =>
+          optAction match {
+            case Some(InputAction.LoadGame) => // Don't autosave when loading
+            case Some(_) => SaveGameSystem.autoSave(gameState) // Autosave before any other player action
+            case None => // No action, no autosave needed
+          }
       }
       
       val newGameState = gameState.updateWithSystems(optAction.map(
@@ -87,9 +109,14 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Input.Move(Direction.Up) => (mainMenu.selectPrevious, None)
         case Input.Move(Direction.Down) => (mainMenu.selectNext, None)
         case Input.UseItem | Input.Attack(_) | Input.Confirm =>
-          mainMenu.getSelectedOption match {
-            case "New Game" => (UIState.Move, None)  // Just transition to Move, update() will handle creating new game
-            case _ => (mainMenu, None)
+          if (mainMenu.canConfirmCurrentSelection) {
+            mainMenu.getSelectedOption match {
+              case "New Game" => (UIState.Move, None)  // Just transition to Move, update() will handle creating new game
+              case "Continue Game" => (UIState.Move, Some(InputAction.LoadGame))  // Load saved game
+              case _ => (mainMenu, None)
+            }
+          } else {
+            (mainMenu, None) // Can't confirm disabled options
           }
         case _ => (mainMenu, None)
       }
@@ -123,30 +150,43 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
               list = usableItems,
               effect = itemEntity => {
                 // Handle different item types based on UsableItem component
-                UsableItem.getUsableItem(itemEntity) match {
+                itemEntity.get[UsableItem] match {
                   case Some(usableItem) =>
                     usableItem.targeting match {
                       case Targeting.Self =>
                         // Self-targeted items (potions)
-                        (UIState.Move, Some(InputAction.UseComponentItem(itemEntity.id)))
+                        (UIState.Move, 
+                          Some(InputAction.UseItem(
+                            itemId = itemEntity.id, 
+                            itemType = usableItem, 
+                            useContext = UseContext(gameState.playerEntity.id, None)
+                          ))
+                        )
                       case Targeting.TileInRange(_) =>
                         // Tile-targeted items (scrolls)
                         (UIState.ScrollSelect(
                           cursor = gameState.playerEntity.position,
-                          effect = targetPoint => (UIState.Move, Some(InputAction.UseComponentItemAtPoint(itemEntity.id, targetPoint)))
+                          effect = targetPoint => (UIState.Move, Some(InputAction.UseItem(itemEntity.id, usableItem, UseContext(gameState.playerEntity.id, Some(targetPoint)))))
                         ), None)
-                      case Targeting.EnemyActor =>
+                      case Targeting.EnemyActor(range) =>
                         // Entity-targeted items (bows)
-                        val enemies = enemiesWithinRange(10)
-                        val hasRequiredAmmo = usableItem.ammo match {
-                          case Some(ammoType) => gameState.playerEntity.inventoryItems(gameState).exists(_.exists[Ammo](_.ammoType == ammoType))
-                          case None => true
+                        val enemies = enemiesWithinRange(range)
+                        val hasRequiredAmmo = usableItem.chargeType match {
+                          case ChargeType.Ammo(ammoType) => gameState.playerEntity.inventoryItems(gameState).exists(_.exists[Ammo](_.ammoType == ammoType))
+                          case _ => true
                         }
                         if (enemies.nonEmpty && hasRequiredAmmo) {
                           (UIState.ListSelect(
                             list = enemies,
-                            effect = target => (UIState.Move, Some(InputAction.UseComponentItemOnEntity(itemEntity.id, target.id)))
-                          ), None)
+                            effect = target => (
+                              UIState.Move,
+                              Some(InputAction.UseItem(
+                                itemId = itemEntity.id,
+                                itemType = usableItem,
+                                useContext = UseContext(gameState.playerEntity.id, Some(target))
+                              ))
+                          )), 
+                            None)
                         } else {
                           (UIState.Move, None) // No enemies in range or no required ammo
                         }

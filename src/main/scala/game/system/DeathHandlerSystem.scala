@@ -1,8 +1,10 @@
 package game.system
 
+import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
 import game.GameState
-import game.entity.{DeathEvents, MarkedForDeath, EntityType}
+import game.entity.{Collision, DeathEvents, EntityType, MarkedForDeath, Movement}
 import game.entity.EntityType.entityType
+import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
 
 object DeathHandlerSystem extends GameSystem {
@@ -16,9 +18,25 @@ object DeathHandlerSystem extends GameSystem {
             // If the entity is marked for death, process the death events
             optDeathEvents match {
               case Some(DeathEvents(deathEvents)) =>
+                val newEvents: Seq[GameSystemEvent] = deathEvents.flatMap {
+                  case GiveExperience(amount) =>
+                    markedForDeath.deathDetails.killerId match {
+                      case Some(killerId) => Some(GameSystemEvent.AddExperienceEvent(killerId, amount))
+                      case None => None
+                    }
+                  case SpawnEntity(entityReference, forceSpawn) =>
+                    val creator = markedForDeath.deathDetails.victim.get[Collision].map(_.creatorId).flatMap(currentGameState.getEntity).getOrElse(entity)
+                    
+                    markedForDeath.deathDetails.victim.get[Movement].map(_.position) match {
+                    case Some(victimPosition) =>
+                      Some(GameSystemEvent.SpawnEntityEvent(entityReference, creator, victimPosition, forceSpawn))
+                    case None =>
+                      throw new Exception("Cannot spawn entity on death: victim has no position")
+                  }
+                }
                 // Trigger death events and remove the entity
                 (currentGameState.remove(entity.id), 
-                  currentEvents ++ deathEvents(markedForDeath.deathDetails))
+                  currentEvents ++ newEvents)
               case None =>
                 // If no death events are defined, just remove the entity
                 (currentGameState.remove(entity.id), 

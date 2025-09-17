@@ -1,5 +1,6 @@
 package ui
 
+import data.DeathEvents.DeathEventReference.GiveExperience
 import data.Sprites
 import game.Direction.{Down, Up}
 import game.entity.*
@@ -198,11 +199,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       SightMemory(),
       Drawable(Sprites.enemySprite),
       Hitbox(),
-      DeathEvents(deathDetails =>
-        deathDetails.killerId.map {
-          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 2)
-        }.toSeq
-      )
+      DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 2)))
     )
 
     val enemy2 = Entity(
@@ -215,11 +212,7 @@ class GameControllerTest extends AnyFunSuiteLike with Matchers {
       SightMemory(),
       Drawable(Sprites.enemySprite),
       Hitbox(),
-      DeathEvents(deathDetails =>
-        deathDetails.killerId.map {
-          killerId => AddExperienceEvent(killerId, experienceForLevel(2) / 2)
-        }.toSeq
-      )
+      DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 2)))
     )
 
     val gameState = GameState(

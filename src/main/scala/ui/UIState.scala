@@ -24,11 +24,30 @@ object UIState {
   }
 
   case class MainMenu(selectedOption: Int = 0) extends UIState {
-    val options: Seq[String] = Seq("New Game")
+    import game.save.SaveGameSystem
+    
+    val options: Seq[String] = {
+      val baseOptions = Seq("New Game")
+      if (SaveGameSystem.hasSaveGame()) {
+        baseOptions :+ "Continue Game"
+      } else {
+        baseOptions :+ "Continue Game (No Save)"
+      }
+    }
     
     def selectNext: MainMenu = copy(selectedOption = (selectedOption + 1) % options.length)
     def selectPrevious: MainMenu = copy(selectedOption = (selectedOption - 1 + options.length) % options.length)
     
     def getSelectedOption: String = options(selectedOption)
+    
+    def isOptionEnabled(index: Int): Boolean = {
+      index match {
+        case 0 => true // New Game is always enabled
+        case 1 => SaveGameSystem.hasSaveGame() // Continue Game only enabled if save exists
+        case _ => false
+      }
+    }
+    
+    def canConfirmCurrentSelection: Boolean = isOptionEnabled(selectedOption)
   }
 }
