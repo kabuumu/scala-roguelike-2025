@@ -23,7 +23,8 @@ lazy val root = (project in file("."))
     indigoOptions := gameOptions,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
-      "io.indigoengine" %%% "indigo" % "0.22.0"
+      "io.indigoengine" %%% "indigo" % "0.22.0",
+      "com.lihaoyi" %%% "upickle" % "3.3.0"
     ),
     // Basic coverage settings (limited support with ScalaJS)
     coverageMinimumStmtTotal := 49, // Set based on current measured coverage
