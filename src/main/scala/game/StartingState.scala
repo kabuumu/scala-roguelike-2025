@@ -2,7 +2,7 @@ package game
 
 import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
 import data.Entities.EntityReference.Slimelet
-import data.Sprites
+import data.{Enemies, Items, Sprites}
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
@@ -15,81 +15,47 @@ object StartingState {
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
-    ItemFactory.createPotion("player-potion-1"),
-    ItemFactory.createPotion("player-potion-2"),
-    ItemFactory.createScroll("player-scroll-1"),
-    ItemFactory.createScroll("player-scroll-2"),
-    ItemFactory.createBow("player-bow-1")
-  ) ++ (1 to 6).map(i => ItemFactory.createArrow(s"player-arrow-$i"))
+    Items.healingPotion("player-potion-1"),
+    Items.healingPotion("player-potion-2"),
+    Items.fireballScroll("player-scroll-1"),
+    Items.fireballScroll("player-scroll-2"),
+    Items.bow("player-bow-1")
+  ) ++ (1 to 6).map(i => Items.arrow(s"player-arrow-$i"))
   
   // Create weapons as entities for enemies and player
   val ratWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
-    case (_, index) if index % 3 == 0 => index -> ItemFactory.createWeapon(s"rat-weapon-$index", 8, Melee)
+    case (_, index) if index % 3 == 0 => index -> Items.weapon(s"rat-weapon-$index", 8, Melee)
   }.toMap
   
   val snakeWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
-    case (_, index) if index % 3 == 1 => index -> ItemFactory.createWeapon(s"snake-weapon-$index", 6, Ranged(4))
+    case (_, index) if index % 3 == 1 => index -> Items.weapon(s"snake-weapon-$index", 6, Ranged(4))
   }.toMap
   
   val slimeWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
-    case (_, index) if index % 3 == 2 => index -> ItemFactory.createWeapon(s"slime-weapon-$index", 6, Melee)
+    case (_, index) if index % 3 == 2 => index -> Items.weapon(s"slime-weapon-$index", 6, Melee)
   }.toMap
   
-  val playerPrimaryWeapon: Entity = ItemFactory.createWeapon("player-primary-weapon", 10, Melee)
+  val playerPrimaryWeapon: Entity = Items.weapon("player-primary-weapon", 10, Melee)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 3 == 0 =>
-      Entity(
-        id = s"Rat $index",
-        Movement(position = Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.Enemy),
-        Health(25),
-        Initiative(12),
-        Inventory(Nil, Some(s"rat-weapon-$index")),
-        EventMemory(),
-        Drawable(Sprites.ratSprite),
-        Hitbox(),
-        DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 4)))
+      val position = Point(
+        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
+      Enemies.rat(s"Rat $index", position, Some(s"rat-weapon-$index"))
     case (point, index) if index % 3 == 1 =>
-      Entity(
-        id = s"Snake $index",
-        Movement(position = Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.Enemy),
-        Health(18),
-        Initiative(25),
-        Inventory(Nil, Some(s"snake-weapon-$index")),
-        EventMemory(),
-        Drawable(Sprites.snakeSprite),
-        Hitbox(),
-        DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 4)))
+      val position = Point(
+        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
+      Enemies.snake(s"Snake $index", position, Some(s"snake-weapon-$index"))
     case (point, index) =>
-      Entity(
-        id = s"Slime $index",
-        Movement(position = Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.Enemy),
-        Health(20),
-        Initiative(15),
-        Inventory(Nil, Some(s"slime-weapon-$index")),
-        EventMemory(),
-        Drawable(Sprites.slimeSprite),
-        Hitbox(),
-        DeathEvents(Seq(
-          GiveExperience(experienceForLevel(2) / 4),
-          SpawnEntity(Slimelet, forceSpawn = false),
-          SpawnEntity(Slimelet, forceSpawn = false)
-        ))
+      val position = Point(
+        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
+      Enemies.slime(s"Slime $index", position, Some(s"slime-weapon-$index"))
       
   }
 

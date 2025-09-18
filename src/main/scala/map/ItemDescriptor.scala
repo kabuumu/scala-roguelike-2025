@@ -1,7 +1,7 @@
 package map
 
 import game.entity.*
-import data.Sprites
+import data.{Items, Sprites}
 import game.Sprite
 
 // Simple descriptors for item types to replace the Item class in map generation
@@ -17,13 +17,13 @@ enum ItemDescriptor {
   
   // Convert descriptor to actual entity
   def createEntity(id: String): Entity = this match {
-    case PotionDescriptor => ItemFactory.createPotion(id)
-    case ScrollDescriptor => ItemFactory.createScroll(id)
-    case ArrowDescriptor => ItemFactory.createArrow(id)
-    case LeatherHelmetDescriptor => EquippableItems.LeatherHelmet.createEntity(id)
-    case ChainmailArmorDescriptor => EquippableItems.ChainmailArmor.createEntity(id)
-    case IronHelmetDescriptor => EquippableItems.IronHelmet.createEntity(id)
-    case PlateArmorDescriptor => EquippableItems.PlateArmor.createEntity(id)
-    case KeyDescriptor(keyColour) => ItemFactory.createKey(id, keyColour)
+    case PotionDescriptor => Items.healingPotion(id)
+    case ScrollDescriptor => Items.fireballScroll(id)
+    case ArrowDescriptor => Items.arrow(id)
+    case LeatherHelmetDescriptor => Items.leatherHelmet(id)
+    case ChainmailArmorDescriptor => Items.chainmailArmor(id)
+    case IronHelmetDescriptor => Items.ironHelmet(id)
+    case PlateArmorDescriptor => Items.plateArmor(id)
+    case KeyDescriptor(keyColour) => Items.key(id, keyColour)
   }
 }
