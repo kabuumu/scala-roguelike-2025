@@ -35,74 +35,12 @@ final case class PersistedDungeon(
 )
 
 /**
- * Implicit ReadWriters contained within the save package to avoid polluting game code
+ * Local implicit ReadWriters for save package only - automatic derivation where possible
  */
 object SavePickle {
-  // Basic ReadWriters for game types used only within save package
-  implicit val pointRW: ReadWriter[Point] = readwriter[ujson.Value].bimap[Point](
-    point => ujson.Obj("x" -> ujson.Num(point.x), "y" -> ujson.Num(point.y)),
-    json => {
-      val obj = json.obj
-      Point(obj("x").num.toInt, obj("y").num.toInt)
-    }
-  )
-  
-  implicit val spriteRW: ReadWriter[Sprite] = readwriter[ujson.Value].bimap[Sprite](
-    sprite => ujson.Obj("x" -> ujson.Num(sprite.x), "y" -> ujson.Num(sprite.y), "layer" -> ujson.Num(sprite.layer)),
-    json => {
-      val obj = json.obj
-      Sprite(obj("x").num.toInt, obj("y").num.toInt, obj("layer").num.toInt)
-    }
-  )
-  
-  implicit val directionRW: ReadWriter[Direction] = readwriter[String].bimap[Direction](
-    _.toString,
-    str => Direction.valueOf(str)
-  )
-  
-  implicit val entityTypeRW: ReadWriter[EntityType] = readwriter[String].bimap[EntityType](
-    _.toString,
-    str => str match {
-      case "Player" => EntityType.Player
-      case "Enemy" => EntityType.Enemy
-      case "Wall" => EntityType.Wall
-      case "Floor" => EntityType.Floor
-      case "Projectile" => EntityType.Projectile
-      case s if s.startsWith("LockedDoor(") =>
-        val colorStr = s.substring(11, s.length - 1)
-        val keyColour = colorStr match {
-          case "Red" => KeyColour.Red
-          case "Blue" => KeyColour.Blue
-          case "Yellow" => KeyColour.Yellow
-          case _ => KeyColour.Red
-        }
-        EntityType.LockedDoor(keyColour)
-      case s if s.startsWith("Key(") =>
-        val colorStr = s.substring(4, s.length - 1)
-        val keyColour = colorStr match {
-          case "Red" => KeyColour.Red
-          case "Blue" => KeyColour.Blue
-          case "Yellow" => KeyColour.Yellow
-          case _ => KeyColour.Red
-        }
-        EntityType.Key(keyColour)
-      case _ => EntityType.Player
-    }
-  )
-
-  implicit val keyColourRW: ReadWriter[KeyColour] = readwriter[String].bimap[KeyColour](
-    _.toString,
-    str => str match {
-      case "Red" => KeyColour.Red
-      case "Blue" => KeyColour.Blue
-      case "Yellow" => KeyColour.Yellow
-      case _ => KeyColour.Red
-    }
-  )
-
-  // ReadWriters for the persistence DTOs
+  // Automatic derivation for simple DTOs
   implicit val savedComponentRW: ReadWriter[SavedComponent] = macroRW
-  implicit val persistedEntityRW: ReadWriter[PersistedEntity] = macroRW
+  implicit val persistedEntityRW: ReadWriter[PersistedEntity] = macroRW  
   implicit val persistedDungeonRW: ReadWriter[PersistedDungeon] = macroRW
   implicit val persistedGameStateRW: ReadWriter[PersistedGameState] = macroRW
 }
@@ -174,7 +112,7 @@ object SaveConversions {
 
 /**
  * Public API for save/load JSON.
- * Self-contained within save package using local ReadWriters.
+ * Self-contained within save package using automatic derivation where possible.
  */
 object SaveGameJson {
   import SaveConversions.*

@@ -5,114 +5,78 @@ import ujson.Value
 import scala.reflect.ClassTag
 import game.entity.*
 import game.entity.Health._
-import game.{Point, Sprite}
+import game.{Point, Sprite, Direction}
 
 /**
- * Self-contained component registry that handles serialization without polluting game code.
- * Uses local implicit ReadWriters to avoid dependencies outside save package.
+ * Self-contained component registry using automatic derivation where possible.
+ * Uses uPickle macroRW for all components that support it.
  */
 object ComponentRegistry {
-  import game.save.SavePickle.* // Import local ReadWriters
+
+  // Type alias for clarity
+  type Codec[T <: Component] = ReadWriter[T]
 
   // One codec entry per component type you want to persist
-  final case class Codec[T <: Component](
+  final case class CodecEntry[T <: Component](
     tag: String,
     toJson: T => Value,
     fromJson: Value => Either[String, T]
   )
 
-  // Helper to create simple codecs using uPickle ReadWriters
-  private def simpleCodec[T <: Component](tag: String)(implicit rw: ReadWriter[T]): Codec[T] = 
-    Codec[T](
+  // Helper to create simple codecs using automatic derivation
+  private def simpleCodec[T <: Component](tag: String)(using rw: ReadWriter[T]): CodecEntry[T] = 
+    CodecEntry[T](
       tag = tag,
       toJson = component => writeJs(component),
       fromJson = json => try Right(read[T](json)) catch case e => Left(e.getMessage)
     )
 
-  // Local ReadWriters for components - contained within save package
-  implicit val movementRW: ReadWriter[Movement] = readwriter[ujson.Value].bimap[Movement](
-    m => ujson.Obj("position" -> writeJs(m.position)),
-    json => Movement(read[Point](json.obj("position")))
+  // Automatic derivation for components - contained within save package
+  // First provide ReadWriters for dependencies that can't be auto-derived
+  implicit val pointRW: ReadWriter[Point] = macroRW
+  implicit val spriteRW: ReadWriter[Sprite] = macroRW
+  implicit val directionRW: ReadWriter[Direction] = readwriter[String].bimap[Direction](
+    _.toString,
+    str => Direction.valueOf(str)
   )
-
-  implicit val initiativeRW: ReadWriter[Initiative] = readwriter[ujson.Value].bimap[Initiative](
-    i => ujson.Obj("maxInitiative" -> ujson.Num(i.maxInitiative), "currentInitiative" -> ujson.Num(i.currentInitiative)),
-    json => {
-      val obj = json.obj
-      Initiative(obj("maxInitiative").num.toInt, obj("currentInitiative").num.toInt)
+  implicit val entityTypeRW: ReadWriter[EntityType] = readwriter[String].bimap[EntityType](
+    _.toString,
+    str => str match {
+      case "Player" => EntityType.Player
+      case "Enemy" => EntityType.Enemy
+      case "Wall" => EntityType.Wall
+      case "Floor" => EntityType.Floor
+      case "Projectile" => EntityType.Projectile
+      case s if s.startsWith("LockedDoor(") =>
+        val colorStr = s.substring(11, s.length - 1)
+        val keyColour = colorStr match {
+          case "Red" => KeyColour.Red
+          case "Blue" => KeyColour.Blue
+          case "Yellow" => KeyColour.Yellow
+          case _ => KeyColour.Red
+        }
+        EntityType.LockedDoor(keyColour)
+      case s if s.startsWith("Key(") =>
+        val colorStr = s.substring(4, s.length - 1)
+        val keyColour = colorStr match {
+          case "Red" => KeyColour.Red
+          case "Blue" => KeyColour.Blue
+          case "Yellow" => KeyColour.Yellow
+          case _ => KeyColour.Red
+        }
+        EntityType.Key(keyColour)
+      case _ => EntityType.Player
     }
   )
-
-  implicit val experienceRW: ReadWriter[Experience] = readwriter[ujson.Value].bimap[Experience](
-    e => ujson.Obj("currentExperience" -> ujson.Num(e.currentExperience), "levelUp" -> ujson.Bool(e.levelUp)),
-    json => {
-      val obj = json.obj
-      Experience(obj("currentExperience").num.toInt, obj("levelUp").bool)
+  implicit val keyColourRW: ReadWriter[KeyColour] = readwriter[String].bimap[KeyColour](
+    _.toString,
+    str => str match {
+      case "Red" => KeyColour.Red
+      case "Blue" => KeyColour.Blue
+      case "Yellow" => KeyColour.Yellow
+      case _ => KeyColour.Red
     }
   )
-
-  implicit val entityTypeComponentRW: ReadWriter[EntityTypeComponent] = readwriter[ujson.Value].bimap[EntityTypeComponent](
-    etc => ujson.Obj("entityType" -> writeJs(etc.entityType)),
-    json => EntityTypeComponent(read[EntityType](json.obj("entityType")))
-  )
-
-  implicit val drawableRW: ReadWriter[Drawable] = readwriter[ujson.Value].bimap[Drawable](
-    d => ujson.Obj("sprites" -> ujson.Arr(d.sprites.toSeq.map { case (point, sprite) =>
-      ujson.Obj("point" -> writeJs(point), "sprite" -> writeJs(sprite))
-    }*)),
-    json => {
-      val sprites = json.obj("sprites").arr.map { item =>
-        val obj = item.obj
-        (read[Point](obj("point")), read[Sprite](obj("sprite")))
-      }.toSet
-      Drawable(sprites)
-    }
-  )
-
-  implicit val hitboxRW: ReadWriter[Hitbox] = readwriter[ujson.Value].bimap[Hitbox](
-    h => ujson.Obj("points" -> ujson.Arr(h.points.toSeq.map(writeJs(_))*)),
-    json => {
-      val points = json.obj("points").arr.map(read[Point](_)).toSet
-      Hitbox(points)
-    }
-  )
-
-  implicit val sightMemoryRW: ReadWriter[SightMemory] = readwriter[ujson.Value].bimap[SightMemory](
-    sm => ujson.Obj("seenPoints" -> ujson.Arr(sm.seenPoints.toSeq.map(writeJs(_))*)),
-    json => {
-      val points = json.obj("seenPoints").arr.map(read[Point](_)).toSet
-      SightMemory(points)
-    }
-  )
-
-  implicit val canPickUpRW: ReadWriter[CanPickUp] = readwriter[ujson.Value].bimap[CanPickUp](
-    _ => ujson.Obj(),
-    _ => CanPickUp()
-  )
-
-  implicit val nameComponentRW: ReadWriter[NameComponent] = readwriter[ujson.Value].bimap[NameComponent](
-    nc => ujson.Obj("name" -> ujson.Str(nc.name), "description" -> ujson.Str(nc.description)),
-    json => {
-      val obj = json.obj
-      NameComponent(obj("name").str, obj("description").str)
-    }
-  )
-
-  implicit val inventoryRW: ReadWriter[Inventory] = readwriter[ujson.Value].bimap[Inventory](
-    inv => ujson.Obj(
-      "itemEntityIds" -> ujson.Arr(inv.itemEntityIds.map(ujson.Str(_))*),
-      "primaryWeaponId" -> inv.primaryWeaponId.map(ujson.Str(_)).getOrElse(ujson.Null),
-      "secondaryWeaponId" -> inv.secondaryWeaponId.map(ujson.Str(_)).getOrElse(ujson.Null)
-    ),
-    json => {
-      val obj = json.obj
-      val itemEntityIds = obj("itemEntityIds").arr.map(_.str).toSeq
-      val primaryWeaponId = if (obj("primaryWeaponId") == ujson.Null) None else Some(obj("primaryWeaponId").str)
-      val secondaryWeaponId = if (obj("secondaryWeaponId") == ujson.Null) None else Some(obj("secondaryWeaponId").str)
-      Inventory(itemEntityIds, primaryWeaponId, secondaryWeaponId)
-    }
-  )
-
   implicit val equipmentSlotRW: ReadWriter[EquipmentSlot] = readwriter[String].bimap[EquipmentSlot](
     _.toString,
     str => str match {
@@ -122,56 +86,42 @@ object ComponentRegistry {
     }
   )
 
-  implicit val equippableRW: ReadWriter[Equippable] = readwriter[ujson.Value].bimap[Equippable](
-    eq => ujson.Obj(
-      "slot" -> writeJs(eq.slot),
-      "damageReduction" -> ujson.Num(eq.damageReduction),
-      "itemName" -> ujson.Str(eq.itemName)
-    ),
-    json => {
-      val obj = json.obj
-      Equippable(
-        read[EquipmentSlot](obj("slot")),
-        obj("damageReduction").num.toInt,
-        obj("itemName").str
-      )
-    }
-  )
+  // Now auto-derive the components that have all dependencies satisfied
+  implicit val movementRW: ReadWriter[Movement] = macroRW
+  implicit val initiativeRW: ReadWriter[Initiative] = macroRW
+  implicit val experienceRW: ReadWriter[Experience] = macroRW
+  implicit val entityTypeComponentRW: ReadWriter[EntityTypeComponent] = macroRW
+  implicit val drawableRW: ReadWriter[Drawable] = macroRW
+  implicit val hitboxRW: ReadWriter[Hitbox] = macroRW
+  implicit val sightMemoryRW: ReadWriter[SightMemory] = macroRW
+  implicit val canPickUpRW: ReadWriter[CanPickUp] = macroRW
+  implicit val nameComponentRW: ReadWriter[NameComponent] = macroRW
+  implicit val inventoryRW: ReadWriter[Inventory] = macroRW
+  implicit val equippableRW: ReadWriter[Equippable] = macroRW
+  implicit val equipmentRW: ReadWriter[Equipment] = macroRW
 
-  implicit val equipmentRW: ReadWriter[Equipment] = readwriter[ujson.Value].bimap[Equipment](
-    eq => ujson.Obj(
-      "helmet" -> eq.helmet.map(writeJs(_)).getOrElse(ujson.Null),
-      "armor" -> eq.armor.map(writeJs(_)).getOrElse(ujson.Null)
-    ),
-    json => {
-      val obj = json.obj
-      val helmet = if (obj("helmet") == ujson.Null) None else Some(read[Equippable](obj("helmet")))
-      val armor = if (obj("armor") == ujson.Null) None else Some(read[Equippable](obj("armor")))
-      Equipment(helmet, armor)
-    }
-  )
-
-  // Registry of all component codecs
-  private val codecs: Map[Class[?], Codec[? <: Component]] = Map(
-    classOf[Movement] -> simpleCodec[Movement]("Movement"),
-    classOf[Initiative] -> simpleCodec[Initiative]("Initiative"),
-    classOf[Experience] -> simpleCodec[Experience]("Experience"),
-    classOf[EntityTypeComponent] -> simpleCodec[EntityTypeComponent]("EntityTypeComponent"),
-    classOf[Drawable] -> simpleCodec[Drawable]("Drawable"),
-    classOf[Hitbox] -> simpleCodec[Hitbox]("Hitbox"),
-    classOf[SightMemory] -> simpleCodec[SightMemory]("SightMemory"),
-    classOf[CanPickUp] -> simpleCodec[CanPickUp]("CanPickUp"),
-    classOf[NameComponent] -> simpleCodec[NameComponent]("NameComponent"),
-    classOf[Inventory] -> simpleCodec[Inventory]("Inventory"),
-    classOf[Equipment] -> simpleCodec[Equipment]("Equipment"),
-    classOf[Equippable] -> simpleCodec[Equippable]("Equippable")
+  // Registry of all component codecs using automatic derivation
+  private val codecs: Map[Class[?], CodecEntry[? <: Component]] = Map(
+    classOf[Movement] -> simpleCodec[Movement]("Movement")(using movementRW),
+    classOf[Initiative] -> simpleCodec[Initiative]("Initiative")(using initiativeRW),
+    classOf[Experience] -> simpleCodec[Experience]("Experience")(using experienceRW),
+    classOf[EntityTypeComponent] -> simpleCodec[EntityTypeComponent]("EntityTypeComponent")(using entityTypeComponentRW),
+    classOf[Drawable] -> simpleCodec[Drawable]("Drawable")(using drawableRW),
+    classOf[Hitbox] -> simpleCodec[Hitbox]("Hitbox")(using hitboxRW),
+    classOf[SightMemory] -> simpleCodec[SightMemory]("SightMemory")(using sightMemoryRW),
+    classOf[CanPickUp] -> simpleCodec[CanPickUp]("CanPickUp")(using canPickUpRW),
+    classOf[NameComponent] -> simpleCodec[NameComponent]("NameComponent")(using nameComponentRW),
+    classOf[Inventory] -> simpleCodec[Inventory]("Inventory")(using inventoryRW),
+    classOf[Equipment] -> simpleCodec[Equipment]("Equipment")(using equipmentRW),
+    classOf[Equippable] -> simpleCodec[Equippable]("Equippable")(using equippableRW)
     
-    // TODO: Add more complex components (WeaponItem, UsableItem, etc.) as needed
-    // For now, focusing on components that work without complex nested dependencies
+    // Adding new components is now even simpler:
+    // 1. Add implicit val newComponentRW: ReadWriter[NewComponent] = macroRW
+    // 2. Add classOf[NewComponent] -> simpleCodec[NewComponent]("NewComponent")(using newComponentRW) to this map
   )
 
   // Special entity-aware codec for Health - needs entity context for computed values
-  private val healthCodec = Codec[Health](
+  private val healthCodec = CodecEntry[Health](
     tag = "Health",
     toJson = health => ujson.Obj(), // Not used - see toSavedWithEntity
     fromJson = json => {
@@ -188,13 +138,13 @@ object ComponentRegistry {
 
   /**
    * Convert a component to a SavedComponent.
-   * Standard method for most components.
+   * Standard method for most components using automatic derivation.
    */
   def toSaved(component: Component): Option[SavedComponent] = {
     val componentClass = component.getClass
     codecs.get(componentClass) match {
       case Some(codec) =>
-        val typedCodec = codec.asInstanceOf[Codec[Component]]
+        val typedCodec = codec.asInstanceOf[CodecEntry[Component]]
         Some(SavedComponent(typedCodec.tag, typedCodec.toJson(component)))
       case None =>
         None // Component not registered for persistence
