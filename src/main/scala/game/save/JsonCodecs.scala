@@ -77,7 +77,9 @@ object SaveGameSerializer {
           // Serialize sprite information properly
           js.Dynamic.literal("sprites" -> serializeSprites(d.sprites))
         case _: Hitbox => js.Dynamic.literal("stored" -> true) // Will use default hitbox
-        case _: SightMemory => js.Dynamic.literal("stored" -> true) // Will reset sight memory for now
+        case sm: SightMemory => 
+          // Serialize sight memory to preserve fog of war
+          serializeSightMemory(sm)
         case eq: Equipment => 
           // Serialize equipment items
           serializeEquipment(eq)
@@ -181,7 +183,8 @@ object SaveGameSerializer {
       result(classOf[Hitbox]) = Hitbox()
     }
     if (js.Object.hasProperty(jsObj, "SightMemory")) {
-      result(classOf[SightMemory]) = SightMemory()
+      val data = componentsData.SightMemory.asInstanceOf[js.Dynamic]
+      result(classOf[SightMemory]) = deserializeSightMemory(data)
     }
     if (js.Object.hasProperty(jsObj, "Equipment")) {
       val data = componentsData.Equipment.asInstanceOf[js.Dynamic]
@@ -648,5 +651,16 @@ object SaveGameSerializer {
   private def deserializeAmmo(data: js.Dynamic): Ammo = {
     val ammoType = parseAmmoType(data.ammoType.asInstanceOf[String])
     Ammo(ammoType)
+  }
+  
+  private def serializeSightMemory(sightMemory: SightMemory): js.Dynamic = {
+    js.Dynamic.literal(
+      "seenPoints" -> js.Array(sightMemory.seenPoints.map(serializePoint).toSeq*)
+    )
+  }
+  
+  private def deserializeSightMemory(data: js.Dynamic): SightMemory = {
+    val seenPoints = data.seenPoints.asInstanceOf[js.Array[js.Dynamic]].map(deserializePoint).toSet
+    SightMemory(seenPoints)
   }
 }
