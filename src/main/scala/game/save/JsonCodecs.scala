@@ -12,6 +12,7 @@ import game.entity.EquipmentSlot
 import data.DeathEvents.DeathEventReference
 import data.DeathEvents.DeathEventReference.*
 import data.Entities.EntityReference
+import data.Projectiles.ProjectileReference
 import map.*
 
 /**
@@ -566,14 +567,18 @@ object SaveGameSerializer {
   private def serializeGameEffect(effect: game.entity.GameEffect): js.Dynamic = {
     effect match {
       case game.entity.GameEffect.Heal(amount) => js.Dynamic.literal("type" -> "Heal", "amount" -> amount)
-      case game.entity.GameEffect.CreateProjectile(entityReference) => 
-        js.Dynamic.literal("type" -> "CreateProjectile", "entityReference" -> entityReference.toString)
+      case game.entity.GameEffect.CreateProjectile(projectileReference) => 
+        js.Dynamic.literal("type" -> "CreateProjectile", "projectileReference" -> projectileReference.toString)
     }
   }
   
   private def deserializeGameEffect(data: js.Dynamic): game.entity.GameEffect = {
     data.`type`.asInstanceOf[String] match {
       case "Heal" => game.entity.GameEffect.Heal(data.amount.asInstanceOf[Int])
+      case "CreateProjectile" => 
+        val projectileRefString = data.projectileReference.asInstanceOf[String]
+        val projectileRef = parseProjectileReference(projectileRefString)
+        game.entity.GameEffect.CreateProjectile(projectileRef)
       case _ => game.entity.GameEffect.Heal(40) // Fallback to healing potion
     }
   }
@@ -625,6 +630,14 @@ object SaveGameSerializer {
     refString match {
       case "Slimelet" => EntityReference.Slimelet
       case _ => EntityReference.Slimelet // Fallback 
+    }
+  }
+  
+  private def parseProjectileReference(refString: String): ProjectileReference = {
+    refString match {
+      case "Arrow" => ProjectileReference.Arrow
+      case "Fireball" => ProjectileReference.Fireball
+      case _ => ProjectileReference.Arrow // Fallback
     }
   }
   
