@@ -7,7 +7,7 @@ import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
 import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
-import map.{Dungeon, ItemDescriptor, MapGenerator}
+import map.{Dungeon, MapGenerator}
 
 
 object StartingState {
@@ -86,20 +86,24 @@ object StartingState {
   }
 
   val items: Set[Entity] = dungeon.items.zipWithIndex.map {
-    case ((point, itemDescriptor), index) =>
+    case ((point, itemReference), index) =>
       val basePosition = Point(
         point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
       
-      // Create entity from descriptor and place in world
-      val itemEntity = itemDescriptor.createEntity(s"item-$index")
+      // Create entity from reference and place in world
+      val itemEntity = itemReference.createEntity(s"item-$index")
       val placedEntity = itemEntity.addComponent(Movement(position = basePosition))
       
       // Add EntityTypeComponent for keys
-      itemDescriptor match {
-        case ItemDescriptor.KeyDescriptor(keyColour) =>
-          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(keyColour)))
+      itemReference match {
+        case data.Items.ItemReference.YellowKey => 
+          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(KeyColour.Yellow)))
+        case data.Items.ItemReference.BlueKey => 
+          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(KeyColour.Blue)))
+        case data.Items.ItemReference.RedKey => 
+          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(KeyColour.Red)))
         case _ =>
           placedEntity
       }

@@ -25,6 +25,24 @@ object Items {
     case IronHelmet
     case PlateArmor
 
+  extension (itemRef: ItemReference) {
+    def createEntity(id: String): Entity = itemRef match {
+      case ItemReference.HealingPotion => healingPotion(id)
+      case ItemReference.FireballScroll => fireballScroll(id)
+      case ItemReference.Arrow => arrow(id)
+      case ItemReference.Bow => bow(id)
+      case ItemReference.YellowKey => key(id, KeyColour.Yellow)
+      case ItemReference.BlueKey => key(id, KeyColour.Blue)
+      case ItemReference.RedKey => key(id, KeyColour.Red)
+      case ItemReference.MeleeWeapon(damage) => weapon(id, damage, Melee)
+      case ItemReference.RangedWeapon(damage, range) => weapon(id, damage, Ranged(range))
+      case ItemReference.LeatherHelmet => leatherHelmet(id)
+      case ItemReference.ChainmailArmor => chainmailArmor(id)
+      case ItemReference.IronHelmet => ironHelmet(id)
+      case ItemReference.PlateArmor => plateArmor(id)
+    }
+  }
+
   def healingPotion(id: String): Entity = Entity(
     id = id,
     NameComponent("Healing Potion", "Restores 40 health points when consumed"),
