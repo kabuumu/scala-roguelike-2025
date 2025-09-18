@@ -31,7 +31,7 @@ object SaveGameSystem {
       Failure(new RuntimeException("localStorage not available (non-browser environment)"))
     } else {
       Try {
-        val jsonString = SaveGameSerializer.serialize(gameState)
+        val jsonString = SaveGameJson.serialize(gameState)
         dom.window.localStorage.setItem(SAVE_KEY, jsonString)
       }
     }
@@ -49,7 +49,7 @@ object SaveGameSystem {
         if (jsonString == null) {
           throw new RuntimeException("No save game found")
         }
-        SaveGameSerializer.deserialize(jsonString).get
+        SaveGameJson.deserialize(jsonString)
       }
     }
   }
