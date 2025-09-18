@@ -1,9 +1,7 @@
 package game.entity
 
-import upickle.default.ReadWriter
-
 // Equipment slots
-enum EquipmentSlot derives ReadWriter {
+enum EquipmentSlot {
   case Helmet, Armor
 }
 

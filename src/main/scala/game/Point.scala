@@ -1,8 +1,6 @@
 package game
 
-import upickle.default.ReadWriter
-
-case class Point(x: Int, y: Int) derives ReadWriter {
+case class Point(x: Int, y: Int) {
   def getChebyshevDistance(otherPoint: Point): Double =
     Math.max(Math.abs(x - otherPoint.x), Math.abs(y - otherPoint.y))
   

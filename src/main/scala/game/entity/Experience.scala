@@ -3,9 +3,8 @@ package game.entity
 import game.entity.Experience.*
 import game.perk.Perks.*
 import game.status.StatusEffect
-import upickle.default.ReadWriter
 
-case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) extends Component derives ReadWriter {
+case class Experience(currentExperience: Int = 0, levelUp: Boolean = false) extends Component {
   val currentLevel: Int = {
     val level = math.sqrt(currentExperience / LEVEL_CONSTANT).toInt
     if (level < 1) 1 else level

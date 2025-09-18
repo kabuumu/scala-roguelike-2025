@@ -1,8 +1,6 @@
 package game.entity
 
-import upickle.default.ReadWriter
-
-case class NameComponent(name: String, description: String = "") extends Component derives ReadWriter
+case class NameComponent(name: String, description: String = "") extends Component
 
 object NameComponent {
   extension (entity: Entity) {

@@ -1,9 +1,7 @@
 package game.entity
 
-import upickle.default.ReadWriter
-
 // Component marking that an entity can be picked up and stored in inventory
-case class CanPickUp() extends Component derives ReadWriter
+case class CanPickUp() extends Component
 
 object CanPickUp {
   extension (entity: Entity) {

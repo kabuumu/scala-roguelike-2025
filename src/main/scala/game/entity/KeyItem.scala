@@ -1,9 +1,7 @@
 package game.entity
 
-import upickle.default.ReadWriter
-
 // Key colors
-enum KeyColour derives ReadWriter {
+enum KeyColour {
   case Yellow, Red, Blue
 }
 
