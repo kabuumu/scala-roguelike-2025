@@ -107,6 +107,9 @@ object SaveGameSerializer {
         case equippable: Equippable =>
           // Serialize equippable item data
           serializeEquippable(equippable)
+        case ki: KeyItem =>
+          // Serialize key color for locked doors
+          serializeKeyItem(ki)
         case _: EventMemory => js.Dynamic.literal("stored" -> true) // Will reset event memory
         case _ => js.Dynamic.literal() // Skip other components for now
       }
@@ -220,6 +223,10 @@ object SaveGameSerializer {
     if (js.Object.hasProperty(jsObj, "Equippable")) {
       val data = componentsData.Equippable.asInstanceOf[js.Dynamic]
       result(classOf[Equippable]) = deserializeEquippable(data)
+    }
+    if (js.Object.hasProperty(jsObj, "KeyItem")) {
+      val data = componentsData.KeyItem.asInstanceOf[js.Dynamic]
+      result(classOf[KeyItem]) = deserializeKeyItem(data)
     }
     if (js.Object.hasProperty(jsObj, "EventMemory")) {
       result(classOf[EventMemory]) = EventMemory()
@@ -662,5 +669,14 @@ object SaveGameSerializer {
   private def deserializeSightMemory(data: js.Dynamic): SightMemory = {
     val seenPoints = data.seenPoints.asInstanceOf[js.Array[js.Dynamic]].map(deserializePoint).toSet
     SightMemory(seenPoints)
+  }
+  
+  private def serializeKeyItem(keyItem: KeyItem): js.Dynamic = {
+    js.Dynamic.literal("keyColour" -> keyItem.keyColour.toString)
+  }
+  
+  private def deserializeKeyItem(data: js.Dynamic): KeyItem = {
+    val keyColour = parseKeyColour(data.keyColour.asInstanceOf[String])
+    KeyItem(keyColour)
   }
 }
