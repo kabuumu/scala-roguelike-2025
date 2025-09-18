@@ -1,8 +1,9 @@
 package game.entity
 
 import game.Point
+import upickle.default.ReadWriter
 
-case class Hitbox(points: Set[Point] = Set(Point(0, 0))) extends Component
+case class Hitbox(points: Set[Point] = Set(Point(0, 0))) extends Component derives ReadWriter
 
 object Hitbox {
   extension (entity: Entity) {

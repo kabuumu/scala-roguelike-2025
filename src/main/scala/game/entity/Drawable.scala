@@ -3,8 +3,9 @@ package game.entity
 import data.Sprites
 import game.entity.Health.*
 import game.{Point, Sprite}
+import upickle.default.ReadWriter
 
-case class Drawable(sprites: Set[(Point, Sprite)]) extends Component
+case class Drawable(sprites: Set[(Point, Sprite)]) extends Component derives ReadWriter
 
 object Drawable {
   def apply(sprite: Sprite): Drawable = {

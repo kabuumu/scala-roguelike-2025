@@ -1,3 +1,5 @@
 package game
 
-case class Sprite(x: Int, y: Int, layer: Int)
+import upickle.default.ReadWriter
+
+case class Sprite(x: Int, y: Int, layer: Int) derives ReadWriter

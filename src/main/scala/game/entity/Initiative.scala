@@ -1,6 +1,8 @@
 package game.entity
 
-case class Initiative(maxInitiative: Int, currentInitiative: Int) extends Component {
+import upickle.default.ReadWriter
+
+case class Initiative(maxInitiative: Int, currentInitiative: Int) extends Component derives ReadWriter {
   val isReady: Boolean = currentInitiative == 0
 
   def reset(): Initiative = {

@@ -4,6 +4,7 @@ import game.entity.EntityType.LockedDoor
 import game.{Direction, Point}
 import map.Dungeon.roomSize
 import map.TileType._
+import upickle.default.ReadWriter
 
 case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    roomConnections: Set[RoomConnection] = Set.empty,
@@ -12,7 +13,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    endpoint: Option[Point] = None,
                    items: Set[(Point, ItemDescriptor)] = Set.empty,
                    testMode: Boolean = false,
-                   seed: Long = System.currentTimeMillis()) {
+                   seed: Long = System.currentTimeMillis()) derives ReadWriter {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
     copy(
       roomConnections = roomConnections - roomConnection + roomConnection.copy(
@@ -238,7 +239,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
 }
 
 
-case class RoomConnection(originRoom: Point, direction: Direction, destinationRoom: Point, optLock: Option[LockedDoor] = None) {
+case class RoomConnection(originRoom: Point, direction: Direction, destinationRoom: Point, optLock: Option[LockedDoor] = None) derives ReadWriter {
   def isLocked: Boolean = optLock.isDefined
 }
 

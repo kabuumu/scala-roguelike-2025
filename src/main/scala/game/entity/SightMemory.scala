@@ -1,8 +1,9 @@
 package game.entity
 
 import game.{GameState, Point}
+import upickle.default.ReadWriter
 
-case class SightMemory(seenPoints: Set[Point] = Set.empty) extends Component {
+case class SightMemory(seenPoints: Set[Point] = Set.empty) extends Component derives ReadWriter {
   def update(gameState: GameState, entity: Entity): SightMemory = {
     val updatedSeenPoints = seenPoints ++ gameState.getVisiblePointsFor(entity)
     copy(updatedSeenPoints)

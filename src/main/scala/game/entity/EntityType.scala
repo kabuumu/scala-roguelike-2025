@@ -1,6 +1,8 @@
 package game.entity
 
-case class EntityTypeComponent(entityType: EntityType) extends Component
+import upickle.default.ReadWriter
+
+case class EntityTypeComponent(entityType: EntityType) extends Component derives ReadWriter
 
 object EntityType {
   extension (entity: Entity) {
@@ -13,7 +15,7 @@ object EntityType {
   }
 }
 
-enum EntityType(val isStatic: Boolean, val blocksMovement: Boolean):
+enum EntityType(val isStatic: Boolean, val blocksMovement: Boolean) derives ReadWriter:
   case Player extends EntityType(false, true)
   case Enemy extends EntityType(false, true)
   case Wall extends EntityType(true, true)

@@ -3,9 +3,10 @@ package map
 import game.entity.*
 import data.Sprites
 import game.Sprite
+import upickle.default.ReadWriter
 
 // Simple descriptors for item types to replace the Item class in map generation
-enum ItemDescriptor {
+enum ItemDescriptor derives ReadWriter {
   case PotionDescriptor
   case ScrollDescriptor  
   case ArrowDescriptor

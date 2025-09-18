@@ -1,8 +1,9 @@
 package game.entity
 
 import game.{Direction, Point}
+import upickle.default.ReadWriter
 
-case class Movement(position: Point) extends Component {
+case class Movement(position: Point) extends Component derives ReadWriter {
   def move(direction: Direction): Movement = {
     copy(position = position + direction)
   }
