@@ -8,6 +8,10 @@ import game.*
 import game.entity.*
 import game.entity.Health.{currentHealth, maxHealth}
 import game.entity.Ammo.AmmoType
+import game.entity.EquipmentSlot
+import data.DeathEvents.DeathEventReference
+import data.DeathEvents.DeathEventReference.*
+import data.Entities.EntityReference
 import map.*
 
 /**
@@ -91,6 +95,16 @@ object SaveGameSerializer {
         case ui: UsableItem =>
           // Serialize the new unified usable item
           serializeUsableItem(ui)
+        case de: DeathEvents =>
+          // Serialize death events for enemy splitting/experience
+          serializeDeathEvents(de)
+        case ammo: Ammo =>
+          // Serialize ammo type for arrows/bolts
+          serializeAmmo(ammo)
+        case equippable: Equippable =>
+          // Serialize equippable item data
+          serializeEquippable(equippable)
+        case _: EventMemory => js.Dynamic.literal("stored" -> true) // Will reset event memory
         case _ => js.Dynamic.literal() // Skip other components for now
       }
       result.updateDynamic(clazz.getSimpleName)(componentData)
@@ -190,6 +204,21 @@ object SaveGameSerializer {
     if (js.Object.hasProperty(jsObj, "UsableItem")) {
       val data = componentsData.UsableItem.asInstanceOf[js.Dynamic]
       result(classOf[UsableItem]) = deserializeUsableItem(data)
+    }
+    if (js.Object.hasProperty(jsObj, "DeathEvents")) {
+      val data = componentsData.DeathEvents.asInstanceOf[js.Dynamic]
+      result(classOf[DeathEvents]) = deserializeDeathEvents(data)
+    }
+    if (js.Object.hasProperty(jsObj, "Ammo")) {
+      val data = componentsData.Ammo.asInstanceOf[js.Dynamic]
+      result(classOf[Ammo]) = deserializeAmmo(data)
+    }
+    if (js.Object.hasProperty(jsObj, "Equippable")) {
+      val data = componentsData.Equippable.asInstanceOf[js.Dynamic]
+      result(classOf[Equippable]) = deserializeEquippable(data)
+    }
+    if (js.Object.hasProperty(jsObj, "EventMemory")) {
+      result(classOf[EventMemory]) = EventMemory()
     }
     
     result.toMap
@@ -551,7 +580,60 @@ object SaveGameSerializer {
   
   private def parseAmmoType(ammoString: String): AmmoType = {
     // Assuming AmmoType is an enum, parse accordingly
-    // For now, assuming only Arrow type exists based on the UsableItem code
-    AmmoType.Arrow // This might need adjustment based on actual AmmoType implementation
+    ammoString match {
+      case "Arrow" => AmmoType.Arrow
+      case _ => AmmoType.Arrow // Fallback
+    }
+  }
+  
+  // Serialization methods for missing components
+  
+  private def serializeDeathEvents(deathEvents: DeathEvents): js.Dynamic = {
+    js.Dynamic.literal(
+      "events" -> js.Array(deathEvents.deathEvents.map(serializeDeathEventReference)*)
+    )
+  }
+  
+  private def deserializeDeathEvents(data: js.Dynamic): DeathEvents = {
+    val events = data.events.asInstanceOf[js.Array[js.Dynamic]].map(deserializeDeathEventReference).toSeq
+    DeathEvents(events)
+  }
+  
+  private def serializeDeathEventReference(event: DeathEventReference): js.Dynamic = {
+    event match {
+      case GiveExperience(amount) => 
+        js.Dynamic.literal("type" -> "GiveExperience", "amount" -> amount)
+      case SpawnEntity(entityRef, forceSpawn) => 
+        js.Dynamic.literal("type" -> "SpawnEntity", "entityReference" -> entityRef.toString, "forceSpawn" -> forceSpawn)
+    }
+  }
+  
+  private def deserializeDeathEventReference(data: js.Dynamic): DeathEventReference = {
+    data.`type`.asInstanceOf[String] match {
+      case "GiveExperience" => 
+        GiveExperience(data.amount.asInstanceOf[Int])
+      case "SpawnEntity" => 
+        val entityRefString = data.entityReference.asInstanceOf[String]
+        val entityRef = parseEntityReference(entityRefString)
+        val forceSpawn = data.forceSpawn.asInstanceOf[Boolean]
+        SpawnEntity(entityRef, forceSpawn)
+      case _ => GiveExperience(10) // Fallback
+    }
+  }
+  
+  private def parseEntityReference(refString: String): EntityReference = {
+    refString match {
+      case "Slimelet" => EntityReference.Slimelet
+      case _ => EntityReference.Slimelet // Fallback 
+    }
+  }
+  
+  private def serializeAmmo(ammo: Ammo): js.Dynamic = {
+    js.Dynamic.literal("ammoType" -> ammo.ammoType.toString)
+  }
+  
+  private def deserializeAmmo(data: js.Dynamic): Ammo = {
+    val ammoType = parseAmmoType(data.ammoType.asInstanceOf[String])
+    Ammo(ammoType)
   }
 }
