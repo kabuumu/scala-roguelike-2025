@@ -22,6 +22,12 @@ object StartingState {
     Items.bow("player-bow-1")
   ) ++ (1 to 6).map(i => Items.arrow(s"player-arrow-$i"))
   
+  // Create player's starting equipment
+  val playerStartingEquipment: Set[Entity] = Set(
+    Items.basicSword("player-starting-sword"),
+    Items.chainmailArmor("player-starting-armor")
+  )
+  
   // Create weapons as entities for enemies and player
   val ratWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
     case (_, index) if index % 3 == 0 => index -> Items.weapon(s"rat-weapon-$index", 8, Melee)
@@ -71,11 +77,14 @@ object StartingState {
         Health(100),
         Initiative(10),
         Inventory(
-          itemEntityIds = playerStartingItems.map(_.id).toSeq,
+          itemEntityIds = (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq,
           primaryWeaponId = Some("player-primary-weapon"),
           secondaryWeaponId = None
         ),
-        Equipment(),
+        Equipment(
+          armor = Some(Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor")),
+          weapon = Some(Equippable.weapon(3, "Basic Sword"))
+        ),
         SightMemory(),
         EventMemory(),
         Drawable(Sprites.playerSprite),
@@ -128,7 +137,7 @@ object StartingState {
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ items ++ enemies ++ lockedDoors ++ 
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors ++ 
                ratWeapons.values ++ snakeWeapons.values ++ slimeWeapons.values ++ Seq(playerPrimaryWeapon),
     dungeon = dungeon
   )

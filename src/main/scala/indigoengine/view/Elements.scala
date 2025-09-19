@@ -207,8 +207,8 @@ object Elements {
     val equipment = player.equipment
     
     // Position paperdoll on the right side of the screen with more space
-    val paperdollWidth = spriteScale * 4
-    val paperdollHeight = spriteScale * 5
+    val paperdollWidth = spriteScale * 5
+    val paperdollHeight = spriteScale * 6
     val paperdollX = canvasWidth - paperdollWidth - defaultBorderSize
     val paperdollY = uiYOffset
     
@@ -222,14 +222,14 @@ object Elements {
     // Title
     val title = text("Equipment", paperdollX, paperdollY - (defaultBorderSize * 3))
     
-    // Helmet slot with better spacing
-    val helmetY = paperdollY + spriteScale
-    val helmetSlotX = paperdollX + spriteScale * 3
+    // Helmet slot (top center)
+    val helmetY = paperdollY + spriteScale / 2
+    val helmetSlotX = paperdollX + spriteScale * 2
     val helmetSlot = BlockBar.getBlockBar(
       Rectangle(Point(helmetSlotX, helmetY), Size(spriteScale, spriteScale)),
       RGBA.SlateGray.withAlpha(0.5f)
     )
-    val helmetLabel = text("Helmet:", paperdollX + defaultBorderSize, helmetY + (spriteScale / 4))
+    val helmetLabel = text("Helm", paperdollX + defaultBorderSize, helmetY + (spriteScale / 4))
     
     val helmetItem = equipment.helmet.map { helmet =>
       val sprite = helmet.itemName match {
@@ -240,14 +240,32 @@ object Elements {
       spriteSheet.fromSprite(sprite).moveTo(helmetSlotX, helmetY)
     }.toSeq
     
-    // Armor slot with better spacing  
-    val armorY = paperdollY + (spriteScale * 2) + defaultBorderSize
-    val armorSlotX = paperdollX + spriteScale * 3
+    // Weapon slot (left middle)
+    val weaponY = paperdollY + (spriteScale * 2)
+    val weaponSlotX = paperdollX + spriteScale / 2
+    val weaponSlot = BlockBar.getBlockBar(
+      Rectangle(Point(weaponSlotX, weaponY), Size(spriteScale, spriteScale)),
+      RGBA.SlateGray.withAlpha(0.5f)
+    )
+    val weaponLabel = text("Weapon", paperdollX + defaultBorderSize, weaponY + (spriteScale / 4))
+    
+    val weaponItem = equipment.weapon.map { weapon =>
+      val sprite = weapon.itemName match {
+        case "Basic Sword" => data.Sprites.basicSwordSprite
+        case "Iron Sword" => data.Sprites.ironSwordSprite
+        case _ => data.Sprites.defaultItemSprite
+      }
+      spriteSheet.fromSprite(sprite).moveTo(weaponSlotX, weaponY)
+    }.toSeq
+    
+    // Armor slot (center middle)
+    val armorY = paperdollY + (spriteScale * 2)
+    val armorSlotX = paperdollX + spriteScale * 2
     val armorSlot = BlockBar.getBlockBar(
       Rectangle(Point(armorSlotX, armorY), Size(spriteScale, spriteScale)),
       RGBA.SlateGray.withAlpha(0.5f)
     )
-    val armorLabel = text("Armor:", paperdollX + defaultBorderSize, armorY + (spriteScale / 4))
+    val armorLabel = text("Armor", paperdollX + defaultBorderSize, armorY + (spriteScale / 4))
     
     val armorItem = equipment.armor.map { armor =>
       val sprite = armor.itemName match {
@@ -258,13 +276,57 @@ object Elements {
       spriteSheet.fromSprite(sprite).moveTo(armorSlotX, armorY)
     }.toSeq
     
+    // Gloves slot (right middle)
+    val glovesY = paperdollY + (spriteScale * 2)
+    val glovesSlotX = paperdollX + spriteScale * 7 / 2
+    val glovesSlot = BlockBar.getBlockBar(
+      Rectangle(Point(glovesSlotX, glovesY), Size(spriteScale, spriteScale)),
+      RGBA.SlateGray.withAlpha(0.5f)
+    )
+    val glovesLabel = text("Gloves", paperdollX + defaultBorderSize, glovesY + (spriteScale / 4))
+    
+    val glovesItem = equipment.gloves.map { gloves =>
+      val sprite = gloves.itemName match {
+        case "Leather Gloves" => data.Sprites.leatherGlovesSprite
+        case "Iron Gloves" => data.Sprites.ironGlovesSprite
+        case _ => data.Sprites.defaultItemSprite
+      }
+      spriteSheet.fromSprite(sprite).moveTo(glovesSlotX, glovesY)
+    }.toSeq
+    
+    // Boots slot (bottom center)
+    val bootsY = paperdollY + (spriteScale * 7 / 2)
+    val bootsSlotX = paperdollX + spriteScale * 2
+    val bootsSlot = BlockBar.getBlockBar(
+      Rectangle(Point(bootsSlotX, bootsY), Size(spriteScale, spriteScale)),
+      RGBA.SlateGray.withAlpha(0.5f)
+    )
+    val bootsLabel = text("Boots", paperdollX + defaultBorderSize, bootsY + (spriteScale / 4))
+    
+    val bootsItem = equipment.boots.map { boots =>
+      val sprite = boots.itemName match {
+        case "Leather Boots" => data.Sprites.leatherBootsSprite
+        case "Iron Boots" => data.Sprites.ironBootsSprite
+        case _ => data.Sprites.defaultItemSprite
+      }
+      spriteSheet.fromSprite(sprite).moveTo(bootsSlotX, bootsY)
+    }.toSeq
+    
     // Equipment stats with better positioning
     val totalDamageReduction = equipment.getTotalDamageReduction
-    val statsY = paperdollY + (spriteScale * 4)
-    val statsText = text(s"Total DR: $totalDamageReduction", paperdollX + defaultBorderSize, statsY)
+    val totalDamageBonus = equipment.getTotalDamageBonus
+    val statsY = paperdollY + (spriteScale * 5)
+    val drText = text(s"DR: $totalDamageReduction", paperdollX + defaultBorderSize, statsY)
+    val dmgText = text(s"DMG: +$totalDamageBonus", paperdollX + defaultBorderSize, statsY + (spriteScale / 2))
     
-    Seq(background, title, helmetSlot, helmetLabel, armorSlot, armorLabel, statsText).toBatch ++ 
-    helmetItem.toBatch ++ armorItem.toBatch
+    Seq(background, title, 
+        helmetSlot, helmetLabel,
+        weaponSlot, weaponLabel,
+        armorSlot, armorLabel,
+        glovesSlot, glovesLabel,
+        bootsSlot, bootsLabel,
+        drText, dmgText).toBatch ++ 
+    helmetItem.toBatch ++ weaponItem.toBatch ++ armorItem.toBatch ++ glovesItem.toBatch ++ bootsItem.toBatch
   }
 
   def perkSelection(model: GameController): Batch[SceneNode] = {

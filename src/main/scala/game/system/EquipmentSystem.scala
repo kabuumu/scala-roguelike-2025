@@ -25,6 +25,12 @@ object EquipmentSystem extends GameSystem {
       case "Iron Helmet" => Sprites.ironHelmetSprite  
       case "Chainmail Armor" => Sprites.chainmailArmorSprite
       case "Plate Armor" => Sprites.plateArmorSprite
+      case "Leather Boots" => Sprites.leatherBootsSprite
+      case "Iron Boots" => Sprites.ironBootsSprite
+      case "Leather Gloves" => Sprites.leatherGlovesSprite
+      case "Iron Gloves" => Sprites.ironGlovesSprite
+      case "Basic Sword" => Sprites.basicSwordSprite
+      case "Iron Sword" => Sprites.ironSwordSprite
       case _ => Sprites.defaultItemSprite
     }
   }
