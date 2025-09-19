@@ -1,6 +1,6 @@
 package testsupport
 
-import data.Sprites
+import data.{Items, Sprites}
 import game.{GameState, Point}
 import game.entity.*
 import game.entity.EntityType.*
@@ -49,8 +49,8 @@ object Given {
   }
 
   def thePlayerAt(x: Int, y: Int, id: String = "testPlayerId"): World = {
-    val primary = ItemFactory.createWeapon("primary-weapon", 2, Melee)
-    val secondary = ItemFactory.createWeapon("secondary-weapon", 1, game.entity.Ranged(6))
+    val primary = Items.weapon("primary-weapon", 2, Melee)
+    val secondary = Items.weapon("secondary-weapon", 1, game.entity.Ranged(6))
 
     val player = Entity(
       id = id,
@@ -70,11 +70,11 @@ object Given {
   }
 
   object items {
-    def potion(id: String): Entity = ItemFactory.createPotion(id)
-    def scroll(id: String): Entity = ItemFactory.createScroll(id)
-    def bow(id: String): Entity = ItemFactory.createBow(id)
-    def arrow(id: String): Entity = ItemFactory.createArrow(id)
-    def weapon(id: String, damage: Int, wt: WeaponType): Entity = ItemFactory.createWeapon(id, damage, wt)
+    def potion(id: String): Entity = Items.healingPotion(id)
+    def scroll(id: String): Entity = Items.fireballScroll(id)
+    def bow(id: String): Entity = Items.bow(id)
+    def arrow(id: String): Entity = Items.arrow(id)
+    def weapon(id: String, damage: Int, wt: WeaponType): Entity = Items.weapon(id, damage, wt)
   }
 
   object enemies {
@@ -99,8 +99,8 @@ object Given {
 
       if (!withWeapons) Seq(base)
       else {
-        val p = ItemFactory.createWeapon(s"$id-primary-weapon", 2, Melee)
-        val s = ItemFactory.createWeapon(s"$id-secondary-weapon", 1, game.entity.Ranged(6))
+        val p = Items.weapon(s"$id-primary-weapon", 2, Melee)
+        val s = Items.weapon(s"$id-secondary-weapon", 1, game.entity.Ranged(6))
         val withInv = base.update[Inventory](_ => Inventory(Seq(), Some(p.id), Some(s.id)))
         Seq(withInv, p, s)
       }
