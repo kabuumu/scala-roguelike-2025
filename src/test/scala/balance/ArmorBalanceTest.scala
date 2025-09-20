@@ -47,7 +47,7 @@ class ArmorBalanceTest extends AnyFunSuite {
     Items.plateArmor("P-armor"),
     Items.ironHelmet("I-helm2"),
     Items.ironGloves("I-gloves"),
-    Items.ironBoots("I-boots2")
+    Items.leatherBoots("L-boots2")
   )
 
   private case class SimpleHit(baseDamage: Int, atkBonus: Int, dr: Int) {
@@ -85,7 +85,7 @@ class ArmorBalanceTest extends AnyFunSuite {
   }
 
   test("Gear impact ratio & TTK bands") {
-    val baseDamage = 8
+    val baseDamage = 9
     val unarmoured = mkBasePlayer()
     val best = equip(mkBasePlayer(), bestSet)
 

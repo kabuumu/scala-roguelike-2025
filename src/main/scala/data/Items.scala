@@ -111,7 +111,7 @@ object Items {
   def leatherHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Helmet, 0, "Leather Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 1, "Leather Helmet"),
     Hitbox(),
     Drawable(Sprites.leatherHelmetSprite)
   )
@@ -119,7 +119,7 @@ object Items {
   def ironHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Helmet, 1, "Iron Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 2, "Iron Helmet"),
     Hitbox(),
     Drawable(Sprites.ironHelmetSprite)
   )
@@ -144,7 +144,7 @@ object Items {
   def leatherBoots(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Boots, 0, "Leather Boots"),
+    Equippable.armor(EquipmentSlot.Boots, 1, "Leather Boots"),
     Hitbox(),
     Drawable(Sprites.leatherBootsSprite)
   )
@@ -152,7 +152,7 @@ object Items {
   def ironBoots(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Boots, 1, "Iron Boots"),
+    Equippable.armor(EquipmentSlot.Boots, 2, "Iron Boots"),
     Hitbox(),
     Drawable(Sprites.ironBootsSprite)
   )
@@ -160,7 +160,7 @@ object Items {
   def leatherGloves(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Gloves, 0, "Leather Gloves"),
+    Equippable.armor(EquipmentSlot.Gloves, 1, "Leather Gloves"),
     Hitbox(),
     Drawable(Sprites.leatherGlovesSprite)
   )

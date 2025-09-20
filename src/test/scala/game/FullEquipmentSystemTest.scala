@@ -74,7 +74,7 @@ class FullEquipmentSystemTest extends AnyFunSuite {
     val sword = Items.ironSword("test-sword")
     
     assert(boots.equippable.exists(_.slot == EquipmentSlot.Boots))
-    assert(boots.equippable.exists(_.damageReduction == 0))
+    assert(boots.equippable.exists(_.damageReduction == 1))
     
     assert(gloves.equippable.exists(_.slot == EquipmentSlot.Gloves))
     assert(gloves.equippable.exists(_.damageReduction == 1))
