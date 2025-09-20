@@ -11,14 +11,15 @@ object Enemies {
     case Snake
     case Slime
 
-  def rat(id: String, position: game.Point, weaponId: Option[String] = None): Entity = {
+  def rat(id: String, position: game.Point): Entity = {
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
       Health(25),
       Initiative(12),
-      Inventory(Nil, weaponId),
+      Inventory(Nil),
+      Equipment(weapon = Some(Equippable.weapon(7, "Rat Claws"))), // 1 base + 7 bonus = 8 total damage
       EventMemory(),
       Drawable(Sprites.ratSprite),
       Hitbox(),
@@ -26,14 +27,15 @@ object Enemies {
     )
   }
 
-  def snake(id: String, position: game.Point, weaponId: Option[String] = None): Entity = {
+  def snake(id: String, position: game.Point, spitAbilityId: String): Entity = {
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
       Health(18),
       Initiative(25),
-      Inventory(Nil, weaponId),
+      Inventory(Seq(spitAbilityId)), // Give snake the spit ability
+      Equipment(weapon = Some(Equippable.weapon(5, "Snake Fangs"))), // 1 base + 5 bonus = 6 total damage
       EventMemory(),
       Drawable(Sprites.snakeSprite),
       Hitbox(),
@@ -41,14 +43,15 @@ object Enemies {
     )
   }
 
-  def slime(id: String, position: game.Point, weaponId: Option[String] = None): Entity = {
+  def slime(id: String, position: game.Point): Entity = {
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
       Health(20),
       Initiative(15),
-      Inventory(Nil, weaponId),
+      Inventory(Nil),
+      Equipment(weapon = Some(Equippable.weapon(5, "Slime Acid"))), // 1 base + 5 bonus = 6 total damage
       EventMemory(),
       Drawable(Sprites.slimeSprite),
       Hitbox(),

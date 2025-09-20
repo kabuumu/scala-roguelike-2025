@@ -15,7 +15,7 @@ object EventMemorySystem extends GameSystem {
     val currentTime = System.nanoTime()
     
     val updatedState = events.foldLeft(gameState) {
-      case (currentState, GameSystemEvent.DamageEvent(targetId, attackerId, baseDamage)) =>
+      case (currentState, GameSystemEvent.DamageEvent(targetId, attackerId, baseDamage, source)) =>
         // Record damage taken by target
         val targetState = currentState.getEntity(targetId) match {
           case Some(target) =>

@@ -62,7 +62,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
       game.entity.EntityTypeComponent(game.entity.EntityType.Player),
       game.entity.Health(100),
       game.entity.Initiative(10),
-      game.entity.Inventory(Nil, None),
+      game.entity.Inventory(Nil),
       game.entity.Drawable(data.Sprites.playerSprite),
       game.entity.Hitbox(),
       game.entity.DeathEvents()

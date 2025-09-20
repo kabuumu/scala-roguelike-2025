@@ -91,10 +91,6 @@ class SaveGameJsonRoundTripTest extends AnyFunSuite {
       val restoredInventory = restoredPlayer.get[Inventory].get
       assert(restoredInventory.itemEntityIds == originalInventory.itemEntityIds,
         "Inventory items should be preserved")
-      assert(restoredInventory.primaryWeaponId == originalInventory.primaryWeaponId,
-        "Primary weapon should be preserved")
-      assert(restoredInventory.secondaryWeaponId == originalInventory.secondaryWeaponId,
-        "Secondary weapon should be preserved")
     }
   }
   

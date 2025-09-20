@@ -8,6 +8,7 @@ object Projectiles {
   enum ProjectileReference:
     case Arrow
     case Fireball
+    case SnakeSpit
   
   def arrowProjectile(creatorId: String, startingPosition: game.Point, targetPoint: game.Point, targetType: EntityType): Entity = {
     Entity(
@@ -34,6 +35,18 @@ object Projectiles {
       DeathEvents(Seq(
         SpawnEntity(Explosion(damage = 15, size = 2))
       )),
+      Hitbox()
+    )
+  }
+  
+  def snakeSpitProjectile(creatorId: String, startingPosition: game.Point, targetPoint: game.Point, targetType: EntityType): Entity = {
+    Entity(
+      id = s"Projectile-${System.nanoTime()}",
+      Movement(position = startingPosition),
+      game.entity.Projectile(startingPosition, targetPoint),
+      EntityTypeComponent(EntityType.Projectile),
+      Drawable(Sprites.projectileSprite),
+      Collision(damage = 6, persistent = false, targetType, creatorId), // Same damage as original snake weapon
       Hitbox()
     )
   }

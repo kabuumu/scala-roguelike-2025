@@ -30,7 +30,7 @@ object Entities {
       EntityTypeComponent(EntityType.Enemy),
       Health(10),
       Initiative(8),
-      Inventory(Nil, None), // No weapon for slimelets, they use default 1 damage
+      Inventory(Nil), // No weapon for slimelets, they use default 1 damage
       EventMemory(),
       Drawable(Sprites.slimeletSprite),
       Hitbox(),

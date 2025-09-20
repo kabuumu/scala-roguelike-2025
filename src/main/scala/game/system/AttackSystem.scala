@@ -1,15 +1,13 @@
 package game.system
 
-import data.Sprites
 import game.*
 import game.entity.*
 import game.entity.EntityType.entityType
 import game.entity.Initiative.*
-import game.entity.Inventory.primaryWeapon
 import game.entity.Movement.*
-import game.entity.WeaponItem.weaponItem
+import game.entity.Equipment.*
 import game.system.event.GameSystemEvent
-import game.system.event.GameSystemEvent.{GameSystemEvent, SpawnEntityEvent}
+import game.system.event.GameSystemEvent.{GameSystemEvent}
 import ui.InputAction
 
 object AttackSystem extends GameSystem {
@@ -17,46 +15,18 @@ object AttackSystem extends GameSystem {
     events.foldLeft((gameState, Nil)) {
       case ((currentState, currentEvents), GameSystemEvent.InputEvent(attackingEntityId, InputAction.Attack(target))) =>
         val optAttackingEntity = currentState.getEntity(attackingEntityId)
-        val optWeaponEntity = currentState.getEntity(attackingEntityId).flatMap(_.primaryWeapon(currentState))
-        (optAttackingEntity, optWeaponEntity) match {
-          case (Some(attackingEntity), Some(weaponEntity)) =>
-            weaponEntity.weaponItem match {
-              case Some(weapon) if weapon.weaponType.isInstanceOf[game.entity.Ranged] =>
-            val targetType = if (attackingEntity.entityType == EntityType.Player) EntityType.Enemy else EntityType.Player
-            val startingPosition = attackingEntity.position
-            val projectileEntity =
-              Entity(
-                id = s"Projectile-${System.nanoTime()}",
-                Movement(position = startingPosition),
-                Projectile(startingPosition, target.position),
-                EntityTypeComponent(EntityType.Projectile),
-                Drawable(Sprites.projectileSprite),
-                Collision(damage = weapon.damage, persistent = false, targetType, ""),
-                Hitbox()
-              )
-
-            val newGameState = currentState
-              .updateEntity(attackingEntityId, _.resetInitiative())
-              .add(projectileEntity)
-
-            (newGameState, currentEvents)
-              case Some(weapon) => // Melee weapon
-                val damage = weapon.damage
-                val newGameState = currentState.updateEntity(attackingEntityId, _.resetInitiative())
-                (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, damage))
-              case None => // No weapon component, shouldn't happen but fallback
-                val newGameState = currentState.updateEntity(attackingEntityId, _.resetInitiative())
-                (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, 1))
-            }
-          case (Some(attackingEntity), Some(weaponEntity)) =>
-            // Weapon entity exists but no weapon component - use default damage
+        optAttackingEntity match {
+          case Some(attackingEntity) =>
+            // Melee attack: base damage 1 + equipped weapon damage bonus
+            val baseDamage = 1
+            val weaponDamageBonus = attackingEntity.getTotalDamageBonus
+            val totalDamage = baseDamage + weaponDamageBonus
+            
             val newGameState = currentState.updateEntity(attackingEntityId, _.resetInitiative())
-            (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, 1))
-          case _ =>
-            // No weapon entity
-            val newGameState = currentState.updateEntity(attackingEntityId, _.resetInitiative())
-            (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, 1))
-
+            (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, totalDamage, GameSystemEvent.DamageSource.Melee))
+          case None =>
+            // Attacking entity doesn't exist - shouldn't happen, but handle gracefully
+            (currentState, currentEvents)
         }
         
       case (currentState, _) =>

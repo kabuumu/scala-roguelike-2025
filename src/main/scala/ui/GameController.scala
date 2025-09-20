@@ -8,7 +8,6 @@ import game.entity.Experience.*
 import game.entity.Health.*
 import game.entity.Initiative.*
 import game.entity.Inventory.*
-import game.entity.WeaponItem.weaponItem
 import game.entity.Movement.*
 import game.system.event.GameSystemEvent.InputEvent
 import game.*
@@ -125,12 +124,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Input.Move(direction) =>
           (UIState.Move, Some(InputAction.Move(direction)))
         case Input.Attack(attackType) =>
-          val optWeaponEntity = attackType match {
-            case Input.PrimaryAttack => gameState.playerEntity.primaryWeapon(gameState)
-            case Input.SecondaryAttack => gameState.playerEntity.secondaryWeapon(gameState)
-          }
-
-          val range = optWeaponEntity.flatMap(_.weaponItem.map(_.range)).getOrElse(1) //Default to melee range
+          // Melee attacks have range 1
+          val range = 1
 
           val enemies = enemiesWithinRange(range)
           if (enemies.nonEmpty) {

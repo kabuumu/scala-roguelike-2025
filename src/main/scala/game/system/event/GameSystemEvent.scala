@@ -29,10 +29,15 @@ object GameSystemEvent {
     input: InputAction
   ) extends GameSystemEvent
 
+  enum DamageSource {
+    case Melee, Projectile
+  }
+
   case class DamageEvent(
     targetId: String,
     attackerId: String,
-    baseDamage: Int
+    baseDamage: Int,
+    source: DamageSource = DamageSource.Melee
   ) extends GameSystemEvent
 
   case class SpawnEntityEvent(

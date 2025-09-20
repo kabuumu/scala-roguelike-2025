@@ -4,6 +4,8 @@ import data.{Items, Sprites}
 import game.{GameState, Point}
 import game.entity.*
 import game.entity.EntityType.*
+import game.entity.Equipment.*
+import game.entity.Equippable.*
 import map.Dungeon
 import ui.UIState
 import ui.UIState.{Move, UIState}
@@ -49,8 +51,8 @@ object Given {
   }
 
   def thePlayerAt(x: Int, y: Int, id: String = "testPlayerId"): World = {
-    val primary = Items.weapon("primary-weapon", 2, Melee)
-    val secondary = Items.weapon("secondary-weapon", 1, game.entity.Ranged(6))
+    val startingSword = Items.basicSword("test-sword")
+    val startingArmor = Items.chainmailArmor("test-armor")
 
     val player = Entity(
       id = id,
@@ -58,7 +60,11 @@ object Given {
       EntityTypeComponent(EntityType.Player),
       Health(10),
       Initiative(0),
-      Inventory(Seq(), Some(primary.id), Some(secondary.id)),
+      Inventory(Seq(startingSword.id, startingArmor.id)),
+      Equipment(
+        weapon = Some(Equippable.weapon(3, "Basic Sword")),
+        armor = Some(Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor"))
+      ),
       SightMemory(),
       Drawable(Sprites.playerSprite),
       Hitbox(),
@@ -66,7 +72,7 @@ object Given {
     )
 
     val dungeon = Dungeon(testMode = true)
-    World(player, Seq(primary, secondary, player), dungeon)
+    World(player, Seq(startingSword, startingArmor, player), dungeon)
   }
 
   object items {
@@ -74,7 +80,6 @@ object Given {
     def scroll(id: String): Entity = Items.fireballScroll(id)
     def bow(id: String): Entity = Items.bow(id)
     def arrow(id: String): Entity = Items.arrow(id)
-    def weapon(id: String, damage: Int, wt: WeaponType): Entity = Items.weapon(id, damage, wt)
   }
 
   object enemies {
@@ -97,13 +102,8 @@ object Given {
 
       val base = Entity(id, allComponents*)
 
-      if (!withWeapons) Seq(base)
-      else {
-        val p = Items.weapon(s"$id-primary-weapon", 2, Melee)
-        val s = Items.weapon(s"$id-secondary-weapon", 1, game.entity.Ranged(6))
-        val withInv = base.update[Inventory](_ => Inventory(Seq(), Some(p.id), Some(s.id)))
-        Seq(withInv, p, s)
-      }
+      // withWeapons parameter is ignored in new system - enemies use melee attacks
+      Seq(base)
     }
   }
 }

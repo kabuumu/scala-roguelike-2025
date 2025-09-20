@@ -22,6 +22,7 @@ case class UsableItem(targeting: Targeting, chargeType: ChargeType, effect: Game
 enum ChargeType {
   case SingleUse
   case Ammo(ammoType: AmmoType)
+  case InfiniteUse // For abilities like snake spit that can be used repeatedly
 }
 
 case class UseContext[T](userId: String, target: Option[T])
