@@ -2,6 +2,7 @@ package indigoengine.view
 
 import game.entity
 import game.entity.ChargeType.SingleUse
+import game.entity.EquipmentSlot.Weapon
 import game.entity.{ChargeType, Drawable, Entity, Equipment, NameComponent}
 import game.status.StatusEffect
 import indigo.*
@@ -229,7 +230,6 @@ object Elements {
       Rectangle(Point(helmetSlotX, helmetY), Size(spriteScale, spriteScale)),
       RGBA.SlateGray.withAlpha(0.5f)
     )
-    val helmetLabel = text("Helm", helmetSlotX - (spriteScale / 4), helmetY - (spriteScale / 4))
     
     val helmetItem = equipment.helmet.map { helmet =>
       val sprite = helmet.itemName match {
@@ -247,7 +247,6 @@ object Elements {
       Rectangle(Point(weaponSlotX, weaponY), Size(spriteScale, spriteScale)),
       RGBA.SlateGray.withAlpha(0.5f)
     )
-    val weaponLabel = text("Weapon", weaponSlotX - (spriteScale / 4), weaponY - (spriteScale / 4))
     
     val weaponItem = equipment.weapon.map { weapon =>
       val sprite = weapon.itemName match {
@@ -265,7 +264,6 @@ object Elements {
       Rectangle(Point(armorSlotX, armorY), Size(spriteScale, spriteScale)),
       RGBA.SlateGray.withAlpha(0.5f)
     )
-    val armorLabel = text("Armor", armorSlotX - (spriteScale / 4), armorY - (spriteScale / 4))
     
     val armorItem = equipment.armor.map { armor =>
       val sprite = armor.itemName match {
@@ -283,7 +281,6 @@ object Elements {
       Rectangle(Point(glovesSlotX, glovesY), Size(spriteScale, spriteScale)),
       RGBA.SlateGray.withAlpha(0.5f)
     )
-    val glovesLabel = text("Gloves", glovesSlotX - (spriteScale / 4), glovesY - (spriteScale / 4))
     
     val glovesItem = equipment.gloves.map { gloves =>
       val sprite = gloves.itemName match {
@@ -301,7 +298,6 @@ object Elements {
       Rectangle(Point(bootsSlotX, bootsY), Size(spriteScale, spriteScale)),
       RGBA.SlateGray.withAlpha(0.5f)
     )
-    val bootsLabel = text("Boots", bootsSlotX - (spriteScale / 4), bootsY + spriteScale + (spriteScale / 8))
     
     val bootsItem = equipment.boots.map { boots =>
       val sprite = boots.itemName match {
@@ -320,11 +316,11 @@ object Elements {
     val dmgText = text(s"DMG: +$totalDamageBonus", paperdollX + defaultBorderSize + (spriteScale * 2), statsY)
     
     Seq(background, title, 
-        helmetSlot, helmetLabel,
-        weaponSlot, weaponLabel,
-        armorSlot, armorLabel,
-        glovesSlot, glovesLabel,
-        bootsSlot, bootsLabel,
+        helmetSlot,
+        weaponSlot,
+        armorSlot,
+        glovesSlot,
+        bootsSlot,
         drText, dmgText).toBatch ++ 
     helmetItem.toBatch ++ weaponItem.toBatch ++ armorItem.toBatch ++ glovesItem.toBatch ++ bootsItem.toBatch
   }
@@ -445,6 +441,8 @@ object Elements {
           .filter(_.isEquippable)
         
         adjacentEquippableEntities.headOption.flatMap(_.equippable) match {
+          case Some(equippable) if equippable.slot == Weapon =>
+            s"Press Q to equip ${equippable.itemName} (Damage bonus +${equippable.damageBonus})"
           case Some(equippable) =>
             s"Press Q to equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
           case None =>

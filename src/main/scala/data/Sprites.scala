@@ -49,12 +49,12 @@ object Sprites {
   val plateArmorSprite: Sprite = Sprite(33, 1, uiLayer)
   
   // New equipment sprites - using default sprite for items without specific sprites
-  val leatherBootsSprite: Sprite = Sprite(37, 13, uiLayer) // using defaultItemSprite
-  val ironBootsSprite: Sprite = Sprite(37, 13, uiLayer) // using defaultItemSprite  
-  val leatherGlovesSprite: Sprite = Sprite(37, 13, uiLayer) // using defaultItemSprite
-  val ironGlovesSprite: Sprite = Sprite(37, 13, uiLayer) // using defaultItemSprite
-  val basicSwordSprite: Sprite = Sprite(37, 13, uiLayer) // using defaultItemSprite
-  val ironSwordSprite: Sprite = Sprite(37, 13, uiLayer) // using defaultItemSprite
+  val leatherBootsSprite: Sprite = Sprite(39, 1, uiLayer) // using defaultItemSprite
+  val ironBootsSprite: Sprite = Sprite(39, 0, uiLayer) // using defaultItemSprite  
+  val leatherGlovesSprite: Sprite = Sprite(41, 1, uiLayer) // using defaultItemSprite
+  val ironGlovesSprite: Sprite = Sprite(41, 0, uiLayer) // using defaultItemSprite
+  val basicSwordSprite: Sprite = Sprite(32, 6, uiLayer) // using defaultItemSprite
+  val ironSwordSprite: Sprite = Sprite(32, 7, uiLayer) // using defaultItemSprite
   
   val defaultItemSprite: Sprite = Sprite(37, 13, uiLayer)
 
