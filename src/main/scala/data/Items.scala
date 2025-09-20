@@ -188,4 +188,13 @@ object Items {
     Hitbox(),
     Drawable(Sprites.ironSwordSprite)
   )
+  
+  // Generic weapon function for testing
+  def weapon(id: String, damage: Int, damageType: game.system.event.GameSystemEvent.DamageSource): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.weapon(damage, s"Weapon-$damage"),
+    Hitbox(),
+    Drawable(Sprites.basicSwordSprite)
+  )
 }
