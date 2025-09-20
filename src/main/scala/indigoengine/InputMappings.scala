@@ -17,13 +17,13 @@ object InputMappings {
     KeyInputs(Key.ARROW_RIGHT)  -> Move(Direction.Right),
     KeyInputs(Key.KEY_Z)        -> Attack(PrimaryAttack),
     KeyInputs(Key.KEY_X)        -> Attack(SecondaryAttack),
-    KeyInputs(Key.KEY_E)        -> Interact,
+    KeyInputs(Key.KEY_E)        -> Action,
     KeyInputs(Key.KEY_U)        -> UseItem,
     KeyInputs(Key.KEY_Q)        -> Equip,
     KeyInputs(Key.KEY_C)        -> Cancel,
     KeyInputs(Key.ESCAPE)       -> Cancel,
-    KeyInputs(Key.SPACE)        -> Confirm,
-    KeyInputs(Key.ENTER)        -> Confirm,
+    KeyInputs(Key.SPACE)        -> Action,
+    KeyInputs(Key.ENTER)        -> Action,
     KeyInputs(Key.KEY_L)        -> LevelUp
   )
 }
