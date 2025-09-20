@@ -307,6 +307,8 @@ class FinalComprehensiveGameTest extends AnyFunSuiteLike with Matchers {
       .thePlayer.confirmsSelection()
       // Potion heals 40 points, so 5 + 40 = 45, but max is 10, so should be 10
       .thePlayer.hasHealth(10)
+      // Wait for initiative to reset after item use before trying level up
+      .timePasses(10)
       // Phase 2: Level up
       .thePlayer.component[Experience].satisfies(_.levelUp, "should be ready to level up")
       .step(Some(Input.LevelUp))
