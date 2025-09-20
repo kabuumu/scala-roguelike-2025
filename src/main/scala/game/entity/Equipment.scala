@@ -2,7 +2,10 @@ package game.entity
 
 case class Equipment(
   helmet: Option[Equippable] = None,
-  armor: Option[Equippable] = None
+  armor: Option[Equippable] = None,
+  boots: Option[Equippable] = None,
+  gloves: Option[Equippable] = None,
+  weapon: Option[Equippable] = None
 ) extends Component {
   
   def equip(item: Equippable): (Equipment, Option[Equippable]) = {
@@ -13,6 +16,15 @@ case class Equipment(
       case EquipmentSlot.Armor => 
         val previousItem = armor
         (copy(armor = Some(item)), previousItem)
+      case EquipmentSlot.Boots => 
+        val previousItem = boots
+        (copy(boots = Some(item)), previousItem)
+      case EquipmentSlot.Gloves => 
+        val previousItem = gloves
+        (copy(gloves = Some(item)), previousItem)
+      case EquipmentSlot.Weapon => 
+        val previousItem = weapon
+        (copy(weapon = Some(item)), previousItem)
     }
   }
   
@@ -20,6 +32,9 @@ case class Equipment(
     slot match {
       case EquipmentSlot.Helmet => copy(helmet = None)
       case EquipmentSlot.Armor => copy(armor = None)
+      case EquipmentSlot.Boots => copy(boots = None)
+      case EquipmentSlot.Gloves => copy(gloves = None)
+      case EquipmentSlot.Weapon => copy(weapon = None)
     }
   }
   
@@ -27,15 +42,22 @@ case class Equipment(
     slot match {
       case EquipmentSlot.Helmet => helmet
       case EquipmentSlot.Armor => armor
+      case EquipmentSlot.Boots => boots
+      case EquipmentSlot.Gloves => gloves
+      case EquipmentSlot.Weapon => weapon
     }
   }
   
   def getAllEquipped: Seq[Equippable] = {
-    Seq(helmet, armor).flatten
+    Seq(helmet, armor, boots, gloves, weapon).flatten
   }
   
   def getTotalDamageReduction: Int = {
     getAllEquipped.map(_.damageReduction).sum
+  }
+  
+  def getTotalDamageBonus: Int = {
+    getAllEquipped.map(_.damageBonus).sum
   }
 }
 
@@ -56,6 +78,10 @@ object Equipment {
     
     def getTotalDamageReduction: Int = {
       entity.equipment.getTotalDamageReduction
+    }
+    
+    def getTotalDamageBonus: Int = {
+      entity.equipment.getTotalDamageBonus
     }
   }
 }

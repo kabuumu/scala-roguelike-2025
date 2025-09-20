@@ -24,6 +24,12 @@ object Items {
     case ChainmailArmor
     case IronHelmet
     case PlateArmor
+    case LeatherBoots
+    case IronBoots
+    case LeatherGloves
+    case IronGloves
+    case BasicSword
+    case IronSword
 
   extension (itemRef: ItemReference) {
     def createEntity(id: String): Entity = itemRef match {
@@ -40,6 +46,12 @@ object Items {
       case ItemReference.ChainmailArmor => chainmailArmor(id)
       case ItemReference.IronHelmet => ironHelmet(id)
       case ItemReference.PlateArmor => plateArmor(id)
+      case ItemReference.LeatherBoots => leatherBoots(id)
+      case ItemReference.IronBoots => ironBoots(id)
+      case ItemReference.LeatherGloves => leatherGloves(id)
+      case ItemReference.IronGloves => ironGloves(id)
+      case ItemReference.BasicSword => basicSword(id)
+      case ItemReference.IronSword => ironSword(id)
     }
   }
 
@@ -106,7 +118,7 @@ object Items {
   def leatherHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable(EquipmentSlot.Helmet, 2, "Leather Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 2, "Leather Helmet"),
     Hitbox(),
     Drawable(Sprites.leatherHelmetSprite)
   )
@@ -114,7 +126,7 @@ object Items {
   def ironHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable(EquipmentSlot.Helmet, 4, "Iron Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 4, "Iron Helmet"),
     Hitbox(),
     Drawable(Sprites.ironHelmetSprite)
   )
@@ -122,7 +134,7 @@ object Items {
   def chainmailArmor(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable(EquipmentSlot.Armor, 5, "Chainmail Armor"),
+    Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor"),
     Hitbox(),
     Drawable(Sprites.chainmailArmorSprite)
   )
@@ -130,8 +142,57 @@ object Items {
   def plateArmor(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable(EquipmentSlot.Armor, 8, "Plate Armor"),
+    Equippable.armor(EquipmentSlot.Armor, 8, "Plate Armor"),
     Hitbox(),
     Drawable(Sprites.plateArmorSprite)
+  )
+  
+  // New equipment items
+  def leatherBoots(id: String): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.armor(EquipmentSlot.Boots, 1, "Leather Boots"),
+    Hitbox(),
+    Drawable(Sprites.leatherBootsSprite)
+  )
+  
+  def ironBoots(id: String): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.armor(EquipmentSlot.Boots, 2, "Iron Boots"),
+    Hitbox(),
+    Drawable(Sprites.ironBootsSprite)
+  )
+  
+  def leatherGloves(id: String): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.armor(EquipmentSlot.Gloves, 1, "Leather Gloves"),
+    Hitbox(),
+    Drawable(Sprites.leatherGlovesSprite)
+  )
+  
+  def ironGloves(id: String): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.armor(EquipmentSlot.Gloves, 2, "Iron Gloves"),
+    Hitbox(),
+    Drawable(Sprites.ironGlovesSprite)
+  )
+  
+  def basicSword(id: String): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.weapon(3, "Basic Sword"),
+    Hitbox(),
+    Drawable(Sprites.basicSwordSprite)
+  )
+  
+  def ironSword(id: String): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.weapon(5, "Iron Sword"),
+    Hitbox(),
+    Drawable(Sprites.ironSwordSprite)
   )
 }

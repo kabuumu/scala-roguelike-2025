@@ -34,7 +34,11 @@ object Entities {
       EventMemory(),
       Drawable(Sprites.slimeletSprite),
       Hitbox(),
-      DeathEvents(Seq(GiveExperience(10))) //TODO - fix slimes
+      DeathEvents(
+        Seq(
+          GiveExperience(experienceForLevel(2) / 5)
+        )
+      )
     )
   }
 }

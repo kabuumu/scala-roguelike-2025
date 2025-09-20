@@ -65,16 +65,26 @@ class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) ex
     ItemReference.LeatherHelmet,
     ItemReference.ChainmailArmor,
     ItemReference.IronHelmet,
-    ItemReference.PlateArmor
+    ItemReference.PlateArmor,
+    ItemReference.LeatherBoots,
+    ItemReference.IronBoots,
+    ItemReference.LeatherGloves,
+    ItemReference.IronGloves,
+    ItemReference.BasicSword,
+    ItemReference.IronSword
   )
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
     if (currentDungeon.nonKeyItems.size >= targetTreasureRoomCount || currentDungeon.roomGrid.size + 1 >= targetRoomCount) {
       Set.empty
     } else {
+      // Get items already placed in the dungeon to avoid duplicates
+      val placedItems = currentDungeon.nonKeyItems.map(_._2).toSet
+      val availableItems = possibleItems -- placedItems
+      
       for {
         (originRoom, direction) <- currentDungeon.availableRooms
-        item <- possibleItems
+        item <- availableItems
         if !currentDungeon.endpoint.contains(originRoom)
         treasureRoom = originRoom + direction
       } yield currentDungeon
