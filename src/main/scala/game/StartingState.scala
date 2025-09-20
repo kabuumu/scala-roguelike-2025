@@ -28,32 +28,90 @@ object StartingState {
     Items.chainmailArmor("player-starting-armor")
   )
 
-  // Create snake spit abilities for snakes
-  val snakeSpitAbilities: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
-    case (_, index) if index % 3 == 1 => index -> Items.snakeSpit(s"Snake-$index-spit")
-  }.toMap
-
-  val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
-    case (point, index) if index % 3 == 0 =>
-      val position = Point(
-        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
+  /**
+   * Generate enemy groups based on dungeon depth progression.
+   * Deeper rooms have harder enemies and larger groups.
+   */
+  object EnemyGeneration {
+    import Enemies.EnemyReference
+    import Enemies.EnemyDifficulty._
+    
+    case class EnemyGroup(enemies: Seq[EnemyReference])
+    
+    /**
+     * Determine appropriate enemy groups for a given dungeon depth.
+     * Examples: depth 1 -> 1 slimelet, depth 2 -> 2 slimelets, etc.
+     */
+    def enemiesForDepth(depth: Int): EnemyGroup = depth match {
+      case 1 => EnemyGroup(Seq(EnemyReference.Slimelet))
+      case 2 => EnemyGroup(Seq(EnemyReference.Slimelet, EnemyReference.Slimelet))
+      case 3 => EnemyGroup(Seq(EnemyReference.Slime))
+      case 4 => EnemyGroup(Seq(EnemyReference.Slime, EnemyReference.Slimelet))
+      case 5 => EnemyGroup(Seq(EnemyReference.Rat))
+      case 6 => EnemyGroup(Seq(EnemyReference.Snake))
+      case d if d >= 7 && d % 2 == 1 => EnemyGroup(Seq(EnemyReference.Rat, EnemyReference.Rat)) // Multiple rats
+      case d if d >= 8 && d % 2 == 0 => EnemyGroup(Seq(EnemyReference.Snake, EnemyReference.Snake)) // Multiple snakes
+      case _ => EnemyGroup(Seq(EnemyReference.Slimelet)) // Fallback for depth 0 or unexpected values
+    }
+    
+    /**
+     * Create enemy entities for a room based on its depth and position.
+     */
+    def createEnemiesForRoom(roomPoint: Point, depth: Int, roomIndex: Int): (Seq[Entity], Map[String, Entity]) = {
+      val roomCenter = Point(
+        roomPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        roomPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      Enemies.rat(s"Rat $index", position)
-    case (point, index) if index % 3 == 1 =>
-      val position = Point(
-        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-      )
-      Enemies.snake(s"Snake $index", position, s"Snake-$index-spit")
-    case (point, index) =>
-      val position = Point(
-        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-      )
-      Enemies.slime(s"Slime $index", position)
       
+      val enemyGroup = enemiesForDepth(depth)
+      val enemies = enemyGroup.enemies.zipWithIndex.map { case (enemyRef, enemyIndex) =>
+        val enemyId = s"${enemyRef.toString}-R$roomIndex-$enemyIndex"
+        val position = if (enemyIndex == 0) roomCenter else {
+          // Offset additional enemies slightly to avoid overlap
+          Point(roomCenter.x + enemyIndex, roomCenter.y + enemyIndex)
+        }
+        
+        enemyRef match {
+          case EnemyReference.Rat => Enemies.rat(enemyId, position)
+          case EnemyReference.Snake => 
+            val spitId = s"$enemyId-spit"
+            Enemies.snake(enemyId, position, spitId)
+          case EnemyReference.Slime => Enemies.slime(enemyId, position)
+          case EnemyReference.Slimelet => Enemies.slimelet(enemyId, position)
+        }
+      }
+      
+      // Create snake spit abilities for any snakes
+      val spitAbilities = enemies.collect {
+        case snake if snake.id.contains("Snake") =>
+          val spitId = s"${snake.id}-spit"
+          spitId -> Items.snakeSpit(spitId)
+      }.toMap
+      
+      (enemies, spitAbilities)
+    }
   }
+
+  // Generate enemies using the new depth-based system
+  val (enemies, allSpitAbilities) = {
+    val nonStartRooms = dungeon.roomGrid - dungeon.startPoint
+    val roomDepths = dungeon.roomDepths
+    
+    val enemiesAndAbilities = nonStartRooms.zipWithIndex.map { case (roomPoint, index) =>
+      val depth = roomDepths.getOrElse(roomPoint, 1) // Default to depth 1 if not found
+      EnemyGeneration.createEnemiesForRoom(roomPoint, depth, index)
+    }
+    
+    val allEnemies = enemiesAndAbilities.flatMap(_._1)
+    val combinedAbilities = enemiesAndAbilities.flatMap(_._2).toMap
+    
+    (allEnemies.toSet, combinedAbilities)
+  }
+
+  // For backward compatibility, maintain the snakeSpitAbilities val
+  val snakeSpitAbilities: Map[Int, Entity] = allSpitAbilities.values.zipWithIndex.map {
+    case (ability, index) => index -> ability
+  }.toMap
 
   val player: Entity = dungeon.startPoint match {
     case point =>

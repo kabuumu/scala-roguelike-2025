@@ -236,6 +236,45 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     case (_, ItemReference.YellowKey | ItemReference.BlueKey | ItemReference.RedKey) => true
     case _ => false
   }
+  
+  /**
+   * Calculate the dungeon depth for each room based on shortest path distance from start point.
+   * Returns a map from room Point to its depth (distance from start).
+   */
+  lazy val roomDepths: Map[Point, Int] = {
+    def calculateDepthFromStart(start: Point): Map[Point, Int] = {
+      val visited = scala.collection.mutable.Set[Point]()
+      val depths = scala.collection.mutable.Map[Point, Int]()
+      val queue = scala.collection.mutable.Queue[(Point, Int)]()
+      
+      queue.enqueue((start, 0))
+      depths(start) = 0
+      visited += start
+      
+      while (queue.nonEmpty) {
+        val (currentRoom, currentDepth) = queue.dequeue()
+        
+        // Find all connected rooms from current room
+        val connectedRooms = roomConnections
+          .filter(_.originRoom == currentRoom)
+          .map(_.destinationRoom)
+          .filterNot(visited.contains)
+        
+        connectedRooms.foreach { nextRoom =>
+          if (!visited.contains(nextRoom)) {
+            visited += nextRoom
+            val nextDepth = currentDepth + 1
+            depths(nextRoom) = nextDepth
+            queue.enqueue((nextRoom, nextDepth))
+          }
+        }
+      }
+      
+      depths.toMap
+    }
+    
+    calculateDepthFromStart(startPoint)
+  }
 }
 
 
