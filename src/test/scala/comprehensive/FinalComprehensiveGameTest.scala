@@ -348,6 +348,22 @@ class FinalComprehensiveGameTest extends AnyFunSuiteLike with Matchers {
       .thePlayer.component[Movement].satisfies(_.position.y >= 0)
   }
 
+  test("Unified action system: shows action list when targets available") {
+    import data.Items
+    val enemy = Given.enemies.basic("test-goblin", 5, 4, health = 5) // Enemy at (5, 4)
+    val sword = Items.ironSword("iron-sword") // Need to position at (6, 5) - adjacent to player at (5, 5)
+    
+    Given
+      .thePlayerAt(5, 5) 
+      .withEntities(enemy*)
+      .withEntities(sword.update[Movement](_ => Movement(Point(6, 5))))
+      .beginStory()
+      .thePlayer.hasHealth(10)
+      .step(Some(Input.Action)) // Should show list with enemy to attack and sword to equip  
+      .uiIsListSelect() // Verify that we got a list selection UI
+      // Don't test the specific outcomes yet, just verify the mechanism works
+  }
+
   test("Empty inventory and edge case handling") {
     Given
       .thePlayerAt(4, 4)

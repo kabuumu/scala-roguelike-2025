@@ -11,5 +11,6 @@ enum InputAction {
   case Attack(target: Entity)
   case Wait
   case Equip
+  case EquipSpecific(target: Entity)
   case LoadGame
 }

@@ -14,4 +14,5 @@ object Input {
   case object Confirm extends Input
   case object LevelUp extends Input
   case object Equip extends Input
+  case object Action extends Input
 }

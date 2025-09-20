@@ -61,6 +61,11 @@ object GameSystemEvent {
     entityId: String
   ) extends GameSystemEvent
   
+  case class EquipSpecificEvent(
+    entityId: String,
+    targetEntity: Entity
+  ) extends GameSystemEvent
+  
   case class HealEvent(
     entityId: String,
     healAmount: Int

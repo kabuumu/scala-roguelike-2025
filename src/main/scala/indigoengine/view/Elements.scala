@@ -430,42 +430,31 @@ object Elements {
     
     val messageContent = model.uiState match {
       case UIState.Move =>
-        // Check for nearby equippable items
-        val playerPosition = model.gameState.playerEntity.position
-        val adjacentPositions = Direction.values.map(dir => playerPosition + Direction.asPoint(dir)).toSet
+        // Check for nearby action targets
+        val actionTargets = model.nearbyActionTargets()
         
-        val adjacentEquippableEntities = model.gameState.entities
-          .filter(e => adjacentPositions.contains(e.position))
-          .filter(_.isEquippable)
-        
-        adjacentEquippableEntities.headOption.flatMap(_.equippable) match {
-          case Some(equippable) if equippable.slot == Weapon =>
-            s"Press Q to equip ${equippable.itemName} (Damage bonus +${equippable.damageBonus})"
-          case Some(equippable) =>
-            s"Press Q to equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
-          case None =>
-            // Check if enemies are within attack range to determine if attack is available
-            val range = 1 // Melee range only
-            val enemies = model.gameState.entities.filter { enemyEntity =>
-              enemyEntity.entityType == EntityType.Enemy &&
-              model.gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range) &&
-              model.gameState.getVisiblePointsFor(model.gameState.playerEntity).contains(enemyEntity.position) &&
-              enemyEntity.isAlive
-            }
-            
-            val moveKeys = "Arrow keys or WASD to move"
-            val useItems = "U to use items"
-            val attackKeys = if (enemies.nonEmpty) ", Z/X to attack" else ""
-            val interactKey = ", E to interact"
-            val equipKey = ", Q to equip"
-            
-            s"$moveKeys, $useItems$attackKeys$interactKey$equipKey"
+        if (actionTargets.nonEmpty) {
+          val firstTarget = actionTargets.head
+          if (actionTargets.length == 1) {
+            s"${firstTarget.description}. Press Space/E/Enter for action."
+          } else {
+            s"${actionTargets.length} actions available. Press Space/E/Enter to choose."
+          }
+        } else {
+          // No actions available
+          val moveKeys = "Arrow keys or WASD to move"
+          val useItems = "U to use items"
+          
+          s"$moveKeys, $useItems"
         }
         
       case listSelect: UIState.ListSelect[_] =>
         if (listSelect.list.nonEmpty) {
           val selectedItem = listSelect.list(listSelect.index)
           selectedItem match {
+            case actionTarget: ui.GameController.ActionTarget =>
+              // Show action description for unified action targets
+              s"${actionTarget.description}. Press Space/E/Enter to confirm."
             case entity: Entity if entity.has[UsableItem] =>
               // Show item name at top, then description
               val itemName = entity.name.getOrElse("Unknown Item")
@@ -483,8 +472,8 @@ object Elements {
                   }
                   val description = entity.description.getOrElse("")
                   val descriptionText = if (description.nonEmpty) s" - $description" else ""
-                  s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Enter to use."
-                case None => s"$itemName. Press Enter to use."
+                  s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Space/E/Enter to use."
+                case None => s"$itemName. Press Space/E/Enter to use."
               }
             case entity: Entity =>
               // Show entity information
@@ -496,12 +485,12 @@ object Elements {
               val healthText = if (entity.has[game.entity.Health]) {
                 s" (${entity.currentHealth}/${entity.maxHealth} HP)"
               } else ""
-              s"$entityTypeName$healthText. Press Enter to target."
+              s"$entityTypeName$healthText. Press Space/E/Enter to target."
             case statusEffect: game.status.StatusEffect =>
               // Show perk description
-              s"${statusEffect.name}: ${statusEffect.description}. Press Enter to select."
+              s"${statusEffect.name}: ${statusEffect.description}. Press Space/E/Enter to select."
             case _ =>
-              "Press Enter to select, Escape to cancel."
+              "Press Space/E/Enter to select, Escape to cancel."
           }
         } else {
           "No items available."
