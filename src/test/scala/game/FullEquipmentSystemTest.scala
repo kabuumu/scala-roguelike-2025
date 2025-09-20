@@ -64,7 +64,7 @@ class FullEquipmentSystemTest extends AnyFunSuite {
     assert(basicSword.equippable.exists(_.damageReduction == 0))
     
     assert(chainmailArmor.equippable.exists(_.slot == EquipmentSlot.Armor))
-    assert(chainmailArmor.equippable.exists(_.damageReduction == 5))
+    assert(chainmailArmor.equippable.exists(_.damageReduction == 3))
     assert(chainmailArmor.equippable.exists(_.damageBonus == 0))
   }
 
@@ -77,7 +77,7 @@ class FullEquipmentSystemTest extends AnyFunSuite {
     assert(boots.equippable.exists(_.damageReduction == 1))
     
     assert(gloves.equippable.exists(_.slot == EquipmentSlot.Gloves))
-    assert(gloves.equippable.exists(_.damageReduction == 2))
+    assert(gloves.equippable.exists(_.damageReduction == 0))
     
     assert(sword.equippable.exists(_.slot == EquipmentSlot.Weapon))
     assert(sword.equippable.exists(_.damageBonus == 5))

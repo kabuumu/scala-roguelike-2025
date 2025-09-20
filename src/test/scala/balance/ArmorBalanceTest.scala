@@ -1,17 +1,19 @@
 package balance
 
-import munit.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import data.Items
 import game.entity.*
 import game.entity.EquipmentSlot.*
+import game.entity.Equipment.*
+import game.entity.Health.*
 import game.balance.BalanceConfig
 import game.Point
 
-class ArmorBalanceTest extends FunSuite {
+class ArmorBalanceTest extends AnyFunSuite {
 
   private def mkBasePlayer(h: Int = 70): Entity =
     Entity(
-      id = java.util.UUID.randomUUID().toString,
+      id = s"test-player-${scala.util.Random.nextInt(10000)}",
       Movement(Point(0,0)),
       EntityTypeComponent(EntityType.Player),
       Health(h),
@@ -25,8 +27,8 @@ class ArmorBalanceTest extends FunSuite {
   private def equip(e: Entity, eqs: Seq[Entity]): Entity =
     eqs.foldLeft(e){ (acc, item) =>
       item.get[Equippable].map { eq =>
-        val (updated, _) = acc.equipItemComponent(eq)
-        updated
+        val (updated, _) = acc.get[Equipment].getOrElse(Equipment()).equip(eq)
+        acc.update[Equipment](_ => updated)
       }.getOrElse(acc)
     }
 
@@ -63,7 +65,7 @@ class ArmorBalanceTest extends FunSuite {
       equip(mkBasePlayer(), bestSet)
     ).map(p => (p.getTotalDamageReduction, p))
 
-    val sorted = variants.sortBy(_._1)
+    val sorted = variants.sortBy(_._1)(Ordering.Int)
     val damages = sorted.map { case (dr, _) =>
       dr -> SimpleHit(baseDamage, atkBonus, dr).finalDamage
     }
@@ -79,11 +81,11 @@ class ArmorBalanceTest extends FunSuite {
 
   test("Damage floor respected") {
     val hit = SimpleHit(5, 0, 999)
-    assertEquals(hit.finalDamage, 1)
+    assert(hit.finalDamage == 1)
   }
 
   test("Gear impact ratio & TTK bands") {
-    val baseDamage = 7
+    val baseDamage = 8
     val unarmoured = mkBasePlayer()
     val best = equip(mkBasePlayer(), bestSet)
 

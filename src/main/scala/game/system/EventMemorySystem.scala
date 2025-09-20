@@ -9,6 +9,7 @@ import game.entity.EntityType.entityType
 import game.entity.Health.{currentHealth, damage}
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
+import game.combat.DamageCalculator
 
 object EventMemorySystem extends GameSystem {
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
@@ -17,38 +18,34 @@ object EventMemorySystem extends GameSystem {
     val updatedState = events.foldLeft(gameState) {
       case (currentState, GameSystemEvent.DamageEvent(targetId, attackerId, baseDamage, source)) =>
         // Record damage taken by target
-        val targetState = currentState.getEntity(targetId) match {
-          case Some(target) =>
-            val equipment = target.get[Equipment].getOrElse(Equipment())
-            val damageReduction = equipment.getTotalDamageReduction
-            val actualDamage = Math.max(1, baseDamage - damageReduction)
-            val modifier = damageReduction
+        val targetState = (currentState.getEntity(targetId), currentState.getEntity(attackerId)) match {
+          case (Some(target), Some(attacker)) =>
+            val breakdown = DamageCalculator.compute(baseDamage, attacker, target, currentState, source)
             
             val memoryEvent = MemoryEvent.DamageTaken(
               timestamp = currentTime,
-              damage = actualDamage,
-              baseDamage = baseDamage,
-              modifier = modifier,
+              damage = breakdown.finalDamage,
+              baseDamage = breakdown.baseDamage,
+              attackerBonus = breakdown.attackerBonus,
+              defenderResistance = breakdown.defenderResistance,
               source = attackerId
             )
             
             currentState.updateEntity(targetId, _.addMemoryEvent(memoryEvent))
-          case None => currentState
+          case _ => currentState
         }
         
-        // Record damage dealt by attacker - only if target exists
+        // Record damage dealt by attacker - only if both entities exist
         (targetState.getEntity(attackerId), targetState.getEntity(targetId)) match {
           case (Some(attacker), Some(target)) =>
-            val equipment = target.get[Equipment].getOrElse(Equipment())
-            val damageReduction = equipment.getTotalDamageReduction
-            val actualDamage = Math.max(1, baseDamage - damageReduction)
-            val modifier = damageReduction
+            val breakdown = DamageCalculator.compute(baseDamage, attacker, target, targetState, source)
             
             val memoryEvent = MemoryEvent.DamageDealt(
               timestamp = currentTime,
-              damage = actualDamage,
-              baseDamage = baseDamage,
-              modifier = modifier,
+              damage = breakdown.finalDamage,
+              baseDamage = breakdown.baseDamage,
+              attackerBonus = breakdown.attackerBonus,
+              defenderResistance = breakdown.defenderResistance,
               target = targetId
             )
             

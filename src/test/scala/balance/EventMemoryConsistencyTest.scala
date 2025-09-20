@@ -1,14 +1,15 @@
 package balance
 
-import munit.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import game.entity.*
+import game.entity.Health.*
 import game.system.{DamageSystem, EventMemorySystem}
 import game.system.event.GameSystemEvent
 import game.Point
 import data.Items
 import game.GameState
 
-class EventMemoryConsistencyTest extends FunSuite {
+class EventMemoryConsistencyTest extends AnyFunSuite {
 
   private def mkPlayer(): Entity =
     Entity(
@@ -25,14 +26,14 @@ class EventMemoryConsistencyTest extends FunSuite {
     )
 
   private def mkEnemy(): (Entity, Entity) = {
-    val weapon = Items.weapon("enemy-weapon", 7, game.entity.Melee)
+    val weapon = Items.weapon("enemy-weapon", 7, game.system.event.GameSystemEvent.DamageSource.Melee)
     val enemy = Entity(
       id = "enemy",
       Movement(Point(0,1)),
       EntityTypeComponent(EntityType.Enemy),
       Health(30),
       Initiative(0),
-      Inventory(Seq(), Some(weapon.id), None),
+      Inventory(Seq(weapon.id)),
       Equipment(),
       EventMemory(),
       Drawable(data.Sprites.enemySprite),
@@ -55,10 +56,10 @@ class EventMemoryConsistencyTest extends FunSuite {
     val appliedHP = beforeHP - afterDamage.getEntity(player.id).get.currentHealth
     val mem = afterMemory.getEntity(player.id).get.get[EventMemory].get
     val taken = mem.getEventsByType[MemoryEvent.DamageTaken].headOption
-      .getOrElse(fail("No DamageTaken memory event"))
+      .getOrElse(throw new AssertionError("No DamageTaken memory event"))
 
-    assertEquals(taken.damage, appliedHP, "Mismatch between recorded and actual damage")
+    assert(taken.damage == appliedHP, "Mismatch between recorded and actual damage")
     val recomputed = math.max(1, taken.baseDamage + taken.attackerBonus - taken.defenderResistance)
-    assertEquals(taken.damage, recomputed, "Breakdown fields do not recompute to final damage")
+    assert(taken.damage == recomputed, "Breakdown fields do not recompute to final damage")
   }
 }
