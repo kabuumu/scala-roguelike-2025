@@ -138,7 +138,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(Direction.Up) => (mainMenu.selectPrevious, None)
         case Input.Move(Direction.Down) => (mainMenu.selectNext, None)
-        case Input.UseItem | Input.Attack(_) | Input.Confirm =>
+        case Input.UseItem | Input.Attack(_) | Input.Confirm | Input.Action =>
           if (mainMenu.canConfirmCurrentSelection) {
             mainMenu.getSelectedOption match {
               case "New Game" => (UIState.Move, None)  // Just transition to Move, update() will handle creating new game
@@ -154,21 +154,6 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(direction) =>
           (UIState.Move, Some(InputAction.Move(direction)))
-        case Input.Attack(attackType) =>
-          // Melee attacks have range 1
-          val range = 1
-
-          val enemies = enemiesWithinRange(range)
-          if (enemies.nonEmpty) {
-            (UIState.ListSelect(
-              list = enemies,
-              effect = target => {
-                (UIState.Move, Some(InputAction.Attack(target)))
-              }
-            ), None)
-          } else {
-            (UIState.Move, None)
-          }
         case Input.UseItem =>
           val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(_.get[NameComponent])
           if (usableItems.nonEmpty) {
@@ -252,7 +237,6 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           } else {
             (UIState.Move, None)
           }
-        case Input.Equip => (UIState.Move, Some(InputAction.Equip))
         case Input.Wait => (UIState.Move, Some(InputAction.Wait))
         case _ => (uiState, None)
       }
@@ -260,7 +244,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterateDown, None)
         case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
-        case Input.UseItem | Input.Attack(_) | Input.Confirm | Input.Action =>
+        case Input.UseItem | Input.Action =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
@@ -275,7 +259,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           } else {
             (scrollSelect, None)
           }
-        case Input.UseItem | Input.Attack(_) | Input.Confirm | Input.Action =>
+        case Input.UseItem | Input.Action =>
           scrollSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
