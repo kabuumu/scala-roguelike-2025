@@ -1,5 +1,6 @@
 package testsupport
 
+import data.Items
 import game.entity.*
 import game.entity.Movement.position
 import game.entity.Health.{currentHealth, damage}
@@ -614,8 +615,8 @@ object GameplayScenario {
     val items = List(
       Given.items.potion("health-potion"),
       Given.items.scroll("damage-scroll"),
-      Given.items.weapon("sword", 3, game.entity.Melee),
-      Given.items.weapon("bow", 2, game.entity.Ranged(6))
+      Items.basicSword("sword"),
+      Given.items.bow("bow")
     )
     
     val world = Given.thePlayerAt(5, 5)

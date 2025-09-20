@@ -425,8 +425,6 @@ object Elements {
     import game.entity.Equippable.*
     import game.entity.UsableItem.*
     import game.entity.NameComponent.*
-    import game.entity.Inventory.primaryWeapon
-    import game.entity.WeaponItem.weaponItem
     import game.Direction
     import game.entity.Movement.*
     
@@ -447,8 +445,7 @@ object Elements {
             s"Press Q to equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
           case None =>
             // Check if enemies are within attack range to determine if attack is available
-            val optWeaponEntity = model.gameState.playerEntity.primaryWeapon(model.gameState)
-            val range = optWeaponEntity.flatMap(_.weaponItem.map(_.range)).getOrElse(1)
+            val range = 1 // Melee range only
             val enemies = model.gameState.entities.filter { enemyEntity =>
               enemyEntity.entityType == EntityType.Enemy &&
               model.gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range) &&

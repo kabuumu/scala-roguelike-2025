@@ -27,21 +27,6 @@ object StartingState {
     Items.basicSword("player-starting-sword"),
     Items.chainmailArmor("player-starting-armor")
   )
-  
-  // Create weapons as entities for enemies and player
-  val ratWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
-    case (_, index) if index % 3 == 0 => index -> Items.weapon(s"rat-weapon-$index", 8, Melee)
-  }.toMap
-  
-  val snakeWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
-    case (_, index) if index % 3 == 1 => index -> Items.weapon(s"snake-weapon-$index", 6, Ranged(4))
-  }.toMap
-  
-  val slimeWeapons: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
-    case (_, index) if index % 3 == 2 => index -> Items.weapon(s"slime-weapon-$index", 6, Melee)
-  }.toMap
-  
-  val playerPrimaryWeapon: Entity = Items.weapon("player-primary-weapon", 10, Melee)
 
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 3 == 0 =>
@@ -49,19 +34,19 @@ object StartingState {
         point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      Enemies.rat(s"Rat $index", position, Some(s"rat-weapon-$index"))
+      Enemies.rat(s"Rat $index", position)
     case (point, index) if index % 3 == 1 =>
       val position = Point(
         point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      Enemies.snake(s"Snake $index", position, Some(s"snake-weapon-$index"))
+      Enemies.snake(s"Snake $index", position)
     case (point, index) =>
       val position = Point(
         point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      Enemies.slime(s"Slime $index", position, Some(s"slime-weapon-$index"))
+      Enemies.slime(s"Slime $index", position)
       
   }
 
@@ -77,9 +62,7 @@ object StartingState {
         Health(100),
         Initiative(10),
         Inventory(
-          itemEntityIds = (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq,
-          primaryWeaponId = Some("player-primary-weapon"),
-          secondaryWeaponId = None
+          itemEntityIds = (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq
         ),
         Equipment(
           armor = Some(Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor")),
@@ -137,8 +120,7 @@ object StartingState {
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors ++ 
-               ratWeapons.values ++ snakeWeapons.values ++ slimeWeapons.values ++ Seq(playerPrimaryWeapon),
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors,
     dungeon = dungeon
   )
 }

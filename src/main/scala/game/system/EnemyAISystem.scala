@@ -3,9 +3,7 @@ package game.system
 import game.entity.EntityType.*
 import game.entity.Initiative.*
 import game.entity.Movement.position
-import game.entity.{EntityType, Inventory}
-import game.entity.Inventory.primaryWeapon
-import game.entity.WeaponItem.weaponItem
+import game.entity.{EntityType}
 import game.system.event.GameSystemEvent.{GameSystemEvent, InputEvent}
 import game.GameState
 import ui.InputAction
@@ -16,7 +14,7 @@ object EnemyAISystem extends GameSystem {
     val aiEvents = gameState.entities.collect {
       case enemy if enemy.entityType == EntityType.Enemy && enemy.isReady =>
         val target = gameState.playerEntity
-        val attackRange = enemy.primaryWeapon(gameState).flatMap(_.weaponItem.map(_.range)).getOrElse(1) //TODO allow enemies to have secondary weapons?
+        val attackRange = 1 // Melee range only - TODO: add ranged AI abilities via UsableItem system
 
         if (gameState.getVisiblePointsFor(enemy).contains(target.position)) {
           if (enemy.position.isWithinRangeOf(target.position, attackRange)) {

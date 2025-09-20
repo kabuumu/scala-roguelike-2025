@@ -18,8 +18,6 @@ object Items {
     case YellowKey
     case BlueKey
     case RedKey
-    case MeleeWeapon(damage: Int)
-    case RangedWeapon(damage: Int, range: Int)
     case LeatherHelmet
     case ChainmailArmor
     case IronHelmet
@@ -40,8 +38,6 @@ object Items {
       case ItemReference.YellowKey => key(id, KeyColour.Yellow)
       case ItemReference.BlueKey => key(id, KeyColour.Blue)
       case ItemReference.RedKey => key(id, KeyColour.Red)
-      case ItemReference.MeleeWeapon(damage) => weapon(id, damage, Melee)
-      case ItemReference.RangedWeapon(damage, range) => weapon(id, damage, Ranged(range))
       case ItemReference.LeatherHelmet => leatherHelmet(id)
       case ItemReference.ChainmailArmor => chainmailArmor(id)
       case ItemReference.IronHelmet => ironHelmet(id)
@@ -103,17 +99,6 @@ object Items {
     })
   )
   
-  def weapon(id: String, damage: Int, weaponType: WeaponType): Entity = Entity(
-    id = id,
-    WeaponItem(damage, weaponType),
-    CanPickUp(),
-    Hitbox(),
-    Drawable(weaponType match {
-      case Melee => Sprites.defaultItemSprite //TODO - add sprite for weapons if needed
-      case Ranged(_) => Sprites.bowSprite
-    })
-  )
-
   // Equipment items
   def leatherHelmet(id: String): Entity = Entity(
     id = id,

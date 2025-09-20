@@ -11,14 +11,14 @@ object Enemies {
     case Snake
     case Slime
 
-  def rat(id: String, position: game.Point, weaponId: Option[String] = None): Entity = {
+  def rat(id: String, position: game.Point): Entity = {
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
       Health(25),
       Initiative(12),
-      Inventory(Nil, weaponId),
+      Inventory(Nil),
       EventMemory(),
       Drawable(Sprites.ratSprite),
       Hitbox(),
@@ -26,14 +26,14 @@ object Enemies {
     )
   }
 
-  def snake(id: String, position: game.Point, weaponId: Option[String] = None): Entity = {
+  def snake(id: String, position: game.Point): Entity = {
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
       Health(18),
       Initiative(25),
-      Inventory(Nil, weaponId),
+      Inventory(Nil),
       EventMemory(),
       Drawable(Sprites.snakeSprite),
       Hitbox(),
@@ -41,14 +41,14 @@ object Enemies {
     )
   }
 
-  def slime(id: String, position: game.Point, weaponId: Option[String] = None): Entity = {
+  def slime(id: String, position: game.Point): Entity = {
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
       Health(20),
       Initiative(15),
-      Inventory(Nil, weaponId),
+      Inventory(Nil),
       EventMemory(),
       Drawable(Sprites.slimeSprite),
       Hitbox(),
