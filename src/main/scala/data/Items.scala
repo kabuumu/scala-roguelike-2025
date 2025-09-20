@@ -168,7 +168,7 @@ object Items {
   def ironGloves(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Gloves, 1, "Iron Gloves"),
+    Equippable.armor(EquipmentSlot.Gloves, 2, "Iron Gloves"),
     Hitbox(),
     Drawable(Sprites.ironGlovesSprite)
   )

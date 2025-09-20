@@ -77,7 +77,7 @@ class FullEquipmentSystemTest extends AnyFunSuite {
     assert(boots.equippable.exists(_.damageReduction == 1))
     
     assert(gloves.equippable.exists(_.slot == EquipmentSlot.Gloves))
-    assert(gloves.equippable.exists(_.damageReduction == 1))
+    assert(gloves.equippable.exists(_.damageReduction == 2))
     
     assert(sword.equippable.exists(_.slot == EquipmentSlot.Weapon))
     assert(sword.equippable.exists(_.damageBonus == 5))
