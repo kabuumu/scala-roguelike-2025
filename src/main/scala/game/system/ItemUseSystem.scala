@@ -74,7 +74,18 @@ object ItemUseSystem extends GameSystem {
                     Seq.empty
                 }
             }
-            Seq(itemEffect) ++ itemUsageEvents ++ Seq(GameSystemEvent.ResetInitiativeEvent(userId))
+            val allEvents = Seq(itemEffect) ++ itemUsageEvents
+            // Only reset initiative for combat-related item effects (projectiles)
+            // Don't reset for healing or other non-combat effects to avoid interfering with other systems
+            val shouldResetInitiative = item.effect match {
+              case CreateProjectile(_) => true
+              case _ => false
+            }
+            if (shouldResetInitiative) {
+              allEvents ++ Seq(GameSystemEvent.ResetInitiativeEvent(userId))
+            } else {
+              allEvents
+            }
           }).getOrElse(Nil)
         }
       case _ =>
