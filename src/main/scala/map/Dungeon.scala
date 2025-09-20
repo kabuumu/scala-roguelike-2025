@@ -119,6 +119,15 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
           roomY + Dungeon.roomSize / 2
         )
 
+        // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
+        val roomCenterArea = Set(
+          roomCentre,                                    // Center
+          Point(roomCentre.x - 1, roomCentre.y),       // Left
+          Point(roomCentre.x + 1, roomCentre.y),       // Right
+          Point(roomCentre.x, roomCentre.y - 1),       // Up
+          Point(roomCentre.x, roomCentre.y + 1)        // Down
+        )
+
         // Find all points between the centre of the room and any doors within the room
         val roomPaths = for {
           roomConnection <- roomConnections(room)
@@ -133,7 +142,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
           if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
         } yield Point(pathX, pathY)
 
-        roomPaths.contains(point)
+        roomCenterArea.contains(point) || roomPaths.contains(point)
       }
 
       val roomTiles = for {
@@ -235,6 +244,45 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
   val nonKeyItems: Set[(Point, ItemReference)] = items.filterNot {
     case (_, ItemReference.YellowKey | ItemReference.BlueKey | ItemReference.RedKey) => true
     case _ => false
+  }
+  
+  /**
+   * Calculate the dungeon depth for each room based on shortest path distance from start point.
+   * Returns a map from room Point to its depth (distance from start).
+   */
+  lazy val roomDepths: Map[Point, Int] = {
+    def calculateDepthFromStart(start: Point): Map[Point, Int] = {
+      val visited = scala.collection.mutable.Set[Point]()
+      val depths = scala.collection.mutable.Map[Point, Int]()
+      val queue = scala.collection.mutable.Queue[(Point, Int)]()
+      
+      queue.enqueue((start, 0))
+      depths(start) = 0
+      visited += start
+      
+      while (queue.nonEmpty) {
+        val (currentRoom, currentDepth) = queue.dequeue()
+        
+        // Find all connected rooms from current room
+        val connectedRooms = roomConnections
+          .filter(_.originRoom == currentRoom)
+          .map(_.destinationRoom)
+          .filterNot(visited.contains)
+        
+        connectedRooms.foreach { nextRoom =>
+          if (!visited.contains(nextRoom)) {
+            visited += nextRoom
+            val nextDepth = currentDepth + 1
+            depths(nextRoom) = nextDepth
+            queue.enqueue((nextRoom, nextDepth))
+          }
+        }
+      }
+      
+      depths.toMap
+    }
+    
+    calculateDepthFromStart(startPoint)
   }
 }
 
