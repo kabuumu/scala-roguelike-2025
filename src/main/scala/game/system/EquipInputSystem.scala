@@ -10,6 +10,8 @@ object EquipInputSystem extends GameSystem {
     val (newState, newEvents) = events.foldLeft((gameState, Seq.empty[GameSystemEvent])) {
       case ((currentState, currentEvents), InputEvent(entityId, InputAction.Equip)) =>
         (currentState, currentEvents :+ EquipEvent(entityId))
+      case ((currentState, currentEvents), InputEvent(entityId, InputAction.EquipSpecific(target))) =>
+        (currentState, currentEvents :+ EquipSpecificEvent(entityId, target))
       case ((currentState, currentEvents), _) =>
         (currentState, currentEvents)
     }

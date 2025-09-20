@@ -9,6 +9,8 @@ import game.entity.Health.*
 import game.entity.Initiative.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
+import game.entity.NameComponent.name
+import game.entity.Equippable.isEquippable
 import game.system.event.GameSystemEvent.InputEvent
 import game.*
 import game.save.SaveGameSystem // Add save system import
@@ -20,6 +22,35 @@ object GameController {
   val allowedActionsPerSecond = 6
   val ticksPerSecond: Long = 1000000000l
   val frameTime: Long = ticksPerSecond / allowedActionsPerSecond
+  
+  // Unified action target for the new input system
+  sealed trait ActionTarget {
+    def entity: Entity
+    def description: String
+  }
+  
+  case class AttackTarget(entity: Entity) extends ActionTarget {
+    def description: String = {
+      val healthText = if (entity.has[Health]) {
+        s" (${entity.currentHealth}/${entity.maxHealth} HP)"
+      } else ""
+      s"Attack ${entity.name.getOrElse("Enemy")}$healthText"
+    }
+  }
+  
+  case class EquipTarget(entity: Entity) extends ActionTarget {
+    def description: String = {
+      entity.get[Equippable] match {
+        case Some(equippable) =>
+          if (equippable.slot == EquipmentSlot.Weapon) {
+            s"Equip ${equippable.itemName} (Damage bonus +${equippable.damageBonus})"
+          } else {
+            s"Equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
+          }
+        case None => s"Equip ${entity.name.getOrElse("Item")}"
+      }
+    }
+  }
 }
 
 case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
@@ -107,7 +138,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(Direction.Up) => (mainMenu.selectPrevious, None)
         case Input.Move(Direction.Down) => (mainMenu.selectNext, None)
-        case Input.UseItem | Input.Attack(_) | Input.Confirm =>
+        case Input.UseItem | Input.Attack(_) | Input.Confirm | Input.Action =>
           if (mainMenu.canConfirmCurrentSelection) {
             mainMenu.getSelectedOption match {
               case "New Game" => (UIState.Move, None)  // Just transition to Move, update() will handle creating new game
@@ -123,21 +154,6 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(direction) =>
           (UIState.Move, Some(InputAction.Move(direction)))
-        case Input.Attack(attackType) =>
-          // Melee attacks have range 1
-          val range = 1
-
-          val enemies = enemiesWithinRange(range)
-          if (enemies.nonEmpty) {
-            (UIState.ListSelect(
-              list = enemies,
-              effect = target => {
-                (UIState.Move, Some(InputAction.Attack(target)))
-              }
-            ), None)
-          } else {
-            (UIState.Move, None)
-          }
         case Input.UseItem =>
           val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(_.get[NameComponent])
           if (usableItems.nonEmpty) {
@@ -203,7 +219,24 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           )
           //Give player choice of level up perks
           (levelUpState, None)
-        case Input.Equip => (UIState.Move, Some(InputAction.Equip))
+        case Input.Action =>
+          val targets = nearbyActionTargets()
+          if (targets.nonEmpty) {
+            (UIState.ListSelect(
+              list = targets,
+              effect = target => {
+                target match {
+                  case GameController.AttackTarget(entity) =>
+                    (UIState.Move, Some(InputAction.Attack(entity)))
+                  case GameController.EquipTarget(entity) =>
+                    // Instead of InputAction.Equip, we need to target specific equipment
+                    (UIState.Move, Some(InputAction.EquipSpecific(entity)))
+                }
+              }
+            ), None)
+          } else {
+            (UIState.Move, None)
+          }
         case Input.Wait => (UIState.Move, Some(InputAction.Wait))
         case _ => (uiState, None)
       }
@@ -211,7 +244,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       input match {
         case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterateDown, None)
         case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
-        case Input.UseItem | Input.Attack(_) | Input.Confirm =>
+        case Input.UseItem | Input.Action =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
@@ -226,7 +259,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
           } else {
             (scrollSelect, None)
           }
-        case Input.UseItem | Input.Attack(_) | Input.Confirm =>
+        case Input.UseItem | Input.Action =>
           scrollSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
@@ -243,4 +276,21 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       &&
       enemyEntity.isAlive
   }.sortBy(enemyEntity => enemyEntity.position.getChebyshevDistance(gameState.playerEntity.position))
+  
+  def nearbyActionTargets(): Seq[GameController.ActionTarget] = {
+    import GameController.*
+    val playerPosition = gameState.playerEntity.position
+    val adjacentPositions = Direction.values.map(dir => playerPosition + Direction.asPoint(dir)).toSet
+    
+    // Get nearby enemies for attacking (range 1)
+    val attackTargets = enemiesWithinRange(1).map(AttackTarget.apply)
+    
+    // Get nearby equippable items
+    val equipTargets = gameState.entities
+      .filter(e => adjacentPositions.contains(e.position))
+      .filter(_.isEquippable)
+      .map(EquipTarget.apply)
+    
+    attackTargets ++ equipTargets
+  }
 }
