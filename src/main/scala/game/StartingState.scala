@@ -70,7 +70,7 @@ object StartingState {
           itemEntityIds = (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq
         ),
         Equipment(
-          armor = Some(Equippable.armor(EquipmentSlot.Armor, 3, "Chainmail Armor")),
+          armor = Some(Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor")),
           weapon = Some(Equippable.weapon(3, "Basic Sword"))
         ),
         SightMemory(),

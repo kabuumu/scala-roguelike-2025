@@ -111,7 +111,7 @@ object Items {
   def leatherHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Helmet, 2, "Leather Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 0, "Leather Helmet"),
     Hitbox(),
     Drawable(Sprites.leatherHelmetSprite)
   )
@@ -119,7 +119,7 @@ object Items {
   def ironHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Helmet, 0, "Iron Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 1, "Iron Helmet"),
     Hitbox(),
     Drawable(Sprites.ironHelmetSprite)
   )
@@ -127,7 +127,7 @@ object Items {
   def chainmailArmor(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Armor, 3, "Chainmail Armor"),
+    Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor"),
     Hitbox(),
     Drawable(Sprites.chainmailArmorSprite)
   )
@@ -144,7 +144,7 @@ object Items {
   def leatherBoots(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Boots, 1, "Leather Boots"),
+    Equippable.armor(EquipmentSlot.Boots, 0, "Leather Boots"),
     Hitbox(),
     Drawable(Sprites.leatherBootsSprite)
   )
@@ -152,7 +152,7 @@ object Items {
   def ironBoots(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Boots, 0, "Iron Boots"),
+    Equippable.armor(EquipmentSlot.Boots, 1, "Iron Boots"),
     Hitbox(),
     Drawable(Sprites.ironBootsSprite)
   )
@@ -160,7 +160,7 @@ object Items {
   def leatherGloves(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Gloves, 1, "Leather Gloves"),
+    Equippable.armor(EquipmentSlot.Gloves, 0, "Leather Gloves"),
     Hitbox(),
     Drawable(Sprites.leatherGlovesSprite)
   )
@@ -168,7 +168,7 @@ object Items {
   def ironGloves(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Gloves, 0, "Iron Gloves"),
+    Equippable.armor(EquipmentSlot.Gloves, 1, "Iron Gloves"),
     Hitbox(),
     Drawable(Sprites.ironGlovesSprite)
   )
