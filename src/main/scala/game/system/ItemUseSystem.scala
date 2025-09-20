@@ -74,7 +74,7 @@ object ItemUseSystem extends GameSystem {
                     Seq.empty
                 }
             }
-            Seq(itemEffect) ++ itemUsageEvents
+            Seq(itemEffect) ++ itemUsageEvents ++ Seq(GameSystemEvent.ResetInitiativeEvent(userId))
           }).getOrElse(Nil)
         }
       case _ =>
