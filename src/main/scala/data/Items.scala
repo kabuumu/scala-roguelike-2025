@@ -111,7 +111,7 @@ object Items {
   def leatherHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Helmet, 2, "Leather Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 1, "Leather Helmet"),
     Hitbox(),
     Drawable(Sprites.leatherHelmetSprite)
   )
@@ -119,7 +119,7 @@ object Items {
   def ironHelmet(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Helmet, 4, "Iron Helmet"),
+    Equippable.armor(EquipmentSlot.Helmet, 2, "Iron Helmet"),
     Hitbox(),
     Drawable(Sprites.ironHelmetSprite)
   )
@@ -127,7 +127,7 @@ object Items {
   def chainmailArmor(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor"),
+    Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor"),
     Hitbox(),
     Drawable(Sprites.chainmailArmorSprite)
   )
@@ -135,7 +135,7 @@ object Items {
   def plateArmor(id: String): Entity = Entity(
     id = id,
     CanPickUp(),
-    Equippable.armor(EquipmentSlot.Armor, 8, "Plate Armor"),
+    Equippable.armor(EquipmentSlot.Armor, 2, "Plate Armor"),
     Hitbox(),
     Drawable(Sprites.plateArmorSprite)
   )
@@ -187,5 +187,14 @@ object Items {
     Equippable.weapon(5, "Iron Sword"),
     Hitbox(),
     Drawable(Sprites.ironSwordSprite)
+  )
+  
+  // Generic weapon function for testing
+  def weapon(id: String, damage: Int, damageType: game.system.event.GameSystemEvent.DamageSource): Entity = Entity(
+    id = id,
+    CanPickUp(),
+    Equippable.weapon(damage, s"Weapon-$damage"),
+    Hitbox(),
+    Drawable(Sprites.basicSwordSprite)
   )
 }

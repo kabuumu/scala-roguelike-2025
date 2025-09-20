@@ -19,7 +19,7 @@ object Enemies {
       Health(25),
       Initiative(12),
       Inventory(Nil),
-      Equipment(weapon = Some(Equippable.weapon(7, "Rat Claws"))), // 1 base + 7 bonus = 8 total damage
+      Equipment(weapon = Some(Equippable.weapon(8, "Rat Claws"))), // 1 base + 8 bonus = 9 total damage
       EventMemory(),
       Drawable(Sprites.ratSprite),
       Hitbox(),
@@ -35,7 +35,7 @@ object Enemies {
       Health(18),
       Initiative(25),
       Inventory(Seq(spitAbilityId)), // Give snake the spit ability
-      Equipment(weapon = Some(Equippable.weapon(5, "Snake Fangs"))), // 1 base + 5 bonus = 6 total damage
+      Equipment(weapon = Some(Equippable.weapon(6, "Snake Fangs"))), // 1 base + 6 bonus = 7 total damage
       EventMemory(),
       Drawable(Sprites.snakeSprite),
       Hitbox(),
@@ -51,7 +51,7 @@ object Enemies {
       Health(20),
       Initiative(15),
       Inventory(Nil),
-      Equipment(weapon = Some(Equippable.weapon(5, "Slime Acid"))), // 1 base + 5 bonus = 6 total damage
+      Equipment(weapon = Some(Equippable.weapon(6, "Slime Acid"))), // 1 base + 6 bonus = 7 total damage
       EventMemory(),
       Drawable(Sprites.slimeSprite),
       Hitbox(),

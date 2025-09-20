@@ -64,13 +64,13 @@ object StartingState {
           point.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )),
         EntityTypeComponent(EntityType.Player),
-        Health(100),
+        Health(70),
         Initiative(10),
         Inventory(
           itemEntityIds = (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq
         ),
         Equipment(
-          armor = Some(Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor")),
+          armor = Some(Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor")),
           weapon = Some(Equippable.weapon(3, "Basic Sword"))
         ),
         SightMemory(),

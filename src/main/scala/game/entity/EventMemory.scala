@@ -27,7 +27,8 @@ object MemoryEvent {
     timestamp: Long,
     damage: Int,
     baseDamage: Int,
-    modifier: Int,
+    attackerBonus: Int,
+    defenderResistance: Int,
     source: String
   ) extends MemoryEvent
 
@@ -35,7 +36,8 @@ object MemoryEvent {
     timestamp: Long,
     damage: Int,
     baseDamage: Int,
-    modifier: Int,
+    attackerBonus: Int,
+    defenderResistance: Int,
     target: String
   ) extends MemoryEvent
 
