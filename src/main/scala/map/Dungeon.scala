@@ -119,6 +119,15 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
           roomY + Dungeon.roomSize / 2
         )
 
+        // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
+        val roomCenterArea = Set(
+          roomCentre,                                    // Center
+          Point(roomCentre.x - 1, roomCentre.y),       // Left
+          Point(roomCentre.x + 1, roomCentre.y),       // Right
+          Point(roomCentre.x, roomCentre.y - 1),       // Up
+          Point(roomCentre.x, roomCentre.y + 1)        // Down
+        )
+
         // Find all points between the centre of the room and any doors within the room
         val roomPaths = for {
           roomConnection <- roomConnections(room)
@@ -133,7 +142,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
           if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
         } yield Point(pathX, pathY)
 
-        roomPaths.contains(point)
+        roomCenterArea.contains(point) || roomPaths.contains(point)
       }
 
       val roomTiles = for {

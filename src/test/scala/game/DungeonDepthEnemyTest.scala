@@ -95,6 +95,36 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
     println("Depth progression test passed")
   }
   
+  test("Room centers and adjacent tiles are always walkable for enemy placement") {
+    val dungeon = MapGenerator.generateDungeon(dungeonSize = 10, lockedDoorCount = 0, itemCount = 0)
+    val movementBlocking = dungeon.walls ++ dungeon.water ++ dungeon.rocks
+    
+    // Check each room's center and orthogonal adjacent tiles
+    dungeon.roomGrid.foreach { room =>
+      val roomX = room.x * map.Dungeon.roomSize
+      val roomY = room.y * map.Dungeon.roomSize
+      val roomCenter = game.Point(
+        roomX + map.Dungeon.roomSize / 2,
+        roomY + map.Dungeon.roomSize / 2
+      )
+      
+      val centerArea = Set(
+        roomCenter,                                    // Center
+        game.Point(roomCenter.x - 1, roomCenter.y),  // Left
+        game.Point(roomCenter.x + 1, roomCenter.y),  // Right
+        game.Point(roomCenter.x, roomCenter.y - 1),  // Up
+        game.Point(roomCenter.x, roomCenter.y + 1)   // Down
+      )
+      
+      centerArea.foreach { point =>
+        assert(!movementBlocking.contains(point), 
+          s"Room center area should be walkable but found blocking tile at $point in room $room")
+      }
+    }
+    
+    println(s"Verified ${dungeon.roomGrid.size} rooms have walkable centers and adjacent tiles")
+  }
+
   test("Slimelet can be created as standalone enemy") {
     val position = game.Point(50, 50)
     val slimelet = Enemies.slimelet("test-slimelet", position)
