@@ -87,6 +87,14 @@ object Items {
     Drawable(Sprites.bowSprite)
   )
   
+  def snakeSpit(id: String): Entity = Entity(
+    id = id,
+    NameComponent("Snake Spit", "Venomous ranged attack"),
+    UsableItem(EnemyActor(4), ChargeType.InfiniteUse, GameEffect.CreateProjectile(ProjectileReference.SnakeSpit)), // Range 4, infinite use
+    Hitbox(),
+    Drawable(Sprites.projectileSprite) // Reuse projectile sprite since this is not a pickup item
+  )
+  
   def key(id: String, keyColour: KeyColour): Entity = Entity(
     id = id,
     KeyItem(keyColour),

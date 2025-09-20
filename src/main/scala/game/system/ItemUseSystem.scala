@@ -43,10 +43,14 @@ object ItemUseSystem extends GameSystem {
               }
             } yield GameSystemEvent.SpawnProjectileEvent(projectileReference, user, targetPoint)
           }
-          itemUsage <- item.chargeType match {
+        } yield {
+          val itemUsageEvents = item.chargeType match {
             case ChargeType.SingleUse =>
               // Remove item from user's inventory
-              Some(GameSystemEvent.RemoveItemEntityEvent(userId, itemEntityId))
+              Seq(GameSystemEvent.RemoveItemEntityEvent(userId, itemEntityId))
+            case ChargeType.InfiniteUse =>
+              // Keep item in inventory, no removal needed
+              Seq.empty
             case ChargeType.Ammo(requiredAmmoType) =>
               // For ammo-based items, we could implement ammo consumption logic here if needed
               val ammo = gameState.getEntity(userId).flatMap(_.inventoryItems(gameState).find(_.exists[Ammo](_.ammoType == requiredAmmoType)))
@@ -54,13 +58,14 @@ object ItemUseSystem extends GameSystem {
               ammo match {
                 case Some(ammo) =>
                   // Remove one ammo from inventory
-                  Some(GameSystemEvent.RemoveItemEntityEvent(userId, ammo.id))
+                  Seq(GameSystemEvent.RemoveItemEntityEvent(userId, ammo.id))
                 case None =>
                   // No ammo available, cannot use item
-                  None
+                  Seq.empty
               }
           }
-        } yield Seq(itemEffect, itemUsage)).getOrElse(Nil)
+          Seq(itemEffect) ++ itemUsageEvents
+        }).getOrElse(Nil)
       case _ =>
         Nil
     }

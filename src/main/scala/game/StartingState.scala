@@ -28,6 +28,11 @@ object StartingState {
     Items.chainmailArmor("player-starting-armor")
   )
 
+  // Create snake spit abilities for snakes
+  val snakeSpitAbilities: Map[Int, Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.collect {
+    case (_, index) if index % 3 == 1 => index -> Items.snakeSpit(s"Snake-$index-spit")
+  }.toMap
+
   val enemies: Set[Entity] = (dungeon.roomGrid - dungeon.startPoint).zipWithIndex.map {
     case (point, index) if index % 3 == 0 =>
       val position = Point(
@@ -40,7 +45,7 @@ object StartingState {
         point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         point.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      Enemies.snake(s"Snake $index", position)
+      Enemies.snake(s"Snake $index", position, s"Snake-$index-spit")
     case (point, index) =>
       val position = Point(
         point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
@@ -120,7 +125,7 @@ object StartingState {
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors ++ snakeSpitAbilities.values,
     dungeon = dungeon
   )
 }

@@ -29,6 +29,12 @@ object SpawnProjectileSystem extends GameSystem {
               creator.position,
               targetPoint,
               if (gameState.getEntity(creator.id).exists(_.entityType == EntityType.Player)) EntityType.Enemy else EntityType.Player)
+          case SnakeSpit =>
+            Projectiles.snakeSpitProjectile(
+              creator.id,
+              creator.position,
+              targetPoint,
+              if (gameState.getEntity(creator.id).exists(_.entityType == EntityType.Player)) EntityType.Enemy else EntityType.Player)
         }
         
         currentState.add(projectile)
