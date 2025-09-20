@@ -23,7 +23,7 @@ object AttackSystem extends GameSystem {
             val totalDamage = baseDamage + weaponDamageBonus
             
             val newGameState = currentState.updateEntity(attackingEntityId, _.resetInitiative())
-            (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, totalDamage))
+            (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, totalDamage, GameSystemEvent.DamageSource.Melee))
           case None =>
             // Attacking entity doesn't exist - shouldn't happen, but handle gracefully
             (currentState, currentEvents)
