@@ -18,5 +18,13 @@ object Hitbox {
         hitbox <- entity.get[Hitbox].toSet
         hitboxPoint <- hitbox.points
       } yield hitboxPoint + movement.position
+
+    // Check if another entity is within range of this entity's hitbox
+    def isWithinRangeOfHitbox(other: Entity, range: Int): Boolean = {
+      other.get[Movement] match {
+        case Some(otherMovement) => otherMovement.position.isWithinRangeOfAny(entity.hitbox, range)
+        case None => false
+      }
+    }
   }
 }

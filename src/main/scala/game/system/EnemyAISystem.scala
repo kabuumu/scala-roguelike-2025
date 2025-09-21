@@ -4,6 +4,7 @@ import game.entity.EntityType.*
 import game.entity.Initiative.*
 import game.entity.Movement.position
 import game.entity.{Entity, EntityType, UsableItem, UseContext, Hitbox}
+import game.entity.Hitbox.isWithinRangeOfHitbox
 import game.entity.Inventory.usableItems
 import game.entity.Targeting.EnemyActor
 import game.system.event.GameSystemEvent.{GameSystemEvent, InputEvent}
@@ -44,7 +45,7 @@ object EnemyAISystem extends GameSystem {
     // Boss strategy: Use ranged if far, melee if close for maximum damage
     if (distanceToTarget <= meleeRange + 1) {
       // Close enough for melee - prefer high damage melee attack
-      if (enemy.position.isWithinRangeOf(target.position, meleeRange)) {
+      if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
         InputEvent(enemy.id, InputAction.Attack(target))
       } else {
         // Move closer for melee attack using boss-sized pathfinding
@@ -64,7 +65,7 @@ object EnemyAISystem extends GameSystem {
             case EnemyActor(r) => r
             case _ => 1
           }
-          if (enemy.position.isWithinRangeOf(target.position, range)) {
+          if (enemy.isWithinRangeOfHitbox(target, range)) {
             // Use ranged ability
             InputEvent(enemy.id, InputAction.UseItem(rangedAbility.id, usableItem, UseContext(enemy.id, Some(target))))
           } else {
@@ -117,7 +118,7 @@ object EnemyAISystem extends GameSystem {
                   case EnemyActor(r) => r
                   case _ => 1
                 }
-                if (enemy.position.isWithinRangeOf(target.position, range)) {
+                if (enemy.isWithinRangeOfHitbox(target, range)) {
                   // Use ranged ability
                   InputEvent(enemy.id, InputAction.UseItem(rangedAbility.id, usableItem, UseContext(enemy.id, Some(target))))
                 } else {
@@ -132,7 +133,7 @@ object EnemyAISystem extends GameSystem {
               case None =>
                 // No ranged abilities, use melee
                 val meleeRange = 1
-                if (enemy.position.isWithinRangeOf(target.position, meleeRange)) {
+                if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
                   InputEvent(enemy.id, InputAction.Attack(target))
                 } else {
                   Pathfinder.getNextStep(enemy.position, target.position, gameState) match {

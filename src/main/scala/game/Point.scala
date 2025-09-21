@@ -11,6 +11,10 @@ case class Point(x: Int, y: Int) {
   def isWithinRangeOf(otherPoint: Point, range: Int): Boolean =
     getChebyshevDistance(otherPoint) <= range
 
+  // Check if this point is within range of any point in the given set of points (e.g., entity hitbox)
+  def isWithinRangeOfAny(otherPoints: Set[Point], range: Int): Boolean =
+    otherPoints.exists(point => isWithinRangeOf(point, range))
+
   lazy val neighbors: Seq[Point] = Seq(
     Point(x + 1, y),
     Point(x - 1, y),
