@@ -43,7 +43,8 @@ object EnemyAISystem extends GameSystem {
     val meleeRange = 1
     
     // Boss strategy: Use ranged if far, melee if close for maximum damage
-    if (distanceToTarget <= meleeRange + 1) {
+    // Boss prefers melee (higher damage) within range + 3 for more aggressive behavior
+    if (distanceToTarget <= meleeRange + 3) {
       // Close enough for melee - prefer high damage melee attack
       if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
         InputEvent(enemy.id, InputAction.Attack(target))

@@ -400,8 +400,10 @@ object Elements {
         // For multi-tile entities: center on entity and position at bottom
         val entityWidth = hitboxPoints.map(_.x).max + 1
         val entityHeight = hitboxPoints.map(_.y).max + 1
-        val centeredX = xPosition * spriteScale + uiXOffset + (entityWidth * spriteScale / 2) - (barWidth / 2)
-        val bottomY = yPosition * spriteScale + uiYOffset + (entityHeight * spriteScale) + (spriteScale / 8)
+        
+        // Special positioning for boss: move up and to the left
+        val centeredX = xPosition * spriteScale + uiXOffset + (entityWidth * spriteScale / 2) - (barWidth / 2) - (spriteScale / 4) // Move left by 1/4 sprite
+        val bottomY = yPosition * spriteScale + uiYOffset + (entityHeight * spriteScale) - (spriteScale / 4) // Move up by 1/4 sprite
         (centeredX, bottomY)
       } else {
         // For single-tile entities: use original positioning (centered on sprite, middle of sprite)

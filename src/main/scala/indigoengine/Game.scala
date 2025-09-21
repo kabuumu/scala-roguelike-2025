@@ -218,7 +218,31 @@ object Game extends IndigoSandbox[Unit, GameController] {
             .moveTo(pos.x * spriteScale, pos.y * spriteScale)
         }
 
-        line ++ cursorSprites
+        // Draw red highlight boxes for multi-tile entities
+        val redHighlights = optTargetEntity match {
+          case Some(entity) =>
+            import game.entity.Hitbox.*
+            entity.get[game.entity.Hitbox] match {
+              case Some(hitbox) if hitbox.points.size > 1 =>
+                // Multi-tile entity: draw red box for each hitbox point
+                hitbox.points.map { hitboxPoint =>
+                  val highlightPos = game.Point(cursorX + hitboxPoint.x, cursorY + hitboxPoint.y)
+                  Shape.Box(
+                    Rectangle(
+                      Point(highlightPos.x * spriteScale, highlightPos.y * spriteScale),
+                      Size(spriteScale)
+                    ),
+                    Fill.Color(RGBA.Red.withAlpha(0.5f))
+                  )
+                }
+              case _ =>
+                Set.empty
+            }
+          case None =>
+            Set.empty
+        }
+
+        line ++ cursorSprites ++ redHighlights
     }
   }
 }
