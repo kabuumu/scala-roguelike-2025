@@ -43,6 +43,7 @@ object StartingState {
      * Examples: depth 1 -> 1 slimelet, depth 2 -> 2 slimelets, etc.
      */
     def enemiesForDepth(depth: Int): EnemyGroup = depth match {
+      case d if d == Int.MaxValue => EnemyGroup(Seq(EnemyReference.Boss)) // Boss room - check first!
       case 1 => EnemyGroup(Seq(EnemyReference.Slimelet))
       case 2 => EnemyGroup(Seq(EnemyReference.Slimelet, EnemyReference.Slimelet))
       case 3 => EnemyGroup(Seq(EnemyReference.Slime))
@@ -51,7 +52,6 @@ object StartingState {
       case 6 => EnemyGroup(Seq(EnemyReference.Snake))
       case d if d >= 7 && d % 2 == 1 => EnemyGroup(Seq(EnemyReference.Rat, EnemyReference.Rat)) // Multiple rats
       case d if d >= 8 && d % 2 == 0 => EnemyGroup(Seq(EnemyReference.Snake, EnemyReference.Snake)) // Multiple snakes
-      case d if d == Int.MaxValue => EnemyGroup(Seq(EnemyReference.Boss)) // Boss room
       case _ => EnemyGroup(Seq(EnemyReference.Slimelet)) // Fallback for depth 0 or unexpected values
     }
     
