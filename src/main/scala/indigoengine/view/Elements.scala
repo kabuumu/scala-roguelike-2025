@@ -389,19 +389,26 @@ object Elements {
       val currentHealth = enemyEntity.currentHealth
       val maxHealth = enemyEntity.maxHealth
 
-      // Get entity size from hitbox for proper positioning
-      val hitboxPoints = enemyEntity.get[game.entity.Hitbox].map(_.points).getOrElse(Set(game.Point(0, 0)))
-      val entityWidth = if (hitboxPoints.nonEmpty) hitboxPoints.map(_.x).max + 1 else 1
-      val entityHeight = if (hitboxPoints.nonEmpty) hitboxPoints.map(_.y).max + 1 else 1
-
       val barWidth = spriteScale // Total width of the health bar
       val barHeight = spriteScale / 5 // Height of the health bar
-      
-      // Center horizontally on the entity (middle of its width)
-      val xOffset = xPosition * spriteScale + uiXOffset + (entityWidth * spriteScale / 2) - (barWidth / 2)
-      
-      // Position at bottom of entity (below the lowest sprite)
-      val yOffset = yPosition * spriteScale + uiYOffset + (entityHeight * spriteScale) + (spriteScale / 8)
+
+      // Check if this is a multi-tile entity (more than just the default (0,0) hitbox point)
+      val hitboxPoints = enemyEntity.get[game.entity.Hitbox].map(_.points).getOrElse(Set(game.Point(0, 0)))
+      val isMultiTile = hitboxPoints.size > 1
+
+      val (xOffset, yOffset) = if (isMultiTile) {
+        // For multi-tile entities: center on entity and position at bottom
+        val entityWidth = hitboxPoints.map(_.x).max + 1
+        val entityHeight = hitboxPoints.map(_.y).max + 1
+        val centeredX = xPosition * spriteScale + uiXOffset + (entityWidth * spriteScale / 2) - (barWidth / 2)
+        val bottomY = yPosition * spriteScale + uiYOffset + (entityHeight * spriteScale) + (spriteScale / 8)
+        (centeredX, bottomY)
+      } else {
+        // For single-tile entities: use original positioning (centered on sprite, middle of sprite)
+        val originalX = xPosition * spriteScale + uiXOffset - (spriteScale / 2)
+        val originalY = yPosition * spriteScale + uiYOffset + (spriteScale / 2)
+        (originalX, originalY)
+      }
 
       val filledWidth = if (maxHealth > 0) (currentHealth * barWidth) / maxHealth else 0
 
