@@ -11,7 +11,7 @@ import map.{Dungeon, MapGenerator}
 
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
+  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 4, lockedDoorCount = 0, itemCount = 0)
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(

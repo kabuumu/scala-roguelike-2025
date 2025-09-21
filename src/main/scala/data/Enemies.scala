@@ -111,7 +111,12 @@ object Enemies {
       Inventory(Seq(rangedAbilityId)), // Boss has ranged ability
       Equipment(weapon = Some(Equippable.weapon(15, "Boss Claws"))), // High damage melee attack
       EventMemory(),
-      Drawable(Sprites.enemySprite), // For now, use regular enemy sprite (will be scaled in rendering)
+      Drawable(Set(
+        Point(0, 0) -> Sprites.bossSpriteTL,
+        Point(1, 0) -> Sprites.bossSpriteTR,
+        Point(0, 1) -> Sprites.bossSpriteBL,
+        Point(1, 1) -> Sprites.bossSpriteBR
+      )),
       Hitbox(points = Set(Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1))), // 2x2 hitbox
       DeathEvents(Seq(GiveExperience(experienceForLevel(5)))) // High experience reward
     )
