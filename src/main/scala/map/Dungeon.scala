@@ -12,6 +12,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    startPoint: Point = Point(0, 0),
                    endpoint: Option[Point] = None,
                    items: Set[(Point, ItemReference)] = Set.empty,
+                   hasBossRoom: Boolean = false,
                    testMode: Boolean = false,
                    seed: Long = System.currentTimeMillis()) {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {

@@ -8,6 +8,10 @@ import scala.collection.mutable
 
 object Pathfinder {
   def findPath(start: Point, end: Point, blockers: Seq[Point]): Seq[Point] = {
+    findPathWithSize(start, end, blockers, entitySize = Point(1, 1))
+  }
+
+  def findPathWithSize(start: Point, end: Point, blockers: Seq[Point], entitySize: Point): Seq[Point] = {
     def heuristic(a: Point, b: Point): Int = Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
     case class Node(point: Point, g: Int, f: Int, parent: Option[Node])
@@ -16,6 +20,16 @@ object Pathfinder {
 
     val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, end), None))
     val closedSet = HashSet.empty[Point]
+
+    // Check if all tiles for an entity of given size at position are clear
+    def isPositionValid(position: Point): Boolean = {
+      val entityTiles = for {
+        dx <- 0 until entitySize.x
+        dy <- 0 until entitySize.y
+      } yield Point(position.x + dx, position.y + dy)
+      
+      entityTiles.forall(tile => !blockers.contains(tile))
+    }
 
     def reconstructPath(node: Node): Seq[Point] = {
       @tailrec
@@ -34,7 +48,9 @@ object Pathfinder {
       if (current.point == end) return reconstructPath(current)
 
       val newClosedSet = closedSet + current.point
-      val neighbors = current.point.neighbors.filterNot(blockers.contains).filterNot(newClosedSet.contains)
+      val neighbors = current.point.neighbors
+        .filter(isPositionValid) // Use the new validation that checks entity size
+        .filterNot(newClosedSet.contains)
 
       neighbors.foreach { neighbor =>
         val tentativeG = current.g + 1
@@ -51,10 +67,15 @@ object Pathfinder {
   }
 
   def getNextStep(startPosition: Point, targetPosition: Point, gameState: GameState): Option[Direction] = {
-    val path = Pathfinder.findPath(
+    getNextStepWithSize(startPosition, targetPosition, gameState, entitySize = Point(1, 1))
+  }
+
+  def getNextStepWithSize(startPosition: Point, targetPosition: Point, gameState: GameState, entitySize: Point): Option[Direction] = {
+    val path = Pathfinder.findPathWithSize(
       startPosition,
       targetPosition,
-      (gameState.movementBlockingPoints - targetPosition).toSeq
+      (gameState.movementBlockingPoints - targetPosition).toSeq,
+      entitySize
     )
 
     path.drop(1).headOption match {

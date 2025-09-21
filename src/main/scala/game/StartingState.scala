@@ -51,6 +51,7 @@ object StartingState {
       case 6 => EnemyGroup(Seq(EnemyReference.Snake))
       case d if d >= 7 && d % 2 == 1 => EnemyGroup(Seq(EnemyReference.Rat, EnemyReference.Rat)) // Multiple rats
       case d if d >= 8 && d % 2 == 0 => EnemyGroup(Seq(EnemyReference.Snake, EnemyReference.Snake)) // Multiple snakes
+      case d if d == Int.MaxValue => EnemyGroup(Seq(EnemyReference.Boss)) // Boss room
       case _ => EnemyGroup(Seq(EnemyReference.Slimelet)) // Fallback for depth 0 or unexpected values
     }
     
@@ -78,14 +79,20 @@ object StartingState {
             Enemies.snake(enemyId, position, spitId)
           case EnemyReference.Slime => Enemies.slime(enemyId, position)
           case EnemyReference.Slimelet => Enemies.slimelet(enemyId, position)
+          case EnemyReference.Boss => 
+            val bossBlastId = s"$enemyId-blast"
+            Enemies.boss(enemyId, position, bossBlastId)
         }
       }
       
-      // Create snake spit abilities for any snakes
+      // Create snake spit abilities for any snakes and boss blast abilities for bosses
       val spitAbilities = enemies.collect {
         case snake if snake.id.contains("Snake") =>
           val spitId = s"${snake.id}-spit"
           spitId -> Items.snakeSpit(spitId)
+        case boss if boss.id.contains("Boss") =>
+          val blastId = s"${boss.id}-blast"
+          blastId -> Items.bossBlast(blastId)
       }.toMap
       
       (enemies, spitAbilities)
@@ -98,8 +105,14 @@ object StartingState {
     val roomDepths = dungeon.roomDepths
     
     val enemiesAndAbilities = nonStartRooms.zipWithIndex.map { case (roomPoint, index) =>
-      val depth = roomDepths.getOrElse(roomPoint, 1) // Default to depth 1 if not found
-      EnemyGeneration.createEnemiesForRoom(roomPoint, depth, index)
+      // If this is the endpoint room and we have a boss room, place boss instead of regular enemies
+      if (dungeon.hasBossRoom && dungeon.endpoint.contains(roomPoint)) {
+        // Place boss in endpoint room
+        EnemyGeneration.createEnemiesForRoom(roomPoint, Int.MaxValue, index) // Use max depth to trigger boss placement
+      } else {
+        val depth = roomDepths.getOrElse(roomPoint, 1) // Default to depth 1 if not found
+        EnemyGeneration.createEnemiesForRoom(roomPoint, depth, index)
+      }
     }
     
     val allEnemies = enemiesAndAbilities.flatMap(_._1)

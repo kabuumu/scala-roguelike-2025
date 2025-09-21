@@ -10,6 +10,7 @@ object MapGenerator {
       new EndPointMutator(dungeonSize),
       new KeyLockMutator(lockedDoorCount, dungeonSize),
       new TreasureRoomMutator(itemCount, dungeonSize),
+      new BossRoomMutator(dungeonSize)
     )
 
     @tailrec
@@ -28,6 +29,7 @@ object MapGenerator {
           && dungeon.nonKeyItems.size == itemCount
 //          && dungeon.dungeonPath.size == dungeonPathSize
           && dungeon.roomGrid.size == dungeonSize
+          && dungeon.hasBossRoom
       ) match {
         case Some(completedDungeon) =>
           completedDungeon

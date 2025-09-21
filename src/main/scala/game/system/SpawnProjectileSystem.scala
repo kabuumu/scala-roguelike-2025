@@ -35,6 +35,12 @@ object SpawnProjectileSystem extends GameSystem {
               creator.position,
               targetPoint,
               if (gameState.getEntity(creator.id).exists(_.entityType == EntityType.Player)) EntityType.Enemy else EntityType.Player)
+          case BossBlast =>
+            Projectiles.bossBlastProjectile(
+              creator.id,
+              creator.position,
+              targetPoint,
+              if (gameState.getEntity(creator.id).exists(_.entityType == EntityType.Player)) EntityType.Enemy else EntityType.Player)
         }
         
         currentState.add(projectile)

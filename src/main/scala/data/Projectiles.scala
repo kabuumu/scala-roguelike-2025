@@ -9,6 +9,7 @@ object Projectiles {
     case Arrow
     case Fireball
     case SnakeSpit
+    case BossBlast
   
   def arrowProjectile(creatorId: String, startingPosition: game.Point, targetPoint: game.Point, targetType: EntityType): Entity = {
     Entity(
@@ -47,6 +48,18 @@ object Projectiles {
       EntityTypeComponent(EntityType.Projectile),
       Drawable(Sprites.projectileSprite),
       Collision(damage = 6, persistent = false, targetType, creatorId), // Same damage as original snake weapon
+      Hitbox()
+    )
+  }
+
+  def bossBlastProjectile(creatorId: String, startingPosition: game.Point, targetPoint: game.Point, targetType: EntityType): Entity = {
+    Entity(
+      id = s"Projectile-${System.nanoTime()}",
+      Movement(position = startingPosition),
+      game.entity.Projectile(startingPosition, targetPoint),
+      EntityTypeComponent(EntityType.Projectile),
+      Drawable(Sprites.projectileSprite),
+      Collision(damage = 8, persistent = false, targetType, creatorId), // Boss ranged attack - less than melee (15)
       Hitbox()
     )
   }
