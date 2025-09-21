@@ -381,6 +381,7 @@ object Elements {
     import game.entity.EntityType.*
     import game.entity.Health.*
     import game.entity.Movement.*
+    import game.entity.Hitbox.*
 
     if (enemyEntity.entityType == game.entity.EntityType.Enemy) {
       val game.Point(xPosition, yPosition) = enemyEntity.position
@@ -388,10 +389,19 @@ object Elements {
       val currentHealth = enemyEntity.currentHealth
       val maxHealth = enemyEntity.maxHealth
 
+      // Get entity size from hitbox for proper positioning
+      val hitboxPoints = enemyEntity.get[game.entity.Hitbox].map(_.points).getOrElse(Set(game.Point(0, 0)))
+      val entityWidth = if (hitboxPoints.nonEmpty) hitboxPoints.map(_.x).max + 1 else 1
+      val entityHeight = if (hitboxPoints.nonEmpty) hitboxPoints.map(_.y).max + 1 else 1
+
       val barWidth = spriteScale // Total width of the health bar
       val barHeight = spriteScale / 5 // Height of the health bar
-      val xOffset = xPosition * spriteScale + uiXOffset - (spriteScale / 2) // X position of the bar
-      val yOffset = yPosition * spriteScale + uiYOffset + (spriteScale / 2)// Y position of the bar
+      
+      // Center horizontally on the entity (middle of its width)
+      val xOffset = xPosition * spriteScale + uiXOffset + (entityWidth * spriteScale / 2) - (barWidth / 2)
+      
+      // Position at bottom of entity (below the lowest sprite)
+      val yOffset = yPosition * spriteScale + uiYOffset + (entityHeight * spriteScale) + (spriteScale / 8)
 
       val filledWidth = if (maxHealth > 0) (currentHealth * barWidth) / maxHealth else 0
 
