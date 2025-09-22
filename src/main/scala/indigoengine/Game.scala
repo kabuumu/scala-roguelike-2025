@@ -103,6 +103,13 @@ object Game extends IndigoSandbox[Unit, GameController] {
             Layer.Content(mainMenu(model))
           )
         )
+      case gameOver: UIState.GameOver =>
+        // Render game over screen
+        Outcome(
+          SceneUpdateFragment(
+            Layer.Content(gameOverScreen(model, gameOver.player))
+          )
+        )
       case _ =>
         // Render normal game
         val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))

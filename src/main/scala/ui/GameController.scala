@@ -122,6 +122,11 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         action => InputEvent(gameState.playerEntity.id, action)
       ).toSeq)
 
+      // Check for player death and transition to GameOver state
+      if (newGameState.playerEntity.isDead && !uiState.isInstanceOf[UIState.GameOver]) {
+        return GameController(UIState.GameOver(newGameState.playerEntity), newGameState, currentTime)
+      }
+
       val newUpdateTime = if (
         newGameState.drawableChanges != gameState.drawableChanges
           || newUiState != uiState
@@ -263,6 +268,13 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Input.UseItem | Input.Action =>
           scrollSelect.action
         case Input.Cancel => (UIState.Move, None)
+        case _ => (uiState, None)
+      }
+    case _: UIState.GameOver =>
+      input match {
+        case Input.UseItem | Input.Attack(_) | Input.Confirm | Input.Action =>
+          // Return to main menu on action key press
+          (UIState.MainMenu(), None)
         case _ => (uiState, None)
       }
 
