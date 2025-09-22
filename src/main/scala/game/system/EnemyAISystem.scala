@@ -39,26 +39,17 @@ object EnemyAISystem extends GameSystem {
       }
     }
     
-    val distanceToTarget = enemy.position.getChebyshevDistance(target.position).toInt
     val meleeRange = 1
     
-    // Boss strategy: Use ranged if far, melee if close for maximum damage
-    // Boss prefers melee (higher damage) within range + 3 for more aggressive behavior
-    if (distanceToTarget <= meleeRange + 3) {
-      // Close enough for melee - prefer high damage melee attack
-      if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
-        InputEvent(enemy.id, InputAction.Attack(target))
-      } else {
-        // Move closer for melee attack using boss-sized pathfinding
-        Pathfinder.getNextStepWithSize(enemy.position, target.position, gameState, Point(2, 2)) match {
-          case Some(nextStep) =>
-            InputEvent(enemy.id, InputAction.Move(nextStep))
-          case None =>
-            InputEvent(enemy.id, InputAction.Wait)
-        }
-      }
+    // Simplified boss strategy: Always prefer melee for maximum damage
+    // Check if boss can attack in melee range
+    if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
+      // In melee range - attack!
+      InputEvent(enemy.id, InputAction.Attack(target))
     } else {
-      // Far away - use ranged attack
+      // Not in melee range - check if we have ranged abilities to use while closing distance
+      val distanceToTarget = enemy.position.getChebyshevDistance(target.position).toInt
+      
       rangedAbilities.headOption match {
         case Some(rangedAbility) =>
           val usableItem = rangedAbility.get[UsableItem].get
@@ -66,11 +57,11 @@ object EnemyAISystem extends GameSystem {
             case EnemyActor(r) => r
             case _ => 1
           }
-          if (enemy.isWithinRangeOfHitbox(target, range)) {
-            // Use ranged ability
+          // Use ranged attack if in range and far enough away that it's worth it
+          if (enemy.isWithinRangeOfHitbox(target, range) && distanceToTarget > meleeRange + 1) {
             InputEvent(enemy.id, InputAction.UseItem(rangedAbility.id, usableItem, UseContext(enemy.id, Some(target))))
           } else {
-            // Move closer to get in ranged attack range
+            // Move closer for melee attack using boss-sized pathfinding
             Pathfinder.getNextStepWithSize(enemy.position, target.position, gameState, Point(2, 2)) match {
               case Some(nextStep) =>
                 InputEvent(enemy.id, InputAction.Move(nextStep))
@@ -79,7 +70,7 @@ object EnemyAISystem extends GameSystem {
             }
           }
         case None =>
-          // No ranged abilities, move closer for melee
+          // No ranged abilities, always move closer for melee
           Pathfinder.getNextStepWithSize(enemy.position, target.position, gameState, Point(2, 2)) match {
             case Some(nextStep) =>
               InputEvent(enemy.id, InputAction.Move(nextStep))
