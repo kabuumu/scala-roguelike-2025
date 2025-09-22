@@ -596,12 +596,13 @@ object Elements {
       enemyStats.zipWithIndex.flatMap { case ((enemyType, count), index) =>
         val spriteY = enemiesHeaderY + spriteScale + (index * spriteScale)
         val sprite = enemyType match {
-          case "Enemy" => Sprites.enemySprite
           case "Rat" => Sprites.ratSprite  
           case "Slimelet" => Sprites.slimeletSprite
-          case "DarkElf" => Sprites.enemySprite  // Use generic enemy sprite
+          case "Slime" => Sprites.slimeSprite
+          case "Snake" => Sprites.snakeSprite
           case "Boss" => Sprites.bossSpriteTL  // Use top-left boss sprite
-          case _ => Sprites.enemySprite
+          case "Enemy" => Sprites.enemySprite  // Fallback for generic enemies
+          case _ => Sprites.enemySprite  // Default fallback
         }
         
         Seq(

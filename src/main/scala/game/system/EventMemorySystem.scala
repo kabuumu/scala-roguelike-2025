@@ -102,9 +102,23 @@ object EventMemorySystem extends GameSystem {
           case Some(markedForDeath) =>
             markedForDeath.deathDetails.killerId match {
               case Some(killerEntityId) =>
+                // Determine enemy type from sprite instead of generic EntityType
+                val enemyTypeName = defeatedEnemy.get[game.entity.Drawable] match {
+                  case Some(drawable) =>
+                    drawable.sprites.headOption.map(_._2) match {
+                      case Some(sprite) if sprite == data.Sprites.ratSprite => "Rat"
+                      case Some(sprite) if sprite == data.Sprites.slimeletSprite => "Slimelet"
+                      case Some(sprite) if sprite == data.Sprites.slimeSprite => "Slime"
+                      case Some(sprite) if sprite == data.Sprites.snakeSprite => "Snake"
+                      case Some(sprite) if sprite == data.Sprites.bossSpriteTL => "Boss"
+                      case _ => "Enemy"
+                    }
+                  case None => "Enemy"
+                }
+                
                 val memoryEvent = MemoryEvent.EnemyDefeated(
                   timestamp = currentTime,
-                  enemyType = defeatedEnemy.entityType.toString,
+                  enemyType = enemyTypeName,
                   method = "combat" // Could be enhanced to track specific methods
                 )
                 
