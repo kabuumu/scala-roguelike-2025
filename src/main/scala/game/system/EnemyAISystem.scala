@@ -42,12 +42,21 @@ object EnemyAISystem extends GameSystem {
           InputEvent(enemy.id, InputAction.Move(nextStep))
         case None =>
           // Pathfinding failed - try simple directional movement as fallback
-          val direction = if (target.position.x > enemy.position.x) Direction.Right
-                         else if (target.position.x < enemy.position.x) Direction.Left
-                         else if (target.position.y > enemy.position.y) Direction.Down
-                         else Direction.Up
+          // Try all four directions to see which ones work
+          val possibleDirections = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
+          val targetPosition = target.position
+          val bossPosition = enemy.position
           
-          InputEvent(enemy.id, InputAction.Move(direction))
+          // Choose direction that gets us closer to target
+          val bestDirection = if (Math.abs(targetPosition.x - bossPosition.x) > Math.abs(targetPosition.y - bossPosition.y)) {
+            // Move horizontally
+            if (targetPosition.x > bossPosition.x) Direction.Right else Direction.Left
+          } else {
+            // Move vertically
+            if (targetPosition.y > bossPosition.y) Direction.Down else Direction.Up
+          }
+          
+          InputEvent(enemy.id, InputAction.Move(bestDirection))
       }
     }
   }

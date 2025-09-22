@@ -29,6 +29,7 @@ object Pathfinder {
         dy <- 0 until entitySize.y
       } yield Point(position.x + dx, position.y + dy)
       
+      // All tiles must be clear (not in blockers list) for position to be valid
       !entityTiles.exists(tile => blockers.contains(tile))
     }
 
@@ -78,20 +79,24 @@ object Pathfinder {
     // Find the target entity to get its hitbox
     val targetEntity = gameState.entities.find(_.position == targetPosition)
     
-    // Calculate all tiles occupied by the moving entity to exclude them from blockers
+    // Calculate all tiles that would be occupied by the moving entity at the start position
     val movingEntityTiles = movingEntity match {
       case Some(entity) =>
         entity.get[game.entity.Hitbox] match {
           case Some(hitbox) =>
-            // Multi-tile entity: include all hitbox points
+            // Multi-tile entity: include all hitbox points at current position
             hitbox.points.map(hitboxPoint => Point(startPosition.x + hitboxPoint.x, startPosition.y + hitboxPoint.y))
           case None =>
             // Single-tile entity: just the start position
             Set(startPosition)
         }
       case None =>
-        // No entity at start position (shouldn't happen), just use the position
-        Set(startPosition)
+        // Fallback: calculate tiles based on entity size parameter
+        val tiles = for {
+          dx <- 0 until entitySize.x
+          dy <- 0 until entitySize.y
+        } yield Point(startPosition.x + dx, startPosition.y + dy)
+        tiles.toSet
     }
     
     // Calculate all tiles occupied by the target entity
