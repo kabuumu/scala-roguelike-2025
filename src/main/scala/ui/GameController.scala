@@ -73,6 +73,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
         case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond =>
           uiState match {
             case _: UIState.MainMenu => handleInput(input)  // MainMenu doesn't need ready check
+            case _: UIState.GameOver => handleInput(input)  // GameOver doesn't need ready check
             case _ if gameState.playerEntity.isReady => handleInput(input)  // Other states need ready check
             case _ => (uiState, None)
           }
