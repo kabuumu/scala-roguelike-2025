@@ -94,3 +94,16 @@ class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) ex
     }
   }
 }
+
+class BossRoomMutator(targetRoomCount: Int) extends DungeonMutator {
+  override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
+    // Only create boss room once the dungeon is at target size and has an endpoint
+    if (currentDungeon.roomGrid.size == targetRoomCount && currentDungeon.endpoint.isDefined) {
+      // Boss room is simply the endpoint room - no changes needed to dungeon structure
+      // The boss will be placed in the endpoint room during enemy generation
+      Set(currentDungeon.copy(hasBossRoom = true))
+    } else {
+      Set.empty
+    }
+  }
+}

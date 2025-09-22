@@ -150,21 +150,21 @@ object Game extends IndigoSandbox[Unit, GameController] {
   }
 
   private def drawUIElements(spriteSheet: Graphic[?], model: GameController): Seq[SceneNode] = {
-    val optCursorPosition = model.uiState match {
+    val optCursorTargetInfo = model.uiState match {
       case UIState.ScrollSelect(cursor, _) =>
-        Some(cursor)
+        Some((cursor, None)) // Position only, no entity
       case list: UIState.ListSelect[_] if list.list.nonEmpty =>
         val selectedItem = list.list(list.index)
         selectedItem match {
           // Handle ActionTarget from unified action system
           case actionTarget: ui.GameController.ActionTarget =>
-            Some(actionTarget.entity.position)
+            Some((actionTarget.entity.position, Some(actionTarget.entity)))
           // Handle direct Entity objects (for attack lists, etc.)
           case entity: game.entity.Entity =>
             // Only show cursor for entities that have meaningful map positions (enemies, not inventory items)
             import game.entity.UsableItem
             if (!entity.has[UsableItem]) {
-              Some(entity.position)
+              Some((entity.position, Some(entity)))
             } else {
               None
             }
@@ -177,8 +177,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
 
     val playerPosition = model.gameState.playerEntity.position
 
-    optCursorPosition.toSeq.flatMap {
-      case game.Point(cursorX, cursorY) =>
+    optCursorTargetInfo.toSeq.flatMap {
+      case (game.Point(cursorX, cursorY), optTargetEntity) =>
         val line = LineOfSight.getBresenhamLine(playerPosition, game.Point(cursorX, cursorY)).dropRight(1)
           .map {
             point =>
@@ -191,14 +191,58 @@ object Game extends IndigoSandbox[Unit, GameController] {
               )
           }
 
+        // Get cursor positions based on entity hitbox or single position
+        val cursorPositions = optTargetEntity match {
+          case Some(entity) =>
+            // For entities with hitboxes, highlight all hitbox points
+            import game.entity.Hitbox.*
+            entity.get[game.entity.Hitbox] match {
+              case Some(hitbox) =>
+                hitbox.points.map(hitboxPoint => 
+                  game.Point(cursorX + hitboxPoint.x, cursorY + hitboxPoint.y)
+                )
+              case None =>
+                Set(game.Point(cursorX, cursorY))
+            }
+          case None =>
+            // For scroll select or non-entity targets, just use the position
+            Set(game.Point(cursorX, cursorY))
+        }
 
         val cursorSprite = Sprites.cursorSprite
 
-        val sprite = spriteSheet
-          .fromSprite(cursorSprite)
-          .moveTo(cursorX * spriteScale, cursorY * spriteScale)
+        // Draw cursor sprite at each position
+        val cursorSprites = cursorPositions.map { pos =>
+          spriteSheet
+            .fromSprite(cursorSprite)
+            .moveTo(pos.x * spriteScale, pos.y * spriteScale)
+        }
 
-        line :+ sprite
+        // Draw red highlight boxes for multi-tile entities
+        val redHighlights = optTargetEntity match {
+          case Some(entity) =>
+            import game.entity.Hitbox.*
+            entity.get[game.entity.Hitbox] match {
+              case Some(hitbox) if hitbox.points.size > 1 =>
+                // Multi-tile entity: draw red box for each hitbox point
+                hitbox.points.map { hitboxPoint =>
+                  val highlightPos = game.Point(cursorX + hitboxPoint.x, cursorY + hitboxPoint.y)
+                  Shape.Box(
+                    Rectangle(
+                      Point(highlightPos.x * spriteScale, highlightPos.y * spriteScale),
+                      Size(spriteScale)
+                    ),
+                    Fill.Color(RGBA.Red.withAlpha(0.5f))
+                  )
+                }
+              case _ =>
+                Set.empty
+            }
+          case None =>
+            Set.empty
+        }
+
+        line ++ cursorSprites ++ redHighlights
     }
   }
 }

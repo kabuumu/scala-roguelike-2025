@@ -26,6 +26,12 @@ object Sprites {
   val slimeSprite: Sprite = Sprite(29, 8, entityLayer)
   val slimeletSprite: Sprite = Sprite(30, 8, entityLayer)
   val deadSprite: Sprite = Sprite(0, 15, backgroundLayer)
+  
+  val bossSpriteTL: Sprite = Sprite(25, 2, entityLayer)
+  val bossSpriteTR: Sprite = Sprite(26, 2, entityLayer)
+  val bossSpriteBL: Sprite = Sprite(25, 3, entityLayer)
+  val bossSpriteBR: Sprite = Sprite(26, 3, entityLayer)
+  
   val fullHeartSprite: Sprite = Sprite(42, 10, uiLayer)
   val halfHeartSprite: Sprite = Sprite(41, 10, uiLayer)
   val emptyHeartSprite: Sprite = Sprite(40, 10, uiLayer)

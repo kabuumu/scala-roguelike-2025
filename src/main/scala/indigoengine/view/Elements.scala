@@ -381,17 +381,26 @@ object Elements {
     import game.entity.EntityType.*
     import game.entity.Health.*
     import game.entity.Movement.*
+    import game.entity.Hitbox.*
 
     if (enemyEntity.entityType == game.entity.EntityType.Enemy) {
+      val hitboxCount = enemyEntity.get[game.entity.Hitbox].map(_.points.size).getOrElse(1)
+      val entitySize = Math.max(1, hitboxCount / 2)
+      
       val game.Point(xPosition, yPosition) = enemyEntity.position
       
       val currentHealth = enemyEntity.currentHealth
       val maxHealth = enemyEntity.maxHealth
 
-      val barWidth = spriteScale // Total width of the health bar
+      val barWidth = entitySize * spriteScale // Total width of the health bar
       val barHeight = spriteScale / 5 // Height of the health bar
-      val xOffset = xPosition * spriteScale + uiXOffset - (spriteScale / 2) // X position of the bar
-      val yOffset = yPosition * spriteScale + uiYOffset + (spriteScale / 2)// Y position of the bar
+
+      // Check if this is a multi-tile entity (more than just the default (0,0) hitbox point)
+      val hitboxPoints = enemyEntity.get[game.entity.Hitbox].map(_.points).getOrElse(Set(game.Point(0, 0)))
+      val isMultiTile = hitboxPoints.size > 1
+
+      val xOffset = (xPosition * spriteScale) + ((entitySize * spriteScale - barWidth) / 2)
+      val yOffset = (yPosition * spriteScale) + (entitySize * spriteScale)
 
       val filledWidth = if (maxHealth > 0) (currentHealth * barWidth) / maxHealth else 0
 

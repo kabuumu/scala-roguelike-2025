@@ -4,6 +4,7 @@ import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
 import data.Entities.EntityReference.Slimelet
 import game.entity.*
 import game.entity.Experience.experienceForLevel
+import game.Point
 
 object Enemies {
   enum EnemyReference:
@@ -11,6 +12,7 @@ object Enemies {
     case Snake
     case Slime
     case Slimelet
+    case Boss
 
   /**
    * Enemy difficulty values for dungeon depth progression.
@@ -21,12 +23,14 @@ object Enemies {
     val SLIME = 2  
     val RAT = 3
     val SNAKE = 4
+    val BOSS = 10
     
     def difficultyFor(enemyRef: EnemyReference): Int = enemyRef match {
       case EnemyReference.Slimelet => SLIMELET
       case EnemyReference.Slime => SLIME
       case EnemyReference.Rat => RAT
       case EnemyReference.Snake => SNAKE
+      case EnemyReference.Boss => BOSS
     }
   }
 
@@ -94,6 +98,27 @@ object Enemies {
       Drawable(Sprites.slimeletSprite),
       Hitbox(),
       DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 5)))
+    )
+  }
+
+  def boss(id: String, position: game.Point, rangedAbilityId: String): Entity = {
+    Entity(
+      id = id,
+      Movement(position = position),
+      EntityTypeComponent(EntityType.Enemy),
+      Health(120), // High health for boss
+      Initiative(20), // High initiative 
+      Inventory(Nil), // TODO - Temporarily removed boss ranged attack to prove pathfinding
+      Equipment(weapon = Some(Equippable.weapon(15, "Boss Claws"))), // High damage melee attack
+      EventMemory(),
+      Drawable(Set(
+        Point(0, 0) -> Sprites.bossSpriteTL,
+        Point(1, 0) -> Sprites.bossSpriteTR,
+        Point(0, 1) -> Sprites.bossSpriteBL,
+        Point(1, 1) -> Sprites.bossSpriteBR
+      )),
+      Hitbox(points = Set(Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1))), // 2x2 hitbox
+      DeathEvents(Seq(GiveExperience(experienceForLevel(5)))) // High experience reward
     )
   }
 }

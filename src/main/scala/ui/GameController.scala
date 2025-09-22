@@ -6,6 +6,7 @@ import game.entity.{UsableItem, Targeting, Ammo} // New item system imports
 import game.entity.EntityType.*
 import game.entity.Experience.*
 import game.entity.Health.*
+import game.entity.Hitbox.isWithinRangeOfHitbox
 import game.entity.Initiative.*
 import game.entity.Inventory.*
 import game.entity.Movement.*
@@ -270,7 +271,8 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
   def enemiesWithinRange(range: Int): Seq[Entity] = gameState.entities.filter { enemyEntity =>
     enemyEntity.entityType == EntityType.Enemy
       &&
-      gameState.playerEntity.position.isWithinRangeOf(enemyEntity.position, range)
+      // Use hitbox-aware range checking for multi-tile entities
+      enemyEntity.isWithinRangeOfHitbox(gameState.playerEntity, range)
       &&
       gameState.getVisiblePointsFor(gameState.playerEntity).contains(enemyEntity.position)
       &&

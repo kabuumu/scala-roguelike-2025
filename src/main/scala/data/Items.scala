@@ -94,6 +94,14 @@ object Items {
     Hitbox(),
     Drawable(Sprites.projectileSprite) // Reuse projectile sprite since this is not a pickup item
   )
+
+  def bossBlast(id: String): Entity = Entity(
+    id = id,
+    NameComponent("Boss Blast", "Devastating ranged energy attack"),
+    UsableItem(EnemyActor(6), ChargeType.InfiniteUse, GameEffect.CreateProjectile(ProjectileReference.BossBlast)), // Range 6, infinite use
+    Hitbox(),
+    Drawable(Sprites.projectileSprite) // Reuse projectile sprite since this is not a pickup item
+  )
   
   def key(id: String, keyColour: KeyColour): Entity = Entity(
     id = id,

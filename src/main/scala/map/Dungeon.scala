@@ -12,6 +12,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    startPoint: Point = Point(0, 0),
                    endpoint: Option[Point] = None,
                    items: Set[(Point, ItemReference)] = Set.empty,
+                   hasBossRoom: Boolean = false,
                    testMode: Boolean = false,
                    seed: Long = System.currentTimeMillis()) {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
@@ -118,6 +119,12 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
           roomX + Dungeon.roomSize / 2,
           roomY + Dungeon.roomSize / 2
         )
+
+        // If this is the endpoint room (boss room) and we have a boss room, make the entire room floor
+        val isBossRoom = hasBossRoom && endpoint.contains(room)
+        if (isBossRoom && !isWall(point)) {
+          return true  // All non-wall tiles in boss room should be floor
+        }
 
         // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
         val roomCenterArea = Set(
