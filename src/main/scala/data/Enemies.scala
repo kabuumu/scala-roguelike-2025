@@ -108,7 +108,7 @@ object Enemies {
       EntityTypeComponent(EntityType.Enemy),
       Health(120), // High health for boss
       Initiative(20), // High initiative 
-      Inventory(Seq(rangedAbilityId)), // Boss has ranged ability
+      Inventory(Nil), // TODO - Temporarily removed boss ranged attack to prove pathfinding
       Equipment(weapon = Some(Equippable.weapon(15, "Boss Claws"))), // High damage melee attack
       EventMemory(),
       Drawable(Set(

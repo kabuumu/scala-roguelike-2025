@@ -384,33 +384,23 @@ object Elements {
     import game.entity.Hitbox.*
 
     if (enemyEntity.entityType == game.entity.EntityType.Enemy) {
+      val hitboxCount = enemyEntity.get[game.entity.Hitbox].map(_.points.size).getOrElse(1)
+      val entitySize = Math.max(1, hitboxCount / 2)
+      
       val game.Point(xPosition, yPosition) = enemyEntity.position
       
       val currentHealth = enemyEntity.currentHealth
       val maxHealth = enemyEntity.maxHealth
 
-      val barWidth = spriteScale // Total width of the health bar
+      val barWidth = entitySize * spriteScale // Total width of the health bar
       val barHeight = spriteScale / 5 // Height of the health bar
 
       // Check if this is a multi-tile entity (more than just the default (0,0) hitbox point)
       val hitboxPoints = enemyEntity.get[game.entity.Hitbox].map(_.points).getOrElse(Set(game.Point(0, 0)))
       val isMultiTile = hitboxPoints.size > 1
 
-      val (xOffset, yOffset) = if (isMultiTile) {
-        // For multi-tile entities: center on entity and position at bottom
-        val entityWidth = hitboxPoints.map(_.x).max + 1
-        val entityHeight = hitboxPoints.map(_.y).max + 1
-        
-        // Special positioning for boss: move up and to the left
-        val centeredX = xPosition * spriteScale + uiXOffset + (entityWidth * spriteScale / 2) - (barWidth / 2) - (spriteScale / 4) // Move left by 1/4 sprite
-        val bottomY = yPosition * spriteScale + uiYOffset + (entityHeight * spriteScale) - (spriteScale / 4) // Move up by 1/4 sprite
-        (centeredX, bottomY)
-      } else {
-        // For single-tile entities: use original positioning (centered on sprite, middle of sprite)
-        val originalX = xPosition * spriteScale + uiXOffset - (spriteScale / 2)
-        val originalY = yPosition * spriteScale + uiYOffset + (spriteScale / 2)
-        (originalX, originalY)
-      }
+      val xOffset = (xPosition * spriteScale) + ((entitySize * spriteScale - barWidth) / 2)
+      val yOffset = (yPosition * spriteScale) + (entitySize * spriteScale)
 
       val filledWidth = if (maxHealth > 0) (currentHealth * barWidth) / maxHealth else 0
 
