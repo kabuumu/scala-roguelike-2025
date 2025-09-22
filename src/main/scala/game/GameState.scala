@@ -6,6 +6,7 @@ import game.system.*
 import game.system.event.GameSystemEvent.GameSystemEvent
 import map.Dungeon
 import util.LineOfSight
+import game.entity.Hitbox.*
 
 import scala.annotation.tailrec
 
@@ -118,7 +119,7 @@ case class GameState(playerEntityId: String,
 
   //TODO - remove magic number
   def getVisiblePointsFor(entity: Entity): Set[Point] = for {
-    entityPosition <- entity.get[Movement].map(_.position).toSet
+    entityPosition <- entity.hitbox
     lineOfSight <- LineOfSight.getVisiblePoints(entityPosition, lineOfSightBlockingPoints, 10)
   } yield lineOfSight
 
