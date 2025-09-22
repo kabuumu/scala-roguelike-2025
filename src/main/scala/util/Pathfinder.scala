@@ -1,6 +1,7 @@
 package scala.util
 
 import game.{Direction, GameState, Point}
+import game.entity.Movement.position
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashSet
@@ -71,10 +72,32 @@ object Pathfinder {
   }
 
   def getNextStepWithSize(startPosition: Point, targetPosition: Point, gameState: GameState, entitySize: Point): Option[Direction] = {
+    // Find the target entity to get its hitbox
+    val targetEntity = gameState.entities.find(_.position == targetPosition)
+    
+    // Calculate all tiles occupied by the target entity
+    val targetTiles = targetEntity match {
+      case Some(entity) =>
+        entity.get[game.entity.Hitbox] match {
+          case Some(hitbox) =>
+            // Multi-tile entity: include all hitbox points
+            hitbox.points.map(hitboxPoint => Point(targetPosition.x + hitboxPoint.x, targetPosition.y + hitboxPoint.y))
+          case None =>
+            // Single-tile entity: just the target position
+            Set(targetPosition)
+        }
+      case None =>
+        // No entity at target position, just use the position
+        Set(targetPosition)
+    }
+    
+    // Remove all target entity tiles from blocking points
+    val adjustedBlockers = gameState.movementBlockingPoints -- targetTiles
+    
     val path = Pathfinder.findPathWithSize(
       startPosition,
       targetPosition,
-      (gameState.movementBlockingPoints - targetPosition).toSeq,
+      adjustedBlockers.toSeq,
       entitySize
     )
 

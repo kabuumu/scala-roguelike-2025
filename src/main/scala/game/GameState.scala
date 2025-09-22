@@ -137,7 +137,18 @@ case class GameState(playerEntityId: String,
       .filter(entity => entity.get[EntityTypeComponent].exists(c => 
         c.entityType == EntityType.Enemy || c.entityType == EntityType.Player || c.entityType.isInstanceOf[LockedDoor]
       ))
-      .flatMap(_.get[Movement].map(_.position))
+      .flatMap { entity =>
+        // Get all points occupied by multi-tile entities (like the boss)
+        val basePosition = entity.get[Movement].map(_.position).getOrElse(Point(0, 0))
+        entity.get[game.entity.Hitbox] match {
+          case Some(hitbox) =>
+            // Multi-tile entity: include all hitbox points
+            hitbox.points.map(hitboxPoint => Point(basePosition.x + hitboxPoint.x, basePosition.y + hitboxPoint.y))
+          case None =>
+            // Single-tile entity: just the base position
+            Set(basePosition)
+        }
+      }
       .toSet
   
   lazy val drawableChanges: Seq[Set[(Point, Sprite)]] = {
