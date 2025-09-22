@@ -8,7 +8,7 @@ import game.entity.Hitbox.isWithinRangeOfHitbox
 import game.entity.Inventory.usableItems
 import game.entity.Targeting.EnemyActor
 import game.system.event.GameSystemEvent.{GameSystemEvent, InputEvent}
-import game.{GameState, Point}
+import game.{GameState, Point, Direction}
 import ui.InputAction
 import util.Pathfinder
 
@@ -29,54 +29,25 @@ object EnemyAISystem extends GameSystem {
   
   // Boss AI: Switches between ranged and melee based on distance and strategy
   private def getBossAction(enemy: Entity, target: Entity, gameState: GameState): InputEvent = {
-    val rangedAbilities = enemy.usableItems(gameState).filter { item =>
-      item.get[UsableItem] match {
-        case Some(usableItem) => usableItem.targeting match {
-          case EnemyActor(range) => range > 1
-          case _ => false
-        }
-        case None => false
-      }
-    }
-    
     val meleeRange = 1
     
-    // Simplified boss strategy: Always prefer melee for maximum damage
     // Check if boss can attack in melee range
     if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
       // In melee range - attack!
       InputEvent(enemy.id, InputAction.Attack(target))
     } else {
-      // Not in melee range - check if we have ranged abilities to use while closing distance
-      val distanceToTarget = enemy.position.getChebyshevDistance(target.position).toInt
-      
-      rangedAbilities.headOption match {
-        case Some(rangedAbility) =>
-          val usableItem = rangedAbility.get[UsableItem].get
-          val range = usableItem.targeting match {
-            case EnemyActor(r) => r
-            case _ => 1
-          }
-          // Use ranged attack if in range and far enough away that it's worth it
-          if (enemy.isWithinRangeOfHitbox(target, range) && distanceToTarget > meleeRange + 1) {
-            InputEvent(enemy.id, InputAction.UseItem(rangedAbility.id, usableItem, UseContext(enemy.id, Some(target))))
-          } else {
-            // Move closer for melee attack using boss-sized pathfinding
-            Pathfinder.getNextStepWithSize(enemy.position, target.position, gameState, Point(2, 2)) match {
-              case Some(nextStep) =>
-                InputEvent(enemy.id, InputAction.Move(nextStep))
-              case None =>
-                InputEvent(enemy.id, InputAction.Wait)
-            }
-          }
+      // Not in melee range - move closer using boss-sized pathfinding
+      Pathfinder.getNextStepWithSize(enemy.position, target.position, gameState, Point(2, 2)) match {
+        case Some(nextStep) =>
+          InputEvent(enemy.id, InputAction.Move(nextStep))
         case None =>
-          // No ranged abilities, always move closer for melee
-          Pathfinder.getNextStepWithSize(enemy.position, target.position, gameState, Point(2, 2)) match {
-            case Some(nextStep) =>
-              InputEvent(enemy.id, InputAction.Move(nextStep))
-            case None =>
-              InputEvent(enemy.id, InputAction.Wait)
-          }
+          // Pathfinding failed - try simple directional movement as fallback
+          val direction = if (target.position.x > enemy.position.x) Direction.Right
+                         else if (target.position.x < enemy.position.x) Direction.Left
+                         else if (target.position.y > enemy.position.y) Direction.Down
+                         else Direction.Up
+          
+          InputEvent(enemy.id, InputAction.Move(direction))
       }
     }
   }

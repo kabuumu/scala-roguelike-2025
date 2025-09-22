@@ -29,7 +29,7 @@ object Pathfinder {
         dy <- 0 until entitySize.y
       } yield Point(position.x + dx, position.y + dy)
       
-      entityTiles.forall(tile => !blockers.contains(tile))
+      !entityTiles.exists(tile => blockers.contains(tile))
     }
 
     def reconstructPath(node: Node): Seq[Point] = {
@@ -72,8 +72,27 @@ object Pathfinder {
   }
 
   def getNextStepWithSize(startPosition: Point, targetPosition: Point, gameState: GameState, entitySize: Point): Option[Direction] = {
+    // Find the moving entity (the one at startPosition) to exclude its tiles from blockers
+    val movingEntity = gameState.entities.find(_.position == startPosition)
+    
     // Find the target entity to get its hitbox
     val targetEntity = gameState.entities.find(_.position == targetPosition)
+    
+    // Calculate all tiles occupied by the moving entity to exclude them from blockers
+    val movingEntityTiles = movingEntity match {
+      case Some(entity) =>
+        entity.get[game.entity.Hitbox] match {
+          case Some(hitbox) =>
+            // Multi-tile entity: include all hitbox points
+            hitbox.points.map(hitboxPoint => Point(startPosition.x + hitboxPoint.x, startPosition.y + hitboxPoint.y))
+          case None =>
+            // Single-tile entity: just the start position
+            Set(startPosition)
+        }
+      case None =>
+        // No entity at start position (shouldn't happen), just use the position
+        Set(startPosition)
+    }
     
     // Calculate all tiles occupied by the target entity
     val targetTiles = targetEntity match {
@@ -91,8 +110,9 @@ object Pathfinder {
         Set(targetPosition)
     }
     
-    // Remove all target entity tiles from blocking points
-    val adjustedBlockers = gameState.movementBlockingPoints -- targetTiles
+    // Remove both moving entity tiles and target entity tiles from blocking points
+    val originalBlockers = gameState.movementBlockingPoints
+    val adjustedBlockers = originalBlockers -- movingEntityTiles -- targetTiles
     
     val path = Pathfinder.findPathWithSize(
       startPosition,
@@ -107,7 +127,6 @@ object Pathfinder {
           startPosition,
           nextStep
         )
-
         Some(direction)
       case None =>
         None
