@@ -72,8 +72,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       val (newUiState, optAction) = optInput match {
         case Some(input) if delta >= ticksPerSecond / allowedActionsPerSecond =>
           uiState match {
-            case _: UIState.MainMenu => handleInput(input)  // MainMenu doesn't need ready check
-            case _: UIState.GameOver => handleInput(input)  // GameOver doesn't need ready check
+            case _: UIState.MainMenu | UIState.GameOver => handleInput(input)  // MainMenu and GameOver don't need ready check
             case _ if gameState.playerEntity.isReady => handleInput(input)  // Other states need ready check
             case _ => (uiState, None)
           }
@@ -124,8 +123,12 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       ).toSeq)
 
       // Check for player death and transition to GameOver state
-      if (newGameState.playerEntity.isDead && !uiState.isInstanceOf[UIState.GameOver]) {
-        return GameController(UIState.GameOver(newGameState.playerEntity), newGameState, currentTime)
+      uiState match {
+        case UIState.GameOver(_) | UIState.MainMenu(_) => // Already in GameOver, no change
+        case _ if newGameState.playerEntity.isDead =>
+          println(s"Player has died, transitioning to GameOver state. State is ${uiState}")
+          return GameController(UIState.GameOver(newGameState.playerEntity), newGameState, currentTime)
+        case _ => // No death, continue
       }
 
       val newUpdateTime = if (
@@ -273,10 +276,7 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       }
     case _: UIState.GameOver =>
       input match {
-        case Input.UseItem | Input.Confirm | Input.Action =>
-          // Return to main menu on action key press
-          (UIState.MainMenu(), None)
-        case Input.Attack(_) =>
+        case Input.UseItem | Input.Confirm | Input.Action | Input.Attack(_) =>
           // Return to main menu on action key press
           (UIState.MainMenu(), None)
         case _ => (uiState, None)

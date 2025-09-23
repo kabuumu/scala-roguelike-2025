@@ -13,8 +13,9 @@ object DeathHandlerSystem extends GameSystem {
     
     entitiesMarkedForDeath.foldLeft((gameState, Seq.empty[GameSystemEvent])) {
       case ((currentGameState, currentEvents), entity) =>
+        // Process death events only for non-player entities
         (entity.get[DeathEvents], entity.get[MarkedForDeath]) match {
-          case (optDeathEvents, Some(markedForDeath)) =>
+          case (optDeathEvents, Some(markedForDeath)) if entity.entityType != EntityType.Player =>
             // If the entity is marked for death, process the death events
             optDeathEvents match {
               case Some(DeathEvents(deathEvents)) =>
