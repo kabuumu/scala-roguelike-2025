@@ -440,7 +440,7 @@ object Elements {
     val messageContent = model.uiState match {
       case UIState.Move =>
         // Check for nearby action targets
-        val actionTargets = model.nearbyActionTargets()
+        val actionTargets = ui.GameTargeting.nearbyActionTargets(model.gameState)
         
         if (actionTargets.nonEmpty) {
           val firstTarget = actionTargets.head
@@ -461,7 +461,7 @@ object Elements {
         if (listSelect.list.nonEmpty) {
           val selectedItem = listSelect.list(listSelect.index)
           selectedItem match {
-            case actionTarget: ui.GameController.ActionTarget =>
+            case actionTarget: ui.ActionTargets.ActionTarget =>
               // Show action description for unified action targets
               s"${actionTarget.description}. Press Space/E/Enter to confirm."
             case entity: Entity if entity.has[UsableItem] =>
