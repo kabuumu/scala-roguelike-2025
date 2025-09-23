@@ -45,25 +45,29 @@ object Pathfinder {
 
     @tailrec
     def search(openSet: mutable.PriorityQueue[Node], closedSet: HashSet[Point]): Seq[Point] = {
-      if (openSet.isEmpty) return Seq.empty
+      if (openSet.isEmpty) {
+        Seq.empty
+      } else {
+        val current = openSet.dequeue()
+        if (current.point == end) {
+          reconstructPath(current)
+        } else {
+          val newClosedSet = closedSet + current.point
+          val neighbors = current.point.neighbors
+            .filter(isPositionValid) // Use the new validation that checks entity size
+            .filterNot(newClosedSet.contains)
 
-      val current = openSet.dequeue()
-      if (current.point == end) return reconstructPath(current)
+          neighbors.foreach { neighbor =>
+            val tentativeG = current.g + 1
+            val existingNode = openSet.find(_.point == neighbor)
+            if (existingNode.isEmpty || tentativeG < existingNode.get.g) {
+              openSet.enqueue(Node(neighbor, tentativeG, tentativeG + heuristic(neighbor, end), Some(current)))
+            }
+          }
 
-      val newClosedSet = closedSet + current.point
-      val neighbors = current.point.neighbors
-        .filter(isPositionValid) // Use the new validation that checks entity size
-        .filterNot(newClosedSet.contains)
-
-      neighbors.foreach { neighbor =>
-        val tentativeG = current.g + 1
-        val existingNode = openSet.find(_.point == neighbor)
-        if (existingNode.isEmpty || tentativeG < existingNode.get.g) {
-          openSet.enqueue(Node(neighbor, tentativeG, tentativeG + heuristic(neighbor, end), Some(current)))
+          search(openSet, newClosedSet)
         }
       }
-
-      search(openSet, newClosedSet)
     }
 
     search(openSet, closedSet)
