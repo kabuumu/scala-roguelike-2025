@@ -1,6 +1,7 @@
 package ui
 
 import game.Point
+import game.entity.Entity
 
 import scala.reflect.ClassTag
 
@@ -8,6 +9,8 @@ object UIState {
   sealed trait UIState
 
   case object Move extends UIState
+  
+  case class GameOver(player: Entity) extends UIState
 
   case class ScrollSelect(cursor: Point, effect: Point => (UIState, Option[InputAction])) extends UIState {
     val cursorX: Int = cursor.x
