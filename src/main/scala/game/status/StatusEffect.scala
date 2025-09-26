@@ -12,6 +12,9 @@ object StatusEffect {
     case IncreaseMaxHealth(amount: Int)
     case ReduceIncomingDamage(amount: Int)
     case IncreaseDamage(amount: Int)
+    case IncreaseDamageVsEnemyType(enemyType: String, amount: Int)
+    case IncreaseDamageWithWeaponType(weaponType: String, amount: Int)
+    case IncreaseDamageWithItemType(itemType: String, amount: Int)
 
   extension (entity: Entity) {
     def addStatusEffect(statusEffect: StatusEffect): Entity = {

@@ -47,10 +47,8 @@ object Experience {
     
     def nextLevelExperience: Int = entity.get[Experience].map(_.nextLevelExperience).getOrElse(0)
     
-    def getPossiblePerks: Seq[StatusEffect] = if(canLevelUp) Seq(
-      IncreaseMaxHealthPerk,
-      IncreaseDamagePerk,
-      ReduceIncomingDamagePerk
-    ) else Nil
+    def getPossiblePerks: Seq[StatusEffect] = if(canLevelUp) {
+      game.perk.Perks.getRandomPerks(entity, 3)
+    } else Nil
   }
 }

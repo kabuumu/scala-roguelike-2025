@@ -76,7 +76,10 @@ object EventMemorySystem extends GameSystem {
           case Some(player) =>
             currentState.getEntity(itemEntityId) match {
               case Some(itemEntity) =>
-                val itemType = itemEntity.entityType.toString
+                // Get item name from NameComponent for more specific tracking
+                val itemType = itemEntity.get[game.entity.NameComponent]
+                  .map(_.name)
+                  .getOrElse(itemEntity.entityType.toString)
                 
                 val memoryEvent = MemoryEvent.ItemUsed(
                   timestamp = currentTime,
