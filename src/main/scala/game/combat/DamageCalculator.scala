@@ -3,6 +3,7 @@ package game.combat
 import game.GameState
 import game.entity.Entity
 import game.entity.Equipment.*
+import game.entity.EnemyTypeComponent.enemyTypeName
 import game.status.StatusEffect
 import game.status.StatusEffect.*
 import game.status.StatusEffect.EffectType
@@ -42,8 +43,8 @@ object DamageCalculator {
   private def calculateSpecializedBonuses(attacker: Entity, defender: Entity, source: GameSystemEvent.DamageSource, gameState: GameState): Int = {
     var totalBonus = 0
 
-    // Get defender's enemy type from sprite
-    val enemyType = getEnemyTypeFromEntity(defender)
+    // Get defender's enemy type using the proper component
+    val enemyType = defender.enemyTypeName
 
     // Apply enemy-specific damage bonuses
     attacker.statusEffects.foreach {
@@ -74,18 +75,4 @@ object DamageCalculator {
     totalBonus
   }
 
-  private def getEnemyTypeFromEntity(entity: Entity): String = {
-    entity.get[game.entity.Drawable] match {
-      case Some(drawable) =>
-        drawable.sprites.headOption.map(_._2) match {
-          case Some(sprite) if sprite == data.Sprites.ratSprite => "Rat"
-          case Some(sprite) if sprite == data.Sprites.slimeletSprite => "Slimelet"
-          case Some(sprite) if sprite == data.Sprites.slimeSprite => "Slime"
-          case Some(sprite) if sprite == data.Sprites.snakeSprite => "Snake"
-          case Some(sprite) if sprite == data.Sprites.bossSpriteTL => "Boss"
-          case _ => "Enemy"
-        }
-      case None => "Enemy"
-    }
-  }
 }

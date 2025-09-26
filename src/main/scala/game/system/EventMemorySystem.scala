@@ -1,11 +1,12 @@
 package game.system
 
 import game.GameState
-import game.entity.{EventMemory, EntityType, Equipment}
+import game.entity.{EventMemory, EntityType, Equipment, EnemyTypeComponent}
 import game.entity.EventMemory.*
 import game.entity.MemoryEvent
 import game.entity.Movement.position
 import game.entity.EntityType.entityType
+import game.entity.EnemyTypeComponent.enemyTypeName
 import game.entity.Health.{currentHealth, damage}
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
@@ -105,19 +106,8 @@ object EventMemorySystem extends GameSystem {
           case Some(markedForDeath) =>
             markedForDeath.deathDetails.killerId match {
               case Some(killerEntityId) =>
-                // Determine enemy type from sprite instead of generic EntityType
-                val enemyTypeName = defeatedEnemy.get[game.entity.Drawable] match {
-                  case Some(drawable) =>
-                    drawable.sprites.headOption.map(_._2) match {
-                      case Some(sprite) if sprite == data.Sprites.ratSprite => "Rat"
-                      case Some(sprite) if sprite == data.Sprites.slimeletSprite => "Slimelet"
-                      case Some(sprite) if sprite == data.Sprites.slimeSprite => "Slime"
-                      case Some(sprite) if sprite == data.Sprites.snakeSprite => "Snake"
-                      case Some(sprite) if sprite == data.Sprites.bossSpriteTL => "Boss"
-                      case _ => "Enemy"
-                    }
-                  case None => "Enemy"
-                }
+                // Use proper enemy type component instead of sprite detection
+                val enemyTypeName = defeatedEnemy.enemyTypeName
                 
                 val memoryEvent = MemoryEvent.EnemyDefeated(
                   timestamp = currentTime,
