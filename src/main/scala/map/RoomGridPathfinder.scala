@@ -25,39 +25,49 @@ object RoomGridPathfinder {
     // Map to reconstruct the path
     val cameFrom = mutable.Map[Point, RoomConnection]()
 
-    while (openSet.nonEmpty) {
-      val (current, _) = openSet.dequeue()
-
-      // If we reached the target, reconstruct the path
-      if (current == target) {
-        val path = mutable.ListBuffer[RoomConnection]()
-        var node = target
-        while (cameFrom.contains(node)) {
-          val connection = cameFrom(node)
-          path.prepend(connection)
-          node = connection.originRoom
-        }
-        return path.toSeq
+    def reconstructPath(target: Point): Seq[RoomConnection] = {
+      val path = mutable.ListBuffer[RoomConnection]()
+      var node = target
+      while (cameFrom.contains(node)) {
+        val connection = cameFrom(node)
+        path.prepend(connection)
+        node = connection.originRoom
       }
+      path.toSeq
+    }
 
-      // Explore neighbors
-      for (connection <- connectionsByOrigin.getOrElse(current, Set.empty)) {
-        val neighbor = connection.destinationRoom
-        val tentativeGScore = gScore(current) + 1 // Assume uniform cost for each connection
+    @annotation.tailrec
+    def searchPath(openSet: mutable.PriorityQueue[(Point, Int)]): Seq[RoomConnection] = {
+      if (openSet.isEmpty) {
+        Seq.empty
+      } else {
+        val (current, _) = openSet.dequeue()
 
-        if (tentativeGScore < gScore(neighbor)) {
-          // Update scores and enqueue neighbor
-          cameFrom(neighbor) = connection
-          gScore(neighbor) = tentativeGScore
-          fScore(neighbor) = tentativeGScore + heuristic(neighbor, target)
-          if (!openSet.exists(_._1 == neighbor)) {
-            openSet.enqueue((neighbor, fScore(neighbor)))
+        // If we reached the target, reconstruct the path
+        if (current == target) {
+          reconstructPath(target)
+        } else {
+          // Explore neighbors
+          for (connection <- connectionsByOrigin.getOrElse(current, Set.empty)) {
+            val neighbor = connection.destinationRoom
+            val tentativeGScore = gScore(current) + 1 // Assume uniform cost for each connection
+
+            if (tentativeGScore < gScore(neighbor)) {
+              // Update scores and enqueue neighbor
+              cameFrom(neighbor) = connection
+              gScore(neighbor) = tentativeGScore
+              fScore(neighbor) = tentativeGScore + heuristic(neighbor, target)
+              if (!openSet.exists(_._1 == neighbor)) {
+                openSet.enqueue((neighbor, fScore(neighbor)))
+              }
+            }
           }
+
+          searchPath(openSet)
         }
       }
     }
 
-    // If no path is found, return an empty sequence
-    Seq.empty
+    searchPath(openSet)
   }
 }

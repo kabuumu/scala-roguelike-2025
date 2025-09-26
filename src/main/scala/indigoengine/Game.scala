@@ -164,7 +164,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
         val selectedItem = list.list(list.index)
         selectedItem match {
           // Handle ActionTarget from unified action system
-          case actionTarget: ui.GameController.ActionTarget =>
+          case actionTarget: ui.ActionTargets.ActionTarget =>
             Some((actionTarget.entity.position, Some(actionTarget.entity)))
           // Handle direct Entity objects (for attack lists, etc.)
           case entity: game.entity.Entity =>
