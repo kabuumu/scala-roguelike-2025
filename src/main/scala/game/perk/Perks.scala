@@ -19,52 +19,52 @@ object Perks {
   )
   
   final val ReduceIncomingDamagePerk = StatusEffect(
-    ReduceIncomingDamage(5),
+    ReduceIncomingDamage(3),
     name = "Fortified",
-    description = "Reduces incoming damage by 5."
+    description = "Reduces incoming damage by 3."
   )
   
   final val IncreaseDamagePerk = StatusEffect(
-    IncreaseDamage(5),
+    IncreaseDamage(3),
     name = "Berserker",
-    description = "Increases damage dealt by 5."
+    description = "Increases damage dealt by 3."
   )
 
   // Specialized perks based on event history
   final val SlimeBanePerk = StatusEffect(
-    IncreaseDamageVsEnemyType("Slime", 3),
+    IncreaseDamageVsEnemyType("Slime", 4),
     name = "Slime Bane",
-    description = "Deal +3 damage against slimes."
+    description = "Deal +4 damage against slimes."
   )
 
   final val SlimeletBanePerk = StatusEffect(
-    IncreaseDamageVsEnemyType("Slimelet", 2),
+    IncreaseDamageVsEnemyType("Slimelet", 3),
     name = "Slimelet Bane", 
-    description = "Deal +2 damage against slimelets."
+    description = "Deal +3 damage against slimelets."
   )
 
   final val BowMasteryPerk = StatusEffect(
-    IncreaseDamageWithWeaponType("Bow", 4),
+    IncreaseDamageWithWeaponType("Bow", 5),
     name = "Bow Mastery",
-    description = "Deal +4 damage with bow attacks."
+    description = "Deal +5 damage with bow attacks."
   )
 
   final val ScrollMasteryPerk = StatusEffect(
-    IncreaseDamageWithItemType("Fireball Scroll", 3),
+    IncreaseDamageWithItemType("Fireball Scroll", 4),
     name = "Scroll Mastery", 
-    description = "Deal +3 damage with scroll attacks."
+    description = "Deal +4 damage with scroll attacks."
   )
 
   final val BattleHardenedPerk = StatusEffect(
-    ReduceIncomingDamage(3),
+    ReduceIncomingDamage(5),
     name = "Battle Hardened",
-    description = "Reduces incoming damage by 3 (stacks with Fortified)."
+    description = "Reduces incoming damage by 5."
   )
 
   final val ImprovedFortificationPerk = StatusEffect(
-    ReduceIncomingDamage(8),
+    ReduceIncomingDamage(7),
     name = "Improved Fortification",
-    description = "Reduces incoming damage by 8."
+    description = "Reduces incoming damage by 7."
   )
 
   // Define perk requirements
