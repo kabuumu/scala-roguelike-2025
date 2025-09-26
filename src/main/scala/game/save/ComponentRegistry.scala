@@ -85,12 +85,24 @@ object ComponentRegistry {
       case _ => EquipmentSlot.Helmet
     }
   )
+  implicit val enemyReferenceRW: ReadWriter[data.Enemies.EnemyReference] = readwriter[String].bimap[data.Enemies.EnemyReference](
+    _.toString,
+    str => str match {
+      case "Rat" => data.Enemies.EnemyReference.Rat
+      case "Snake" => data.Enemies.EnemyReference.Snake
+      case "Slime" => data.Enemies.EnemyReference.Slime
+      case "Slimelet" => data.Enemies.EnemyReference.Slimelet
+      case "Boss" => data.Enemies.EnemyReference.Boss
+      case _ => data.Enemies.EnemyReference.Rat
+    }
+  )
 
   // Now auto-derive the components that have all dependencies satisfied
   implicit val movementRW: ReadWriter[Movement] = macroRW
   implicit val initiativeRW: ReadWriter[Initiative] = macroRW
   implicit val experienceRW: ReadWriter[Experience] = macroRW
   implicit val entityTypeComponentRW: ReadWriter[EntityTypeComponent] = macroRW
+  implicit val enemyTypeComponentRW: ReadWriter[EnemyTypeComponent] = macroRW
   implicit val drawableRW: ReadWriter[Drawable] = macroRW
   implicit val hitboxRW: ReadWriter[Hitbox] = macroRW
   implicit val sightMemoryRW: ReadWriter[SightMemory] = macroRW
@@ -106,6 +118,7 @@ object ComponentRegistry {
     classOf[Initiative] -> simpleCodec[Initiative]("Initiative")(using initiativeRW),
     classOf[Experience] -> simpleCodec[Experience]("Experience")(using experienceRW),
     classOf[EntityTypeComponent] -> simpleCodec[EntityTypeComponent]("EntityTypeComponent")(using entityTypeComponentRW),
+    classOf[EnemyTypeComponent] -> simpleCodec[EnemyTypeComponent]("EnemyTypeComponent")(using enemyTypeComponentRW),
     classOf[Drawable] -> simpleCodec[Drawable]("Drawable")(using drawableRW),
     classOf[Hitbox] -> simpleCodec[Hitbox]("Hitbox")(using hitboxRW),
     classOf[SightMemory] -> simpleCodec[SightMemory]("SightMemory")(using sightMemoryRW),

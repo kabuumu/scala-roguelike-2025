@@ -66,6 +66,7 @@ object Given {
         armor = Some(Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor"))
       ),
       SightMemory(),
+      EventMemory(),
       Drawable(Sprites.playerSprite),
       Hitbox(),
       Experience()

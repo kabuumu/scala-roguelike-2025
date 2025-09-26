@@ -3,6 +3,7 @@ package game.combat
 import game.GameState
 import game.entity.Entity
 import game.entity.Equipment.*
+import game.entity.EnemyTypeComponent.enemyTypeName
 import game.status.StatusEffect
 import game.status.StatusEffect.*
 import game.status.StatusEffect.EffectType
@@ -26,7 +27,10 @@ object DamageCalculator {
       case GameSystemEvent.DamageSource.Projectile => 0
     }
     
-    val attackerBonus = statusDamageBonus + equipmentDamageBonus
+    // Apply specialized perk bonuses
+    val specializedBonuses = calculateSpecializedBonuses(attacker, defender, source, gameState)
+    
+    val attackerBonus = statusDamageBonus + equipmentDamageBonus + specializedBonuses
 
     val statusDamageResistance = defender.statusEffects.collect { case StatusEffect(EffectType.ReduceIncomingDamage(r), _, _) => r }.sum
     val equipmentDamageResistance = defender.getTotalDamageReduction
@@ -35,4 +39,40 @@ object DamageCalculator {
     val finalDamage = math.max(1, baseDamage + attackerBonus - defenderResistance)
     DamageBreakdown(baseDamage, attackerBonus, defenderResistance, finalDamage)
   }
+
+  private def calculateSpecializedBonuses(attacker: Entity, defender: Entity, source: GameSystemEvent.DamageSource, gameState: GameState): Int = {
+    var totalBonus = 0
+
+    // Get defender's enemy type using the proper component
+    val enemyType = defender.enemyTypeName
+
+    // Apply enemy-specific damage bonuses
+    attacker.statusEffects.foreach {
+      case StatusEffect(EffectType.IncreaseDamageVsEnemyType(targetEnemyType, bonus), _, _) =>
+        if (enemyType == targetEnemyType) {
+          totalBonus += bonus
+        }
+      case _ => // Not an enemy-specific bonus
+    }
+
+    // Apply weapon/item specific bonuses based on damage source
+    // This would require context from the attacking system about what weapon/item was used
+    // For now, we'll implement basic logic based on damage source
+    source match {
+      case GameSystemEvent.DamageSource.Projectile =>
+        // For projectile attacks, check if it's from bow or scroll
+        // This is a simplified implementation - ideally we'd pass more context
+        attacker.statusEffects.foreach {
+          case StatusEffect(EffectType.IncreaseDamageWithWeaponType("Bow", bonus), _, _) =>
+            totalBonus += bonus
+          case StatusEffect(EffectType.IncreaseDamageWithItemType("Fireball Scroll", bonus), _, _) =>
+            totalBonus += bonus
+          case _ => // Not a weapon/item-specific bonus
+        }
+      case _ => // Melee attacks don't get projectile bonuses
+    }
+
+    totalBonus
+  }
+
 }

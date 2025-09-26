@@ -39,6 +39,7 @@ object Enemies {
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
+      EnemyTypeComponent(EnemyReference.Rat),
       Health(25),
       Initiative(12),
       Inventory(Nil),
@@ -55,6 +56,7 @@ object Enemies {
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
+      EnemyTypeComponent(EnemyReference.Snake),
       Health(18),
       Initiative(25),
       Inventory(Seq(spitAbilityId)), // Give snake the spit ability
@@ -71,6 +73,7 @@ object Enemies {
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
+      EnemyTypeComponent(EnemyReference.Slime),
       Health(20),
       Initiative(15),
       Inventory(Nil),
@@ -91,6 +94,7 @@ object Enemies {
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
+      EnemyTypeComponent(EnemyReference.Slimelet),
       Health(10),
       Initiative(8),
       Inventory(Nil), // No weapon for slimelets, they use default 1 damage
@@ -106,6 +110,7 @@ object Enemies {
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Enemy),
+      EnemyTypeComponent(EnemyReference.Boss),
       Health(120), // High health for boss
       Initiative(20), // High initiative 
       Inventory(Nil), // TODO - Temporarily removed boss ranged attack to prove pathfinding
