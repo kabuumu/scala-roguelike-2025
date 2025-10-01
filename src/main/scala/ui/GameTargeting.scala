@@ -41,6 +41,12 @@ object GameTargeting {
       .filter(_.isEquippable)
       .map(EquipTarget.apply)
     
-    attackTargets ++ equipTargets
+    // Get nearby stairs
+    val stairsTargets = gameState.entities
+      .filter(e => adjacentPositions.contains(e.position))
+      .filter(_.entityType == EntityType.Stairs)
+      .map(DescendStairsTarget.apply)
+    
+    attackTargets ++ equipTargets ++ stairsTargets
   }
 }

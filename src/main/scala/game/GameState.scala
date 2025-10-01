@@ -13,7 +13,8 @@ import scala.annotation.tailrec
 case class GameState(playerEntityId: String,
                      entities: Seq[Entity],
                      messages: Seq[String] = Nil,
-                     dungeon: Dungeon) {
+                     dungeon: Dungeon,
+                     dungeonFloor: Int = 1) {
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
   def getEntity(entityId: String): Option[Entity] = {
@@ -27,6 +28,7 @@ case class GameState(playerEntityId: String,
     // Phase 1: Input processing and early systems
     Seq(
       DeathHandlerSystem,
+      StairsSpawnSystem,
       ExperienceSystem,
       EnemyAISystem,
       MovementSystem,
@@ -34,7 +36,8 @@ case class GameState(playerEntityId: String,
       WaveSystem,
       ItemUseSystem, // New unified item system
       HealingSystem, // Handles healing events
-      EquipInputSystem
+      EquipInputSystem,
+      DescendStairsSystem
     ),
     // Phase 2: Creation and spawning  
     Seq(

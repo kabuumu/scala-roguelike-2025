@@ -76,6 +76,39 @@ object Given {
     World(player, Seq(startingSword, startingArmor, player), dungeon)
   }
 
+  def thePlayerInBossRoom(x: Int, y: Int, id: String = "testPlayerId"): World = {
+    val startingSword = Items.basicSword("test-sword")
+    val startingArmor = Items.chainmailArmor("test-armor")
+
+    val player = Entity(
+      id = id,
+      Movement(position = Point(x, y)),
+      EntityTypeComponent(EntityType.Player),
+      Health(10),
+      Initiative(0),
+      Inventory(Seq(startingSword.id, startingArmor.id)),
+      Equipment(
+        weapon = Some(Equippable.weapon(3, "Basic Sword")),
+        armor = Some(Equippable.armor(EquipmentSlot.Armor, 5, "Chainmail Armor"))
+      ),
+      SightMemory(),
+      EventMemory(),
+      Drawable(Sprites.playerSprite),
+      Hitbox(),
+      Experience()
+    )
+
+    // Create a simple 2-room dungeon with boss room
+    val dungeon = Dungeon(
+      roomGrid = Set(Point(0, 0), Point(1, 0)),
+      startPoint = Point(0, 0),
+      endpoint = Some(Point(1, 0)),
+      hasBossRoom = true,
+      testMode = true
+    )
+    World(player, Seq(startingSword, startingArmor, player), dungeon)
+  }
+
   object items {
     def potion(id: String): Entity = Items.healingPotion(id)
     def scroll(id: String): Entity = Items.fireballScroll(id)
