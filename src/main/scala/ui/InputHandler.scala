@@ -122,6 +122,8 @@ object InputHandler {
                   case ActionTargets.EquipTarget(entity) =>
                     // Instead of InputAction.Equip, we need to target specific equipment
                     (UIState.Move, Some(InputAction.EquipSpecific(entity)))
+                  case ActionTargets.DescendStairsTarget(_) =>
+                    (UIState.Move, Some(InputAction.DescendStairs))
                 }
               }
             ), None)

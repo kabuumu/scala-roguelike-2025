@@ -63,6 +63,8 @@ object Sprites {
   val ironSwordSprite: Sprite = Sprite(32, 7, uiLayer) // using defaultItemSprite
   
   val defaultItemSprite: Sprite = Sprite(37, 13, uiLayer)
+  
+  val stairsSprite: Sprite = Sprite(5, 17, entityLayer)
 
   val errorSprite: Sprite = Sprite(35, 21, uiLayer)
 }

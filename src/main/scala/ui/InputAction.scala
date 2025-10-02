@@ -13,4 +13,5 @@ enum InputAction {
   case Equip
   case EquipSpecific(target: Entity)
   case LoadGame
+  case DescendStairs
 }
