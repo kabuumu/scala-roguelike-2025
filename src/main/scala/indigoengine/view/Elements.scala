@@ -208,9 +208,9 @@ object Elements {
     val player = model.gameState.playerEntity
     val coinCount = player.coins
     
-    // Position coins display below health and experience bars
+    // Position coins display below keys (to avoid blocking usable items)
     val startX = uiXOffset
-    val startY = uiYOffset + (spriteScale * 2) + defaultBorderSize
+    val startY = uiYOffset + (spriteScale * 4) + (defaultBorderSize * 3)
     val itemSize = spriteScale
     
     Seq(
