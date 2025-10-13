@@ -34,12 +34,20 @@ object InputHandler {
             mainMenu.getSelectedOption match {
               case "New Game" => (UIState.Move, None)  // Just transition to Move, update() will handle creating new game
               case "Continue Game" => (UIState.Move, Some(InputAction.LoadGame))  // Load saved game
+              case "Debug Menu" => (UIState.DebugMenu(), None)  // Enter debug menu
               case _ => (mainMenu, None)
             }
           } else {
             (mainMenu, None) // Can't confirm disabled options
           }
         case _ => (mainMenu, None)
+      }
+    case debugMenu: UIState.DebugMenu =>
+      input match {
+        case Input.Move(Direction.Left) => (debugMenu.previousSprite, None)
+        case Input.Move(Direction.Right) => (debugMenu.nextSprite, None)
+        case Input.Cancel => (UIState.MainMenu(), None)
+        case _ => (debugMenu, None)
       }
     case UIState.Move =>
       input match {

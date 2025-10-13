@@ -103,6 +103,13 @@ object Game extends IndigoSandbox[Unit, GameController] {
             Layer.Content(mainMenu(model))
           )
         )
+      case _: UIState.DebugMenu =>
+        // Render debug menu screen
+        Outcome(
+          SceneUpdateFragment(
+            Layer.Content(mainMenu(model))
+          )
+        )
       case gameOver: UIState.GameOver =>
         // Render game over screen
         Outcome(

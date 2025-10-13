@@ -511,6 +511,10 @@ object Elements {
         s"Target: [$x,$y]. Press Enter to confirm action at this location."
       case _: UIState.MainMenu =>
         "" // No message window content for main menu
+      case _: UIState.GameOver =>
+        "" // No message window content for game over
+      case _: UIState.DebugMenu =>
+        "" // No message window content for debug menu
     }
     
     // Position message window at the very bottom of the visible canvas area
@@ -556,6 +560,45 @@ object Elements {
         val instructions = text("Use Arrow Keys and Enter", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
         
         Batch(title) ++ menuOptions.toBatch ++ Batch(instructions)
+      case debugMenu: UIState.DebugMenu =>
+        val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+        
+        val titleText = "Debug Menu - Sprite Viewer"
+        val titleX = (canvasWidth - (titleText.length * 8)) / 2
+        val titleY = spriteScale * 2
+        val title = text(titleText, titleX, titleY)
+        
+        // Get current sprite coordinates
+        val (x, y) = debugMenu.getCurrentCoordinates
+        
+        // Get sprite name from Sprites object
+        val spriteName = data.Sprites.getSpriteNameByCoordinates(x, y)
+        
+        // Display sprite (scaled up 4x for visibility)
+        val pixelSize = 16
+        val displayScale = 4
+        val spriteDisplaySize = pixelSize * displayScale
+        
+        val spriteX = (canvasWidth - spriteDisplaySize) / 2
+        val spriteY = canvasHeight / 3
+        
+        val displayedSprite = spriteSheet
+          .withCrop(x * pixelSize, y * pixelSize, pixelSize, pixelSize)
+          .moveTo(spriteX, spriteY)
+          .scaleBy(displayScale, displayScale)
+        
+        // Display sprite information
+        val infoY = spriteY + spriteDisplaySize + spriteScale * 2
+        val coordText = text(s"Coordinates: ($x, $y)", (canvasWidth - 160) / 2, infoY)
+        val nameText = text(s"Name: $spriteName", (canvasWidth - (spriteName.length * 8)) / 2, infoY + spriteScale)
+        val indexText = text(s"Index: ${debugMenu.spriteIndex} / ${debugMenu.totalSprites - 1}", (canvasWidth - 160) / 2, infoY + spriteScale * 2)
+        
+        // Instructions
+        val instructionsY = canvasHeight - spriteScale * 3
+        val instructions1 = text("Left/Right Arrow: Previous/Next Sprite", (canvasWidth - 280) / 2, instructionsY)
+        val instructions2 = text("Escape: Return to Main Menu", (canvasWidth - 200) / 2, instructionsY + spriteScale)
+        
+        Batch(title, displayedSprite, coordText, nameText, indexText, instructions1, instructions2)
       case _ =>
         Batch.empty
     }

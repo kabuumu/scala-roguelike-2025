@@ -10,6 +10,67 @@ object Sprites {
   val backgroundLayer = 1
   val entityLayer = 2
   val uiLayer = 3
+  
+  /**
+   * Get sprite name by coordinates for debug purposes
+   * This manually maps commonly used sprites. For unmapped sprites, returns a generic name.
+   */
+  def getSpriteNameByCoordinates(x: Int, y: Int): String = {
+    // Only map a subset of important sprites to avoid method size issues
+    getAllSpriteMappings.getOrElse((x, y), s"sprite_${x}_${y}")
+  }
+  
+  // Build sprite mappings lazily
+  private lazy val getAllSpriteMappings: Map[(Int, Int), String] = {
+    Map(
+      // Key sprites that are commonly used
+      (25, 0) -> "playerSprite",
+      (26, 0) -> "enemySprite",
+      (10, 17) -> "wallSprite",
+      (2, 0) -> "floorSprite",
+      (1, 0) -> "maybeFloorSprite",
+      (8, 5) -> "waterSprite",
+      (16, 5) -> "bridgeSprite",
+      (5, 2) -> "rockSprite",
+      (31, 8) -> "ratSprite",
+      (28, 8) -> "snakeSprite",
+      (29, 8) -> "slimeSprite",
+      (30, 8) -> "slimeletSprite",
+      (0, 15) -> "deadSprite",
+      (25, 2) -> "bossSpriteTL",
+      (26, 2) -> "bossSpriteTR",
+      (25, 3) -> "bossSpriteBL",
+      (26, 3) -> "bossSpriteBR",
+      (42, 10) -> "fullHeartSprite",
+      (41, 10) -> "halfHeartSprite",
+      (40, 10) -> "emptyHeartSprite",
+      (29, 14) -> "cursorSprite",
+      (33, 13) -> "potionSprite",
+      (33, 15) -> "scrollSprite",
+      (37, 6) -> "bowSprite",
+      (32, 11) -> "yellowKeySprite",
+      (33, 11) -> "blueKeySprite",
+      (34, 11) -> "redKeySprite",
+      (0, 11) -> "yellowDoorSprite",
+      (0, 9) -> "blueDoorSprite",
+      (0, 10) -> "redDoorSprite",
+      (40, 5) -> "arrowSprite",
+      (28, 11) -> "projectileSprite",
+      (33, 0) -> "leatherHelmetSprite",
+      (36, 0) -> "ironHelmetSprite",
+      (32, 1) -> "chainmailArmorSprite",
+      (33, 1) -> "plateArmorSprite",
+      (39, 1) -> "leatherBootsSprite",
+      (39, 0) -> "ironBootsSprite",
+      (41, 1) -> "leatherGlovesSprite",
+      (41, 0) -> "ironGlovesSprite",
+      (32, 6) -> "basicSwordSprite",
+      (32, 7) -> "ironSwordSprite",
+      (37, 13) -> "defaultItemSprite",
+      (5, 17) -> "stairsSprite",
+      (35, 21) -> "errorSprite"
+    )
+  }
 
   // Row 0 sprites
   val maybeFloorSprite: Sprite = Sprite(1, 0, floorLayer)

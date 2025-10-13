@@ -31,11 +31,12 @@ object UIState {
     
     val options: Seq[String] = {
       val baseOptions = Seq("New Game")
-      if (SaveGameSystem.hasSaveGame()) {
+      val withSave = if (SaveGameSystem.hasSaveGame()) {
         baseOptions :+ "Continue Game"
       } else {
         baseOptions :+ "Continue Game (No Save)"
       }
+      withSave :+ "Debug Menu"
     }
     
     def selectNext: MainMenu = copy(selectedOption = (selectedOption + 1) % options.length)
@@ -47,10 +48,26 @@ object UIState {
       index match {
         case 0 => true // New Game is always enabled
         case 1 => SaveGameSystem.hasSaveGame() // Continue Game only enabled if save exists
+        case 2 => true // Debug Menu is always enabled
         case _ => false
       }
     }
     
     def canConfirmCurrentSelection: Boolean = isOptionEnabled(selectedOption)
+  }
+  
+  case class DebugMenu(spriteIndex: Int = 0) extends UIState {
+    // Calculate total number of sprites in the sprite sheet
+    // 49 columns x 22 rows = 1078 sprites total
+    val totalSprites: Int = 49 * 22
+    
+    def nextSprite: DebugMenu = copy(spriteIndex = (spriteIndex + 1) % totalSprites)
+    def previousSprite: DebugMenu = copy(spriteIndex = (spriteIndex - 1 + totalSprites) % totalSprites)
+    
+    def getCurrentCoordinates: (Int, Int) = {
+      val x = spriteIndex % 49
+      val y = spriteIndex / 49
+      (x, y)
+    }
   }
 }
