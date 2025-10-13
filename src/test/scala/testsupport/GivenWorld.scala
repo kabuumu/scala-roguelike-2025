@@ -69,7 +69,8 @@ object Given {
       EventMemory(),
       Drawable(Sprites.playerSprite),
       Hitbox(),
-      Experience()
+      Experience(),
+      Coins()
     )
 
     val dungeon = Dungeon(testMode = true)
@@ -95,7 +96,8 @@ object Given {
       EventMemory(),
       Drawable(Sprites.playerSprite),
       Hitbox(),
-      Experience()
+      Experience(),
+      Coins()
     )
 
     // Create a simple 2-room dungeon with boss room
