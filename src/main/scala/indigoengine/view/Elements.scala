@@ -40,7 +40,7 @@ object Elements {
   
   // Helper to position count text consistently next to sprites
   private def countTextOffset(spriteX: Int): (Int, Int) = 
-    (spriteX + spriteScale - (defaultBorderSize / 2), (spriteScale / 4))
+    (spriteX + spriteScale, (spriteScale / 4))
 
   def healthBar(model: GameController): Batch[SceneNode] = {
     import game.entity.Health.*
@@ -120,7 +120,7 @@ object Elements {
       val startX = uiXOffset
       val startY = uiRowY(2) // Row 2 - below experience bar
       val itemSize = spriteScale
-      val itemSpacing = itemSize + defaultBorderSize
+      val itemSpacing = itemSize + uiXOffset
       
       val itemTypesWithCounts = usableItems.distinctBy(_.get[NameComponent]).map {
         itemEntity =>
