@@ -34,6 +34,14 @@ object Elements {
     }
   }
 
+  // UI Row system - each row takes up consistent vertical space
+  private val uiRowHeight = spriteScale + (defaultBorderSize * 2)
+  private def uiRowY(rowIndex: Int): Int = uiYOffset + (rowIndex * uiRowHeight)
+  
+  // Helper to position count text consistently next to sprites
+  private def countTextOffset(spriteX: Int): (Int, Int) = 
+    (spriteX + spriteScale, (spriteScale / 4))
+
   def healthBar(model: GameController): Batch[SceneNode] = {
     import game.entity.Health.*
 
@@ -43,7 +51,7 @@ object Elements {
     val barWidth = spriteScale * 6 // Total width of the health bar
     val barHeight = (spriteScale / 4) * 3 // Height of the health bar
     val xOffset = uiXOffset // X position of the bar
-    val yOffset = uiYOffset // Y position of the bar
+    val yOffset = uiRowY(0) // Row 0
 
     val filledWidth = (currentHealth * barWidth) / maxHealth
 
@@ -66,12 +74,10 @@ object Elements {
     val drawableCurrentExperience = currentExp - player.previousLevelExperience
     val drawableNextLevelExperience = nextLevelExp - player.previousLevelExperience
 
-    // Calculate the width of the filled portion of the experience bar
-
     val barWidth = spriteScale * 6 // Total width of the experience bar
     val barHeight = spriteScale / 2 // Height of the experience bar
     val xOffset = uiXOffset // X position of the bar
-    val yOffset = uiYOffset + spriteScale // Y position of the bar
+    val yOffset = uiRowY(1) // Row 1
 
     val filledWidth: Int = if (player.canLevelUp) barWidth 
     else (drawableCurrentExperience * barWidth) / drawableNextLevelExperience
@@ -112,13 +118,13 @@ object Elements {
       Batch.empty
     } else {
       val startX = uiXOffset
-      val startY = uiYOffset + (spriteScale * 2) + defaultBorderSize // Position below experience bar
+      val startY = uiRowY(2) // Row 2 - below experience bar
       val itemSize = spriteScale
-      val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
+      val itemSpacing = itemSize + uiXOffset
       
       val itemTypesWithCounts = usableItems.distinctBy(_.get[NameComponent]).map {
         itemEntity =>
-          val sprite = itemEntity.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite) //Temp code, need explicit way to set item sprite
+          val sprite = itemEntity.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(Sprites.defaultItemSprite)
           val count = itemEntity.get[UsableItem].map(_.chargeType) match {
             case Some(ChargeType.Ammo(requiredAmmo)) => allInventoryItems.count(_.exists[Ammo](_.ammoType == requiredAmmo))
             case _ => usableItems.count(_.get[NameComponent] == itemEntity.get[NameComponent])
@@ -136,9 +142,10 @@ object Elements {
           // Check if this display item should be highlighted
           val isHighlighted = selectedItemIndex.contains(displayIndex)
           
+          val (countX, countYOffset) = countTextOffset(itemX)
           val baseElements = Seq(
             spriteSheet.fromSprite(sprite).moveTo(itemX, itemY),
-            text(count.toString, itemX + itemSize - (defaultBorderSize / 2), itemY + itemSize - (defaultBorderSize / 2))
+            text(count.toString, countX, itemY + countYOffset)
           )
           
           // Add highlight background if selected
@@ -170,9 +177,9 @@ object Elements {
       Batch.empty
     } else {
       val startX = uiXOffset
-      val startY = uiYOffset + (spriteScale * 3) + (defaultBorderSize * 2) // Position below usable items
+      val startY = uiRowY(3) // Row 3 - below usable items
       val itemSize = spriteScale
-      val itemSpacing = itemSize + defaultBorderSize // Increased spacing between items
+      val itemSpacing = itemSize + defaultBorderSize
       
       // Group keys by color and count them
       val yellowKeyCount = playerKeys.count(_.keyItem.exists(_.keyColour == KeyColour.Yellow))
@@ -191,14 +198,32 @@ object Elements {
         val keyX = startX + (index * itemSpacing)
         val keyY = startY
         
+        val (countX, countYOffset) = countTextOffset(keyX)
         Seq(
           spriteSheet.fromSprite(sprite).moveTo(keyX, keyY),
-          text(count.toString, keyX + itemSize - (defaultBorderSize / 2), keyY + itemSize - (defaultBorderSize / 2))
+          text(count.toString, countX, keyY + countYOffset)
         )
       }
       
       keyDisplays.toBatch
     }
+  }
+
+  def coins(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
+    import data.Sprites
+    import game.entity.Coins.*
+    
+    val player = model.gameState.playerEntity
+    val coinCount = player.coins
+    
+    val startX = uiXOffset
+    val startY = uiRowY(4) // Row 4 - below keys
+    
+    val (countX, countYOffset) = countTextOffset(startX)
+    Seq(
+      spriteSheet.fromSprite(Sprites.coinSprite).moveTo(startX, startY),
+      text(s"$coinCount", countX, startY + countYOffset)
+    ).toBatch
   }
 
   def equipmentPaperdoll(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
@@ -619,8 +644,13 @@ object Elements {
     val stepsText = text(s"Steps travelled: $stepsTaken", uiXOffset, statsY)
     val itemsText = text(s"Items used: $itemsUsed", uiXOffset, statsY + spriteScale)
     
+    // Coins collected
+    import game.entity.Coins.*
+    val totalCoins = player.totalCoinsCollected
+    val coinsText = text(s"Coins collected: $totalCoins", uiXOffset, statsY + (spriteScale * 2))
+    
     // Final equipment section
-    val equipmentY = statsY + spriteScale * 3
+    val equipmentY = statsY + spriteScale * 4
     val equipmentHeader = text("Final equipment:", uiXOffset, equipmentY)
     
     val equipment = player.equipment
@@ -677,7 +707,7 @@ object Elements {
     val instructionsY = canvasHeight - spriteScale * 2
     val instructions = text("Press Space/Enter/E to return to main menu", uiXOffset, instructionsY)
     
-    Batch(title, enemiesHeader, stepsText, itemsText, equipmentHeader, instructions) ++ 
+    Batch(title, enemiesHeader, stepsText, itemsText, coinsText, equipmentHeader, instructions) ++ 
     enemyDisplayElements.toBatch ++ equipmentElements.toBatch
   }
 }

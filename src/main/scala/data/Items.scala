@@ -28,6 +28,7 @@ object Items {
     case IronGloves
     case BasicSword
     case IronSword
+    case Coin
 
   extension (itemRef: ItemReference) {
     def createEntity(id: String): Entity = itemRef match {
@@ -48,6 +49,7 @@ object Items {
       case ItemReference.IronGloves => ironGloves(id)
       case ItemReference.BasicSword => basicSword(id)
       case ItemReference.IronSword => ironSword(id)
+      case ItemReference.Coin => coin(id)
     }
   }
 
@@ -204,5 +206,13 @@ object Items {
     Equippable.weapon(damage, s"Weapon-$damage"),
     Hitbox(),
     Drawable(Sprites.basicSwordSprite)
+  )
+  
+  def coin(id: String): Entity = Entity(
+    id = id,
+    NameComponent("Coin", "A gold coin"),
+    CanPickUp(),
+    Hitbox(),
+    Drawable(Sprites.coinSprite)
   )
 }

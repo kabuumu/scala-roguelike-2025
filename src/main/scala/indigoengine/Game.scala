@@ -144,6 +144,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
             Layer.Content(
               healthBar(model)
                 ++ experienceBar(model)
+                ++ coins(model, spriteSheet)
                 ++ usableItems(model, spriteSheet)
                 ++ perkSelection(model)
                 ++ keys(model, spriteSheet)
