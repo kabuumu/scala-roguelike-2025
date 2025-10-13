@@ -1,6 +1,7 @@
 package game.system
 
-import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
+import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity, DropCoins}
+import data.Entities.EntityReference
 import game.GameState
 import game.entity.{Collision, DeathEvents, EntityType, MarkedForDeath, Movement}
 import game.entity.EntityType.entityType
@@ -34,6 +35,13 @@ object DeathHandlerSystem extends GameSystem {
                     case None =>
                       throw new Exception("Cannot spawn entity on death: victim has no position")
                   }
+                  case DropCoins(amount) =>
+                    markedForDeath.deathDetails.victim.get[Movement].map(_.position) match {
+                      case Some(victimPosition) =>
+                        Some(GameSystemEvent.SpawnEntityEvent(EntityReference.Coin, entity, victimPosition, forceSpawn = true))
+                      case None =>
+                        throw new Exception("Cannot drop coins on death: victim has no position")
+                    }
                 }
                 // Trigger death events and remove the entity
                 (currentGameState.remove(entity.id), 

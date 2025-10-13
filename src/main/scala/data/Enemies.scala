@@ -1,6 +1,6 @@
 package data
 
-import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
+import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity, DropCoins}
 import data.Entities.EntityReference.Slimelet
 import game.entity.*
 import game.entity.Experience.experienceForLevel
@@ -47,7 +47,10 @@ object Enemies {
       EventMemory(),
       Drawable(Sprites.ratSprite),
       Hitbox(),
-      DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 4)))
+      DeathEvents(Seq(
+        GiveExperience(experienceForLevel(2) / 4),
+        DropCoins(3)
+      ))
     )
   }
 
@@ -64,7 +67,10 @@ object Enemies {
       EventMemory(),
       Drawable(Sprites.snakeSprite),
       Hitbox(),
-      DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 4)))
+      DeathEvents(Seq(
+        GiveExperience(experienceForLevel(2) / 4),
+        DropCoins(3)
+      ))
     )
   }
 
@@ -84,7 +90,8 @@ object Enemies {
       DeathEvents(Seq(
         GiveExperience(experienceForLevel(2) / 4),
         SpawnEntity(Slimelet, forceSpawn = false),
-        SpawnEntity(Slimelet, forceSpawn = false)
+        SpawnEntity(Slimelet, forceSpawn = false),
+        DropCoins(5)
       ))
     )
   }
@@ -101,7 +108,10 @@ object Enemies {
       EventMemory(),
       Drawable(Sprites.slimeletSprite),
       Hitbox(),
-      DeathEvents(Seq(GiveExperience(experienceForLevel(2) / 5)))
+      DeathEvents(Seq(
+        GiveExperience(experienceForLevel(2) / 5),
+        DropCoins(1)
+      ))
     )
   }
 
@@ -123,7 +133,10 @@ object Enemies {
         Point(1, 1) -> Sprites.bossSpriteBR
       )),
       Hitbox(points = Set(Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1))), // 2x2 hitbox
-      DeathEvents(Seq(GiveExperience(experienceForLevel(5)))) // High experience reward
+      DeathEvents(Seq(
+        GiveExperience(experienceForLevel(5)),
+        DropCoins(50)
+      )) // High experience and coin reward
     )
   }
 }

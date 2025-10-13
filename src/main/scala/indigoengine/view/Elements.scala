@@ -201,6 +201,24 @@ object Elements {
     }
   }
 
+  def coins(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
+    import data.Sprites
+    import game.entity.Coins.*
+    
+    val player = model.gameState.playerEntity
+    val coinCount = player.coins
+    
+    // Position coins display below health and experience bars
+    val startX = uiXOffset
+    val startY = uiYOffset + (spriteScale * 2) + defaultBorderSize
+    val itemSize = spriteScale
+    
+    Seq(
+      spriteSheet.fromSprite(Sprites.coinSprite).moveTo(startX, startY),
+      text(s"$coinCount", startX + itemSize, startY + (itemSize / 4))
+    ).toBatch
+  }
+
   def equipmentPaperdoll(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
     import game.entity.Equipment.*
 
@@ -619,8 +637,13 @@ object Elements {
     val stepsText = text(s"Steps travelled: $stepsTaken", uiXOffset, statsY)
     val itemsText = text(s"Items used: $itemsUsed", uiXOffset, statsY + spriteScale)
     
+    // Coins collected
+    import game.entity.Coins.*
+    val totalCoins = player.totalCoinsCollected
+    val coinsText = text(s"Coins collected: $totalCoins", uiXOffset, statsY + (spriteScale * 2))
+    
     // Final equipment section
-    val equipmentY = statsY + spriteScale * 3
+    val equipmentY = statsY + spriteScale * 4
     val equipmentHeader = text("Final equipment:", uiXOffset, equipmentY)
     
     val equipment = player.equipment
@@ -677,7 +700,7 @@ object Elements {
     val instructionsY = canvasHeight - spriteScale * 2
     val instructions = text("Press Space/Enter/E to return to main menu", uiXOffset, instructionsY)
     
-    Batch(title, enemiesHeader, stepsText, itemsText, equipmentHeader, instructions) ++ 
+    Batch(title, enemiesHeader, stepsText, itemsText, coinsText, equipmentHeader, instructions) ++ 
     enemyDisplayElements.toBatch ++ equipmentElements.toBatch
   }
 }

@@ -2,10 +2,11 @@ package game.system
 
 import game.entity.EntityType
 import game.entity.EntityType.*
-import game.entity.{Inventory, CanPickUp, Movement}
+import game.entity.{Inventory, CanPickUp, Movement, NameComponent, Coins}
 import game.entity.Inventory.*
 import game.entity.CanPickUp.canPickUp
 import game.entity.Equippable.isEquippable
+import game.entity.Coins.addCoins
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{CollisionTarget, GameSystemEvent}
 import game.{GameState}
@@ -16,8 +17,14 @@ object InventorySystem extends GameSystem {
       case (currentState, GameSystemEvent.CollisionEvent(entityId, CollisionTarget.Entity(collidedWith))) =>
         (currentState.getEntity(entityId), currentState.getEntity(collidedWith)) match {
           case (Some(entity@EntityType(Player)), Some(itemEntity)) if itemEntity.canPickUp =>
-            // Check if item is equippable (should not be auto-picked up)
-            if (itemEntity.isEquippable) {
+            // Check if item is a coin
+            val isCoin = itemEntity.get[NameComponent].exists(_.name == "Coin")
+            if (isCoin) {
+              // Coins are added to the Coins component and removed from the world
+              currentState
+                .updateEntity(entityId, entity.addCoins(1))
+                .remove(collidedWith)
+            } else if (itemEntity.isEquippable) {
               // Don't auto-pickup equippable items - they need to be equipped with Q key
               currentState
             } else {

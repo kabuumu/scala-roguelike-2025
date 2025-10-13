@@ -9,6 +9,7 @@ object Entities {
   enum EntityReference:
     case Explosion(damage: Int, size: Int)
     case Slimelet
+    case Coin
 
   def explosionEffect(creatorId: String, position: game.Point, targetType: EntityType, damage: Int = 10, size: Int = 2): Entity = {
     Entity(

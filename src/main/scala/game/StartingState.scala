@@ -149,6 +149,7 @@ object StartingState {
         Drawable(Sprites.playerSprite),
         Hitbox(),
         Experience(),
+        Coins(),
         DeathEvents()
       )
   }

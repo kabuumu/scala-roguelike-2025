@@ -1,7 +1,7 @@
 package game.system
 
-import data.Entities.EntityReference.{Explosion, Slimelet}
-import data.{Entities, Sprites}
+import data.Entities.EntityReference.{Explosion, Slimelet, Coin}
+import data.{Entities, Items, Sprites}
 import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
@@ -37,6 +37,8 @@ object SpawnEntitySystem extends GameSystem {
             Entities.explosionEffect(creator.id, spawnPosition, Enemy, damage, size) //TODO - Defaulted to targetType Enemy, should be parameterized
           case Slimelet =>
             Entities.slimelet(spawnPosition)
+          case Coin =>
+            Items.coin(s"coin-${System.currentTimeMillis()}-${spawnPosition.x}-${spawnPosition.y}").addComponent(Movement(position = spawnPosition))
         }
         // Regular spawn - no collision checking
         currentState.add(entity)
