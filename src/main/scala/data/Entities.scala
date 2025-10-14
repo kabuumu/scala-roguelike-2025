@@ -52,7 +52,7 @@ object Entities {
       Trader(Trader.defaultInventory),
       NameComponent("Trader", "A friendly merchant willing to buy and sell items"),
       Hitbox(),
-      Drawable(Sprites.playerSprite) // Reuse player sprite temporarily until we have a trader sprite
+      Drawable(Sprites.traderSprite)
     )
   }
 }

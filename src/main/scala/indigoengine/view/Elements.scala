@@ -523,6 +523,24 @@ object Elements {
             case statusEffect: game.status.StatusEffect =>
               // Show perk description
               s"${statusEffect.name}: ${statusEffect.description}. Press Space/E/Enter to select."
+            case itemRef: data.Items.ItemReference =>
+              // Show item reference for trading
+              val tempEntity = itemRef.createEntity("temp")
+              val itemName = tempEntity.get[game.entity.NameComponent].map(_.name).getOrElse(itemRef.toString)
+              val description = tempEntity.get[game.entity.NameComponent].map(_.description).getOrElse("")
+              val descriptionText = if (description.nonEmpty) s" - $description" else ""
+              
+              // Get price from trader if we're in trade menu
+              val priceText = model.uiState match {
+                case tradeMenu: UIState.TradeMenu =>
+                  tradeMenu.trader.get[game.entity.Trader].flatMap(_.buyPrice(itemRef)) match {
+                    case Some(price) => s" (${price} coins)"
+                    case None => ""
+                  }
+                case _ => ""
+              }
+              
+              s"$itemName$descriptionText$priceText. Press Space/E/Enter to buy."
             case _ =>
               "Press Space/E/Enter to select, Escape to cancel."
           }

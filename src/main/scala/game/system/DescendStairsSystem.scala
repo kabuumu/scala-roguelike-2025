@@ -107,11 +107,19 @@ object DescendStairsSystem extends GameSystem {
       // Get player's inventory items from current game state
       val playerInventoryEntities = gameState.entities.filter(e => playerInventoryEntityIds.contains(e.id))
       
-      // Spawn a trader in the starting room of the new floor
+      // Spawn a trader in a separate room adjacent to starting room
       val newTrader: Entity = {
+        // Find a room adjacent to the start point that is not the endpoint or a blocked room
+        val adjacentRooms = game.Direction.values.map(dir => dungeon.startPoint + dir)
+          .filter(room => dungeon.roomGrid.contains(room))
+          .filterNot(room => dungeon.endpoint.contains(room))
+          .filterNot(room => dungeon.blockedRooms.contains(room))
+        
+        val traderRoom = adjacentRooms.headOption.getOrElse(dungeon.startPoint)
+        
         val traderPos = game.Point(
-          dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2 + 2,
-          dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+          traderRoom.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          traderRoom.y * Dungeon.roomSize + Dungeon.roomSize / 2
         )
         data.Entities.trader(s"trader-floor-$newFloor", traderPos)
       }
