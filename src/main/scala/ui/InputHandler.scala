@@ -190,10 +190,21 @@ object InputHandler {
                 case None => (UIState.Move, None)
               }
             case "Sell" =>
-              // Show player's inventory to sell
+              // Show player's inventory to sell (excluding equipped items)
+              import game.entity.Equipment
+              
+              // Get IDs of all equipped items
+              val equippedItemNames = gameState.playerEntity.get[Equipment]
+                .map(_.getAllEquipped.map(_.itemName).toSet)
+                .getOrElse(Set.empty)
+              
               val sellableItems = gameState.playerEntity.inventoryItems(gameState).filter { item =>
-                // Check if trader buys this item type
-                item.get[game.entity.NameComponent].exists { nameComp =>
+                // First check if the item is not currently equipped
+                val itemName = item.get[game.entity.NameComponent].map(_.name).getOrElse("")
+                val notEquipped = !equippedItemNames.contains(itemName)
+                
+                // Then check if trader buys this item type
+                val traderBuysIt = item.get[game.entity.NameComponent].exists { nameComp =>
                   tradeMenu.trader.get[game.entity.Trader].exists { traderComp =>
                     traderComp.tradeInventory.keys.exists { ref =>
                       val refEntity = ref.createEntity("temp")
@@ -201,6 +212,8 @@ object InputHandler {
                     }
                   }
                 }
+                
+                notEquipped && traderBuysIt
               }
               if (sellableItems.nonEmpty) {
                 (UIState.ListSelect[Entity](

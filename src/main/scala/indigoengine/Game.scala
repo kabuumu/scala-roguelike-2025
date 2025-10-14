@@ -159,20 +159,25 @@ object Game extends IndigoSandbox[Unit, GameController] {
   }
 
   private def drawUIElements(spriteSheet: Graphic[?], model: GameController): Seq[SceneNode] = {
+    // Don't show targeting for trade-related lists (buying/selling)
     val optCursorTargetInfo = model.uiState match {
       case UIState.ScrollSelect(cursor, _) =>
         Some((cursor, None)) // Position only, no entity
       case list: UIState.ListSelect[_] if list.list.nonEmpty =>
         val selectedItem = list.list(list.index)
         selectedItem match {
+          // Skip targeting for ItemReference (buying from trader)
+          case _: data.Items.ItemReference =>
+            None
           // Handle ActionTarget from unified action system
           case actionTarget: ui.ActionTargets.ActionTarget =>
             Some((actionTarget.entity.position, Some(actionTarget.entity)))
           // Handle direct Entity objects (for attack lists, etc.)
           case entity: game.entity.Entity =>
             // Only show cursor for entities that have meaningful map positions (enemies, not inventory items)
+            // Skip if it's an inventory item being sold (has position but it's just stored data)
             import game.entity.UsableItem
-            if (!entity.has[UsableItem]) {
+            if (!entity.has[UsableItem] && !entity.has[game.entity.Equippable]) {
               Some((entity.position, Some(entity)))
             } else {
               None
