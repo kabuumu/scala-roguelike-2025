@@ -79,7 +79,7 @@ object InputHandler {
                           case _ => true
                         }
                         if (enemies.nonEmpty && hasRequiredAmmo) {
-                          (UIState.ListSelect(
+                          (UIState.EnemyTargetSelect(
                             list = enemies,
                             effect = target => (
                               UIState.Move,
@@ -103,7 +103,7 @@ object InputHandler {
             (UIState.Move, None)
           }
         case Input.LevelUp if gameState.playerEntity.canLevelUp =>
-          val levelUpState = UIState.ListSelect(
+          val levelUpState = UIState.StatusEffectSelect(
             list = gameState.playerEntity.getPossiblePerks,
             effect = selectedPerk => {
               (UIState.Move, Some(InputAction.LevelUp(selectedPerk)))
@@ -114,7 +114,7 @@ object InputHandler {
         case Input.Action =>
           val targets = GameTargeting.nearbyActionTargets(gameState)
           if (targets.nonEmpty) {
-            (UIState.ListSelect(
+            (UIState.ActionTargetSelect(
               list = targets,
               effect = target => {
                 target match {
@@ -144,7 +144,8 @@ object InputHandler {
             case s: UIState.BuyItemSelect => (s.iterateDown, None)
             case s: UIState.SellItemSelect => (s.iterateDown, None)
             case s: UIState.StatusEffectSelect => (s.iterateDown, None)
-            case s: UIState.ListSelect[_] => (s.iterateDown, None)
+            case s: UIState.ActionTargetSelect => (s.iterateDown, None)
+            case s: UIState.EnemyTargetSelect => (s.iterateDown, None)
           }
         case Input.Move(Direction.Up | Direction.Right) =>
           listSelect match {
@@ -152,7 +153,8 @@ object InputHandler {
             case s: UIState.BuyItemSelect => (s.iterate, None)
             case s: UIState.SellItemSelect => (s.iterate, None)
             case s: UIState.StatusEffectSelect => (s.iterate, None)
-            case s: UIState.ListSelect[_] => (s.iterate, None)
+            case s: UIState.ActionTargetSelect => (s.iterate, None)
+            case s: UIState.EnemyTargetSelect => (s.iterate, None)
           }
         case Input.UseItem | Input.Action =>
           listSelect.action

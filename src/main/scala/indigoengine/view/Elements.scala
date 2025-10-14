@@ -555,6 +555,25 @@ object Elements {
         } else {
           "No items available."
         }
+      
+      case actionTargetSelect: UIState.ActionTargetSelect =>
+        if (actionTargetSelect.list.nonEmpty) {
+          val target = actionTargetSelect.currentItem
+          s"${target.description}. Press Space/E/Enter to select, Escape to cancel."
+        } else {
+          "No actions available."
+        }
+      
+      case enemyTargetSelect: UIState.EnemyTargetSelect =>
+        if (enemyTargetSelect.list.nonEmpty) {
+          val enemy = enemyTargetSelect.currentItem
+          val healthText = if (enemy.has[game.entity.Health]) {
+            s" (${enemy.currentHealth}/${enemy.maxHealth} HP)"
+          } else ""
+          s"Target: ${enemy.name.getOrElse("Enemy")}$healthText. Press Space/E/Enter to confirm."
+        } else {
+          "No targets available."
+        }
         
       case scrollSelect: UIState.ScrollSelect =>
         val x = scrollSelect.cursor.x

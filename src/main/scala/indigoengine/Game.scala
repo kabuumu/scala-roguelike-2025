@@ -172,29 +172,24 @@ object Game extends IndigoSandbox[Unit, GameController] {
       case useItemSelect: UIState.UseItemSelect =>
         None // Item use targeting is handled by ScrollSelect transition
       
-      // Handle old generic ListSelect for backward compatibility
-      case list: UIState.ListSelect[_] if list.list.nonEmpty =>
-        val selectedItem = list.list(list.index)
-        selectedItem match {
-          // Skip targeting for ItemReference (buying from trader)
-          case _: data.Items.ItemReference =>
-            None
-          // Handle ActionTarget from unified action system
-          case actionTarget: ui.ActionTargets.ActionTarget =>
-            Some((actionTarget.entity.position, Some(actionTarget.entity)))
-          // Handle direct Entity objects (for attack lists, etc.)
-          case entity: game.entity.Entity =>
-            // Only show cursor for entities that have meaningful map positions (enemies, not inventory items)
-            // Skip if it's an inventory item being sold (has position but it's just stored data)
-            import game.entity.UsableItem
-            if (!entity.has[UsableItem] && !entity.has[game.entity.Equippable]) {
-              Some((entity.position, Some(entity)))
-            } else {
-              None
-            }
-          case _ =>
-            None
+      // Handle action target selection (for attacks, equipping, trading, etc.)
+      case actionTargetSelect: UIState.ActionTargetSelect =>
+        if (actionTargetSelect.list.nonEmpty) {
+          val actionTarget = actionTargetSelect.currentItem
+          Some((actionTarget.entity.position, Some(actionTarget.entity)))
+        } else {
+          None
         }
+      
+      // Handle enemy targeting (for ranged attacks, spells, etc.)
+      case enemyTargetSelect: UIState.EnemyTargetSelect =>
+        if (enemyTargetSelect.list.nonEmpty) {
+          val targetEntity = enemyTargetSelect.currentItem
+          Some((targetEntity.position, Some(targetEntity)))
+        } else {
+          None
+        }
+      
       case _ =>
         None
     }

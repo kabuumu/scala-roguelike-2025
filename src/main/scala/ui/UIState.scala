@@ -68,13 +68,22 @@ object UIState {
     def currentItem: game.status.StatusEffect = list(index)
   }
   
-  // Legacy generic ListSelect - deprecated but kept for compatibility
-  @deprecated("Use specific ListSelectState implementations instead", "2025-10-14")
-  case class ListSelect[T](list: Seq[T], index: Int = 0, effect: T => (UIState, Option[InputAction])) extends ListSelectState {
-    def iterate: ListSelect[T] = copy(index = nextIndex)
-    def iterateDown: ListSelect[T] = copy(index = prevIndex)
+  // Concrete list select for action targets (Attack, Equip, Trade, etc.)
+  case class ActionTargetSelect(list: Seq[ActionTargets.ActionTarget], index: Int = 0, effect: ActionTargets.ActionTarget => (UIState, Option[InputAction])) extends ListSelectState {
+    def iterate: ActionTargetSelect = copy(index = nextIndex)
+    def iterateDown: ActionTargetSelect = copy(index = prevIndex)
     def listLength: Int = list.length
     def action: (UIState, Option[InputAction]) = effect(list(index))
+    def currentItem: ActionTargets.ActionTarget = list(index)
+  }
+  
+  // Concrete list select for enemy targeting (for ranged attacks, spells, etc.)
+  case class EnemyTargetSelect(list: Seq[Entity], index: Int = 0, effect: Entity => (UIState, Option[InputAction])) extends ListSelectState {
+    def iterate: EnemyTargetSelect = copy(index = nextIndex)
+    def iterateDown: EnemyTargetSelect = copy(index = prevIndex)
+    def listLength: Int = list.length
+    def action: (UIState, Option[InputAction]) = effect(list(index))
+    def currentItem: Entity = list(index)
   }
 
   case class TradeMenu(trader: Entity, selectedOption: Int = 0) extends UIState {
