@@ -27,25 +27,83 @@ object TradeSystem extends GameSystem {
   }
   
   private def handleBuyItem(gameState: GameState, trader: Entity, itemRef: ItemReference): GameState = {
+    import game.entity.Equipment.equipItemComponent
+    import game.entity.Equippable.isEquippable
+    import game.entity.Movement
+    import game.entity.Movement.position
+    
     trader.get[Trader] match {
       case Some(traderComponent) =>
         traderComponent.buyPrice(itemRef) match {
           case Some(price) if gameState.playerEntity.coins >= price =>
-            // Create the item and add it to player's inventory
+            // Create the item
             val newItemId = s"item-${Random.nextString(8)}"
             val newItem = itemRef.createEntity(newItemId)
             
-            val updatedPlayer = gameState.playerEntity
-              .removeCoins(price)
-              .addItemEntity(newItemId)
-            
-            val updatedEntities = gameState.entities
-              .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer :+ newItem
-            
-            gameState.copy(entities = updatedEntities)
+            // Check if the item is equippable
+            if (newItem.isEquippable) {
+              // Auto-equip the item
+              newItem.get[game.entity.Equippable] match {
+                case Some(equippable) =>
+                  val (playerWithNewEquipment, previousEquippable) = gameState.playerEntity.equipItemComponent(equippable)
+                  val updatedPlayer = playerWithNewEquipment.removeCoins(price)
+                  
+                  // Drop previously equipped item nearby if there was one
+                  val droppedItemEntities = previousEquippable.map { prevEquip =>
+                    val droppedItemId = s"dropped-${Random.nextString(8)}"
+                    val droppedItem = createEquipmentEntity(droppedItemId, prevEquip)
+                    // Place item adjacent to player
+                    val playerPos = gameState.playerEntity.position
+                    val dropPos = game.Point(playerPos.x + 1, playerPos.y)
+                    droppedItem.addComponent(Movement(position = dropPos))
+                  }.toSeq
+                  
+                  val updatedEntities = (gameState.entities
+                    .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer) ++ droppedItemEntities
+                  
+                  gameState.copy(entities = updatedEntities)
+                case None => gameState
+              }
+            } else {
+              // Non-equippable item, just add to inventory
+              val updatedPlayer = gameState.playerEntity
+                .removeCoins(price)
+                .addItemEntity(newItemId)
+              
+              val updatedEntities = gameState.entities
+                .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer :+ newItem
+              
+              gameState.copy(entities = updatedEntities)
+            }
           case _ => gameState // Can't afford or item not for sale
         }
       case None => gameState
+    }
+  }
+  
+  // Helper to create an equipment entity from an Equippable component
+  private def createEquipmentEntity(id: String, equippable: game.entity.Equippable): Entity = {
+    import game.entity.{NameComponent, Drawable, Hitbox, Movement}
+    import data.Sprites
+    
+    // Find the matching ItemReference to create the entity properly
+    val itemRefOpt = ItemReference.values.find { ref =>
+      val tempEntity = ref.createEntity("temp")
+      tempEntity.get[game.entity.Equippable].exists(_.itemName == equippable.itemName)
+    }
+    
+    itemRefOpt match {
+      case Some(itemRef) => itemRef.createEntity(id)
+      case None =>
+        // Fallback: create a basic entity with the equippable component
+        Entity(
+          id = id,
+          equippable,
+          NameComponent(equippable.itemName, ""),
+          Drawable(Sprites.defaultItemSprite),
+          Hitbox(),
+          Movement(position = game.Point(0, 0))
+        )
     }
   }
   
