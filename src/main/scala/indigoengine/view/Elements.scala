@@ -510,16 +510,40 @@ object Elements {
                 case None => s"$itemName. Press Space/E/Enter to use."
               }
             case entity: Entity =>
-              // Show entity information
-              val entityTypeName = entity.entityType match {
-                case Enemy => "Enemy"
-                case Player => "Player"
-                case _ => entity.entityType.toString
+              // Check if this is an item being sold (has UsableItem or Equippable component)
+              if (entity.has[game.entity.UsableItem] || entity.has[game.entity.Equippable]) {
+                // This is an item to sell
+                val itemName = entity.get[game.entity.NameComponent].map(_.name).getOrElse("Item")
+                val description = entity.get[game.entity.NameComponent].map(_.description).getOrElse("")
+                val descriptionText = if (description.nonEmpty) s" - $description" else ""
+                
+                // Try to get sell price from trader
+                val priceText = model.gameState.entities.collectFirst {
+                  case e if e.entityType == game.entity.EntityType.Trader =>
+                    e.get[game.entity.Trader].flatMap { traderComp =>
+                      // Find the ItemReference for this item
+                      entity.get[game.entity.NameComponent].flatMap { nameComp =>
+                        data.Items.ItemReference.values.find { ref =>
+                          val refEntity = ref.createEntity("temp")
+                          refEntity.get[game.entity.NameComponent].map(_.name) == Some(nameComp.name)
+                        }.flatMap(traderComp.sellPrice).map(price => s" (${price} coins)")
+                      }
+                    }
+                }.flatten.getOrElse("")
+                
+                s"$itemName$descriptionText$priceText. Press Space/E/Enter to sell."
+              } else {
+                // Show entity information for non-items (enemies, etc.)
+                val entityTypeName = entity.entityType match {
+                  case Enemy => "Enemy"
+                  case Player => "Player"
+                  case _ => entity.entityType.toString
+                }
+                val healthText = if (entity.has[game.entity.Health]) {
+                  s" (${entity.currentHealth}/${entity.maxHealth} HP)"
+                } else ""
+                s"$entityTypeName$healthText. Press Space/E/Enter to target."
               }
-              val healthText = if (entity.has[game.entity.Health]) {
-                s" (${entity.currentHealth}/${entity.maxHealth} HP)"
-              } else ""
-              s"$entityTypeName$healthText. Press Space/E/Enter to target."
             case statusEffect: game.status.StatusEffect =>
               // Show perk description
               s"${statusEffect.name}: ${statusEffect.description}. Press Space/E/Enter to select."
