@@ -108,6 +108,8 @@ object TradeSystem extends GameSystem {
   }
   
   private def handleSellItem(gameState: GameState, trader: Entity, itemEntity: Entity): GameState = {
+    import game.entity.Equipment.{equipment, unequipItem}
+    
     // Find the corresponding ItemReference for this item
     val itemRefOpt = findItemReference(itemEntity)
     
@@ -115,8 +117,26 @@ object TradeSystem extends GameSystem {
       case (Some(traderComponent), Some(itemRef)) =>
         traderComponent.sellPrice(itemRef) match {
           case Some(price) =>
+            // Check if item is currently equipped and unequip it first
+            val playerWithUnequipped = itemEntity.get[game.entity.Equippable] match {
+              case Some(equippable) =>
+                // Check if this item is currently equipped
+                val currentEquipment = gameState.playerEntity.equipment
+                val isEquipped = currentEquipment.getEquippedItem(equippable.slot)
+                  .exists(_.itemName == equippable.itemName)
+                
+                if (isEquipped) {
+                  // Unequip the item before selling
+                  gameState.playerEntity.unequipItem(equippable.slot)
+                } else {
+                  gameState.playerEntity
+                }
+              case None =>
+                gameState.playerEntity
+            }
+            
             // Remove item from player's inventory and add coins
-            val updatedPlayer = gameState.playerEntity
+            val updatedPlayer = playerWithUnequipped
               .addCoins(price)
               .removeItemEntity(itemEntity.id)
             
