@@ -191,8 +191,33 @@ object InputHandler {
               }
             case "Sell" =>
               // Show player's inventory to sell (including equipped items)
-              val sellableItems = gameState.playerEntity.inventoryItems(gameState).filter { item =>
-                // Check if trader buys this item type
+              import game.entity.Equipment
+              import scala.util.Random
+              
+              // Get inventory items
+              val inventoryItems = gameState.playerEntity.inventoryItems(gameState)
+              
+              // Get equipped items as entities (create temporary entities for them)
+              val equippedItems = gameState.playerEntity.get[Equipment]
+                .map(_.getAllEquipped.map { equippable =>
+                  // Find the ItemReference for this equipped item
+                  val itemRefOpt = data.Items.ItemReference.values.find { ref =>
+                    val tempEntity = ref.createEntity("temp")
+                    tempEntity.get[game.entity.Equippable].exists(_.itemName == equippable.itemName)
+                  }
+                  
+                  itemRefOpt.map { itemRef =>
+                    // Create a temporary entity for display purposes
+                    itemRef.createEntity(s"equipped-${equippable.itemName}-${Random.nextString(8)}")
+                  }
+                }.flatten)
+                .getOrElse(Seq.empty)
+              
+              // Combine both lists
+              val allItems = inventoryItems ++ equippedItems
+              
+              // Filter to only items the trader buys
+              val sellableItems = allItems.filter { item =>
                 item.get[game.entity.NameComponent].exists { nameComp =>
                   tradeMenu.trader.get[game.entity.Trader].exists { traderComp =>
                     traderComp.tradeInventory.keys.exists { ref =>
