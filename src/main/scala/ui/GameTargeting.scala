@@ -47,6 +47,12 @@ object GameTargeting {
       .filter(_.entityType == EntityType.Stairs)
       .map(DescendStairsTarget.apply)
     
-    attackTargets ++ equipTargets ++ stairsTargets
+    // Get nearby traders
+    val tradeTargets = gameState.entities
+      .filter(e => adjacentPositions.contains(e.position))
+      .filter(_.entityType == EntityType.Trader)
+      .map(TradeTarget.apply)
+    
+    attackTargets ++ equipTargets ++ stairsTargets ++ tradeTargets
   }
 }

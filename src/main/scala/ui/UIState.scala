@@ -26,6 +26,15 @@ object UIState {
     val action: (UIState, Option[InputAction]) = effect(list(index))
   }
 
+  case class TradeMenu(trader: Entity, selectedOption: Int = 0) extends UIState {
+    val options: Seq[String] = Seq("Buy", "Sell", "Exit")
+    
+    def selectNext: TradeMenu = copy(selectedOption = (selectedOption + 1) % options.length)
+    def selectPrevious: TradeMenu = copy(selectedOption = (selectedOption - 1 + options.length) % options.length)
+    
+    def getSelectedOption: String = options(selectedOption)
+  }
+
   case class MainMenu(selectedOption: Int = 0) extends UIState {
     import game.save.SaveGameSystem
     

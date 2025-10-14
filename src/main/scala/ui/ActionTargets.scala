@@ -41,4 +41,8 @@ object ActionTargets {
   case class DescendStairsTarget(entity: Entity) extends ActionTarget {
     def description: String = "Descend stairs to next floor"
   }
+  
+  case class TradeTarget(entity: Entity) extends ActionTarget {
+    def description: String = s"Trade with ${entity.name.getOrElse("Trader")}"
+  }
 }

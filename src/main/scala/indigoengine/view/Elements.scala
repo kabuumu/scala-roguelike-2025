@@ -534,8 +534,13 @@ object Elements {
         val x = scrollSelect.cursor.x
         val y = scrollSelect.cursor.y
         s"Target: [$x,$y]. Press Enter to confirm action at this location."
+      case tradeMenu: UIState.TradeMenu =>
+        val selectedOption = tradeMenu.getSelectedOption
+        s"Trading Menu - Selected: $selectedOption. Use arrows to navigate, Space/E/Enter to select."
       case _: UIState.MainMenu =>
         "" // No message window content for main menu
+      case _: UIState.GameOver =>
+        "" // Game over screen handles its own messaging
     }
     
     // Position message window at the very bottom of the visible canvas area

@@ -10,6 +10,7 @@ import game.entity.Inventory.*
 import game.entity.Movement.*
 import game.entity.NameComponent.name
 import game.entity.Equippable.isEquippable
+import game.entity.Coins.coins
 import game.*
 import ui.ActionTargets.*
 import ui.UIState.UIState
@@ -124,6 +125,8 @@ object InputHandler {
                     (UIState.Move, Some(InputAction.EquipSpecific(entity)))
                   case ActionTargets.DescendStairsTarget(_) =>
                     (UIState.Move, Some(InputAction.DescendStairs))
+                  case ActionTargets.TradeTarget(entity) =>
+                    (UIState.TradeMenu(entity), Some(InputAction.Trade(entity)))
                 }
               }
             ), None)
@@ -156,6 +159,65 @@ object InputHandler {
           scrollSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
+      }
+    case tradeMenu: UIState.TradeMenu =>
+      input match {
+        case Input.Move(Direction.Up) => (tradeMenu.selectPrevious, None)
+        case Input.Move(Direction.Down) => (tradeMenu.selectNext, None)
+        case Input.UseItem | Input.Action | Input.Confirm =>
+          tradeMenu.getSelectedOption match {
+            case "Buy" =>
+              // Show list of items to buy from trader
+              val trader = tradeMenu.trader
+              trader.get[game.entity.Trader] match {
+                case Some(traderComponent) =>
+                  val buyableItems = traderComponent.tradeInventory.keys.toSeq
+                  if (buyableItems.nonEmpty) {
+                    (UIState.ListSelect[data.Items.ItemReference](
+                      list = buyableItems,
+                      effect = itemRef => {
+                        traderComponent.buyPrice(itemRef) match {
+                          case Some(price) if gameState.playerEntity.coins >= price =>
+                            (UIState.TradeMenu(trader), Some(InputAction.BuyItem(trader, itemRef)))
+                          case _ =>
+                            (UIState.TradeMenu(trader), None) // Can't afford
+                        }
+                      }
+                    ), None)
+                  } else {
+                    (tradeMenu, None)
+                  }
+                case None => (UIState.Move, None)
+              }
+            case "Sell" =>
+              // Show player's inventory to sell
+              val sellableItems = gameState.playerEntity.inventoryItems(gameState).filter { item =>
+                // Check if trader buys this item type
+                item.get[game.entity.NameComponent].exists { nameComp =>
+                  tradeMenu.trader.get[game.entity.Trader].exists { traderComp =>
+                    traderComp.tradeInventory.keys.exists { ref =>
+                      val refEntity = ref.createEntity("temp")
+                      refEntity.get[game.entity.NameComponent].map(_.name) == Some(nameComp.name)
+                    }
+                  }
+                }
+              }
+              if (sellableItems.nonEmpty) {
+                (UIState.ListSelect[Entity](
+                  list = sellableItems,
+                  effect = itemEntity => {
+                    (UIState.TradeMenu(tradeMenu.trader), Some(InputAction.SellItem(tradeMenu.trader, itemEntity)))
+                  }
+                ), None)
+              } else {
+                (tradeMenu, None) // No sellable items
+              }
+            case "Exit" =>
+              (UIState.Move, None)
+            case _ => (tradeMenu, None)
+          }
+        case Input.Cancel => (UIState.Move, None)
+        case _ => (tradeMenu, None)
       }
     case _: UIState.GameOver =>
       input match {
