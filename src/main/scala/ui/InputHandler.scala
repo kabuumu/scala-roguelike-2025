@@ -49,7 +49,7 @@ object InputHandler {
         case Input.UseItem =>
           val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(_.get[NameComponent])
           if (usableItems.nonEmpty) {
-            (UIState.ListSelect[Entity](
+            (UIState.UseItemSelect(
               list = usableItems,
               effect = itemEntity => {
                 // Handle different item types based on UsableItem component
@@ -136,10 +136,24 @@ object InputHandler {
         case Input.Wait => (UIState.Move, Some(InputAction.Wait))
         case _ => (uiState, None)
       }
-    case listSelect: UIState.ListSelect[_] =>
+    case listSelect: UIState.ListSelectState =>
       input match {
-        case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterateDown, None)
-        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
+        case Input.Move(Direction.Down | Direction.Left) =>
+          listSelect match {
+            case s: UIState.UseItemSelect => (s.iterateDown, None)
+            case s: UIState.BuyItemSelect => (s.iterateDown, None)
+            case s: UIState.SellItemSelect => (s.iterateDown, None)
+            case s: UIState.StatusEffectSelect => (s.iterateDown, None)
+            case s: UIState.ListSelect[_] => (s.iterateDown, None)
+          }
+        case Input.Move(Direction.Up | Direction.Right) =>
+          listSelect match {
+            case s: UIState.UseItemSelect => (s.iterate, None)
+            case s: UIState.BuyItemSelect => (s.iterate, None)
+            case s: UIState.SellItemSelect => (s.iterate, None)
+            case s: UIState.StatusEffectSelect => (s.iterate, None)
+            case s: UIState.ListSelect[_] => (s.iterate, None)
+          }
         case Input.UseItem | Input.Action =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)
@@ -173,7 +187,7 @@ object InputHandler {
                 case Some(traderComponent) =>
                   val buyableItems = traderComponent.tradeInventory.keys.toSeq
                   if (buyableItems.nonEmpty) {
-                    (UIState.ListSelect[data.Items.ItemReference](
+                    (UIState.BuyItemSelect(
                       list = buyableItems,
                       effect = itemRef => {
                         traderComponent.buyPrice(itemRef) match {
@@ -228,7 +242,7 @@ object InputHandler {
                 }
               }
               if (sellableItems.nonEmpty) {
-                (UIState.ListSelect[Entity](
+                (UIState.SellItemSelect(
                   list = sellableItems,
                   effect = itemEntity => {
                     (UIState.TradeMenu(tradeMenu.trader), Some(InputAction.SellItem(tradeMenu.trader, itemEntity)))

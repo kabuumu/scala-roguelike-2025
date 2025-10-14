@@ -161,8 +161,18 @@ object Game extends IndigoSandbox[Unit, GameController] {
   private def drawUIElements(spriteSheet: Graphic[?], model: GameController): Seq[SceneNode] = {
     // Don't show targeting for trade-related lists (buying/selling)
     val optCursorTargetInfo = model.uiState match {
-      case UIState.ScrollSelect(cursor, _) =>
-        Some((cursor, None)) // Position only, no entity
+      case scrollSelect: UIState.ScrollSelectState =>
+        Some((scrollSelect.cursor, None)) // Position only, no entity
+      
+      // Skip targeting for buying/selling - these are inventory/shop UIs
+      case _: UIState.BuyItemSelect | _: UIState.SellItemSelect =>
+        None
+      
+      // Show cursor for using items (when they have entity targets)
+      case useItemSelect: UIState.UseItemSelect =>
+        None // Item use targeting is handled by ScrollSelect transition
+      
+      // Handle old generic ListSelect for backward compatibility
       case list: UIState.ListSelect[_] if list.list.nonEmpty =>
         val selectedItem = list.list(list.index)
         selectedItem match {
