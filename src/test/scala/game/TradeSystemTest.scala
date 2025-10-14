@@ -96,4 +96,37 @@ class TradeSystemTest extends AnyFunSuite {
     assert(updatedState.playerEntity.coins == 8) // Sell price
     assert(!updatedState.playerEntity.get[Inventory].exists(_.itemEntityIds.contains(potion.id)))
   }
+  
+  test("Trader spawns on each floor when descending stairs") {
+    // Floor 1 - verify initial trader exists
+    val floor1State = StartingState.startingGameState
+    val floor1Traders = floor1State.entities.filter(_.entityType == EntityType.Trader)
+    assert(floor1Traders.size == 1, s"Floor 1 should have exactly 1 trader, found ${floor1Traders.size}")
+    
+    // Simulate descending to floor 2
+    val floor2State = game.system.DescendStairsSystem.update(
+      floor1State,
+      Seq(game.system.event.GameSystemEvent.InputEvent(
+        floor1State.playerEntity.id,
+        InputAction.DescendStairs
+      ))
+    )._1
+    
+    assert(floor2State.dungeonFloor == 2, "Should be on floor 2 after descending")
+    val floor2Traders = floor2State.entities.filter(_.entityType == EntityType.Trader)
+    assert(floor2Traders.size == 1, s"Floor 2 should have exactly 1 trader, found ${floor2Traders.size}")
+    
+    // Simulate descending to floor 3
+    val floor3State = game.system.DescendStairsSystem.update(
+      floor2State,
+      Seq(game.system.event.GameSystemEvent.InputEvent(
+        floor2State.playerEntity.id,
+        InputAction.DescendStairs
+      ))
+    )._1
+    
+    assert(floor3State.dungeonFloor == 3, "Should be on floor 3 after descending")
+    val floor3Traders = floor3State.entities.filter(_.entityType == EntityType.Trader)
+    assert(floor3Traders.size == 1, s"Floor 3 should have exactly 1 trader, found ${floor3Traders.size}")
+  }
 }
