@@ -107,3 +107,21 @@ class BossRoomMutator(targetRoomCount: Int) extends DungeonMutator {
     }
   }
 }
+
+class TraderRoomMutator(targetRoomCount: Int) extends DungeonMutator {
+  override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
+    // Create trader room early in dungeon generation, adjacent to start point
+    if (currentDungeon.traderRoom.isEmpty && currentDungeon.roomGrid.size >= 2 && currentDungeon.roomGrid.size < targetRoomCount) {
+      // Find an available room adjacent to the start point
+      for {
+        (originRoom, direction) <- currentDungeon.availableRooms(currentDungeon.startPoint)
+        traderRoom = originRoom + direction
+      } yield currentDungeon
+        .addRoom(originRoom, direction)
+        .blockRoom(traderRoom)
+        .copy(traderRoom = Some(traderRoom))
+    } else {
+      Set.empty
+    }
+  }
+}

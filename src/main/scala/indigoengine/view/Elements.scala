@@ -609,6 +609,89 @@ object Elements {
     }
   }
 
+  def tradeItemDisplay(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
+    import game.entity.EntityType.entityType
+    
+    model.uiState match {
+      case list: UIState.ListSelect[_] if list.list.nonEmpty =>
+        list.list(list.index) match {
+          case itemRef: data.Items.ItemReference =>
+            // Create the item entity to get its information
+            val tempEntity = itemRef.createEntity("temp")
+            val itemName = tempEntity.get[game.entity.NameComponent].map(_.name).getOrElse(itemRef.toString)
+            val description = tempEntity.get[game.entity.NameComponent].map(_.description).getOrElse("")
+            
+            // Get the sprite for the item
+            val sprite = tempEntity.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(data.Sprites.defaultItemSprite)
+            
+            // Get price information
+            val priceOpt = model.gameState.entities.collectFirst {
+              case e if e.entityType == game.entity.EntityType.Trader =>
+                e.get[game.entity.Trader].flatMap(_.buyPrice(itemRef))
+            }.flatten
+            
+            // Position for the item display (center-left of screen)
+            val displayX = canvasWidth / 4
+            val displayY = canvasHeight / 3
+            val displayWidth = canvasWidth / 2
+            val displayHeight = spriteScale * 6
+            
+            // Background
+            val background = BlockBar.getBlockBar(
+              Rectangle(Point(displayX - defaultBorderSize, displayY - defaultBorderSize), 
+                       Size(displayWidth + (defaultBorderSize * 2), displayHeight + (defaultBorderSize * 2))),
+              RGBA.Black.withAlpha(0.9)
+            )
+            
+            // Item sprite (large display)
+            val spriteSize = spriteScale * 2
+            val spriteX = displayX + defaultBorderSize
+            val spriteY = displayY + defaultBorderSize
+            val itemSprite = spriteSheet.fromSprite(sprite)
+              .moveTo(spriteX, spriteY)
+              .scaleBy(2.0, 2.0) // Make it larger
+            
+            // Item name
+            val nameY = spriteY
+            val nameX = spriteX + spriteSize + defaultBorderSize
+            val nameText = text(itemName, nameX, nameY)
+            
+            // Price
+            val priceY = nameY + spriteScale
+            val priceText = priceOpt.map { price =>
+              text(s"Price: $price coins", nameX, priceY)
+            }.toSeq
+            
+            // Description (wrapped)
+            val descY = priceY + spriteScale
+            val maxLineChars = (displayWidth - spriteSize - (defaultBorderSize * 3)) / (spriteScale / 3)
+            val wrappedDesc = wrapText(description, maxLineChars)
+            val descriptionLines = wrappedDesc.zipWithIndex.map { case (line, idx) =>
+              text(line, nameX, descY + (idx * (spriteScale / 2)))
+            }
+            
+            // Get UsableItem info for effects
+            val effectsY = descY + (wrappedDesc.length * (spriteScale / 2)) + spriteScale / 2
+            val effectsText = tempEntity.get[game.entity.UsableItem].map { usableItem =>
+              val targetType = usableItem.targeting match {
+                case game.entity.Targeting.Self => "Self-targeted"
+                case game.entity.Targeting.EnemyActor(range) => s"Enemy (range: $range)"
+                case game.entity.Targeting.TileInRange(range) => s"Area (range: $range)"
+              }
+              val consumeText = if (usableItem.chargeType == SingleUse) "Single use" else "Reusable"
+              Seq(
+                text(s"Type: $targetType", nameX, effectsY),
+                text(consumeText, nameX, effectsY + spriteScale / 2)
+              )
+            }.getOrElse(Seq.empty)
+            
+            Batch(background, itemSprite, nameText) ++ priceText.toBatch ++ descriptionLines.toBatch ++ effectsText.toBatch
+          case _ => Batch.empty
+        }
+      case _ => Batch.empty
+    }
+  }
+
   def gameOverScreen(model: GameController, player: Entity): Batch[SceneNode] = {
     import game.entity.EventMemory.*
     import game.entity.MemoryEvent

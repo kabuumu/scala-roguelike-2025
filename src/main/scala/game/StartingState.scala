@@ -154,19 +154,13 @@ object StartingState {
       )
   }
 
-  // Spawn a trader in a separate room adjacent to starting room
+  // Spawn a trader in the dedicated trader room
   val trader: Entity = {
-    // Find a room adjacent to the start point that is not the endpoint or a blocked room
-    val adjacentRooms = Direction.values.map(dir => dungeon.startPoint + dir)
-      .filter(room => dungeon.roomGrid.contains(room))
-      .filterNot(room => dungeon.endpoint.contains(room))
-      .filterNot(room => dungeon.blockedRooms.contains(room))
-    
-    val traderRoom = adjacentRooms.headOption.getOrElse(dungeon.startPoint)
+    val traderRoomPoint = dungeon.traderRoom.getOrElse(dungeon.startPoint)
     
     val traderPos = Point(
-      traderRoom.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-      traderRoom.y * Dungeon.roomSize + Dungeon.roomSize / 2
+      traderRoomPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+      traderRoomPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
     )
     data.Entities.trader("trader-1", traderPos)
   }

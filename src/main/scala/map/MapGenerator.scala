@@ -8,6 +8,7 @@ object MapGenerator {
 
     val mutators: Set[DungeonMutator] = Set(
       new EndPointMutator(dungeonSize),
+      new TraderRoomMutator(dungeonSize),
       new KeyLockMutator(lockedDoorCount, dungeonSize),
       new TreasureRoomMutator(itemCount, dungeonSize),
       new BossRoomMutator(dungeonSize)
@@ -29,6 +30,7 @@ object MapGenerator {
           && dungeon.nonKeyItems.size == itemCount
 //          && dungeon.dungeonPath.size == dungeonPathSize
           && dungeon.roomGrid.size == dungeonSize
+          && dungeon.traderRoom.isDefined
           && dungeon.hasBossRoom
       ) match {
         case Some(completedDungeon) =>
