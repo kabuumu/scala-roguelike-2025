@@ -43,7 +43,7 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
     
     // Verify enemy types exist
     val enemyTypes = enemies.map(_.id).map(_.split("-")(0)).toSet
-    assert(enemyTypes.contains("Slimelet"), "Should have slimelets for early depths")
+    assert(enemyTypes.contains("Bat"), "Should have bats for early depths")
     
     println(s"Generated ${enemies.size} enemies of types: ${enemyTypes.mkString(", ")}")
   }
@@ -69,11 +69,11 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
     // Test specific depth examples from requirements
     val depth1 = enemiesForDepth(1)
     assert(depth1.enemies.length == 1)
-    assert(depth1.enemies.head == Enemies.EnemyReference.Slimelet)
+    assert(depth1.enemies.head == Enemies.EnemyReference.Bat)
     
     val depth2 = enemiesForDepth(2)
     assert(depth2.enemies.length == 2)
-    assert(depth2.enemies.forall(_ == Enemies.EnemyReference.Slimelet))
+    assert(depth2.enemies.forall(_ == Enemies.EnemyReference.Bat))
     
     val depth3 = enemiesForDepth(3)
     assert(depth3.enemies.length == 1)
@@ -82,7 +82,7 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
     val depth4 = enemiesForDepth(4)
     assert(depth4.enemies.length == 2)
     assert(depth4.enemies.contains(Enemies.EnemyReference.Slime))
-    assert(depth4.enemies.contains(Enemies.EnemyReference.Slimelet))
+    assert(depth4.enemies.contains(Enemies.EnemyReference.Bat))
     
     val depth5 = enemiesForDepth(5)
     assert(depth5.enemies.length == 1)
