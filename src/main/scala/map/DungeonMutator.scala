@@ -115,8 +115,7 @@ class TraderRoomMutator(targetRoomCount: Int) extends DungeonMutator {
       // Already have a trader room, no more mutations needed
       Set.empty
     } else if (currentDungeon.roomGrid.size >= 2 && currentDungeon.roomGrid.size <= targetRoomCount - 1) {
-      // Try to create a dedicated trader room adjacent to start point
-      val adjacentRooms = currentDungeon.availableRooms(currentDungeon.startPoint)
+      val adjacentRooms = currentDungeon.availableRooms
       if (adjacentRooms.nonEmpty) {
         for {
           (originRoom, direction) <- adjacentRooms

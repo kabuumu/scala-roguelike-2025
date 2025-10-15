@@ -114,6 +114,9 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
 
       def isDoor(point: Point) = doorPoints.contains(point)
 
+      val isBossRoom = hasBossRoom && endpoint.contains(room)
+      val isTraderRoom = traderRoom.contains(room)
+      
       // If the point is the centre of a room, a door, or the path between, it must be a floor tile
       def mustBeFloor(point: Point): Boolean = {
         val roomCentre = Point(
@@ -122,8 +125,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
         )
 
         // If this is the endpoint room (boss room) and we have a boss room, make the entire room floor
-        val isBossRoom = hasBossRoom && endpoint.contains(room)
-        if (isBossRoom && !isWall(point)) {
+        if ((isBossRoom || isTraderRoom) && !isWall(point)) {
           true  // All non-wall tiles in boss room should be floor
         } else {
           // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
@@ -162,10 +164,12 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
         val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
 
         if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
-          case _ if testMode => (point, TileType.Floor)
+          case _ if testMode || isBossRoom || isTraderRoom => (point, TileType.Floor)
           case 0 | 1 => (point, TileType.Bridge)
           case 2 | 3 => (point, TileType.Floor)
           case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
+        else if(isWall(point) && (isBossRoom || isTraderRoom))
+          (point, TileType.Wall)
         else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
           case _ if testMode => (point, TileType.Wall)
           case 0 | 1 | 2 | 3 => (point, TileType.Water)
