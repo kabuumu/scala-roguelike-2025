@@ -118,7 +118,7 @@ object TradeSystem extends GameSystem {
         traderComponent.sellPrice(itemRef) match {
           case Some(price) =>
             // Check if item is currently equipped and unequip it first
-            val playerWithUnequipped = itemEntity.get[game.entity.Equippable] match {
+            val (playerWithUnequipped, wasEquipped) = itemEntity.get[game.entity.Equippable] match {
               case Some(equippable) =>
                 // Check if this item is currently equipped
                 val currentEquipment = gameState.playerEntity.equipment
@@ -127,21 +127,31 @@ object TradeSystem extends GameSystem {
                 
                 if (isEquipped) {
                   // Unequip the item before selling
-                  gameState.playerEntity.unequipItem(equippable.slot)
+                  (gameState.playerEntity.unequipItem(equippable.slot), true)
                 } else {
-                  gameState.playerEntity
+                  (gameState.playerEntity, false)
                 }
               case None =>
-                gameState.playerEntity
+                (gameState.playerEntity, false)
             }
             
             // Remove item from player's inventory and add coins
-            val updatedPlayer = playerWithUnequipped
-              .addCoins(price)
-              .removeItemEntity(itemEntity.id)
+            // For equipped items (temporary entities), they were created for display only and don't exist in game world
+            // For inventory items, remove from inventory list and from entities
+            val (updatedPlayer, entitiesToRemove) = if (wasEquipped) {
+              // Item was equipped - we already unequipped it, just add coins
+              // The temporary entity used for display doesn't exist in gameState.entities, so no need to remove it
+              (playerWithUnequipped.addCoins(price), Set.empty[String])
+            } else {
+              // Item was in inventory - remove from inventory list and add coins
+              (playerWithUnequipped
+                .addCoins(price)
+                .removeItemEntity(itemEntity.id), Set(itemEntity.id))
+            }
             
+            // Remove the item entity from the world if it was in inventory
             val updatedEntities = gameState.entities
-              .filterNot(e => e.id == gameState.playerEntity.id || e.id == itemEntity.id) :+ updatedPlayer
+              .filterNot(e => e.id == gameState.playerEntity.id || entitiesToRemove.contains(e.id)) :+ updatedPlayer
             
             gameState.copy(entities = updatedEntities)
           case None => gameState // Trader doesn't buy this item
