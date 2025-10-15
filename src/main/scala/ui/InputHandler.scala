@@ -233,13 +233,17 @@ object InputHandler {
               val allItems = inventoryItems ++ equippedItems
               
               // Filter to only items the trader buys
+              // Equipment items use Equippable.itemName, usable items use NameComponent
               val sellableItems = allItems.filter { item =>
-                item.get[game.entity.NameComponent].exists { nameComp =>
-                  tradeMenu.trader.get[game.entity.Trader].exists { traderComp =>
-                    traderComp.tradeInventory.keys.exists { ref =>
-                      val refEntity = ref.createEntity("temp")
-                      refEntity.get[game.entity.NameComponent].map(_.name) == Some(nameComp.name)
-                    }
+                tradeMenu.trader.get[game.entity.Trader].exists { traderComp =>
+                  traderComp.tradeInventory.keys.exists { ref =>
+                    val refEntity = ref.createEntity("temp")
+                    // Match by comparing Equippable itemName OR NameComponent name
+                    val itemName = item.get[game.entity.Equippable].map(_.itemName)
+                      .orElse(item.get[game.entity.NameComponent].map(_.name))
+                    val refName = refEntity.get[game.entity.Equippable].map(_.itemName)
+                      .orElse(refEntity.get[game.entity.NameComponent].map(_.name))
+                    itemName.isDefined && itemName == refName
                   }
                 }
               }
