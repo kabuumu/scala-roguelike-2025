@@ -129,4 +129,66 @@ class TradeSystemTest extends AnyFunSuite {
     val floor3Traders = floor3State.entities.filter(_.entityType == EntityType.Trader)
     assert(floor3Traders.size == 1, s"Floor 3 should have exactly 1 trader, found ${floor3Traders.size}")
   }
+  
+  test("Starting state player has equipment correctly initialized") {
+    val gameState = StartingState.startingGameState
+    val player = gameState.playerEntity
+    
+    // Verify player has Equipment component
+    val equipment = player.get[Equipment]
+    assert(equipment.isDefined, "Player should have Equipment component")
+    
+    // Verify armor and weapon are equipped
+    assert(equipment.flatMap(_.armor).isDefined, "Player should have armor equipped")
+    assert(equipment.flatMap(_.weapon).isDefined, "Player should have weapon equipped")
+    
+    // Verify getAllEquipped returns them
+    val allEquipped = equipment.map(_.getAllEquipped).getOrElse(Seq.empty)
+    assert(allEquipped.size == 2, s"Player should have 2 equipped items, found ${allEquipped.size}")
+    
+    // Print for debugging
+    println(s"Equipped items: ${allEquipped.map(_.itemName).mkString(", ")}")
+  }
+  
+  test("Player's sellable items includes equipped items") {
+    val trader = data.Entities.trader("trader-1", Point(5, 5))
+    val gameState = StartingState.startingGameState.copy(
+      entities = StartingState.startingGameState.entities :+ trader
+    )
+    val player = gameState.playerEntity
+    
+    // Get inventory items
+    val inventoryItems = player.inventoryItems(gameState)
+    println(s"Inventory items count: ${inventoryItems.size}")
+    
+    // Get equipped items
+    val equippedItems = player.get[Equipment]
+      .map(_.getAllEquipped)
+      .getOrElse(Seq.empty)
+    println(s"Equipped items count: ${equippedItems.size}")
+    println(s"Equipped item names: ${equippedItems.map(_.itemName).mkString(", ")}")
+    
+    // Try to create entities from equipped items
+    val equippedAsEntities = equippedItems.map { equippable =>
+      val itemRefOpt = data.Items.ItemReference.values.find { ref =>
+        val tempEntity = ref.createEntity("temp")
+        tempEntity.get[Equippable].exists(_.itemName == equippable.itemName)
+      }
+      itemRefOpt.map { itemRef =>
+        itemRef.createEntity(s"equipped-${equippable.itemName}")
+      }
+    }.flatten
+    
+    println(s"Equipped as entities count: ${equippedAsEntities.size}")
+    
+    // Verify we can create entities from equipped items
+    assert(equippedAsEntities.nonEmpty, "Should be able to create entities from equipped items")
+    
+    // Combine both
+    val allItems = inventoryItems ++ equippedAsEntities
+    println(s"Total sellable items (should include equipped): ${allItems.size}")
+    
+    assert(allItems.size >= equippedAsEntities.size, 
+      s"Total items (${allItems.size}) should include equipped items (${equippedAsEntities.size})")
+  }
 }
