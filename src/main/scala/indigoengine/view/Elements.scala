@@ -103,14 +103,10 @@ object Elements {
     val usableItems = player.usableItems(model.gameState)
     val allInventoryItems = player.inventoryItems(model.gameState)
     
-    // Check if we're in item selection mode
+    // Check if we're in item selection mode (only for UseItemSelect)
     val selectedItemIndex = model.uiState match {
-      case listSelect: UIState.ListSelect[?] if listSelect.list.nonEmpty && listSelect.list.head.isInstanceOf[Entity] =>
-        // Check if the list contains usable items
-        val entities = listSelect.list.asInstanceOf[Seq[Entity]]
-        if (entities.exists(_.has[UsableItem])) {
-          Some(listSelect.index)
-        } else None
+      case useItemSelect: UIState.UseItemSelect =>
+        Some(useItemSelect.index)
       case _ => None
     }
     
@@ -352,12 +348,12 @@ object Elements {
 
   def perkSelection(model: GameController): Batch[SceneNode] = {
     model.uiState match {
-      case uiState@UIState.ListSelect(list, _, _) if list.head.isInstanceOf[StatusEffect] =>
+      case uiState: UIState.StatusEffectSelect =>
         val perkCardWidth = spriteScale * 4 // Width of the perk card
         val perkCardHeight = spriteScale * 6 // Height of the perk card
 
         // Get the possible perks for the player
-        val perks = uiState.list.asInstanceOf[Seq[StatusEffect]]
+        val perks = uiState.list
 
         val numPerks = perks.size
         val spacing = spriteScale * 2
@@ -482,60 +478,114 @@ object Elements {
           s"$moveKeys, $useItems"
         }
         
-      case listSelect: UIState.ListSelect[_] =>
-        if (listSelect.list.nonEmpty) {
-          val selectedItem = listSelect.list(listSelect.index)
-          selectedItem match {
-            case actionTarget: ui.ActionTargets.ActionTarget =>
-              // Show action description for unified action targets
-              s"${actionTarget.description}. Press Space/E/Enter to confirm."
-            case entity: Entity if entity.has[UsableItem] =>
-              // Show item name at top, then description
-              val itemName = entity.name.getOrElse("Unknown Item")
-              entity.get[UsableItem] match {
-                case Some(usableItem) =>
-                  val targetType = usableItem.targeting match {
-                    case game.entity.Targeting.Self => "Self-targeted"
-                    case game.entity.Targeting.EnemyActor(range) => s"Enemy-targeted (range: $range)"
-                    case game.entity.Targeting.TileInRange(range) => s"Tile-targeted (range: $range)"
-                  }
-                  val consumeText = if (usableItem.chargeType == SingleUse) "consumed on use" else "reusable"
-                  val ammoText = usableItem.chargeType match {
-                    case ChargeType.Ammo(ammo) => s", requires ${ammo.toString}"
-                    case _ => ""
-                  }
-                  val description = entity.description.getOrElse("")
-                  val descriptionText = if (description.nonEmpty) s" - $description" else ""
-                  s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Space/E/Enter to use."
-                case None => s"$itemName. Press Space/E/Enter to use."
+      // Handle specific list select types
+      case useItemSelect: UIState.UseItemSelect =>
+        if (useItemSelect.list.nonEmpty) {
+          val entity = useItemSelect.currentItem
+          val itemName = entity.name.getOrElse("Unknown Item")
+          entity.get[UsableItem] match {
+            case Some(usableItem) =>
+              val targetType = usableItem.targeting match {
+                case game.entity.Targeting.Self => "Self-targeted"
+                case game.entity.Targeting.EnemyActor(range) => s"Enemy-targeted (range: $range)"
+                case game.entity.Targeting.TileInRange(range) => s"Tile-targeted (range: $range)"
               }
-            case entity: Entity =>
-              // Show entity information
-              val entityTypeName = entity.entityType match {
-                case Enemy => "Enemy"
-                case Player => "Player"
-                case _ => entity.entityType.toString
+              val consumeText = if (usableItem.chargeType == SingleUse) "consumed on use" else "reusable"
+              val ammoText = usableItem.chargeType match {
+                case ChargeType.Ammo(ammo) => s", requires ${ammo.toString}"
+                case _ => ""
               }
-              val healthText = if (entity.has[game.entity.Health]) {
-                s" (${entity.currentHealth}/${entity.maxHealth} HP)"
-              } else ""
-              s"$entityTypeName$healthText. Press Space/E/Enter to target."
-            case statusEffect: game.status.StatusEffect =>
-              // Show perk description
-              s"${statusEffect.name}: ${statusEffect.description}. Press Space/E/Enter to select."
-            case _ =>
-              "Press Space/E/Enter to select, Escape to cancel."
+              val description = entity.description.getOrElse("")
+              val descriptionText = if (description.nonEmpty) s" - $description" else ""
+              s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Space/E/Enter to use."
+            case None => s"$itemName. Press Space/E/Enter to use."
           }
         } else {
           "No items available."
+        }
+      
+      case buyItemSelect: UIState.BuyItemSelect =>
+        if (buyItemSelect.list.nonEmpty) {
+          val itemRef = buyItemSelect.currentItem
+          val tempEntity = itemRef.createEntity("temp")
+          val itemName = tempEntity.get[game.entity.NameComponent].map(_.name).getOrElse(itemRef.toString)
+          val description = tempEntity.get[game.entity.NameComponent].map(_.description).getOrElse("")
+          val descriptionText = if (description.nonEmpty) s" - $description" else ""
+          
+          // Get price from trader
+          val priceText = model.gameState.entities.collectFirst {
+            case e if e.entityType == game.entity.EntityType.Trader =>
+              e.get[game.entity.Trader].flatMap(_.buyPrice(itemRef)).map(price => s" (${price} coins)")
+          }.flatten.getOrElse("")
+          
+          s"$itemName$descriptionText$priceText. Press Space/E/Enter to buy."
+        } else {
+          "No items available."
+        }
+      
+      case sellItemSelect: UIState.SellItemSelect =>
+        if (sellItemSelect.list.nonEmpty) {
+          val entity = sellItemSelect.currentItem
+          val itemName = entity.get[game.entity.NameComponent].map(_.name).getOrElse("Item")
+          val description = entity.get[game.entity.NameComponent].map(_.description).getOrElse("")
+          val descriptionText = if (description.nonEmpty) s" - $description" else ""
+          
+          // Try to get sell price from trader
+          val priceText = model.gameState.entities.collectFirst {
+            case e if e.entityType == game.entity.EntityType.Trader =>
+              e.get[game.entity.Trader].flatMap { traderComp =>
+                entity.get[game.entity.NameComponent].flatMap { nameComp =>
+                  data.Items.ItemReference.values.find { ref =>
+                    val refEntity = ref.createEntity("temp")
+                    refEntity.get[game.entity.NameComponent].map(_.name) == Some(nameComp.name)
+                  }.flatMap(traderComp.sellPrice).map(price => s" (${price} coins)")
+                }
+              }
+          }.flatten.getOrElse("")
+          
+          s"$itemName$descriptionText$priceText. Press Space/E/Enter to sell."
+        } else {
+          "No items available."
+        }
+      
+      case statusEffectSelect: UIState.StatusEffectSelect =>
+        if (statusEffectSelect.list.nonEmpty) {
+          val statusEffect = statusEffectSelect.currentItem
+          s"${statusEffect.name}: ${statusEffect.description}. Press Space/E/Enter to select."
+        } else {
+          "No items available."
+        }
+      
+      case actionTargetSelect: UIState.ActionTargetSelect =>
+        if (actionTargetSelect.list.nonEmpty) {
+          val target = actionTargetSelect.currentItem
+          s"${target.description}. Press Space/E/Enter to select, Escape to cancel."
+        } else {
+          "No actions available."
+        }
+      
+      case enemyTargetSelect: UIState.EnemyTargetSelect =>
+        if (enemyTargetSelect.list.nonEmpty) {
+          val enemy = enemyTargetSelect.currentItem
+          val healthText = if (enemy.has[game.entity.Health]) {
+            s" (${enemy.currentHealth}/${enemy.maxHealth} HP)"
+          } else ""
+          s"Target: ${enemy.name.getOrElse("Enemy")}$healthText. Press Space/E/Enter to confirm."
+        } else {
+          "No targets available."
         }
         
       case scrollSelect: UIState.ScrollSelect =>
         val x = scrollSelect.cursor.x
         val y = scrollSelect.cursor.y
         s"Target: [$x,$y]. Press Enter to confirm action at this location."
+      case tradeMenu: UIState.TradeMenu =>
+        val selectedOption = tradeMenu.getSelectedOption
+        s"Trading Menu - Selected: $selectedOption. Use arrows to navigate, Space/E/Enter to select."
       case _: UIState.MainMenu =>
         "" // No message window content for main menu
+      case _: UIState.GameOver =>
+        "" // Game over screen handles its own messaging
     }
     
     // Position message window at the very bottom of the visible canvas area
@@ -584,6 +634,198 @@ object Elements {
       case _ =>
         Batch.empty
     }
+  }
+
+  def tradeItemDisplay(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
+    import game.entity.EntityType.entityType
+    
+    model.uiState match {
+      case buyItemSelect: UIState.BuyItemSelect if buyItemSelect.list.nonEmpty =>
+        val itemRef = buyItemSelect.currentItem
+        renderBuyItemDisplay(model, spriteSheet, itemRef)
+      
+      case sellItemSelect: UIState.SellItemSelect if sellItemSelect.list.nonEmpty =>
+        val itemEntity = sellItemSelect.currentItem
+        renderSellItemDisplay(model, spriteSheet, itemEntity)
+      
+      case _ => Batch.empty
+    }
+  }
+  
+  private def renderBuyItemDisplay(model: GameController, spriteSheet: Graphic[?], itemRef: data.Items.ItemReference): Batch[SceneNode] = {
+    import game.entity.EntityType.entityType
+    
+    // Create the item entity to get its information
+    val tempEntity = itemRef.createEntity("temp")
+    val itemName = tempEntity.get[game.entity.NameComponent].map(_.name).getOrElse(itemRef.toString)
+    val description = tempEntity.get[game.entity.NameComponent].map(_.description).getOrElse("")
+    
+    // Get the sprite for the item
+    val sprite = tempEntity.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(data.Sprites.defaultItemSprite)
+    
+    // Get price information
+    val priceOpt = model.gameState.entities.collectFirst {
+      case e if e.entityType == game.entity.EntityType.Trader =>
+        e.get[game.entity.Trader].flatMap(_.buyPrice(itemRef))
+    }.flatten
+    
+    // Position for the item display (center-left of screen)
+    val displayX = canvasWidth / 4
+    val displayY = canvasHeight / 3
+    val displayWidth = canvasWidth / 2
+    val displayHeight = spriteScale * 6
+    
+    // Background
+    val background = BlockBar.getBlockBar(
+      Rectangle(Point(displayX - defaultBorderSize, displayY - defaultBorderSize), 
+               Size(displayWidth + (defaultBorderSize * 2), displayHeight + (defaultBorderSize * 2))),
+      RGBA.Black.withAlpha(0.9)
+    )
+    
+    // Item sprite (large display)
+    val spriteSize = spriteScale * 2
+    val spriteX = displayX + defaultBorderSize
+    val spriteY = displayY + defaultBorderSize
+    val itemSprite = spriteSheet.fromSprite(sprite)
+      .moveTo(spriteX, spriteY)
+      .scaleBy(2.0, 2.0) // Make it larger
+    
+    // Item name
+    val nameY = spriteY
+    val nameX = spriteX + spriteSize + defaultBorderSize
+    val nameText = text(itemName, nameX, nameY)
+    
+    // Price
+    val priceY = nameY + spriteScale
+    val priceText = priceOpt.map { price =>
+      text(s"Price: $price coins", nameX, priceY)
+    }.toSeq
+    
+    // Description (wrapped)
+    val descY = priceY + spriteScale
+    val maxLineChars = (displayWidth - spriteSize - (defaultBorderSize * 3)) / (spriteScale / 3)
+    val wrappedDesc = wrapText(description, maxLineChars)
+    val descriptionLines = wrappedDesc.zipWithIndex.map { case (line, idx) =>
+      text(line, nameX, descY + (idx * (spriteScale / 2)))
+    }
+    
+    // Get UsableItem info for effects
+    val effectsY = descY + (wrappedDesc.length * (spriteScale / 2)) + spriteScale / 2
+    val effectsText = tempEntity.get[game.entity.UsableItem].map { usableItem =>
+      val targetType = usableItem.targeting match {
+        case game.entity.Targeting.Self => "Self-targeted"
+        case game.entity.Targeting.EnemyActor(range) => s"Enemy (range: $range)"
+        case game.entity.Targeting.TileInRange(range) => s"Area (range: $range)"
+      }
+      val consumeText = if (usableItem.chargeType == SingleUse) "Single use" else "Reusable"
+      Seq(
+        text(s"Type: $targetType", nameX, effectsY),
+        text(consumeText, nameX, effectsY + spriteScale / 2)
+      )
+    }.getOrElse(Seq.empty)
+    
+    Batch(background, itemSprite, nameText) ++ priceText.toBatch ++ descriptionLines.toBatch ++ effectsText.toBatch
+  }
+  
+  private def renderSellItemDisplay(model: GameController, spriteSheet: Graphic[?], itemEntity: Entity): Batch[SceneNode] = {
+    import game.entity.EntityType.entityType
+    
+    // Display entity items (for selling) with same rich UI
+    val itemName = itemEntity.get[game.entity.NameComponent].map(_.name).getOrElse("Unknown Item")
+    val description = itemEntity.get[game.entity.NameComponent].map(_.description).getOrElse("")
+    
+    // Get the sprite for the item
+    val sprite = itemEntity.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(data.Sprites.defaultItemSprite)
+    
+    // Get sell price information by finding matching ItemReference
+    val priceOpt = {
+      val itemRefOpt = itemEntity.get[game.entity.NameComponent].flatMap { nameComp =>
+        data.Items.ItemReference.values.find { ref =>
+          val refEntity = ref.createEntity("temp")
+          refEntity.get[game.entity.NameComponent].map(_.name) == Some(nameComp.name)
+        }
+      }
+      
+      itemRefOpt.flatMap { itemRef =>
+        model.gameState.entities.collectFirst {
+          case e if e.entityType == game.entity.EntityType.Trader =>
+            e.get[game.entity.Trader].flatMap(_.sellPrice(itemRef))
+        }.flatten
+      }
+    }
+    
+    // Position for the item display (center-left of screen)
+    val displayX = canvasWidth / 4
+    val displayY = canvasHeight / 3
+    val displayWidth = canvasWidth / 2
+    val displayHeight = spriteScale * 6
+    
+    // Background
+    val background = BlockBar.getBlockBar(
+      Rectangle(Point(displayX - defaultBorderSize, displayY - defaultBorderSize), 
+               Size(displayWidth + (defaultBorderSize * 2), displayHeight + (defaultBorderSize * 2))),
+      RGBA.Black.withAlpha(0.9)
+    )
+    
+    // Item sprite (large display)
+    val spriteSize = spriteScale * 2
+    val spriteX = displayX + defaultBorderSize
+    val spriteY = displayY + defaultBorderSize
+    val itemSprite = spriteSheet.fromSprite(sprite)
+      .moveTo(spriteX, spriteY)
+      .scaleBy(2.0, 2.0) // Make it larger
+    
+    // Item name
+    val nameY = spriteY
+    val nameX = spriteX + spriteSize + defaultBorderSize
+    val nameText = text(itemName, nameX, nameY)
+    
+    // Sell Price
+    val priceY = nameY + spriteScale
+    val priceText = priceOpt.map { price =>
+      text(s"Sell for: $price coins", nameX, priceY)
+    }.toSeq
+    
+    // Description (wrapped)
+    val descY = priceY + spriteScale
+    val maxLineChars = (displayWidth - spriteSize - (defaultBorderSize * 3)) / (spriteScale / 3)
+    val wrappedDesc = wrapText(description, maxLineChars)
+    val descriptionLines = wrappedDesc.zipWithIndex.map { case (line, idx) =>
+      text(line, nameX, descY + (idx * (spriteScale / 2)))
+    }
+    
+    // Get UsableItem or Equippable info for effects
+    val effectsY = descY + (wrappedDesc.length * (spriteScale / 2)) + spriteScale / 2
+    val effectsText = itemEntity.get[game.entity.UsableItem].map { usableItem =>
+      val targetType = usableItem.targeting match {
+        case game.entity.Targeting.Self => "Self-targeted"
+        case game.entity.Targeting.EnemyActor(range) => s"Enemy (range: $range)"
+        case game.entity.Targeting.TileInRange(range) => s"Area (range: $range)"
+      }
+      val consumeText = if (usableItem.chargeType == SingleUse) "Single use" else "Reusable"
+      Seq(
+        text(s"Type: $targetType", nameX, effectsY),
+        text(consumeText, nameX, effectsY + spriteScale / 2)
+      )
+    }.orElse {
+      // Show equipment stats
+      itemEntity.get[game.entity.Equippable].map { equippable =>
+        val slotText = s"Slot: ${equippable.slot}"
+        val statsText = if (equippable.damageReduction > 0) {
+          s"Defense: +${equippable.damageReduction}"
+        } else if (equippable.damageBonus > 0) {
+          s"Damage: +${equippable.damageBonus}"
+        } else {
+          "No special stats"
+        }
+        Seq(
+          text(slotText, nameX, effectsY),
+          text(statsText, nameX, effectsY + spriteScale / 2)
+        )
+      }
+    }.getOrElse(Seq.empty)
+    
+    Batch(background, itemSprite, nameText) ++ priceText.toBatch ++ descriptionLines.toBatch ++ effectsText.toBatch
   }
 
   def gameOverScreen(model: GameController, player: Entity): Batch[SceneNode] = {

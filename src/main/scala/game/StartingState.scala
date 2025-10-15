@@ -154,6 +154,17 @@ object StartingState {
       )
   }
 
+  // Spawn a trader in the dedicated trader room
+  val trader: Entity = {
+    val traderRoomPoint = dungeon.traderRoom.getOrElse(dungeon.startPoint)
+    
+    val traderPos = Point(
+      traderRoomPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+      traderRoomPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+    )
+    data.Entities.trader("trader-1", traderPos)
+  }
+
   val items: Set[Entity] = dungeon.items.zipWithIndex.map {
     case ((point, itemReference), index) =>
       val basePosition = Point(
@@ -197,7 +208,7 @@ object StartingState {
 
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors ++ snakeSpitAbilities.values,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors ++ snakeSpitAbilities.values :+ trader,
     dungeon = dungeon
   )
 }

@@ -10,6 +10,7 @@ import game.entity.Inventory.*
 import game.entity.Movement.*
 import game.entity.NameComponent.name
 import game.entity.Equippable.isEquippable
+import game.entity.Coins.coins
 import game.*
 import ui.ActionTargets.*
 import ui.UIState.UIState
@@ -48,7 +49,7 @@ object InputHandler {
         case Input.UseItem =>
           val usableItems = gameState.playerEntity.usableItems(gameState).distinctBy(_.get[NameComponent])
           if (usableItems.nonEmpty) {
-            (UIState.ListSelect[Entity](
+            (UIState.UseItemSelect(
               list = usableItems,
               effect = itemEntity => {
                 // Handle different item types based on UsableItem component
@@ -78,7 +79,7 @@ object InputHandler {
                           case _ => true
                         }
                         if (enemies.nonEmpty && hasRequiredAmmo) {
-                          (UIState.ListSelect(
+                          (UIState.EnemyTargetSelect(
                             list = enemies,
                             effect = target => (
                               UIState.Move,
@@ -102,7 +103,7 @@ object InputHandler {
             (UIState.Move, None)
           }
         case Input.LevelUp if gameState.playerEntity.canLevelUp =>
-          val levelUpState = UIState.ListSelect(
+          val levelUpState = UIState.StatusEffectSelect(
             list = gameState.playerEntity.getPossiblePerks,
             effect = selectedPerk => {
               (UIState.Move, Some(InputAction.LevelUp(selectedPerk)))
@@ -113,7 +114,7 @@ object InputHandler {
         case Input.Action =>
           val targets = GameTargeting.nearbyActionTargets(gameState)
           if (targets.nonEmpty) {
-            (UIState.ListSelect(
+            (UIState.ActionTargetSelect(
               list = targets,
               effect = target => {
                 target match {
@@ -124,6 +125,8 @@ object InputHandler {
                     (UIState.Move, Some(InputAction.EquipSpecific(entity)))
                   case ActionTargets.DescendStairsTarget(_) =>
                     (UIState.Move, Some(InputAction.DescendStairs))
+                  case ActionTargets.TradeTarget(entity) =>
+                    (UIState.TradeMenu(entity), Some(InputAction.Trade(entity)))
                 }
               }
             ), None)
@@ -133,10 +136,26 @@ object InputHandler {
         case Input.Wait => (UIState.Move, Some(InputAction.Wait))
         case _ => (uiState, None)
       }
-    case listSelect: UIState.ListSelect[_] =>
+    case listSelect: UIState.ListSelectState =>
       input match {
-        case Input.Move(Direction.Down | Direction.Left) => (listSelect.iterateDown, None)
-        case Input.Move(Direction.Up | Direction.Right) => (listSelect.iterate, None)
+        case Input.Move(Direction.Down | Direction.Left) =>
+          listSelect match {
+            case s: UIState.UseItemSelect => (s.iterateDown, None)
+            case s: UIState.BuyItemSelect => (s.iterateDown, None)
+            case s: UIState.SellItemSelect => (s.iterateDown, None)
+            case s: UIState.StatusEffectSelect => (s.iterateDown, None)
+            case s: UIState.ActionTargetSelect => (s.iterateDown, None)
+            case s: UIState.EnemyTargetSelect => (s.iterateDown, None)
+          }
+        case Input.Move(Direction.Up | Direction.Right) =>
+          listSelect match {
+            case s: UIState.UseItemSelect => (s.iterate, None)
+            case s: UIState.BuyItemSelect => (s.iterate, None)
+            case s: UIState.SellItemSelect => (s.iterate, None)
+            case s: UIState.StatusEffectSelect => (s.iterate, None)
+            case s: UIState.ActionTargetSelect => (s.iterate, None)
+            case s: UIState.EnemyTargetSelect => (s.iterate, None)
+          }
         case Input.UseItem | Input.Action =>
           listSelect.action
         case Input.Cancel => (UIState.Move, None)
@@ -156,6 +175,94 @@ object InputHandler {
           scrollSelect.action
         case Input.Cancel => (UIState.Move, None)
         case _ => (uiState, None)
+      }
+    case tradeMenu: UIState.TradeMenu =>
+      input match {
+        case Input.Move(Direction.Up) => (tradeMenu.selectPrevious, None)
+        case Input.Move(Direction.Down) => (tradeMenu.selectNext, None)
+        case Input.UseItem | Input.Action | Input.Confirm =>
+          tradeMenu.getSelectedOption match {
+            case "Buy" =>
+              // Show list of items to buy from trader
+              val trader = tradeMenu.trader
+              trader.get[game.entity.Trader] match {
+                case Some(traderComponent) =>
+                  val buyableItems = traderComponent.tradeInventory.keys.toSeq
+                  if (buyableItems.nonEmpty) {
+                    (UIState.BuyItemSelect(
+                      list = buyableItems,
+                      effect = itemRef => {
+                        traderComponent.buyPrice(itemRef) match {
+                          case Some(price) if gameState.playerEntity.coins >= price =>
+                            (UIState.TradeMenu(trader), Some(InputAction.BuyItem(trader, itemRef)))
+                          case _ =>
+                            (UIState.TradeMenu(trader), None) // Can't afford
+                        }
+                      }
+                    ), None)
+                  } else {
+                    (tradeMenu, None)
+                  }
+                case None => (UIState.Move, None)
+              }
+            case "Sell" =>
+              // Show player's inventory to sell (including equipped items)
+              import game.entity.Equipment
+              import scala.util.Random
+              
+              // Get inventory items
+              val inventoryItems = gameState.playerEntity.inventoryItems(gameState)
+              
+              // Get equipped items as entities (create temporary entities for them)
+              val equippedItems = gameState.playerEntity.get[Equipment]
+                .map(_.getAllEquipped.map { equippable =>
+                  // Find the ItemReference for this equipped item
+                  val itemRefOpt = data.Items.ItemReference.values.find { ref =>
+                    val tempEntity = ref.createEntity("temp")
+                    tempEntity.get[game.entity.Equippable].exists(_.itemName == equippable.itemName)
+                  }
+                  
+                  itemRefOpt.map { itemRef =>
+                    // Create a temporary entity for display purposes
+                    itemRef.createEntity(s"equipped-${equippable.itemName}-${Random.nextString(8)}")
+                  }
+                }.flatten)
+                .getOrElse(Seq.empty)
+              
+              // Combine both lists
+              val allItems = inventoryItems ++ equippedItems
+              
+              // Filter to only items the trader buys
+              // Equipment items use Equippable.itemName, usable items use NameComponent
+              val sellableItems = allItems.filter { item =>
+                tradeMenu.trader.get[game.entity.Trader].exists { traderComp =>
+                  traderComp.tradeInventory.keys.exists { ref =>
+                    val refEntity = ref.createEntity("temp")
+                    // Match by comparing Equippable itemName OR NameComponent name
+                    val itemName = item.get[game.entity.Equippable].map(_.itemName)
+                      .orElse(item.get[game.entity.NameComponent].map(_.name))
+                    val refName = refEntity.get[game.entity.Equippable].map(_.itemName)
+                      .orElse(refEntity.get[game.entity.NameComponent].map(_.name))
+                    itemName.isDefined && itemName == refName
+                  }
+                }
+              }
+              if (sellableItems.nonEmpty) {
+                (UIState.SellItemSelect(
+                  list = sellableItems,
+                  effect = itemEntity => {
+                    (UIState.TradeMenu(tradeMenu.trader), Some(InputAction.SellItem(tradeMenu.trader, itemEntity)))
+                  }
+                ), None)
+              } else {
+                (tradeMenu, None) // No sellable items
+              }
+            case "Exit" =>
+              (UIState.Move, None)
+            case _ => (tradeMenu, None)
+          }
+        case Input.Cancel => (UIState.Move, None)
+        case _ => (tradeMenu, None)
       }
     case _: UIState.GameOver =>
       input match {

@@ -37,7 +37,8 @@ case class GameState(playerEntityId: String,
       ItemUseSystem, // New unified item system
       HealingSystem, // Handles healing events
       EquipInputSystem,
-      DescendStairsSystem
+      DescendStairsSystem,
+      TradeSystem // Handles buy/sell transactions
     ),
     // Phase 2: Creation and spawning  
     Seq(

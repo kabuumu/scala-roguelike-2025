@@ -107,3 +107,43 @@ class BossRoomMutator(targetRoomCount: Int) extends DungeonMutator {
     }
   }
 }
+
+class TraderRoomMutator(targetRoomCount: Int) extends DungeonMutator {
+  override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
+    // Only create trader room once, and only if we haven't already
+    if (currentDungeon.traderRoom.isDefined) {
+      // Already have a trader room, no more mutations needed
+      Set.empty
+    } else if (currentDungeon.roomGrid.size >= 2 && currentDungeon.roomGrid.size <= targetRoomCount - 1) {
+      val adjacentRooms = currentDungeon.availableRooms
+      if (adjacentRooms.nonEmpty) {
+        for {
+          (originRoom, direction) <- adjacentRooms
+          traderRoom = originRoom + direction
+        } yield currentDungeon
+          .addRoom(originRoom, direction)
+          .blockRoom(traderRoom)
+          .copy(traderRoom = Some(traderRoom))
+      } else {
+        // No available adjacent rooms, use an existing adjacent room or start point
+        val fallbackRoom = game.Direction.values
+          .map(dir => currentDungeon.startPoint + dir)
+          .find(point => currentDungeon.roomGrid.contains(point))
+          .getOrElse(currentDungeon.startPoint)
+        
+        Set(currentDungeon.copy(traderRoom = Some(fallbackRoom)))
+      }
+    } else if (currentDungeon.roomGrid.size > targetRoomCount - 1) {
+      // We're at or near target size and still no trader room - just pick an existing room
+      val fallbackRoom = game.Direction.values
+        .map(dir => currentDungeon.startPoint + dir)
+        .find(point => currentDungeon.roomGrid.contains(point))
+        .getOrElse(currentDungeon.startPoint)
+      
+      Set(currentDungeon.copy(traderRoom = Some(fallbackRoom)))
+    } else {
+      // Not ready yet (size < 2)
+      Set.empty
+    }
+  }
+}

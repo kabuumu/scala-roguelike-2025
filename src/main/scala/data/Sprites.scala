@@ -11,6 +11,7 @@ object Sprites {
   val entityLayer = 2
   val uiLayer = 3
 
+  val traderSprite: Sprite = Sprite(24, 0, entityLayer)
   val playerSprite: Sprite = Sprite(25, 0, entityLayer)
   val enemySprite: Sprite = Sprite(26, 0, entityLayer)
   

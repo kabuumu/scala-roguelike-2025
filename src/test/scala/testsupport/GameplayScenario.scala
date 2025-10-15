@@ -182,7 +182,7 @@ object GameplayScenario {
     
     private def handleItemSelection(): Scenario = {
       uiState match {
-        case _: UIState.ListSelect[?] => performAction(Input.Confirm)
+        case _: UIState.ListSelectState => performAction(Input.Confirm)
         case _ => this // Already used item or no items available
       }
     }
@@ -192,7 +192,7 @@ object GameplayScenario {
     
     private def handleEquipmentSelection(): Scenario = {
       uiState match {
-        case _: UIState.ListSelect[?] => performAction(Input.Confirm)
+        case _: UIState.ListSelectState => performAction(Input.Confirm)
         case _ => this
       }
     }

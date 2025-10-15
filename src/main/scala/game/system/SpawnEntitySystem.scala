@@ -1,6 +1,6 @@
 package game.system
 
-import data.Entities.EntityReference.{Explosion, Slimelet, Coin}
+import data.Entities.EntityReference.{Explosion, Slimelet, Coin, Trader}
 import data.{Entities, Items, Sprites}
 import game.entity.*
 import game.entity.Experience.experienceForLevel
@@ -39,6 +39,8 @@ object SpawnEntitySystem extends GameSystem {
             Entities.slimelet(spawnPosition)
           case Coin =>
             Items.coin(s"coin-${System.currentTimeMillis()}-${spawnPosition.x}-${spawnPosition.y}").addComponent(Movement(position = spawnPosition))
+          case Trader =>
+            Entities.trader(s"trader-${System.currentTimeMillis()}", spawnPosition)
         }
         // Regular spawn - no collision checking
         currentState.add(entity)

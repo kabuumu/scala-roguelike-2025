@@ -149,6 +149,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
                 ++ perkSelection(model)
                 ++ keys(model, spriteSheet)
                 ++ equipmentPaperdoll(model, spriteSheet)
+                ++ tradeItemDisplay(model, spriteSheet)
                 ++ messageWindow(model)
                 ++ versionInfo(model)
             )
@@ -158,27 +159,37 @@ object Game extends IndigoSandbox[Unit, GameController] {
   }
 
   private def drawUIElements(spriteSheet: Graphic[?], model: GameController): Seq[SceneNode] = {
+    // Don't show targeting for trade-related lists (buying/selling)
     val optCursorTargetInfo = model.uiState match {
-      case UIState.ScrollSelect(cursor, _) =>
-        Some((cursor, None)) // Position only, no entity
-      case list: UIState.ListSelect[_] if list.list.nonEmpty =>
-        val selectedItem = list.list(list.index)
-        selectedItem match {
-          // Handle ActionTarget from unified action system
-          case actionTarget: ui.ActionTargets.ActionTarget =>
-            Some((actionTarget.entity.position, Some(actionTarget.entity)))
-          // Handle direct Entity objects (for attack lists, etc.)
-          case entity: game.entity.Entity =>
-            // Only show cursor for entities that have meaningful map positions (enemies, not inventory items)
-            import game.entity.UsableItem
-            if (!entity.has[UsableItem]) {
-              Some((entity.position, Some(entity)))
-            } else {
-              None
-            }
-          case _ =>
-            None
+      case scrollSelect: UIState.ScrollSelectState =>
+        Some((scrollSelect.cursor, None)) // Position only, no entity
+      
+      // Skip targeting for buying/selling - these are inventory/shop UIs
+      case _: UIState.BuyItemSelect | _: UIState.SellItemSelect =>
+        None
+      
+      // Show cursor for using items (when they have entity targets)
+      case useItemSelect: UIState.UseItemSelect =>
+        None // Item use targeting is handled by ScrollSelect transition
+      
+      // Handle action target selection (for attacks, equipping, trading, etc.)
+      case actionTargetSelect: UIState.ActionTargetSelect =>
+        if (actionTargetSelect.list.nonEmpty) {
+          val actionTarget = actionTargetSelect.currentItem
+          Some((actionTarget.entity.position, Some(actionTarget.entity)))
+        } else {
+          None
         }
+      
+      // Handle enemy targeting (for ranged attacks, spells, etc.)
+      case enemyTargetSelect: UIState.EnemyTargetSelect =>
+        if (enemyTargetSelect.list.nonEmpty) {
+          val targetEntity = enemyTargetSelect.currentItem
+          Some((targetEntity.position, Some(targetEntity)))
+        } else {
+          None
+        }
+      
       case _ =>
         None
     }

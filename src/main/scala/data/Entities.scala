@@ -10,6 +10,7 @@ object Entities {
     case Explosion(damage: Int, size: Int)
     case Slimelet
     case Coin
+    case Trader
 
   def explosionEffect(creatorId: String, position: game.Point, targetType: EntityType, damage: Int = 10, size: Int = 2): Entity = {
     Entity(
@@ -40,6 +41,18 @@ object Entities {
           GiveExperience(experienceForLevel(2) / 5)
         )
       )
+    )
+  }
+  
+  def trader(id: String, position: game.Point): Entity = {
+    Entity(
+      id = id,
+      Movement(position = position),
+      EntityTypeComponent(EntityType.Trader),
+      Trader(Trader.defaultInventory),
+      NameComponent("Trader", "A friendly merchant willing to buy and sell items"),
+      Hitbox(),
+      Drawable(Sprites.traderSprite)
     )
   }
 }

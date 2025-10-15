@@ -120,6 +120,7 @@ object Items {
   // Equipment items
   def leatherHelmet(id: String): Entity = Entity(
     id = id,
+    NameComponent("Leather Helmet", "Provides +1 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Helmet, 1, "Leather Helmet"),
     Hitbox(),
@@ -128,6 +129,7 @@ object Items {
   
   def ironHelmet(id: String): Entity = Entity(
     id = id,
+    NameComponent("Iron Helmet", "Provides +2 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Helmet, 2, "Iron Helmet"),
     Hitbox(),
@@ -136,6 +138,7 @@ object Items {
   
   def chainmailArmor(id: String): Entity = Entity(
     id = id,
+    NameComponent("Chainmail Armor", "Provides +1 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor"),
     Hitbox(),
@@ -144,6 +147,7 @@ object Items {
   
   def plateArmor(id: String): Entity = Entity(
     id = id,
+    NameComponent("Plate Armor", "Provides +2 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Armor, 2, "Plate Armor"),
     Hitbox(),
@@ -153,6 +157,7 @@ object Items {
   // New equipment items
   def leatherBoots(id: String): Entity = Entity(
     id = id,
+    NameComponent("Leather Boots", "Provides +1 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Boots, 1, "Leather Boots"),
     Hitbox(),
@@ -161,6 +166,7 @@ object Items {
   
   def ironBoots(id: String): Entity = Entity(
     id = id,
+    NameComponent("Iron Boots", "Provides +2 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Boots, 2, "Iron Boots"),
     Hitbox(),
@@ -169,6 +175,7 @@ object Items {
   
   def leatherGloves(id: String): Entity = Entity(
     id = id,
+    NameComponent("Leather Gloves", "Provides +1 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Gloves, 1, "Leather Gloves"),
     Hitbox(),
@@ -177,6 +184,7 @@ object Items {
   
   def ironGloves(id: String): Entity = Entity(
     id = id,
+    NameComponent("Iron Gloves", "Provides +2 defense when equipped"),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Gloves, 2, "Iron Gloves"),
     Hitbox(),
@@ -185,6 +193,7 @@ object Items {
   
   def basicSword(id: String): Entity = Entity(
     id = id,
+    NameComponent("Basic Sword", "Provides +3 damage when equipped"),
     CanPickUp(),
     Equippable.weapon(3, "Basic Sword"),
     Hitbox(),
@@ -193,6 +202,7 @@ object Items {
   
   def ironSword(id: String): Entity = Entity(
     id = id,
+    NameComponent("Iron Sword", "Provides +5 damage when equipped"),
     CanPickUp(),
     Equippable.weapon(5, "Iron Sword"),
     Hitbox(),

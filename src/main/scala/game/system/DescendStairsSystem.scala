@@ -107,10 +107,21 @@ object DescendStairsSystem extends GameSystem {
       // Get player's inventory items from current game state
       val playerInventoryEntities = gameState.entities.filter(e => playerInventoryEntityIds.contains(e.id))
       
+      // Spawn a trader in the dedicated trader room
+      val newTrader: Entity = {
+        val traderRoomPoint = dungeon.traderRoom.getOrElse(dungeon.startPoint)
+        
+        val traderPos = game.Point(
+          traderRoomPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          traderRoomPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        )
+        data.Entities.trader(s"trader-floor-$newFloor", traderPos)
+      }
+      
       // Create new game state with new dungeon and preserved player
       val newGameState = GameState(
         playerEntityId = newPlayer.id,
-        entities = Vector(newPlayer) ++ playerInventoryEntities ++ newItems ++ newEnemies ++ newLockedDoors ++ newAbilities.values,
+        entities = Vector(newPlayer) ++ playerInventoryEntities ++ newItems ++ newEnemies ++ newLockedDoors ++ newAbilities.values :+ newTrader,
         dungeon = dungeon,
         dungeonFloor = newFloor,
         messages = Seq(s"Descended to dungeon floor $newFloor. Enemies grow stronger...")

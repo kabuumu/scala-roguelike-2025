@@ -94,7 +94,7 @@ final case class GameStory(controller: GameController, tick: Int) {
 
   def uiIsListSelect(): GameStory = {
     uiState match {
-      case _: UIState.ListSelect[_] => this
+      case _: UIState.ListSelectState => this
       case other => fail(s"Expected UI state ListSelect but was $other")
     }
   }

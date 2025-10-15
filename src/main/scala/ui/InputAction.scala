@@ -14,4 +14,7 @@ enum InputAction {
   case EquipSpecific(target: Entity)
   case LoadGame
   case DescendStairs
+  case Trade(trader: Entity)
+  case BuyItem(trader: Entity, itemRef: data.Items.ItemReference)
+  case SellItem(trader: Entity, itemEntity: Entity)
 }
