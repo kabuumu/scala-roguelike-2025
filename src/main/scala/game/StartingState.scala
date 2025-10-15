@@ -73,6 +73,7 @@ object StartingState {
         }
         
         enemyRef match {
+          case EnemyReference.Bat => Enemies.bat(enemyId, position)
           case EnemyReference.Rat => Enemies.rat(enemyId, position)
           case EnemyReference.Snake => 
             val spitId = s"$enemyId-spit"

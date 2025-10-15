@@ -8,6 +8,7 @@ import game.Point
 
 object Enemies {
   enum EnemyReference:
+    case Bat
     case Rat
     case Snake
     case Slime
@@ -20,6 +21,7 @@ object Enemies {
    */
   object EnemyDifficulty {
     val SLIMELET = 1
+    val BAT = 1
     val SLIME = 2  
     val RAT = 3
     val SNAKE = 4
@@ -27,11 +29,32 @@ object Enemies {
     
     def difficultyFor(enemyRef: EnemyReference): Int = enemyRef match {
       case EnemyReference.Slimelet => SLIMELET
+      case EnemyReference.Bat => BAT
       case EnemyReference.Slime => SLIME
       case EnemyReference.Rat => RAT
       case EnemyReference.Snake => SNAKE
       case EnemyReference.Boss => BOSS
     }
+  }
+
+  def bat(id: String, position: game.Point): Entity = {
+    Entity(
+      id = id,
+      Movement(position = position),
+      EntityTypeComponent(EntityType.Enemy),
+      EnemyTypeComponent(EnemyReference.Bat),
+      Health(8),
+      Initiative(30),
+      Inventory(Nil),
+      Equipment(weapon = Some(Equippable.weapon(2, "Bat Bite"))), // 1 base + 2 bonus = 3 total damage
+      EventMemory(),
+      Drawable(Sprites.batSprite),
+      Hitbox(),
+      DeathEvents(Seq(
+        GiveExperience(experienceForLevel(2) / 5),
+        DropCoins(2)
+      ))
+    )
   }
 
   def rat(id: String, position: game.Point): Entity = {

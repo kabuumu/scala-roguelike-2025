@@ -10,6 +10,7 @@ object EnemyTypeComponent {
     
     def enemyTypeName: String = entity.get[EnemyTypeComponent] match {
       case Some(component) => component.enemyType match {
+        case EnemyReference.Bat => "Bat"
         case EnemyReference.Rat => "Rat"
         case EnemyReference.Snake => "Snake"
         case EnemyReference.Slime => "Slime"
