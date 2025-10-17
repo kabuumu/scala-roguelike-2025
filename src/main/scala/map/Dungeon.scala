@@ -105,89 +105,114 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     NoiseGenerator.getNoise(minX, maxX, minY, maxY, seed)
   }
 
-  lazy val tiles: Map[Point, TileType] = roomGrid.flatMap {
-    room =>
-      val roomX = room.x * Dungeon.roomSize
-      val roomY = room.y * Dungeon.roomSize
+  lazy val tiles: Map[Point, TileType] = {
+    // First generate regular tiles
+    val regularTiles = roomGrid.flatMap {
+      room =>
+        val roomX = room.x * Dungeon.roomSize
+        val roomY = room.y * Dungeon.roomSize
 
-      def isWall(point: Point) = point.x == roomX || point.x == roomX + Dungeon.roomSize || point.y == roomY || point.y == roomY + Dungeon.roomSize
+        def isWall(point: Point) = point.x == roomX || point.x == roomX + Dungeon.roomSize || point.y == roomY || point.y == roomY + Dungeon.roomSize
 
-      def isDoor(point: Point) = doorPoints.contains(point)
+        def isDoor(point: Point) = doorPoints.contains(point)
 
-      val isBossRoom = hasBossRoom && endpoint.contains(room)
-      val isTraderRoom = traderRoom.contains(room)
-      
-      // If the point is the centre of a room, a door, or the path between, it must be a floor tile
-      def mustBeFloor(point: Point): Boolean = {
-        val roomCentre = Point(
-          roomX + Dungeon.roomSize / 2,
-          roomY + Dungeon.roomSize / 2
-        )
-
-        // If this is the endpoint room (boss room) and we have a boss room, make the entire room floor
-        if ((isBossRoom || isTraderRoom) && !isWall(point)) {
-          true  // All non-wall tiles in boss room should be floor
-        } else {
-          // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
-          val roomCenterArea = Set(
-            roomCentre,                                    // Center
-            Point(roomCentre.x - 1, roomCentre.y),       // Left
-            Point(roomCentre.x + 1, roomCentre.y),       // Right
-            Point(roomCentre.x, roomCentre.y - 1),       // Up
-            Point(roomCentre.x, roomCentre.y + 1)        // Down
+        val isBossRoom = hasBossRoom && endpoint.contains(room)
+        val isTraderRoom = traderRoom.contains(room)
+        val isOutdoorArea = room == startPoint // The starting room is the outdoor area
+        
+        // If the point is the centre of a room, a door, or the path between, it must be a floor tile
+        def mustBeFloor(point: Point): Boolean = {
+          val roomCentre = Point(
+            roomX + Dungeon.roomSize / 2,
+            roomY + Dungeon.roomSize / 2
           )
 
-          // Find all points between the centre of the room and any doors within the room
-          val roomPaths = for {
-            roomConnection <- roomConnections(room)
-            doorPoint = roomConnection.direction match {
-              case Direction.Up => Point(roomX + Dungeon.roomSize / 2, roomY)
-              case Direction.Down => Point(roomX + Dungeon.roomSize / 2, roomY + Dungeon.roomSize)
-              case Direction.Left => Point(roomX, roomY + Dungeon.roomSize / 2)
-              case Direction.Right => Point(roomX + Dungeon.roomSize, roomY + Dungeon.roomSize / 2)
-            }
-            pathX <- (Math.min(roomCentre.x, doorPoint.x)) to (Math.max(roomCentre.x, doorPoint.x))
-            pathY <- (Math.min(roomCentre.y, doorPoint.y)) to (Math.max(roomCentre.y, doorPoint.y))
-            if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
-          } yield Point(pathX, pathY)
+          // If this is the endpoint room (boss room) and we have a boss room, make the entire room floor
+          if ((isBossRoom || isTraderRoom || isOutdoorArea) && !isWall(point)) {
+            true  // All non-wall tiles in boss room, trader room, or outdoor area should be floor
+          } else {
+            // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
+            val roomCenterArea = Set(
+              roomCentre,                                    // Center
+              Point(roomCentre.x - 1, roomCentre.y),       // Left
+              Point(roomCentre.x + 1, roomCentre.y),       // Right
+              Point(roomCentre.x, roomCentre.y - 1),       // Up
+              Point(roomCentre.x, roomCentre.y + 1)        // Down
+            )
 
-          roomCenterArea.contains(point) || roomPaths.contains(point)
+            // Find all points between the centre of the room and any doors within the room
+            val roomPaths = for {
+              roomConnection <- roomConnections(room)
+              doorPoint = roomConnection.direction match {
+                case Direction.Up => Point(roomX + Dungeon.roomSize / 2, roomY)
+                case Direction.Down => Point(roomX + Dungeon.roomSize / 2, roomY + Dungeon.roomSize)
+                case Direction.Left => Point(roomX, roomY + Dungeon.roomSize / 2)
+                case Direction.Right => Point(roomX + Dungeon.roomSize, roomY + Dungeon.roomSize / 2)
+              }
+              pathX <- (Math.min(roomCentre.x, doorPoint.x)) to (Math.max(roomCentre.x, doorPoint.x))
+              pathY <- (Math.min(roomCentre.y, doorPoint.y)) to (Math.max(roomCentre.y, doorPoint.y))
+              if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
+            } yield Point(pathX, pathY)
+
+            roomCenterArea.contains(point) || roomPaths.contains(point)
+          }
         }
-      }
 
-      val roomTiles = for {
-        x <- roomX to roomX + Dungeon.roomSize
-        y <- roomY to roomY + Dungeon.roomSize
-      } yield {
-        val point = Point(x, y)
+        val roomTiles = for {
+          x <- roomX to roomX + Dungeon.roomSize
+          y <- roomY to roomY + Dungeon.roomSize
+        } yield {
+          val point = Point(x, y)
 
-        val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
+          val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
 
-        if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
-          case _ if testMode || isBossRoom || isTraderRoom => (point, TileType.Floor)
-          case 0 | 1 => (point, TileType.Bridge)
-          case 2 | 3 => (point, TileType.Floor)
-          case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
-        else if(isWall(point) && (isBossRoom || isTraderRoom))
-          (point, TileType.Wall)
-        else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
-          case _ if testMode => (point, TileType.Wall)
-          case 0 | 1 | 2 | 3 => (point, TileType.Water)
-          case 4 | 5 | 6 | 7 => (point, TileType.Wall)
-        else if(isWall(point) && roomConnectionsForWall.isEmpty)
-          (point, TileType.Wall)
-        else noise(x -> y) match
-          case _ if testMode => (point, TileType.Floor)
-          case 0 | 1 => (point, TileType.Water)
-          case 2 | 3 => (point, TileType.Floor)
-          case 4 | 5 => (point, TileType.MaybeFloor)
-          case 6 | 7 => (point, TileType.Rock)
-      }
+          // Special handling for outdoor area
+          if (isOutdoorArea) {
+            if (isWall(point) && roomConnectionsForWall.isEmpty) {
+              // Perimeter walls become trees
+              (point, TileType.Tree)
+            } else if (isDoor(point)) {
+              // Door area uses dirt as transition
+              (point, TileType.Dirt)
+            } else if (mustBeFloor(point)) {
+              // Use grass tiles for the floor with some variety
+              noise(x -> y) match {
+                case 0 | 1 | 2 => (point, TileType.Grass1)
+                case 3 | 4 | 5 => (point, TileType.Grass2)
+                case 6 | 7 => (point, TileType.Grass3)
+              }
+            } else {
+              // Default to grass
+              (point, TileType.Grass1)
+            }
+          } else if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
+            case _ if testMode || isBossRoom || isTraderRoom => (point, TileType.Floor)
+            case 0 | 1 => (point, TileType.Bridge)
+            case 2 | 3 => (point, TileType.Floor)
+            case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
+          else if(isWall(point) && (isBossRoom || isTraderRoom))
+            (point, TileType.Wall)
+          else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
+            case _ if testMode => (point, TileType.Wall)
+            case 0 | 1 | 2 | 3 => (point, TileType.Water)
+            case 4 | 5 | 6 | 7 => (point, TileType.Wall)
+          else if(isWall(point) && roomConnectionsForWall.isEmpty)
+            (point, TileType.Wall)
+          else noise(x -> y) match
+            case _ if testMode => (point, TileType.Floor)
+            case 0 | 1 => (point, TileType.Water)
+            case 2 | 3 => (point, TileType.Floor)
+            case 4 | 5 => (point, TileType.MaybeFloor)
+            case 6 | 7 => (point, TileType.Rock)
+        }
 
-      roomTiles.toMap
-  }.toMap
+        roomTiles.toMap
+    }.toMap
+    
+    regularTiles
+  }
 
-  lazy val walls: Set[Point] = tiles.filter(_._2 == TileType.Wall).keySet
+  lazy val walls: Set[Point] = tiles.filter(t => t._2 == TileType.Wall || t._2 == TileType.Tree).keySet
   
   lazy val rocks: Set[Point] = tiles.filter(_._2 == TileType.Rock).keySet
 
