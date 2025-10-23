@@ -101,10 +101,13 @@ object StartingState {
 
   // Generate enemies using the new depth-based system
   val (enemies, allSpitAbilities) = {
-    val nonStartRooms = dungeon.roomGrid - dungeon.startPoint
+    // Exclude outdoor rooms and starting room from enemy spawning
+    val dungeonRoomsOnly = dungeon.roomGrid.filterNot(room => 
+      dungeon.outdoorRooms.contains(room) || room == dungeon.startPoint
+    )
     val roomDepths = dungeon.roomDepths
     
-    val enemiesAndAbilities = nonStartRooms.zipWithIndex.map { case (roomPoint, index) =>
+    val enemiesAndAbilities = dungeonRoomsOnly.zipWithIndex.map { case (roomPoint, index) =>
       // If this is the endpoint room and we have a boss room, place boss instead of regular enemies
       if (dungeon.hasBossRoom && dungeon.endpoint.contains(roomPoint)) {
         // Place boss in endpoint room

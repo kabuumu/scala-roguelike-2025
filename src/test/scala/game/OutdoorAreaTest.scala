@@ -128,4 +128,43 @@ class OutdoorAreaTest extends AnyFunSuite {
     println(s"Starting room tiles: ${startRoomTiles.mkString(", ")}")
     println(s"Other room tiles: ${otherRoomTiles.mkString(", ")}")
   }
+  
+  test("Outdoor area encompasses entire dungeon with grass and tree perimeter") {
+    val dungeon = MapGenerator.generateDungeon(dungeonSize = 10, lockedDoorCount = 0, itemCount = 0)
+    
+    // Calculate dungeon bounds
+    val minRoomX = dungeon.roomGrid.map(_.x).min
+    val maxRoomX = dungeon.roomGrid.map(_.x).max
+    val minRoomY = dungeon.roomGrid.map(_.y).min
+    val maxRoomY = dungeon.roomGrid.map(_.y).max
+    
+    // With 2 room-widths of padding, outdoor area should extend beyond dungeon bounds
+    val outdoorPadding = 2
+    val expectedOutdoorMinX = (minRoomX - outdoorPadding) * Dungeon.roomSize
+    val expectedOutdoorMaxX = (maxRoomX + outdoorPadding + 1) * Dungeon.roomSize
+    val expectedOutdoorMinY = (minRoomY - outdoorPadding) * Dungeon.roomSize
+    val expectedOutdoorMaxY = (maxRoomY + outdoorPadding + 1) * Dungeon.roomSize
+    
+    // Check that grass tiles exist in the outdoor area (outside dungeon rooms)
+    val outdoorGrassTiles = dungeon.tiles.filter { case (point, tileType) =>
+      val roomPoint = Point(point.x / Dungeon.roomSize, point.y / Dungeon.roomSize)
+      !dungeon.roomGrid.contains(roomPoint) && 
+      (tileType == TileType.Grass1 || tileType == TileType.Grass2 || tileType == TileType.Grass3)
+    }
+    
+    // Check that tree perimeter exists at outer bounds
+    val outerPerimeterTrees = dungeon.tiles.filter { case (point, tileType) =>
+      tileType == TileType.Tree &&
+      (point.x == expectedOutdoorMinX || point.x == expectedOutdoorMaxX ||
+       point.y == expectedOutdoorMinY || point.y == expectedOutdoorMaxY)
+    }
+    
+    assert(outdoorGrassTiles.nonEmpty, "Outdoor area should have grass tiles surrounding dungeon")
+    assert(outerPerimeterTrees.nonEmpty, "Outdoor area should have tree perimeter at outer bounds")
+    
+    println(s"Dungeon bounds: (${minRoomX * Dungeon.roomSize}, ${minRoomY * Dungeon.roomSize}) to (${maxRoomX * Dungeon.roomSize}, ${maxRoomY * Dungeon.roomSize})")
+    println(s"Outdoor bounds: ($expectedOutdoorMinX, $expectedOutdoorMinY) to ($expectedOutdoorMaxX, $expectedOutdoorMaxY)")
+    println(s"Found ${outdoorGrassTiles.size} grass tiles in outdoor area")
+    println(s"Found ${outerPerimeterTrees.size} trees in outer perimeter")
+  }
 }
