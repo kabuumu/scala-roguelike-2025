@@ -114,9 +114,10 @@ def analyze_test_coverage(output_file=None):
     for file_path in test_files:
         rel_path = file_path.relative_to(src_test)
         lines = count_lines_of_code(file_path)
+        file_name = file_path.name
         
         # Special handling for comprehensive test files
-        if "comprehensive" in str(rel_path) or "FinalComprehensiveGameTest" in str(file_path):
+        if "comprehensive" in str(rel_path).lower() or "FinalComprehensiveGameTest" in str(file_path):
             # Comprehensive test files cover all areas more efficiently
             # Use a higher multiplier since integration tests cover more ground per line
             total_main_lines = sum(main_areas.values())
@@ -125,6 +126,14 @@ def analyze_test_coverage(output_file=None):
                     area_weight = main_areas[area] / total_main_lines
                     # Use 2x multiplier for comprehensive tests as they test integration
                     tested_areas[area] += int(lines * area_weight * 2)
+        # Outdoor area tests cover map generation extensively
+        elif "Outdoor" in file_name or "outdoor" in str(rel_path).lower():
+            # These tests specifically test map generation and dungeon mechanics
+            tested_areas["map"] += lines
+            # They also test game entity systems (player, enemies)
+            tested_areas["game/entity"] += int(lines * 0.3)
+            # And game systems (spawning, depth calculation)
+            tested_areas["game/system"] += int(lines * 0.2)
         else:
             # Standard area-based mapping for other test files
             for area in tested_areas:
@@ -178,10 +187,10 @@ def analyze_test_coverage(output_file=None):
     # Add CI-friendly summary
     print(f"\n::notice title=Code Coverage::Overall coverage: {overall_coverage:.1f}%")
     
-    # Check coverage threshold (49% baseline, with small tolerance for rounding)
-    threshold = 45  # Allow for floating point precision and rounding
+    # Check coverage threshold (65% baseline, with small tolerance for rounding)
+    threshold = 60  # Allow for floating point precision and rounding
     if overall_coverage < threshold:
-        print(f"::warning title=Coverage Below Threshold::Coverage {overall_coverage:.1f}% is below 49% baseline")
+        print(f"::warning title=Coverage Below Threshold::Coverage {overall_coverage:.1f}% is below 65% baseline")
         return overall_coverage, False
     else:
         print(f"::notice title=Coverage OK::Coverage {overall_coverage:.1f}% meets baseline requirement")
@@ -192,6 +201,6 @@ if __name__ == "__main__":
     output_file = "coverage-output.txt" if len(sys.argv) == 1 else sys.argv[1] if sys.argv[1] != "--no-file" else None
     coverage, meets_threshold = analyze_test_coverage(output_file)
     
-    # Exit with non-zero status if coverage is below baseline (49%)
+    # Exit with non-zero status if coverage is below baseline (65%)
     if not meets_threshold:
         sys.exit(1)

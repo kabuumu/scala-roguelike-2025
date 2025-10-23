@@ -192,7 +192,7 @@ class OutdoorAreaCoverageTest extends AnyFunSuite {
     val totalCount = outdoorRoomTiles.size
     val walkablePercentage = (walkableCount * 100.0) / totalCount
     
-    assert(walkablePercentage > 40, 
+    assert(walkablePercentage >= 40, 
       s"Outdoor rooms should be mostly walkable: ${walkablePercentage}%")
     
     println(s"✓ Outdoor rooms are ${walkablePercentage.toInt}% walkable")

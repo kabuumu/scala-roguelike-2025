@@ -40,12 +40,12 @@ jobs:
     - name: Run tests
       run: sbt test
 
-    - name: Run coverage analysis and enforce 49% baseline
+    - name: Run coverage analysis and enforce 65% baseline
       run: |
         set -o pipefail
         python3 scripts/analyze_coverage.py --no-file | tee coverage-output.txt
         if grep -q "Coverage Below Threshold" coverage-output.txt; then
-          echo "Coverage baseline (49%) not met."
+          echo "Coverage baseline (65%) not met."
           exit 1
         fi
 
