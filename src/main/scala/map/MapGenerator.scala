@@ -24,7 +24,21 @@ object MapGenerator {
     )
 
     @tailrec
-    def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
+    def recursiveGenerator(openDungeons: Set[Dungeon], iterations: Int = 0): Dungeon = {
+      if (openDungeons.isEmpty) {
+        throw new IllegalStateException(
+          s"Cannot generate dungeon: bounds too restrictive or configuration impossible. " +
+          s"Bounds: ${config.bounds.map(_.describe).getOrElse("None")}, size: ${config.size}"
+        )
+      }
+      
+      if (iterations > 10000) {
+        throw new IllegalStateException(
+          s"Dungeon generation exceeded maximum iterations (10000). " +
+          s"Configuration may be impossible to satisfy: ${config.bounds.map(_.describe).getOrElse("None")}, size: ${config.size}"
+        )
+      }
+      
       val currentDungeon: Dungeon = openDungeons.maxBy( dungeon =>
         dungeon.roomGrid.size + dungeon.lockedDoorCount + dungeon.nonKeyItems.size
       )
@@ -46,7 +60,7 @@ object MapGenerator {
         case Some(completedDungeon) =>
           completedDungeon
         case None =>
-          recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon)
+          recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon, iterations + 1)
       }
     }
 
