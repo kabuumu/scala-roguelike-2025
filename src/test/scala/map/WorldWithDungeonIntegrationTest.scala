@@ -5,6 +5,9 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class WorldWithDungeonIntegrationTest extends AnyFunSuite {
   
+  /** Expected number of outdoor transition rooms added to dungeons */
+  private val OutdoorRoomCount = 6
+  
   test("create world with dungeon in center - basic integration") {
     // Define world bounds (large enough to contain dungeon + surrounding world)
     val worldBounds = MapBounds(-10, 10, -10, 10)
@@ -40,7 +43,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     
     // Verify dungeon was created
     assert(dungeon.roomGrid.nonEmpty, "Dungeon should have rooms")
-    assert(dungeon.roomGrid.size == 16) // 10 dungeon + 6 outdoor
+    assert(dungeon.roomGrid.size == 10 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
     
     // Output AI-readable summary
     println("\n=== World with Dungeon Integration ===")
@@ -77,7 +80,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     val dungeon = MapGenerator.generateDungeon(dungeonConfig)
     
     assert(worldTiles.nonEmpty)
-    assert(dungeon.roomGrid.size == 14) // 8 + 6 outdoor
+    assert(dungeon.roomGrid.size == 8 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
     
     println(s"Bounded dungeon: ${dungeonBounds.describe}, entrance: ${dungeonConfig.entranceSide}")
     println(s"  Generated ${dungeon.roomGrid.size} total rooms")
@@ -190,7 +193,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     
     // Verify everything was created correctly
     assert(worldTiles.nonEmpty)
-    assert(dungeon.roomGrid.size == 14) // 8 + 6 outdoor
+    assert(dungeon.roomGrid.size == 8 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
     assert(dungeon.lockedDoorCount == 1)
     assert(dungeon.nonKeyItems.size == 2)
   }
@@ -214,7 +217,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     val simpleConfig = DungeonConfig(size = 5, seed = 999)
     val simpleDungeon = MapGenerator.generateDungeon(simpleConfig)
     
-    assert(simpleDungeon.roomGrid.size == 11) // 5 + 6 outdoor
+    assert(simpleDungeon.roomGrid.size == 5 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
     println(s"  Example: Simple dungeon with ${simpleDungeon.roomGrid.size} rooms created")
   }
 }

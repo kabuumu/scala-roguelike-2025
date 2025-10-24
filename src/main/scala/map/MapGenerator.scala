@@ -5,6 +5,9 @@ import scala.annotation.tailrec
 
 object MapGenerator {
   
+  /** Maximum iterations for dungeon generation before declaring configuration impossible */
+  private val MaxGenerationIterations = 10000
+  
   /**
    * Generates a dungeon with configurable parameters.
    * This is the new parameterized API that supports bounds and entrance side configuration.
@@ -32,9 +35,9 @@ object MapGenerator {
         )
       }
       
-      if (iterations > 10000) {
+      if (iterations > MaxGenerationIterations) {
         throw new IllegalStateException(
-          s"Dungeon generation exceeded maximum iterations (10000). " +
+          s"Dungeon generation exceeded maximum iterations ($MaxGenerationIterations). " +
           s"Configuration may be impossible to satisfy: ${config.bounds.map(_.describe).getOrElse("None")}, size: ${config.size}"
         )
       }
