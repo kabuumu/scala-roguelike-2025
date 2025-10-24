@@ -1,35 +1,44 @@
 # Code Coverage Report
 
-## Current Coverage: 54.1%
+## Current Coverage: 66.5%
 
 This document provides detailed code coverage metrics and technical analysis for the Scala Roguelike 2025 project. For build and testing instructions, see the main [README.md](README.md#-build--test).
 
 ## Overview
 
-The project maintains **54.1% estimated code coverage** across 3,426 lines of main source code with 2,252 lines of test code, providing a test-to-source ratio of 0.66.
+The project maintains **66.5% estimated code coverage** across 4,532 lines of main source code with 2,819 lines of test code, providing a test-to-source ratio of 0.62.
 
 ## Detailed Coverage Breakdown
 
 | Area | Main Lines | Test Lines | Estimated Coverage | Description |
 |------|------------|------------|-------------------|-------------|
-| **game/system** | 924 | 1,436 | ~100% | Combat, movement, equipment systems |
-| **ui** | 209 | 316 | ~100% | User interface and input handling |
-| **map** | 466 | 83 | ~53% | Dungeon generation algorithms |
-| **game/entity** | 613 | 70 | ~34% | Entity component system |
-| **util** | 91 | 0 | ~0% | Pathfinding and utilities |
-| **indigoengine** | 640 | 0 | ~0% | Engine integration layer |
+| **game/entity** | 598 | 226 | ~100% | Entity component system with comprehensive outdoor tests |
+| **game/system** | 1,382 | 270 | ~59% | Combat, movement, equipment systems |
+| **ui** | 567 | 133 | ~70% | User interface and input handling |
+| **map** | 758 | 610 | ~100% | Dungeon generation including outdoor area system |
+| **util** | 126 | 15 | ~36% | Pathfinding and utilities |
+| **indigoengine** | 1,101 | 134 | ~37% | Engine integration layer |
 
 ## Test Suite Breakdown
 
-The project includes **128 tests** across **14 test suites**:
+The project includes **112 tests** across **18 test suites**:
 
-- **MovementSystemTest** (7 tests): Player movement and collision detection
-- **GameControllerStoryTest** (6 tests): High-level game interactions
-- **EntityTest** (10 tests): Component system functionality
-- **InitiativeSystemTest** (2 tests): Turn-based combat timing
+### Core Tests
+- **OutdoorAreaTest** (6 tests): Core outdoor functionality including grass tiles, tree perimeter, collision
+- **OutdoorAreaCoverageTest** (11 tests): Comprehensive coverage of outdoor mechanics
+- **OutdoorAreaFixesTest** (3 tests): Bug prevention for enemy spawning and depth system
+- **OutdoorSurroundsTest** (3 tests): OOO/OXO/OOO perimeter pattern validation
+- **DebugOutdoorTest** (1 test): Development debugging for outdoor area
+- **DungeonDepthEnemyTest** (6 tests): Depth calculation and enemy generation
 - **EquipmentSystemTest** (19 tests): Equipment and inventory mechanics
-- **MapGeneratorTest** (23 tests): Dungeon generation with various configurations
-- **Plus 8 additional suites**: Covering pathfinding, UI state management, combat systems, and more
+
+### Additional Suites
+- **FinalComprehensiveGameTest** (18 tests): End-to-end gameplay scenarios
+- **MovementSystemTest**: Player movement and collision detection
+- **GameControllerTest**: High-level game interactions
+- **EntityTest**: Component system functionality
+- **InitiativeSystemTest**: Turn-based combat timing
+- Plus 6 additional suites covering pathfinding, UI state management, combat systems, and more
 
 ## Coverage Analysis Tools
 

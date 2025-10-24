@@ -78,12 +78,12 @@ After making changes, ALWAYS validate by running this complete scenario:
 
 ### Code Coverage
 - **Coverage Analysis**: `python3 scripts/analyze_coverage.py` -- comprehensive coverage report (5 seconds)
-- **Coverage Baseline**: Project maintains **49.0% estimated coverage** across 2,928 lines of source code
+- **Coverage Baseline**: Project maintains **66.5% estimated coverage** across 4,532 lines of source code with 112 tests
 - **Coverage Report (Limited)**: `sbt testCoverage` -- has ScalaJS compatibility issues, use Python script instead
 - **Coverage Documentation**: See `COVERAGE.md` for detailed metrics and improvement areas
-- **High Coverage Areas**: game/system (~100%), ui (~100%) - core game mechanics are well-tested  
-- **Low Coverage Areas**: util (0%), map (9%) - focus areas for improvement
-- **Coverage Goal**: Maintain 49%+ baseline, target critical paths and new features
+- **High Coverage Areas**: game/system (~100%), ui (~70%), map (~100%) - core game mechanics are well-tested  
+- **Low Coverage Areas**: util (~36%), indigoengine (~37%) - focus areas for improvement
+- **Coverage Goal**: Maintain 65%+ baseline, target critical paths and new features
 
 ### Common Build Issues
 - **Missing SBT**: Install SBT 1.10.2 manually as shown above
@@ -131,9 +131,9 @@ After making changes, ALWAYS validate by running this complete scenario:
 - **Coverage Validation**: Run `python3 scripts/analyze_coverage.py` before PRs to ensure coverage doesn't decrease
 - **Manual Validation Required**: The web game MUST be tested manually after changes
 - **No Linting Tools**: Project does not use scalafmt or scalafix
-- **Test Coverage**: 132 comprehensive tests covering 49% of codebase with focus on core game mechanics
+- **Test Coverage**: 112 comprehensive tests covering 66.5% of codebase with focus on core game mechanics
 - **Expected Warnings**: Some pattern matching and type warnings are normal
-- **Coverage Focus**: Prioritize testing critical paths and new features; existing high-coverage areas (systems, UI) set the standard
+- **Coverage Focus**: Prioritize testing critical paths and new features; existing high-coverage areas (systems, UI, map) set the standard
 
 ### Test-Driven Development (TDD) Workflow
 When writing new code, especially for core game features, follow the TDD cycle:
@@ -208,8 +208,8 @@ test("New potion type should provide temporary speed boost") {
 #### TDD Validation Steps
 1. **Red**: Run `sbt "testOnly YourNewTest"` - should fail
 2. **Green**: Implement minimal code, run test again - should pass
-3. **Refactor**: Run `sbt test` - all 132+ tests should pass
-4. **Coverage**: Run `python3 scripts/analyze_coverage.py` - maintain 49%+ baseline
+3. **Refactor**: Run `sbt test` - all 112+ tests should pass
+4. **Coverage**: Run `python3 scripts/analyze_coverage.py` - maintain 65%+ baseline
 
 Remember: This is a real-time rendered game with complex state management. Always validate changes by playing the actual game to ensure mechanics work correctly.
 
@@ -243,11 +243,11 @@ When making changes, especially to low-coverage areas:
 ### ScalaJS Coverage Limitations
 - **Standard Tools Don't Work**: JaCoCo, standard scoverage have JVM/bytecode dependency
 - **Custom Solution**: Python script analyzes source files and test coverage heuristically  
-- **CI Integration**: GitHub Actions runs coverage analysis and validates 49%+ baseline
+- **CI Integration**: GitHub Actions runs coverage analysis and validates 65%+ baseline
 - **Known Issue**: `sbt testCoverage` may fail during ScalaJS linking phase
 
 ### Coverage Expectations for Contributors
-- **Maintain Baseline**: Don't decrease overall coverage below 49%
+- **Maintain Baseline**: Don't decrease overall coverage below 65%
 - **New Features**: Include appropriate tests, especially for core game logic
 - **High-Risk Areas**: Any changes to combat, movement, or entity systems must have tests
 - **Documentation**: Refer to `COVERAGE.md` for detailed area-specific metrics

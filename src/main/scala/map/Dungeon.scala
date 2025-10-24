@@ -14,6 +14,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    items: Set[(Point, ItemReference)] = Set.empty,
                    traderRoom: Option[Point] = None,
                    hasBossRoom: Boolean = false,
+                   outdoorRooms: Set[Point] = Set.empty, // Rooms that are outdoor areas
                    testMode: Boolean = false,
                    seed: Long = System.currentTimeMillis()) {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
@@ -105,89 +106,237 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     NoiseGenerator.getNoise(minX, maxX, minY, maxY, seed)
   }
 
-  lazy val tiles: Map[Point, TileType] = roomGrid.flatMap {
-    room =>
-      val roomX = room.x * Dungeon.roomSize
-      val roomY = room.y * Dungeon.roomSize
-
-      def isWall(point: Point) = point.x == roomX || point.x == roomX + Dungeon.roomSize || point.y == roomY || point.y == roomY + Dungeon.roomSize
-
-      def isDoor(point: Point) = doorPoints.contains(point)
-
-      val isBossRoom = hasBossRoom && endpoint.contains(room)
-      val isTraderRoom = traderRoom.contains(room)
+  lazy val tiles: Map[Point, TileType] = {
+    // Calculate the bounds of the entire dungeon
+    val minRoomX = roomGrid.map(_.x).min
+    val maxRoomX = roomGrid.map(_.x).max
+    val minRoomY = roomGrid.map(_.y).min
+    val maxRoomY = roomGrid.map(_.y).max
+    
+    // Create outdoor perimeter tiles around the dungeon (2 room-widths of padding)
+    val outdoorPadding = 2
+    val dungeonMinX = minRoomX * Dungeon.roomSize
+    val dungeonMaxX = (maxRoomX + 1) * Dungeon.roomSize
+    val dungeonMinY = minRoomY * Dungeon.roomSize
+    val dungeonMaxY = (maxRoomY + 1) * Dungeon.roomSize
+    
+    val outdoorMinX = dungeonMinX - (outdoorPadding * Dungeon.roomSize)
+    val outdoorMaxX = dungeonMaxX + (outdoorPadding * Dungeon.roomSize)
+    val outdoorMinY = dungeonMinY - (outdoorPadding * Dungeon.roomSize)
+    val outdoorMaxY = dungeonMaxY + (outdoorPadding * Dungeon.roomSize)
+    
+    // Generate outdoor area tiles - this creates a COMPLETE grid that covers everything
+    val outdoorTiles = (for {
+      x <- outdoorMinX to outdoorMaxX
+      y <- outdoorMinY to outdoorMaxY
+      point = Point(x, y)
+    } yield {
+      val isPerimeter = x == outdoorMinX || x == outdoorMaxX || y == outdoorMinY || y == outdoorMaxY
       
-      // If the point is the centre of a room, a door, or the path between, it must be a floor tile
-      def mustBeFloor(point: Point): Boolean = {
-        val roomCentre = Point(
-          roomX + Dungeon.roomSize / 2,
-          roomY + Dungeon.roomSize / 2
-        )
-
-        // If this is the endpoint room (boss room) and we have a boss room, make the entire room floor
-        if ((isBossRoom || isTraderRoom) && !isWall(point)) {
-          true  // All non-wall tiles in boss room should be floor
-        } else {
-          // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
-          val roomCenterArea = Set(
-            roomCentre,                                    // Center
-            Point(roomCentre.x - 1, roomCentre.y),       // Left
-            Point(roomCentre.x + 1, roomCentre.y),       // Right
-            Point(roomCentre.x, roomCentre.y - 1),       // Up
-            Point(roomCentre.x, roomCentre.y + 1)        // Down
-          )
-
-          // Find all points between the centre of the room and any doors within the room
-          val roomPaths = for {
-            roomConnection <- roomConnections(room)
-            doorPoint = roomConnection.direction match {
-              case Direction.Up => Point(roomX + Dungeon.roomSize / 2, roomY)
-              case Direction.Down => Point(roomX + Dungeon.roomSize / 2, roomY + Dungeon.roomSize)
-              case Direction.Left => Point(roomX, roomY + Dungeon.roomSize / 2)
-              case Direction.Right => Point(roomX + Dungeon.roomSize, roomY + Dungeon.roomSize / 2)
-            }
-            pathX <- (Math.min(roomCentre.x, doorPoint.x)) to (Math.max(roomCentre.x, doorPoint.x))
-            pathY <- (Math.min(roomCentre.y, doorPoint.y)) to (Math.max(roomCentre.y, doorPoint.y))
-            if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
-          } yield Point(pathX, pathY)
-
-          roomCenterArea.contains(point) || roomPaths.contains(point)
+      if (isPerimeter) {
+        // Outer perimeter is all trees (impassable boundary)
+        (point, TileType.Tree)
+      } else {
+        // Inner outdoor area uses grass tiles with variety
+        noise.getOrElse(x -> y, (x + y) % 8) match {
+          case 0 | 1 | 2 => (point, TileType.Grass1)
+          case 3 | 4 | 5 => (point, TileType.Grass2)
+          case 6 | 7 => (point, TileType.Grass3)
+          case _ => (point, TileType.Grass1)
         }
       }
+    }).toMap
+    
+    // Generate regular dungeon room tiles
+    val regularTiles = roomGrid.flatMap {
+      room =>
+        val roomX = room.x * Dungeon.roomSize
+        val roomY = room.y * Dungeon.roomSize
 
-      val roomTiles = for {
-        x <- roomX to roomX + Dungeon.roomSize
-        y <- roomY to roomY + Dungeon.roomSize
-      } yield {
-        val point = Point(x, y)
+        def isWall(point: Point) = point.x == roomX || point.x == roomX + Dungeon.roomSize || point.y == roomY || point.y == roomY + Dungeon.roomSize
 
-        val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
+        def isDoor(point: Point) = doorPoints.contains(point)
 
-        if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
-          case _ if testMode || isBossRoom || isTraderRoom => (point, TileType.Floor)
-          case 0 | 1 => (point, TileType.Bridge)
-          case 2 | 3 => (point, TileType.Floor)
-          case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
-        else if(isWall(point) && (isBossRoom || isTraderRoom))
-          (point, TileType.Wall)
-        else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
-          case _ if testMode => (point, TileType.Wall)
-          case 0 | 1 | 2 | 3 => (point, TileType.Water)
-          case 4 | 5 | 6 | 7 => (point, TileType.Wall)
-        else if(isWall(point) && roomConnectionsForWall.isEmpty)
-          (point, TileType.Wall)
-        else noise(x -> y) match
-          case _ if testMode => (point, TileType.Floor)
-          case 0 | 1 => (point, TileType.Water)
-          case 2 | 3 => (point, TileType.Floor)
-          case 4 | 5 => (point, TileType.MaybeFloor)
-          case 6 | 7 => (point, TileType.Rock)
-      }
+        val isBossRoom = hasBossRoom && endpoint.contains(room)
+        val isTraderRoom = traderRoom.contains(room)
+        val isStartingRoom = room == startPoint
+        val isOutdoorRoom = outdoorRooms.contains(room)
+        
+        // Check if this room has connections to dungeon rooms (for outdoor rooms)
+        // or connections to outdoor rooms (for dungeon rooms)
+        def connectsToOutdoorRoom(direction: game.Direction): Boolean = {
+          roomConnections.exists { conn =>
+            conn.originRoom == room && 
+            conn.direction == direction && 
+            outdoorRooms.contains(conn.destinationRoom)
+          }
+        }
+        
+        def connectsToDungeonRoom(direction: game.Direction): Boolean = {
+          roomConnections.exists { conn =>
+            conn.originRoom == room && 
+            conn.direction == direction && 
+            !outdoorRooms.contains(conn.destinationRoom)
+          }
+        }
 
-      roomTiles.toMap
-  }.toMap
+        // If the point is the centre of a room, a door, or the path between, it must be a floor tile
+        def mustBeFloor(point: Point): Boolean = {
+          val roomCentre = Point(
+            roomX + Dungeon.roomSize / 2,
+            roomY + Dungeon.roomSize / 2
+          )
 
-  lazy val walls: Set[Point] = tiles.filter(_._2 == TileType.Wall).keySet
+          // If this is the endpoint room (boss room) and we have a boss room, make the entire room floor
+          if ((isBossRoom || isTraderRoom || isStartingRoom) && !isWall(point)) {
+            true  // All non-wall tiles in boss room, trader room, or starting room should be floor
+          } else {
+            // Ensure room center and orthogonal adjacent tiles are always walkable for enemy placement
+            val roomCenterArea = Set(
+              roomCentre,                                    // Center
+              Point(roomCentre.x - 1, roomCentre.y),       // Left
+              Point(roomCentre.x + 1, roomCentre.y),       // Right
+              Point(roomCentre.x, roomCentre.y - 1),       // Up
+              Point(roomCentre.x, roomCentre.y + 1)        // Down
+            )
+
+            // Find all points between the centre of the room and any doors within the room
+            val roomPaths = for {
+              roomConnection <- roomConnections(room)
+              doorPoint = roomConnection.direction match {
+                case Direction.Up => Point(roomX + Dungeon.roomSize / 2, roomY)
+                case Direction.Down => Point(roomX + Dungeon.roomSize / 2, roomY + Dungeon.roomSize)
+                case Direction.Left => Point(roomX, roomY + Dungeon.roomSize / 2)
+                case Direction.Right => Point(roomX + Dungeon.roomSize, roomY + Dungeon.roomSize / 2)
+              }
+              pathX <- (Math.min(roomCentre.x, doorPoint.x)) to (Math.max(roomCentre.x, doorPoint.x))
+              pathY <- (Math.min(roomCentre.y, doorPoint.y)) to (Math.max(roomCentre.y, doorPoint.y))
+              if roomCentre.x == doorPoint.x || roomCentre.y == doorPoint.y // Ensure we only consider horizontal or vertical paths
+            } yield Point(pathX, pathY)
+
+            roomCenterArea.contains(point) || roomPaths.contains(point)
+          }
+        }
+
+        val roomTiles = for {
+          x <- roomX to roomX + Dungeon.roomSize
+          y <- roomY to roomY + Dungeon.roomSize
+        } yield {
+          val point = Point(x, y)
+
+          val roomConnectionsForWall = if(isWall(point)) getRoomConnectionsForWall(point) else Set.empty[RoomConnection]
+
+        // Special handling for outdoor rooms - use grass tiles and trees for walls
+        if (isOutdoorRoom) {
+          if (isDoor(point)) {
+            // Check if this door connects to a dungeon room
+            val doorConnectsToDungeon = roomConnectionsForWall.exists(conn => 
+              !outdoorRooms.contains(conn.destinationRoom)
+            )
+            if (doorConnectsToDungeon) {
+              // Doorway to dungeon uses dungeon floor
+              (point, TileType.Floor)
+            } else {
+              // Doorway to other outdoor room uses dirt
+              (point, TileType.Dirt)
+            }
+          } else if (isWall(point) && roomConnectionsForWall.isEmpty) {
+              // Check if this wall is on the side that connects to a dungeon room
+              val wallDirection = if (point.y == roomY) game.Direction.Up
+                                 else if (point.y == roomY + Dungeon.roomSize) game.Direction.Down
+                                 else if (point.x == roomX) game.Direction.Left
+                                 else game.Direction.Right
+              
+              if (connectsToDungeonRoom(wallDirection)) {
+                // Use solid wall (impassable) where outdoor connects to dungeon
+                (point, TileType.Wall)
+              } else {
+                // Other outdoor walls are trees
+                (point, TileType.Tree)
+              }
+            } else if (isWall(point) && roomConnectionsForWall.nonEmpty) {
+              // Walls with connections - ensure they're solid walls to dungeon
+              val hasConnectionToDungeon = roomConnectionsForWall.exists(conn => 
+                !outdoorRooms.contains(conn.destinationRoom)
+              )
+              if (hasConnectionToDungeon) {
+                (point, TileType.Wall)
+              } else {
+                (point, TileType.Dirt) // Connection to other outdoor room
+              }
+            } else {
+              // Floor uses grass tiles with variety
+              noise(x -> y) match {
+                case 0 | 1 | 2 => (point, TileType.Grass1)
+                case 3 | 4 | 5 => (point, TileType.Grass2)
+                case 6 | 7 => (point, TileType.Grass3)
+                case _ => (point, TileType.Grass1)
+              }
+            }
+        } else if (isStartingRoom) {
+          if (isDoor(point)) {
+            // Check if this door connects to a dungeon room (non-outdoor room)
+            val doorConnectsToDungeon = roomConnectionsForWall.exists(conn => 
+              !outdoorRooms.contains(conn.destinationRoom)
+            )
+            if (doorConnectsToDungeon) {
+              // Doorway to dungeon uses dungeon floor
+              (point, TileType.Floor)
+            } else {
+              // Doorway to other outdoor room uses dirt
+              (point, TileType.Dirt)
+            }
+          } else if (isWall(point) && roomConnectionsForWall.isEmpty) {
+              // Starting room walls are GRASS (passable, open to outdoor area)
+              noise(x -> y) match {
+                case 0 | 1 | 2 => (point, TileType.Grass1)
+                case 3 | 4 | 5 => (point, TileType.Grass2)
+                case 6 | 7 => (point, TileType.Grass3)
+                case _ => (point, TileType.Grass1)
+              }
+            } else if (isWall(point) && roomConnectionsForWall.nonEmpty) {
+              // Walls with doors/connections use dirt as transition to dungeon
+              (point, TileType.Dirt)
+            } else if (mustBeFloor(point)) {
+              // Use grass tiles for the floor with some variety
+              noise(x -> y) match {
+                case 0 | 1 | 2 => (point, TileType.Grass1)
+                case 3 | 4 | 5 => (point, TileType.Grass2)
+                case 6 | 7 => (point, TileType.Grass3)
+              }
+            } else {
+              // Default to grass
+              (point, TileType.Grass1)
+            }
+          } else if (isDoor(point) || mustBeFloor(point)) noise(x -> y) match
+            case _ if testMode || isBossRoom || isTraderRoom => (point, TileType.Floor)
+            case 0 | 1 => (point, TileType.Bridge)
+            case 2 | 3 => (point, TileType.Floor)
+            case 4 | 5 | 6 | 7 => (point, TileType.MaybeFloor)
+          else if(isWall(point) && (isBossRoom || isTraderRoom))
+            (point, TileType.Wall)
+          else if(isWall(point) && roomConnectionsForWall.exists(_.isLocked)) noise(x -> y) match
+            case _ if testMode => (point, TileType.Wall)
+            case 0 | 1 | 2 | 3 => (point, TileType.Water)
+            case 4 | 5 | 6 | 7 => (point, TileType.Wall)
+          else if(isWall(point) && roomConnectionsForWall.isEmpty)
+            (point, TileType.Wall)
+          else noise(x -> y) match
+            case _ if testMode => (point, TileType.Floor)
+            case 0 | 1 => (point, TileType.Water)
+            case 2 | 3 => (point, TileType.Floor)
+            case 4 | 5 => (point, TileType.MaybeFloor)
+            case 6 | 7 => (point, TileType.Rock)
+        }
+
+        roomTiles.toMap
+    }.toMap
+    
+    // Combine outdoor tiles with dungeon room tiles (room tiles override outdoor tiles)
+    outdoorTiles ++ regularTiles
+  }
+
+  lazy val walls: Set[Point] = tiles.filter(t => t._2 == TileType.Wall || t._2 == TileType.Tree).keySet
   
   lazy val rocks: Set[Point] = tiles.filter(_._2 == TileType.Rock).keySet
 
@@ -261,6 +410,7 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
   /**
    * Calculate the dungeon depth for each room based on shortest path distance from start point.
    * Returns a map from room Point to its depth (distance from start).
+   * Note: Outdoor rooms are excluded from depth calculation.
    */
   lazy val roomDepths: Map[Point, Int] = {
     def calculateDepthFromStart(start: Point): Map[Point, Int] = {
@@ -268,21 +418,35 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
       val depths = scala.collection.mutable.Map[Point, Int]()
       val queue = scala.collection.mutable.Queue[(Point, Int)]()
       
-      queue.enqueue((start, 0))
-      depths(start) = 0
-      visited += start
+      // If start is an outdoor room, find the first dungeon room connected to it
+      val dungeonStart = if (outdoorRooms.contains(start)) {
+        roomConnections
+          .find(conn => conn.originRoom == start && !outdoorRooms.contains(conn.destinationRoom))
+          .map(_.destinationRoom)
+          .getOrElse(start)
+      } else {
+        start
+      }
+      
+      // Only add to depths if it's not an outdoor room
+      if (!outdoorRooms.contains(dungeonStart)) {
+        queue.enqueue((dungeonStart, 0))
+        depths(dungeonStart) = 0
+        visited += dungeonStart
+      }
       
       while (queue.nonEmpty) {
         val (currentRoom, currentDepth) = queue.dequeue()
         
-        // Find all connected rooms from current room
+        // Find all connected rooms from current room, excluding outdoor rooms
         val connectedRooms = roomConnections
           .filter(_.originRoom == currentRoom)
           .map(_.destinationRoom)
           .filterNot(visited.contains)
+          .filterNot(outdoorRooms.contains) // Don't include outdoor rooms in depth calculation
         
         connectedRooms.foreach { nextRoom =>
-          if (!visited.contains(nextRoom)) {
+          if (!visited.contains(nextRoom) && !outdoorRooms.contains(nextRoom)) {
             visited += nextRoom
             val nextDepth = currentDepth + 1
             depths(nextRoom) = nextDepth

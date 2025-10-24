@@ -22,6 +22,13 @@ object Sprites {
   val bridgeSprite: Sprite = Sprite(16, 5, floorLayer)
   val rockSprite: Sprite = Sprite(5, 2, floorLayer)
   
+  // Outdoor area sprites
+  val treeSprite: Sprite = Sprite(3, 1, entityLayer)
+  val grass1Sprite: Sprite = Sprite(5, 0, floorLayer)
+  val grass2Sprite: Sprite = Sprite(6, 0, floorLayer)
+  val grass3Sprite: Sprite = Sprite(7, 0, floorLayer)
+  val dirtSprite: Sprite = Sprite(3, 0, floorLayer)
+  
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)
   val slimeSprite: Sprite = Sprite(29, 8, entityLayer)
