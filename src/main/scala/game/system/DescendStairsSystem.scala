@@ -27,15 +27,15 @@ object DescendStairsSystem extends GameSystem {
       val newFloor = gameState.dungeonFloor + 1
       val seed = System.currentTimeMillis() + newFloor
       
-      val worldBounds = MapBounds(-15, 15, -15, 15)
+      val worldBounds = MapBounds(-20, 20, -20, 20)
       
       val worldMap = WorldMapGenerator.generateWorldMap(
         WorldMapConfig(
           worldConfig = WorldConfig(
             bounds = worldBounds,
-            grassDensity = 0.65,
-            treeDensity = 0.20,
-            dirtDensity = 0.10,
+            grassDensity = 0.60,
+            treeDensity = 0.15,
+            dirtDensity = 0.15,
             ensureWalkablePaths = true,
             perimeterTrees = true,
             seed = seed
@@ -51,27 +51,29 @@ object DescendStairsSystem extends GameSystem {
           ),
           riverConfigs = Seq(
             RiverConfig(
-              startPoint = game.Point(-150, -100),
+              startPoint = game.Point(-200, -150),
               flowDirection = (1, 1),
-              length = 150,
+              length = 200,
               width = 1,
               curviness = 0.3,
               bounds = worldBounds,
               seed = seed
             ),
             RiverConfig(
-              startPoint = game.Point(150, -100),
+              startPoint = game.Point(200, -150),
               flowDirection = (-1, 1),
-              length = 150,
+              length = 200,
               width = 1,
               curviness = 0.25,
               bounds = worldBounds,
               seed = seed + 1
             )
           ),
-          generatePathsToDungeons = true,
+          generatePathsToDungeons = false,
+          generatePathsBetweenDungeons = true,
           pathsPerDungeon = 2,
-          pathWidth = 1
+          pathWidth = 1,
+          minDungeonSpacing = 10
         )
       )
       

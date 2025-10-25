@@ -4,37 +4,40 @@ import game.Point
 
 /**
  * Unified world map that combines terrain, rivers, paths, and dungeons.
- * This creates an open-world RPG style map with natural flow.
+ * Uses a 4-pass approach for natural procedural generation:
+ * 1st pass - Create grass/dirt based on noise
+ * 2nd pass - Place dungeons with spacing
+ * 3rd pass - Create paths between dungeons
+ * 4th pass - Create rivers with bridges at path crossings
  */
 object WorldMapGenerator {
   
   /**
    * Generates a complete world map with terrain, rivers, paths, and dungeons.
+   * Uses multi-pass approach for procedural generation.
    * 
    * @param config WorldMapConfig specifying all map generation parameters
    * @return WorldMap containing all generated elements
    */
   def generateWorldMap(config: WorldMapConfig): WorldMap = {
-    // Generate base terrain (grass, dirt, trees)
+    // ===== PASS 1: Create base terrain (grass/dirt/trees) =====
     val terrainTiles = WorldGenerator.generateWorld(config.worldConfig)
     
-    // Generate rivers
-    val riverTiles = if (config.riverConfigs.nonEmpty) {
-      RiverGenerator.generateRivers(config.riverConfigs)
-    } else {
-      Set.empty[Point]
-    }
+    // ===== PASS 2: Place dungeons on the world with spacing =====
+    val (dungeons, dungeonPlacements) = placeDungeonsWithSpacing(
+      config.dungeonConfigs,
+      config.worldConfig.bounds,
+      config.minDungeonSpacing
+    )
     
-    // Generate dungeons
-    val dungeons = config.dungeonConfigs.map { dungeonConfig =>
-      MapGenerator.generateDungeon(dungeonConfig)
-    }
-    
-    // Find dungeon entrance points (outdoor starting rooms)
+    // Find dungeon entrance points (use the actual dungeon start points, not outdoor rooms)
     val dungeonEntrances = dungeons.map(_.startPoint)
     
-    // Generate paths leading to dungeons
-    val pathTiles = if (dungeonEntrances.nonEmpty && config.generatePathsToDungeons) {
+    // ===== PASS 3: Create dirt paths between all dungeons =====
+    val pathTiles = if (dungeonEntrances.size > 1 && config.generatePathsBetweenDungeons) {
+      generatePathsBetweenDungeons(dungeonEntrances.toSeq, config.pathWidth)
+    } else if (dungeonEntrances.nonEmpty && config.generatePathsToDungeons) {
+      // Fallback: paths from world edges to dungeons
       PathGenerator.generateDungeonPaths(
         dungeonEntrances.toSeq,
         config.worldConfig.bounds,
@@ -46,30 +49,178 @@ object WorldMapGenerator {
       Set.empty[Point]
     }
     
+    // ===== PASS 4: Create rivers with bridges at path crossings =====
+    val (riverTiles, bridgeTiles) = if (config.riverConfigs.nonEmpty) {
+      val rivers = RiverGenerator.generateRivers(config.riverConfigs)
+      val bridges = findBridgePoints(rivers, pathTiles)
+      (rivers, bridges)
+    } else {
+      (Set.empty[Point], Set.empty[Point])
+    }
+    
     // Combine all tiles with proper priority:
-    // 1. Dungeon tiles (highest priority)
-    // 2. Path tiles (override terrain and rivers)
-    // 3. River tiles (override terrain)
-    // 4. Terrain tiles (base layer)
-    val combinedTiles = combineTiles(terrainTiles, riverTiles, pathTiles, dungeons)
+    // Dungeons > Bridges > Paths > Rivers > Terrain
+    val combinedTiles = combineTilesWithBridges(
+      terrainTiles, riverTiles, pathTiles, bridgeTiles, dungeons
+    )
     
     WorldMap(
       tiles = combinedTiles,
       dungeons = dungeons,
       rivers = riverTiles,
       paths = pathTiles,
+      bridges = bridgeTiles,
       bounds = config.worldConfig.bounds
     )
   }
   
   /**
-   * Combines tiles from different sources with proper priority.
-   * Priority: Dungeons > Paths > Rivers > Terrain
+   * Places dungeons on the world map ensuring minimum spacing between them.
+   * Returns dungeons without the hardcoded outdoor rooms.
    */
-  private def combineTiles(
+  private def placeDungeonsWithSpacing(
+    configs: Seq[DungeonConfig],
+    bounds: MapBounds,
+    minSpacing: Int
+  ): (Seq[Dungeon], Seq[Point]) = {
+    val random = new scala.util.Random(configs.headOption.map(_.seed).getOrElse(System.currentTimeMillis()))
+    val placements = scala.collection.mutable.ArrayBuffer[Point]()
+    
+    val dungeons = configs.map { config =>
+      // Find a suitable placement that doesn't overlap with existing dungeons
+      val placement = findDungeonPlacement(placements.toSeq, bounds, minSpacing, random)
+      placements += placement
+      
+      // Generate dungeon without outdoor rooms - it will sit directly on the terrain
+      val baseDungeon = MapGenerator.generateDungeonWithoutOutdoorRooms(config)
+      
+      // Shift dungeon to the placement location
+      shiftDungeon(baseDungeon, placement)
+    }
+    
+    (dungeons, placements.toSeq)
+  }
+  
+  /**
+   * Finds a suitable placement for a dungeon that maintains spacing from existing dungeons.
+   */
+  private def findDungeonPlacement(
+    existingPlacements: Seq[Point],
+    bounds: MapBounds,
+    minSpacing: Int,
+    random: scala.util.Random
+  ): Point = {
+    val maxAttempts = 100
+    var attempt = 0
+    
+    while (attempt < maxAttempts) {
+      val x = random.between(bounds.minRoomX, bounds.maxRoomX + 1)
+      val y = random.between(bounds.minRoomY, bounds.maxRoomY + 1)
+      val candidate = Point(x, y)
+      
+      // Check if this placement maintains minimum spacing from all existing dungeons
+      val hasGoodSpacing = existingPlacements.forall { existing =>
+        val distance = math.abs(candidate.x - existing.x) + math.abs(candidate.y - existing.y)
+        distance >= minSpacing
+      }
+      
+      if (hasGoodSpacing) {
+        return candidate
+      }
+      
+      attempt += 1
+    }
+    
+    // If we couldn't find a good placement, return a random one anyway
+    Point(
+      random.between(bounds.minRoomX, bounds.maxRoomX + 1),
+      random.between(bounds.minRoomY, bounds.maxRoomY + 1)
+    )
+  }
+  
+  /**
+   * Shifts a dungeon to a new location.
+   */
+  private def shiftDungeon(dungeon: Dungeon, targetCenter: Point): Dungeon = {
+    // Calculate current center
+    val currentMinX = dungeon.roomGrid.map(_.x).min
+    val currentMaxX = dungeon.roomGrid.map(_.x).max
+    val currentMinY = dungeon.roomGrid.map(_.y).min
+    val currentMaxY = dungeon.roomGrid.map(_.y).max
+    
+    val currentCenterX = (currentMinX + currentMaxX) / 2
+    val currentCenterY = (currentMinY + currentMaxY) / 2
+    
+    val shiftX = targetCenter.x - currentCenterX
+    val shiftY = targetCenter.y - currentCenterY
+    
+    dungeon.copy(
+      roomGrid = dungeon.roomGrid.map(p => Point(p.x + shiftX, p.y + shiftY)),
+      startPoint = Point(dungeon.startPoint.x + shiftX, dungeon.startPoint.y + shiftY),
+      endpoint = dungeon.endpoint.map(p => Point(p.x + shiftX, p.y + shiftY)),
+      traderRoom = dungeon.traderRoom.map(p => Point(p.x + shiftX, p.y + shiftY)),
+      roomConnections = dungeon.roomConnections.map(rc => 
+        rc.copy(
+          originRoom = Point(rc.originRoom.x + shiftX, rc.originRoom.y + shiftY),
+          destinationRoom = Point(rc.destinationRoom.x + shiftX, rc.destinationRoom.y + shiftY)
+        )
+      ),
+      items = dungeon.items.map { case (p, item) => (Point(p.x + shiftX, p.y + shiftY), item) },
+      outdoorRooms = dungeon.outdoorRooms.map(p => Point(p.x + shiftX, p.y + shiftY))
+    )
+  }
+  
+  /**
+   * Generates paths that connect all dungeons to each other.
+   * Creates a network of dirt paths between dungeon entrances.
+   */
+  private def generatePathsBetweenDungeons(
+    entrances: Seq[Point],
+    pathWidth: Int
+  ): Set[Point] = {
+    if (entrances.size < 2) return Set.empty
+    
+    val allPaths = scala.collection.mutable.Set[Point]()
+    
+    // Connect each dungeon to its nearest neighbor(s) to create a network
+    entrances.zipWithIndex.foreach { case (entrance, idx) =>
+      // Find the nearest other entrance
+      val others = entrances.zipWithIndex.filter(_._2 != idx).map(_._1)
+      val nearest = others.minBy { other =>
+        val dx = entrance.x - other.x
+        val dy = entrance.y - other.y
+        dx * dx + dy * dy
+      }
+      
+      // Create path to nearest entrance
+      val tileStart = Point(entrance.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+                           entrance.y * Dungeon.roomSize + Dungeon.roomSize / 2)
+      val tileTarget = Point(nearest.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+                            nearest.y * Dungeon.roomSize + Dungeon.roomSize / 2)
+      
+      allPaths ++= PathGenerator.generatePath(tileStart, tileTarget, pathWidth, 
+        MapBounds(-1000, 1000, -1000, 1000)) // Use large bounds
+    }
+    
+    allPaths.toSet
+  }
+  
+  /**
+   * Finds points where rivers cross paths and should have bridges.
+   */
+  private def findBridgePoints(rivers: Set[Point], paths: Set[Point]): Set[Point] = {
+    rivers.intersect(paths)
+  }
+  
+  /**
+   * Combines tiles from different sources with proper priority.
+   * Priority: Dungeons > Bridges > Paths > Rivers > Terrain
+   */
+  private def combineTilesWithBridges(
     terrainTiles: Map[Point, TileType],
     riverTiles: Set[Point],
     pathTiles: Set[Point],
+    bridgeTiles: Set[Point],
     dungeons: Seq[Dungeon]
   ): Map[Point, TileType] = {
     var result = terrainTiles
@@ -82,6 +233,11 @@ object WorldMapGenerator {
     // Apply paths (override terrain and rivers)
     pathTiles.foreach { point =>
       result = result.updated(point, TileType.Dirt)
+    }
+    
+    // Apply bridges (override rivers at path crossings)
+    bridgeTiles.foreach { point =>
+      result = result.updated(point, TileType.Bridge)
     }
     
     // Apply dungeon tiles (override everything)
@@ -229,17 +385,21 @@ object WorldMapGenerator {
  * @param worldConfig Configuration for the base terrain
  * @param dungeonConfigs Configurations for dungeons to place in the world
  * @param riverConfigs Configurations for rivers to generate
- * @param generatePathsToDungeons Whether to generate paths leading to dungeons
- * @param pathsPerDungeon Number of paths leading to each dungeon entrance
+ * @param generatePathsToDungeons Whether to generate paths leading to dungeons from edges
+ * @param generatePathsBetweenDungeons Whether to generate paths connecting all dungeons
+ * @param pathsPerDungeon Number of paths leading to each dungeon entrance (when using edge paths)
  * @param pathWidth Width of paths in tiles
+ * @param minDungeonSpacing Minimum spacing between dungeon centers (in rooms)
  */
 case class WorldMapConfig(
   worldConfig: WorldConfig,
   dungeonConfigs: Seq[DungeonConfig] = Seq.empty,
   riverConfigs: Seq[RiverConfig] = Seq.empty,
   generatePathsToDungeons: Boolean = true,
+  generatePathsBetweenDungeons: Boolean = true,
   pathsPerDungeon: Int = 2,
-  pathWidth: Int = 1
+  pathWidth: Int = 1,
+  minDungeonSpacing: Int = 10
 )
 
 /**
@@ -249,6 +409,7 @@ case class WorldMapConfig(
  * @param dungeons All dungeons in the world
  * @param rivers Set of points that are river tiles
  * @param paths Set of points that are path tiles
+ * @param bridges Set of points where bridges cross rivers
  * @param bounds The bounds of the world
  */
 case class WorldMap(
@@ -256,6 +417,7 @@ case class WorldMap(
   dungeons: Seq[Dungeon],
   rivers: Set[Point],
   paths: Set[Point],
+  bridges: Set[Point],
   bounds: MapBounds
 )
 

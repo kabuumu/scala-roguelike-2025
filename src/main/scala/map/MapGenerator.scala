@@ -93,6 +93,65 @@ object MapGenerator {
   }
   
   /**
+   * Generates a dungeon without the hardcoded outdoor rooms.
+   * This is used by WorldMapGenerator to place dungeons directly on procedural terrain.
+   * 
+   * @param config DungeonConfig specifying all dungeon parameters
+   * @return Generated Dungeon without outdoor rooms
+   */
+  def generateDungeonWithoutOutdoorRooms(config: DungeonConfig): Dungeon = {
+    val mutators: Set[DungeonMutator] = Set(
+      new EndPointMutator(config.size),
+      new TraderRoomMutator(config.size),
+      new KeyLockMutator(config.lockedDoorCount, config.size),
+      new TreasureRoomMutator(config.itemCount, config.size),
+      new BossRoomMutator(config.size)
+    )
+
+    @tailrec
+    def recursiveGenerator(openDungeons: Set[Dungeon], iterations: Int = 0): Dungeon = {
+      if (openDungeons.isEmpty) {
+        throw new IllegalStateException(
+          s"Cannot generate dungeon: configuration impossible. " +
+          s"Size: ${config.size}"
+        )
+      }
+      
+      if (iterations > MaxGenerationIterations) {
+        throw new IllegalStateException(
+          s"Dungeon generation exceeded maximum iterations ($MaxGenerationIterations). " +
+          s"Configuration may be impossible to satisfy: size: ${config.size}"
+        )
+      }
+      
+      val currentDungeon: Dungeon = openDungeons.maxBy( dungeon =>
+        dungeon.roomGrid.size + dungeon.lockedDoorCount + dungeon.nonKeyItems.size
+      )
+
+      val newOpenDungeons: Set[Dungeon] = for {
+        mutator <- mutators
+        possibleDungeon <- mutator.getPossibleMutations(currentDungeon)
+      } yield possibleDungeon
+      
+      newOpenDungeons.find(dungeon =>
+        dungeon.lockedDoorCount == config.lockedDoorCount
+          && dungeon.nonKeyItems.size == config.itemCount
+          && dungeon.roomGrid.size == config.size
+          && dungeon.traderRoom.isDefined
+          && dungeon.hasBossRoom
+      ) match {
+        case Some(completedDungeon) =>
+          completedDungeon
+        case None =>
+          recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon, iterations + 1)
+      }
+    }
+
+    // Generate dungeon without outdoor rooms - it will sit directly on the terrain
+    recursiveGenerator(Set(Dungeon(seed = config.seed)))
+  }
+  
+  /**
    * Backward-compatible dungeon generation API.
    * This maintains compatibility with existing code that uses the old signature.
    */

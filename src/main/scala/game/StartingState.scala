@@ -11,16 +11,16 @@ import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfi
 
 
 object StartingState {
-  // Generate a complete open-world RPG map with rivers, paths, and dungeons
-  private val worldBounds = MapBounds(-15, 15, -15, 15)
+  // Generate a complete open-world RPG map with noise-based terrain, dungeons, paths, and rivers
+  private val worldBounds = MapBounds(-20, 20, -20, 20)
   
   private val worldMap = WorldMapGenerator.generateWorldMap(
     WorldMapConfig(
       worldConfig = WorldConfig(
         bounds = worldBounds,
-        grassDensity = 0.65,
-        treeDensity = 0.20,
-        dirtDensity = 0.10,
+        grassDensity = 0.60,
+        treeDensity = 0.15,
+        dirtDensity = 0.15,
         ensureWalkablePaths = true,
         perimeterTrees = true,
         seed = System.currentTimeMillis()
@@ -36,32 +36,33 @@ object StartingState {
       ),
       riverConfigs = Seq(
         RiverConfig(
-          startPoint = Point(-150, -100),
+          startPoint = Point(-200, -150),
           flowDirection = (1, 1),
-          length = 150,
+          length = 200,
           width = 1,
           curviness = 0.3,
           bounds = worldBounds,
           seed = System.currentTimeMillis()
         ),
         RiverConfig(
-          startPoint = Point(150, -100),
+          startPoint = Point(200, -150),
           flowDirection = (-1, 1),
-          length = 150,
+          length = 200,
           width = 1,
           curviness = 0.25,
           bounds = worldBounds,
           seed = System.currentTimeMillis() + 1
         )
       ),
-      generatePathsToDungeons = true,
+      generatePathsToDungeons = false,      // Don't generate paths from edges
+      generatePathsBetweenDungeons = true,  // Generate paths between dungeons (single dungeon = no paths)
       pathsPerDungeon = 2,
-      pathWidth = 1
+      pathWidth = 1,
+      minDungeonSpacing = 10
     )
   )
   
   // Use the first (and only) dungeon from the world map
-  // The dungeon's tiles property will automatically include the world terrain
   val dungeon: Dungeon = worldMap.dungeons.head
 
   // Create player's starting inventory items as entities

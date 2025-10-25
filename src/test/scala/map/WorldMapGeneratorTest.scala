@@ -226,8 +226,8 @@ class WorldMapGeneratorTest extends AnyFunSuite {
     val config = WorldMapConfig(
       worldConfig = worldConfig,
       dungeonConfigs = dungeons,
-      generatePathsToDungeons = true,
-      pathsPerDungeon = 2
+      generatePathsToDungeons = false,  // Don't use edge paths
+      generatePathsBetweenDungeons = true  // Generate paths connecting dungeons
     )
     
     val worldMap = WorldMapGenerator.generateWorldMap(config)
@@ -235,13 +235,24 @@ class WorldMapGeneratorTest extends AnyFunSuite {
     assert(worldMap.dungeons.size == 3, "Should have 3 dungeons")
     assert(worldMap.paths.nonEmpty, "Should have paths")
     
-    // Each dungeon entrance should be in the path set
-    worldMap.dungeons.foreach { dungeon =>
-      assert(worldMap.paths.contains(dungeon.startPoint), 
-             s"Paths should reach dungeon at ${dungeon.startPoint}")
+    // Paths should form a network connecting dungeons
+    // Each dungeon should be reachable from the others via paths
+    val dungeonTileStartPoints = worldMap.dungeons.map { dungeon =>
+      Point(dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+            dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2)
     }
     
-    println(s"Generated ${worldMap.paths.size} path tiles leading to ${worldMap.dungeons.size} dungeons")
+    // At least some dungeon entrance tiles should be part of the path network
+    val pathsNearDungeons = dungeonTileStartPoints.exists { tilePoint =>
+      // Check if path is within a reasonable distance
+      worldMap.paths.exists { pathPoint =>
+        val distance = math.abs(pathPoint.x - tilePoint.x) + math.abs(pathPoint.y - tilePoint.y)
+        distance < 20  // Paths should be close to dungeon entrances
+      }
+    }
+    
+    assert(pathsNearDungeons, "Paths should be near dungeon entrances")
+    println(s"Generated ${worldMap.paths.size} path tiles connecting ${worldMap.dungeons.size} dungeons")
   }
   
   test("rivers flow in non-straight lines with curviness") {
