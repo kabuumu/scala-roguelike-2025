@@ -13,7 +13,8 @@ import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfi
 object StartingState {
   // Generate a simple open world with just grass, dirt, trees, and rivers
   // No dungeons or enemies for now - just exploring the procedural terrain
-  private val worldBounds = MapBounds(-50, 50, -50, 50)  // Larger world
+  // Reduced world size for better performance (20x20 rooms = ~105k tiles instead of 1M+)
+  private val worldBounds = MapBounds(-10, 10, -10, 10)  // Moderate world size
   
   println(s"[StartingState] Generating world map with bounds: $worldBounds")
   
@@ -31,18 +32,18 @@ object StartingState {
       dungeonConfigs = Seq.empty,  // No dungeons for now
       riverConfigs = Seq(
         RiverConfig(
-          startPoint = Point(-500, -400),
+          startPoint = Point(-100, -80),
           flowDirection = (1, 1),
-          length = 400,
+          length = 80,
           width = 2,
           curviness = 0.3,
           bounds = worldBounds,
           seed = System.currentTimeMillis()
         ),
         RiverConfig(
-          startPoint = Point(500, -300),
+          startPoint = Point(100, -60),
           flowDirection = (-1, 1),
-          length = 350,
+          length = 70,
           width = 2,
           curviness = 0.25,
           bounds = worldBounds,
@@ -166,10 +167,18 @@ object StartingState {
 
   val player: Entity = {
     // Spawn player in the center of the open world
-    println(s"[StartingState] Creating player with sight memory of ${worldMap.tiles.size} points")
+    // Start with limited sight memory - tiles will be discovered as player explores
+    val initialVisibleRange = 15  // Player can initially see 15 tiles in each direction
+    val playerPos = Point(0, 0)
+    val initiallyVisibleTiles = worldMap.tiles.keys.filter { tilePos =>
+      math.abs(tilePos.x - playerPos.x) <= initialVisibleRange &&
+      math.abs(tilePos.y - playerPos.y) <= initialVisibleRange
+    }.toSet
+    
+    println(s"[StartingState] Creating player with initial sight memory of ${initiallyVisibleTiles.size} nearby tiles (out of ${worldMap.tiles.size} total)")
     val playerEntity = Entity(
       id = "Player ID",
-      Movement(position = Point(0, 0)),  // Center of the world
+      Movement(position = playerPos),  // Center of the world
       EntityTypeComponent(EntityType.Player),
       Health(70),
       Initiative(10),
@@ -180,7 +189,7 @@ object StartingState {
         armor = Some(Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor")),
         weapon = Some(Equippable.weapon(3, "Basic Sword"))
       ),
-      SightMemory(seenPoints = worldMap.tiles.keySet),  // Can see entire open world
+      SightMemory(seenPoints = initiallyVisibleTiles),  // Only nearby tiles initially
       EventMemory(),
       Drawable(Sprites.playerSprite),
       Hitbox(),
