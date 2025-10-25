@@ -1,9 +1,101 @@
 package map
 
-import game.Point
+import game.{Direction, Point}
 import scala.annotation.tailrec
 
 object MapGenerator {
+  
+  /** Maximum iterations for dungeon generation before declaring configuration impossible */
+  private val MaxGenerationIterations = 10000
+  
+  /**
+   * Generates a dungeon with configurable parameters.
+   * This is the new parameterized API that supports bounds and entrance side configuration.
+   * 
+   * @param config DungeonConfig specifying all dungeon parameters
+   * @return Generated Dungeon with outdoor area
+   */
+  def generateDungeon(config: DungeonConfig): Dungeon = {
+    val startTime = System.currentTimeMillis()
+
+    val mutators: Set[DungeonMutator] = Set(
+      new EndPointMutator(config.size),
+      new TraderRoomMutator(config.size),
+      new KeyLockMutator(config.lockedDoorCount, config.size),
+      new TreasureRoomMutator(config.itemCount, config.size),
+      new BossRoomMutator(config.size)
+    )
+
+    @tailrec
+    def recursiveGenerator(openDungeons: Set[Dungeon], iterations: Int = 0): Dungeon = {
+      if (openDungeons.isEmpty) {
+        throw new IllegalStateException(
+          s"Cannot generate dungeon: bounds too restrictive or configuration impossible. " +
+          s"Bounds: ${config.bounds.map(_.describe).getOrElse("None")}, size: ${config.size}"
+        )
+      }
+      
+      if (iterations > MaxGenerationIterations) {
+        throw new IllegalStateException(
+          s"Dungeon generation exceeded maximum iterations ($MaxGenerationIterations). " +
+          s"Configuration may be impossible to satisfy: ${config.bounds.map(_.describe).getOrElse("None")}, size: ${config.size}"
+        )
+      }
+      
+      val currentDungeon: Dungeon = openDungeons.maxBy( dungeon =>
+        dungeon.roomGrid.size + dungeon.lockedDoorCount + dungeon.nonKeyItems.size
+      )
+
+      // Filter mutations to only include rooms within bounds (if specified)
+      val newOpenDungeons: Set[Dungeon] = for {
+        mutator <- mutators
+        possibleDungeon <- mutator.getPossibleMutations(currentDungeon)
+        if possibleDungeon.roomGrid.forall(config.isWithinBounds)
+      } yield possibleDungeon
+      
+      newOpenDungeons.find(dungeon =>
+        dungeon.lockedDoorCount == config.lockedDoorCount
+          && dungeon.nonKeyItems.size == config.itemCount
+          && dungeon.roomGrid.size == config.size
+          && dungeon.traderRoom.isDefined
+          && dungeon.hasBossRoom
+      ) match {
+        case Some(completedDungeon) =>
+          completedDungeon
+        case None =>
+          recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon, iterations + 1)
+      }
+    }
+
+    // Start from configured entrance room if bounds are specified
+    val startRoom = config.bounds match {
+      case Some(_) => config.getEntranceRoom
+      case None => Point(0, 0)
+    }
+    
+    val baseDungeon = recursiveGenerator(Set(Dungeon(startPoint = startRoom, seed = config.seed)))
+    
+    // Add outdoor rooms connected to the starting room
+    val dungeonWithOutdoor = addOutdoorRooms(baseDungeon, config.entranceSide)
+
+    println("Generating Dungeon (Configured)")
+    println(s"  Bounds: ${config.bounds.map(_.describe).getOrElse("Unbounded")}")
+    println(s"  Entrance side: ${config.entranceSide}")
+    println(s"  Generated dungeon with ${dungeonWithOutdoor.roomGrid.size} rooms " +
+      s"(${dungeonWithOutdoor.outdoorRooms.size} outdoor), " +
+      s"${dungeonWithOutdoor.roomConnections.size} connections, " +
+      s"${dungeonWithOutdoor.lockedDoorCount} locked doors, " +
+      s"${dungeonWithOutdoor.nonKeyItems.size} items")
+
+    println(s"  Completed dungeon with config took ${System.currentTimeMillis() - startTime}ms")
+
+    dungeonWithOutdoor
+  }
+  
+  /**
+   * Backward-compatible dungeon generation API.
+   * This maintains compatibility with existing code that uses the old signature.
+   */
   def generateDungeon(dungeonSize: Int, lockedDoorCount: Int = 0, itemCount: Int = 0, seed: Long = System.currentTimeMillis()): Dungeon = {
     val startTime = System.currentTimeMillis()
 
@@ -61,8 +153,21 @@ object MapGenerator {
   /**
    * Add outdoor rooms around the dungeon entrance.
    * Creates an outdoor entrance room below the starting room, then surrounds it with more outdoor rooms.
+   * This version defaults to Down (traditional behavior).
    */
   private def addOutdoorRooms(dungeon: Dungeon): Dungeon = {
+    addOutdoorRooms(dungeon, Direction.Down)
+  }
+  
+  /**
+   * Add outdoor rooms around the dungeon entrance with configurable entrance side.
+   * Creates an outdoor entrance room in the specified direction from the dungeon, 
+   * then surrounds it with more outdoor rooms.
+   * 
+   * @param dungeon The base dungeon to add outdoor rooms to
+   * @param entranceSide The side where the outdoor entrance should be (Up/Down/Left/Right)
+   */
+  private def addOutdoorRooms(dungeon: Dungeon, entranceSide: Direction): Dungeon = {
     import game.Direction
     
     // Find the highest Y coordinate in the dungeon (bottom of dungeon in screen space)
