@@ -95,7 +95,7 @@ class OutdoorAreaCoverageTest extends AnyFunSuite {
     println(s"✓ No overlap between outdoor and dungeon room sets")
   }
   
-  test("Player spawns in outdoor area") {
+  test("Player spawns in dungeon start point on procedural terrain") {
     val startingState = StartingState
     val player = startingState.startingGameState.playerEntity
     val dungeon = startingState.dungeon
@@ -107,10 +107,13 @@ class OutdoorAreaCoverageTest extends AnyFunSuite {
                       else (playerPos.y - Dungeon.roomSize + 1) / Dungeon.roomSize
     val playerRoom = Point(playerRoomX, playerRoomY)
     
-    assert(dungeon.outdoorRooms.contains(playerRoom),
-      s"Player should spawn in outdoor room, but spawned in room $playerRoom")
+    assert(dungeon.roomGrid.contains(playerRoom),
+      s"Player should spawn in a dungeon room, but spawned in room $playerRoom")
     
-    println(s"✓ Player spawns at $playerPos (room $playerRoom) which is outdoor")
+    assert(playerRoom == dungeon.startPoint,
+      s"Player should spawn at dungeon start point ${dungeon.startPoint}, but spawned at $playerRoom")
+    
+    println(s"✓ Player spawns at $playerPos (room $playerRoom) which is the dungeon start point")
   }
   
   test("Outdoor rooms have connections to dungeon") {

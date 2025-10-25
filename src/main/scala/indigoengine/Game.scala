@@ -119,7 +119,9 @@ object Game extends IndigoSandbox[Unit, GameController] {
         val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
 
         // Combine filtering and mapping for tileSprites
-        val tileSprites = model.gameState.dungeon.tiles.iterator.collect {
+        // Use worldTiles if available (includes rivers and paths), otherwise use dungeon.tiles
+        val tilesToRender = model.gameState.worldTiles.getOrElse(model.gameState.dungeon.tiles)
+        val tileSprites = tilesToRender.iterator.collect {
           case (tilePosition, tileType) if sightMemory.contains(tilePosition) =>
             val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
             if (visiblePoints.contains(tilePosition)) tileSprite

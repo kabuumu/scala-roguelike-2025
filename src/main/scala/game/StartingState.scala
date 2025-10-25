@@ -7,11 +7,72 @@ import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
 import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
-import map.{Dungeon, MapGenerator}
+import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig}
 
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
+  // Generate a simple open world with just grass, dirt, trees, and rivers
+  // No dungeons or enemies for now - just exploring the procedural terrain
+  // Reduced world size for better performance (20x20 rooms = ~105k tiles instead of 1M+)
+  private val worldBounds = MapBounds(-10, 10, -10, 10)  // Moderate world size
+  
+  println(s"[StartingState] Generating world map with bounds: $worldBounds")
+  
+  private val worldMap = WorldMapGenerator.generateWorldMap(
+    WorldMapConfig(
+      worldConfig = WorldConfig(
+        bounds = worldBounds,
+        grassDensity = 0.65,
+        treeDensity = 0.20,
+        dirtDensity = 0.10,
+        ensureWalkablePaths = true,
+        perimeterTrees = true,
+        seed = System.currentTimeMillis()
+      ),
+      dungeonConfigs = Seq.empty,  // No dungeons for now
+      riverConfigs = Seq(
+        // Rivers flow through the center of the world so they're visible
+        // World bounds in tiles: (-100, 110) x (-100, 110)
+        RiverConfig(
+          startPoint = Point(-60, -80),    // Start from upper left area
+          flowDirection = (1, 1),           // Flow diagonally down-right
+          length = 120,                     // Long river
+          width = 2,                        // Visible width
+          curviness = 0.3,                  // 30% chance of curves
+          bounds = worldBounds,
+          seed = System.currentTimeMillis()
+        ),
+        RiverConfig(
+          startPoint = Point(80, -70),      // Start from upper right area
+          flowDirection = (-1, 1),          // Flow diagonally down-left
+          length = 110,                     // Long river
+          width = 2,                        // Visible width
+          curviness = 0.25,                 // 25% chance of curves
+          bounds = worldBounds,
+          seed = System.currentTimeMillis() + 1
+        )
+      ),
+      generatePathsToDungeons = false,
+      generatePathsBetweenDungeons = false,
+      pathsPerDungeon = 0,
+      pathWidth = 1,
+      minDungeonSpacing = 10
+    )
+  )
+  
+  println(s"[StartingState] World map generated with ${worldMap.tiles.size} tiles")
+  println(s"[StartingState] Rivers: ${worldMap.rivers.size} river tiles")
+  println(s"[StartingState] Tile sample (first 10): ${worldMap.tiles.take(10).map{ case (p, t) => s"$p->$t" }.mkString(", ")}")
+  
+  // Create a simple dummy dungeon for compatibility with existing game state
+  // This is just a placeholder - the player spawns in the open world
+  val dungeon: Dungeon = Dungeon(
+    roomGrid = Set(Point(0, 0)),
+    roomConnections = Set.empty,
+    startPoint = Point(0, 0),
+    outdoorRooms = Set(Point(0, 0)),  // Entire "dungeon" is outdoor
+    seed = System.currentTimeMillis()
+  )
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
@@ -99,119 +160,61 @@ object StartingState {
     }
   }
 
-  // Generate enemies using the new depth-based system
-  val (enemies, allSpitAbilities) = {
-    // Exclude outdoor rooms and starting room from enemy spawning
-    val dungeonRoomsOnly = dungeon.roomGrid.filterNot(room => 
-      dungeon.outdoorRooms.contains(room) || room == dungeon.startPoint
-    )
-    val roomDepths = dungeon.roomDepths
-    
-    val enemiesAndAbilities = dungeonRoomsOnly.zipWithIndex.map { case (roomPoint, index) =>
-      // If this is the endpoint room and we have a boss room, place boss instead of regular enemies
-      if (dungeon.hasBossRoom && dungeon.endpoint.contains(roomPoint)) {
-        // Place boss in endpoint room
-        EnemyGeneration.createEnemiesForRoom(roomPoint, Int.MaxValue, index) // Use max depth to trigger boss placement
-      } else {
-        val depth = roomDepths.getOrElse(roomPoint, 1) // Default to depth 1 if not found
-        EnemyGeneration.createEnemiesForRoom(roomPoint, depth, index)
-      }
-    }
-    
-    val allEnemies = enemiesAndAbilities.flatMap(_._1)
-    val combinedAbilities = enemiesAndAbilities.flatMap(_._2).toMap
-    
-    (allEnemies.toSet, combinedAbilities)
-  }
+  // No enemies for the simple open world demo
+  val enemies: Set[Entity] = Set.empty
+  val allSpitAbilities: Map[String, Entity] = Map.empty
 
   // For backward compatibility, maintain the snakeSpitAbilities val
-  val snakeSpitAbilities: Map[Int, Entity] = allSpitAbilities.values.zipWithIndex.map {
-    case (ability, index) => index -> ability
-  }.toMap
+  val snakeSpitAbilities: Map[Int, Entity] = Map.empty
 
-  val player: Entity = dungeon.startPoint match {
-    case point =>
-      Entity(
-        id = "Player ID",
-        Movement(position = Point(
-          point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-          point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-        )),
-        EntityTypeComponent(EntityType.Player),
-        Health(70),
-        Initiative(10),
-        Inventory(
-          itemEntityIds = (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq
-        ),
-        Equipment(
-          armor = Some(Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor")),
-          weapon = Some(Equippable.weapon(3, "Basic Sword"))
-        ),
-        SightMemory(),
-        EventMemory(),
-        Drawable(Sprites.playerSprite),
-        Hitbox(),
-        Experience(),
-        Coins(),
-        DeathEvents()
-      )
-  }
-
-  // Spawn a trader in the dedicated trader room
-  val trader: Entity = {
-    val traderRoomPoint = dungeon.traderRoom.getOrElse(dungeon.startPoint)
+  val player: Entity = {
+    // Spawn player in the center of the open world
+    // Start with limited sight memory - tiles will be discovered as player explores
+    val initialVisibleRange = 15  // Player can initially see 15 tiles in each direction
+    val playerPos = Point(0, 0)
+    val initiallyVisibleTiles = worldMap.tiles.keys.filter { tilePos =>
+      math.abs(tilePos.x - playerPos.x) <= initialVisibleRange &&
+      math.abs(tilePos.y - playerPos.y) <= initialVisibleRange
+    }.toSet
     
-    val traderPos = Point(
-      traderRoomPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-      traderRoomPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+    println(s"[StartingState] Creating player with initial sight memory of ${initiallyVisibleTiles.size} nearby tiles (out of ${worldMap.tiles.size} total)")
+    val playerEntity = Entity(
+      id = "Player ID",
+      Movement(position = playerPos),  // Center of the world
+      EntityTypeComponent(EntityType.Player),
+      Health(70),
+      Initiative(10),
+      Inventory(
+        itemEntityIds = (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq
+      ),
+      Equipment(
+        armor = Some(Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor")),
+        weapon = Some(Equippable.weapon(3, "Basic Sword"))
+      ),
+      SightMemory(seenPoints = initiallyVisibleTiles),  // Only nearby tiles initially
+      EventMemory(),
+      Drawable(Sprites.playerSprite),
+      Hitbox(),
+      Experience(),
+      Coins(),
+      DeathEvents()
     )
-    data.Entities.trader("trader-1", traderPos)
+    println(s"[StartingState] Player created with ${playerEntity.get[SightMemory].map(_.seenPoints.size).getOrElse(0)} seen points")
+    playerEntity
   }
 
-  val items: Set[Entity] = dungeon.items.zipWithIndex.map {
-    case ((point, itemReference), index) =>
-      val basePosition = Point(
-        point.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        point.y * Dungeon.roomSize + Dungeon.roomSize / 2
-      )
-      
-      // Create entity from reference and place in world
-      val itemEntity = itemReference.createEntity(s"item-$index")
-      val placedEntity = itemEntity.addComponent(Movement(position = basePosition))
-      
-      // Add EntityTypeComponent for keys
-      itemReference match {
-        case data.Items.ItemReference.YellowKey => 
-          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(KeyColour.Yellow)))
-        case data.Items.ItemReference.BlueKey => 
-          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(KeyColour.Blue)))
-        case data.Items.ItemReference.RedKey => 
-          placedEntity.addComponent(EntityTypeComponent(EntityType.Key(KeyColour.Red)))
-        case _ =>
-          placedEntity
-      }
-  }.toSet
+  // No trader, items, or locked doors in the simple open world
+  val items: Set[Entity] = Set.empty
+  val lockedDoors: Set[Entity] = Set.empty
 
-  val lockedDoors: Set[Entity] = dungeon.lockedDoors.map {
-    case (point, lockedDoor) =>
-      Entity(
-        Movement(position = Point(
-          point.x,
-          point.y
-        )),
-        EntityTypeComponent(lockedDoor),
-        Hitbox(),
-        lockedDoor.keyColour match {
-          case KeyColour.Yellow => Drawable(Sprites.yellowDoorSprite)
-          case KeyColour.Blue => Drawable(Sprites.blueDoorSprite)
-          case KeyColour.Red => Drawable(Sprites.redDoorSprite)
-        }
-      )
-  }
-
+  println(s"[StartingState] Creating GameState with worldTiles containing ${worldMap.tiles.size} tiles")
+  
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors ++ snakeSpitAbilities.values :+ trader,
-    dungeon = dungeon
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment,
+    dungeon = dungeon,
+    worldTiles = Some(worldMap.tiles)
   )
+  
+  println(s"[StartingState] GameState created. World tiles present: ${startingGameState.worldTiles.isDefined}, size: ${startingGameState.worldTiles.map(_.size).getOrElse(0)}")
 }
