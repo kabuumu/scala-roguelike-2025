@@ -31,21 +31,23 @@ object StartingState {
       ),
       dungeonConfigs = Seq.empty,  // No dungeons for now
       riverConfigs = Seq(
+        // Rivers flow through the center of the world so they're visible
+        // World bounds in tiles: (-100, 110) x (-100, 110)
         RiverConfig(
-          startPoint = Point(-100, -80),
-          flowDirection = (1, 1),
-          length = 80,
-          width = 2,
-          curviness = 0.3,
+          startPoint = Point(-60, -80),    // Start from upper left area
+          flowDirection = (1, 1),           // Flow diagonally down-right
+          length = 120,                     // Long river
+          width = 2,                        // Visible width
+          curviness = 0.3,                  // 30% chance of curves
           bounds = worldBounds,
           seed = System.currentTimeMillis()
         ),
         RiverConfig(
-          startPoint = Point(100, -60),
-          flowDirection = (-1, 1),
-          length = 70,
-          width = 2,
-          curviness = 0.25,
+          startPoint = Point(80, -70),      // Start from upper right area
+          flowDirection = (-1, 1),          // Flow diagonally down-left
+          length = 110,                     // Long river
+          width = 2,                        // Visible width
+          curviness = 0.25,                 // 25% chance of curves
           bounds = worldBounds,
           seed = System.currentTimeMillis() + 1
         )
