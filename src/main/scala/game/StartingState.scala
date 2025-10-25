@@ -7,11 +7,62 @@ import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
 import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
-import map.{Dungeon, MapGenerator}
+import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig}
 
 
 object StartingState {
-  val dungeon: Dungeon = MapGenerator.generateDungeon(dungeonSize = 20, lockedDoorCount = 3, itemCount = 6)
+  // Generate a complete open-world RPG map with rivers, paths, and dungeons
+  private val worldBounds = MapBounds(-15, 15, -15, 15)
+  
+  private val worldMap = WorldMapGenerator.generateWorldMap(
+    WorldMapConfig(
+      worldConfig = WorldConfig(
+        bounds = worldBounds,
+        grassDensity = 0.65,
+        treeDensity = 0.20,
+        dirtDensity = 0.10,
+        ensureWalkablePaths = true,
+        perimeterTrees = true,
+        seed = System.currentTimeMillis()
+      ),
+      dungeonConfigs = Seq(
+        DungeonConfig(
+          bounds = None,
+          size = 20,
+          lockedDoorCount = 3,
+          itemCount = 6,
+          seed = System.currentTimeMillis()
+        )
+      ),
+      riverConfigs = Seq(
+        RiverConfig(
+          startPoint = Point(-150, -100),
+          flowDirection = (1, 1),
+          length = 150,
+          width = 1,
+          curviness = 0.3,
+          bounds = worldBounds,
+          seed = System.currentTimeMillis()
+        ),
+        RiverConfig(
+          startPoint = Point(150, -100),
+          flowDirection = (-1, 1),
+          length = 150,
+          width = 1,
+          curviness = 0.25,
+          bounds = worldBounds,
+          seed = System.currentTimeMillis() + 1
+        )
+      ),
+      generatePathsToDungeons = true,
+      pathsPerDungeon = 2,
+      pathWidth = 1
+    )
+  )
+  
+  // Use the first (and only) dungeon from the world map
+  // The dungeon's tiles property will automatically include the world terrain
+  val dungeon: Dungeon = worldMap.dungeons.head
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
@@ -212,6 +263,7 @@ object StartingState {
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
     entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ items ++ enemies ++ lockedDoors ++ snakeSpitAbilities.values :+ trader,
-    dungeon = dungeon
+    dungeon = dungeon,
+    worldTiles = Some(worldMap.tiles)
   )
 }

@@ -14,7 +14,8 @@ case class GameState(playerEntityId: String,
                      entities: Seq[Entity],
                      messages: Seq[String] = Nil,
                      dungeon: Dungeon,
-                     dungeonFloor: Int = 1) {
+                     dungeonFloor: Int = 1,
+                     worldTiles: Option[Map[Point, map.TileType]] = None) {
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
   def getEntity(entityId: String): Option[Entity] = {
