@@ -15,6 +15,8 @@ object StartingState {
   // No dungeons or enemies for now - just exploring the procedural terrain
   private val worldBounds = MapBounds(-50, 50, -50, 50)  // Larger world
   
+  println(s"[StartingState] Generating world map with bounds: $worldBounds")
+  
   private val worldMap = WorldMapGenerator.generateWorldMap(
     WorldMapConfig(
       worldConfig = WorldConfig(
@@ -54,6 +56,10 @@ object StartingState {
       minDungeonSpacing = 10
     )
   )
+  
+  println(s"[StartingState] World map generated with ${worldMap.tiles.size} tiles")
+  println(s"[StartingState] Rivers: ${worldMap.rivers.size} river tiles")
+  println(s"[StartingState] Tile sample (first 10): ${worldMap.tiles.take(10).map{ case (p, t) => s"$p->$t" }.mkString(", ")}")
   
   // Create a simple dummy dungeon for compatibility with existing game state
   // This is just a placeholder - the player spawns in the open world
@@ -160,6 +166,7 @@ object StartingState {
 
   val player: Entity = {
     // Spawn player in the center of the open world
+    println(s"[StartingState] Creating player with sight memory of ${worldMap.tiles.size} points")
     val playerEntity = Entity(
       id = "Player ID",
       Movement(position = Point(0, 0)),  // Center of the world
@@ -181,6 +188,7 @@ object StartingState {
       Coins(),
       DeathEvents()
     )
+    println(s"[StartingState] Player created with ${playerEntity.get[SightMemory].map(_.seenPoints.size).getOrElse(0)} seen points")
     playerEntity
   }
 
@@ -188,10 +196,14 @@ object StartingState {
   val items: Set[Entity] = Set.empty
   val lockedDoors: Set[Entity] = Set.empty
 
+  println(s"[StartingState] Creating GameState with worldTiles containing ${worldMap.tiles.size} tiles")
+  
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
     entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment,
     dungeon = dungeon,
     worldTiles = Some(worldMap.tiles)
   )
+  
+  println(s"[StartingState] GameState created. World tiles present: ${startingGameState.worldTiles.isDefined}, size: ${startingGameState.worldTiles.map(_.size).getOrElse(0)}")
 }
