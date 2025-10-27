@@ -7,7 +7,7 @@ import game.entity.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
 import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
-import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig}
+import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig, PathGenerator, TileType}
 
 
 object StartingState {
@@ -17,7 +17,8 @@ object StartingState {
   
   println(s"[StartingState] Generating world map with bounds: $worldBounds")
   
-  private val worldMap = WorldMapGenerator.generateWorldMap(
+  // First generate world without paths (we'll add player-to-dungeon path after player spawn is determined)
+  private val initialWorldMap = WorldMapGenerator.generateWorldMap(
     WorldMapConfig(
       worldConfig = WorldConfig(
         bounds = worldBounds,
@@ -61,17 +62,16 @@ object StartingState {
           seed = System.currentTimeMillis() + 1
         )
       ),
-      generatePathsToDungeons = true,       // Generate paths to dungeon entrance
-      generatePathsBetweenDungeons = false, // Only one dungeon for now
-      pathsPerDungeon = 2,                  // 2 paths leading to the dungeon
+      generatePathsToDungeons = false,      // We'll add player-to-dungeon path manually
+      generatePathsBetweenDungeons = false, // Only one dungeon
+      pathsPerDungeon = 0,
       pathWidth = 1,
       minDungeonSpacing = 10
     )
   )
   
-  println(s"[StartingState] World map generated with ${worldMap.tiles.size} tiles")
-  println(s"[StartingState] Rivers: ${worldMap.rivers.size} river tiles")
-  println(s"[StartingState] Tile sample (first 10): ${worldMap.tiles.take(10).map{ case (p, t) => s"$p->$t" }.mkString(", ")}")
+  println(s"[StartingState] Initial world map generated with ${initialWorldMap.tiles.size} tiles")
+  println(s"[StartingState] Rivers: ${initialWorldMap.rivers.size} river tiles")
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
@@ -194,15 +194,101 @@ object StartingState {
   // For backward compatibility, maintain the snakeSpitAbilities val
   val snakeSpitAbilities: Map[Int, Entity] = allSpitAbilities.zipWithIndex.map { case ((k, v), idx) => idx -> v }.toMap
 
-  val player: Entity = {
-    // Spawn player at dungeon entrance (if available) or center of world
-    val playerPos = worldMap.primaryDungeon.map { dungeon =>
-      // Convert room coordinates to tile coordinates and place player at center of start room
-      Point(
+  /**
+   * Find a suitable spawn point for the player in the open world (not in dungeon).
+   * Tries to find a walkable grass tile away from the dungeon.
+   */
+  private def findPlayerSpawnPoint(worldMap: map.WorldMap, bounds: MapBounds): Point = {
+    // Convert room bounds to tile bounds
+    val (minX, maxX, minY, maxY) = bounds.toTileBounds(Dungeon.roomSize)
+    
+    // If there's a dungeon, find a spawn point away from it
+    worldMap.primaryDungeon match {
+      case Some(dungeon) =>
+        // Get dungeon bounds (in tile coordinates)
+        val dungeonRoomPoints = dungeon.roomGrid
+        val dungeonMinX = dungeonRoomPoints.map(_.x).min * Dungeon.roomSize
+        val dungeonMaxX = dungeonRoomPoints.map(_.x).max * Dungeon.roomSize + Dungeon.roomSize
+        val dungeonMinY = dungeonRoomPoints.map(_.y).min * Dungeon.roomSize
+        val dungeonMaxY = dungeonRoomPoints.map(_.y).max * Dungeon.roomSize + Dungeon.roomSize
+        
+        // Try to find a suitable spawn point away from dungeon
+        val random = new scala.util.Random(worldMap.tiles.size)
+        val maxAttempts = 100
+        var attempt = 0
+        
+        while (attempt < maxAttempts) {
+          val x = random.between(minX, maxX)
+          val y = random.between(minY, maxY)
+          val candidate = Point(x, y)
+          
+          // Check if this is a walkable tile (grass or dirt) and not in dungeon area
+          val isWalkable = worldMap.tiles.get(candidate).exists { tileType =>
+            tileType == TileType.Grass1 || tileType == TileType.Grass2 || 
+            tileType == TileType.Grass3 || tileType == TileType.Dirt
+          }
+          
+          val isNotInDungeon = !(x >= dungeonMinX && x <= dungeonMaxX && 
+                                  y >= dungeonMinY && y <= dungeonMaxY)
+          
+          // Check it's reasonably far from dungeon entrance
+          val distanceFromDungeon = {
+            val entranceTile = Point(
+              dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+              dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+            )
+            val dx = candidate.x - entranceTile.x
+            val dy = candidate.y - entranceTile.y
+            math.sqrt(dx * dx + dy * dy)
+          }
+          
+          if (isWalkable && isNotInDungeon && distanceFromDungeon > 20) {
+            return candidate
+          }
+          
+          attempt += 1
+        }
+        
+        // Fallback: spawn near world edge
+        Point(minX + 10, minY + 10)
+        
+      case None =>
+        // No dungeon, spawn at world center
+        Point(0, 0)
+    }
+  }
+
+  // Determine player spawn point
+  private val playerSpawnPoint = findPlayerSpawnPoint(initialWorldMap, worldBounds)
+  
+  // Generate path from player spawn to dungeon entrance
+  private val playerToDungeonPath: Set[Point] = initialWorldMap.primaryDungeon match {
+    case Some(dungeon) =>
+      val dungeonEntranceTile = Point(
         dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-    }.getOrElse(Point(0, 0)) // Fallback to world center if no dungeon
+      println(s"[StartingState] Generating path from player spawn $playerSpawnPoint to dungeon entrance $dungeonEntranceTile")
+      PathGenerator.generatePath(playerSpawnPoint, dungeonEntranceTile, width = 1, worldBounds)
+    case None => Set.empty
+  }
+  
+  // Combine initial world with player-to-dungeon path
+  private val worldMap = {
+    val pathTilesMap = playerToDungeonPath.map(p => p -> TileType.Dirt).toMap
+    val combinedTiles = initialWorldMap.tiles ++ pathTilesMap
+    initialWorldMap.copy(
+      tiles = combinedTiles,
+      paths = initialWorldMap.paths ++ playerToDungeonPath
+    )
+  }
+  
+  println(s"[StartingState] World map finalized with ${worldMap.tiles.size} tiles")
+  println(s"[StartingState] Player-to-dungeon path: ${playerToDungeonPath.size} tiles")
+
+  val player: Entity = {
+    // Spawn player in open world area, not in dungeon
+    val playerPos = playerSpawnPoint
     
     // Start with limited sight memory - tiles will be discovered as player explores
     val initialVisibleRange = 15  // Player can initially see 15 tiles in each direction
