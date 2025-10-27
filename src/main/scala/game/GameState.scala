@@ -13,9 +13,8 @@ import scala.annotation.tailrec
 case class GameState(playerEntityId: String,
                      entities: Seq[Entity],
                      messages: Seq[String] = Nil,
-                     dungeon: Dungeon,
-                     dungeonFloor: Int = 1,
-                     worldTiles: Option[Map[Point, map.TileType]] = None) {
+                     worldMap: map.WorldMap,
+                     dungeonFloor: Int = 1) {
   val playerEntity: Entity = entities.find(_.id == playerEntityId).get
 
   def getEntity(entityId: String): Option[Entity] = {
@@ -132,13 +131,13 @@ case class GameState(playerEntityId: String,
     copy(messages = message +: messages)
   }
 
-  lazy val lineOfSightBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.rocks ++
+  lazy val lineOfSightBlockingPoints: Set[Point] = worldMap.walls ++ worldMap.rocks ++
     entities
       .filter(_.entityType.isInstanceOf[LockedDoor])
       .flatMap(_.get[Movement].map(_.position))
       .toSet
 
-  lazy val movementBlockingPoints: Set[Point] = dungeon.walls ++ dungeon.water ++ dungeon.rocks ++
+  lazy val movementBlockingPoints: Set[Point] = worldMap.walls ++ worldMap.water ++ worldMap.rocks ++
     entities
       .filter(entity => entity.get[EntityTypeComponent].exists(c => 
         c.entityType == EntityType.Enemy || c.entityType == EntityType.Player || c.entityType.isInstanceOf[LockedDoor]

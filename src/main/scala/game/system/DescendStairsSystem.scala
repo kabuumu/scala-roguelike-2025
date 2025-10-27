@@ -168,14 +168,13 @@ object DescendStairsSystem extends GameSystem {
         data.Entities.trader(s"trader-floor-$newFloor", traderPos)
       }
       
-      // Create new game state with new dungeon and preserved player
+      // Create new game state with new world map and preserved player
       val newGameState = GameState(
         playerEntityId = newPlayer.id,
         entities = Vector(newPlayer) ++ playerInventoryEntities ++ newItems ++ newEnemies ++ newLockedDoors ++ newAbilities.values :+ newTrader,
-        dungeon = dungeon,
+        worldMap = worldMap,
         dungeonFloor = newFloor,
-        messages = Seq(s"Descended to dungeon floor $newFloor. Enemies grow stronger..."),
-        worldTiles = Some(worldMap.tiles)
+        messages = Seq(s"Descended to dungeon floor $newFloor. Enemies grow stronger...")
       )
       
       (newGameState, Nil)

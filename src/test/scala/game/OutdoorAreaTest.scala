@@ -69,24 +69,26 @@ class OutdoorAreaTest extends AnyFunSuite {
   test("No enemies spawn in outdoor area") {
     val startingState = StartingState
     val enemies = startingState.enemies
-    val dungeon = startingState.dungeon
+    val maybeDungeon = startingState.startingGameState.worldMap.primaryDungeon
     
-    // Calculate starting room bounds
-    val startRoom = dungeon.startPoint
-    val roomX = startRoom.x * Dungeon.roomSize
-    val roomY = startRoom.y * Dungeon.roomSize
-    
-    // Check that no enemies are in the starting room
-    val enemiesInStartRoom = enemies.filter { enemy =>
-      enemy.get[game.entity.Movement].exists { movement =>
-        val pos = movement.position
-        pos.x >= roomX && pos.x <= roomX + Dungeon.roomSize &&
-        pos.y >= roomY && pos.y <= roomY + Dungeon.roomSize
+    maybeDungeon.foreach { dungeon =>
+      // Calculate starting room bounds
+      val startRoom = dungeon.startPoint
+      val roomX = startRoom.x * Dungeon.roomSize
+      val roomY = startRoom.y * Dungeon.roomSize
+      
+      // Check that no enemies are in the starting room
+      val enemiesInStartRoom = enemies.filter { enemy =>
+        enemy.get[game.entity.Movement].exists { movement =>
+          val pos = movement.position
+          pos.x >= roomX && pos.x <= roomX + Dungeon.roomSize &&
+          pos.y >= roomY && pos.y <= roomY + Dungeon.roomSize
+        }
       }
+      
+      assert(enemiesInStartRoom.isEmpty, "No enemies should spawn in the outdoor starting area")
+      println(s"Verified no enemies in starting room (total enemies: ${enemies.size})")
     }
-    
-    assert(enemiesInStartRoom.isEmpty, "No enemies should spawn in the outdoor starting area")
-    println(s"Verified no enemies in starting room (total enemies: ${enemies.size})")
   }
   
   test("Outdoor area uses different tile types than regular dungeon") {

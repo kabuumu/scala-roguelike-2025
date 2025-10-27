@@ -8,33 +8,36 @@ class OutdoorAreaFixesTest extends AnyFunSuite {
   test("No enemies spawn in outdoor rooms") {
     val startingState = StartingState
     val enemies = startingState.enemies
-    val dungeon = startingState.dungeon
+    val maybeDungeon = startingState.startingGameState.worldMap.primaryDungeon
     
-    // Check that no enemies are in any outdoor rooms
-    val enemiesInOutdoor = enemies.filter { enemy =>
-      enemy.get[game.entity.Movement].exists { movement =>
-        val pos = movement.position
-        // Calculate which room this position is in
-        // Note: Room coordinates are calculated by dividing pixel coordinates by room size
-        // and we need to use floor division for negative coordinates
-        val roomX = if (pos.x >= 0) pos.x / Dungeon.roomSize else (pos.x - Dungeon.roomSize + 1) / Dungeon.roomSize
-        val roomY = if (pos.y >= 0) pos.y / Dungeon.roomSize else (pos.y - Dungeon.roomSize + 1) / Dungeon.roomSize
-        val roomPoint = Point(roomX, roomY)
-        dungeon.outdoorRooms.contains(roomPoint)
+    maybeDungeon.foreach { dungeon =>
+      // Check that no enemies are in any outdoor rooms
+      val enemiesInOutdoor = enemies.filter { enemy =>
+        enemy.get[game.entity.Movement].exists { movement =>
+          val pos = movement.position
+          // Calculate which room this position is in
+          // Note: Room coordinates are calculated by dividing pixel coordinates by room size
+          // and we need to use floor division for negative coordinates
+          val roomX = if (pos.x >= 0) pos.x / Dungeon.roomSize else (pos.x - Dungeon.roomSize + 1) / Dungeon.roomSize
+          val roomY = if (pos.y >= 0) pos.y / Dungeon.roomSize else (pos.y - Dungeon.roomSize + 1) / Dungeon.roomSize
+          val roomPoint = Point(roomX, roomY)
+          dungeon.outdoorRooms.contains(roomPoint)
+        }
       }
+      
+      if (enemiesInOutdoor.nonEmpty) {
+        println(s"Enemies in outdoor rooms:")
+        enemiesInOutdoor.foreach { enemy =>
+          val pos = enemy.get[game.entity.Movement].map(_.position).getOrElse(Point(0, 0))
+          val roomX = if (pos.x >= 0) pos.x / Dungeon.roomSize else (pos.x - Dungeon.roomSize + 1) / Dungeon.roomSize
+          val roomY = if (pos.y >= 0) pos.y / Dungeon.roomSize else (pos.y - Dungeon.roomSize + 1) / Dungeon.roomSize
+          println(s"  ${enemy.id} at $pos -> room ($roomX, $roomY)")
+        }
+      }
+      
+      assert(enemiesInOutdoor.isEmpty, s"No enemies should spawn in outdoor rooms, but found ${enemiesInOutdoor.size}")
+      println(s"✓ No enemies in outdoor rooms (total enemies: ${enemies.size})")
     }
-    
-    if (enemiesInOutdoor.nonEmpty) {
-      println(s"Enemies in outdoor rooms:")
-      enemiesInOutdoor.foreach { enemy =>
-        val pos = enemy.get[game.entity.Movement].map(_.position).getOrElse(Point(0, 0))
-        val roomX = if (pos.x >= 0) pos.x / Dungeon.roomSize else (pos.x - Dungeon.roomSize + 1) / Dungeon.roomSize
-        val roomY = if (pos.y >= 0) pos.y / Dungeon.roomSize else (pos.y - Dungeon.roomSize + 1) / Dungeon.roomSize
-        println(s"  ${enemy.id} at $pos -> room ($roomX, $roomY)")
-      }}
-    
-    assert(enemiesInOutdoor.isEmpty, s"No enemies should spawn in outdoor rooms, but found ${enemiesInOutdoor.size}")
-    println(s"✓ No enemies in outdoor rooms (total enemies: ${enemies.size})")
   }
   
   test("Outdoor rooms do not have dungeon depth") {

@@ -46,7 +46,15 @@ class EventMemoryConsistencyTest extends AnyFunSuite {
     val player = mkPlayer()
     val (weapon, enemy) = mkEnemy()
     val dungeon = map.MapGenerator.generateDungeon(dungeonSize = 3, lockedDoorCount = 0, itemCount = 0)
-    val state0 = GameState(player.id, Seq(player, enemy, weapon), Nil, dungeon)
+    val worldMap = map.WorldMap(
+      tiles = dungeon.tiles,
+      dungeons = Seq(dungeon),
+      rivers = Set.empty,
+      paths = Set.empty,
+      bridges = Set.empty,
+      bounds = map.MapBounds(-10, 10, -10, 10)
+    )
+    val state0 = GameState(player.id, Seq(player, enemy, weapon), Nil, worldMap)
 
     val beforeHP = player.currentHealth
     val events = Seq(GameSystemEvent.DamageEvent(player.id, enemy.id, baseDamage = 7))

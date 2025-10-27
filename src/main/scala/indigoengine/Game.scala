@@ -56,6 +56,16 @@ object Game extends IndigoSandbox[Unit, GameController] {
       seed = 0L
     )
     
+    // Create a dummy world map with the dummy dungeon
+    val dummyWorldMap = map.WorldMap(
+      tiles = dummyDungeon.tiles,
+      dungeons = Seq(dummyDungeon),
+      rivers = Set.empty,
+      paths = Set.empty,
+      bridges = Set.empty,
+      bounds = map.MapBounds(-1, 1, -1, 1)
+    )
+    
     val dummyPlayer = game.entity.Entity(
       id = "dummy",
       game.entity.Movement(position = game.Point(0, 0)),
@@ -71,7 +81,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
     val dummyGameState = game.GameState(
       playerEntityId = "dummy",
       entities = Vector(dummyPlayer),
-      dungeon = dummyDungeon
+      worldMap = dummyWorldMap
     )
     
     Outcome(GameController(
@@ -119,8 +129,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
         val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
 
         // Combine filtering and mapping for tileSprites
-        // Use worldTiles if available (includes rivers and paths), otherwise use dungeon.tiles
-        val tilesToRender = model.gameState.worldTiles.getOrElse(model.gameState.dungeon.tiles)
+        // Use worldMap.tiles which contains all combined tiles (terrain, dungeons, rivers, paths, etc.)
+        val tilesToRender = model.gameState.worldMap.tiles
         val tileSprites = tilesToRender.iterator.collect {
           case (tilePosition, tileType) if sightMemory.contains(tilePosition) =>
             val tileSprite = spriteSheet.fromTile(tilePosition, tileType)

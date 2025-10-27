@@ -412,6 +412,17 @@ case class WorldMapConfig(
  * @param bridges Set of points where bridges cross rivers
  * @param bounds The bounds of the world
  */
+/**
+ * Unified world map that combines all terrain elements and provides consistent blocking behavior.
+ * Replaces the split between Dungeon and worldTiles in GameState.
+ * 
+ * @param tiles All tiles in the world (terrain, dungeons, rivers, paths, etc.)
+ * @param dungeons The dungeon structures included in this world (for spawning, items, etc.)
+ * @param rivers Points that are part of rivers
+ * @param paths Points that are part of paths
+ * @param bridges Points where bridges cross rivers
+ * @param bounds The world map boundaries
+ */
 case class WorldMap(
   tiles: Map[Point, TileType],
   dungeons: Seq[Dungeon],
@@ -419,7 +430,42 @@ case class WorldMap(
   paths: Set[Point],
   bridges: Set[Point],
   bounds: MapBounds
-)
+) {
+  /**
+   * Points that block line of sight (walls and trees).
+   * Trees block sight in open world areas.
+   */
+  lazy val walls: Set[Point] = tiles.filter { case (_, tileType) =>
+    tileType == TileType.Wall || tileType == TileType.Tree
+  }.keySet
+  
+  /**
+   * Points that are rocks (impassable terrain features).
+   */
+  lazy val rocks: Set[Point] = tiles.filter(_._2 == TileType.Rock).keySet
+  
+  /**
+   * Points that are water (impassable unless bridged).
+   * Bridges make water passable, so we exclude bridge points.
+   */
+  lazy val water: Set[Point] = tiles.filter(_._2 == TileType.Water).keySet -- bridges
+  
+  /**
+   * Get the primary dungeon (first dungeon if multiple exist).
+   * Maintains backward compatibility with code expecting a single dungeon.
+   */
+  def primaryDungeon: Option[Dungeon] = dungeons.headOption
+  
+  /**
+   * All points where items can be found (from all dungeons).
+   */
+  def allItems: Set[(Point, data.Items.ItemReference)] = dungeons.flatMap(_.items).toSet
+  
+  /**
+   * All trader room locations (from all dungeons).
+   */
+  def allTraderRooms: Seq[Point] = dungeons.flatMap(_.traderRoom)
+}
 
 /**
  * Report on the traversability of a world map.

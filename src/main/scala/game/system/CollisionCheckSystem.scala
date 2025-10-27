@@ -24,7 +24,7 @@ object CollisionCheckSystem extends GameSystem {
     
     val wallCollisionEvents = for {
       entity <- collidableEntities
-      if entity.collidesWith(gameState.dungeon.walls)
+      if entity.collidesWith(gameState.worldMap.walls)
     } yield CollisionEvent(
       entityId = entity.id,
       collidedWith = CollisionTarget.Wall

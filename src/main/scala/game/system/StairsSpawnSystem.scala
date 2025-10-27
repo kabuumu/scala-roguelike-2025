@@ -25,14 +25,14 @@ object StairsSpawnSystem extends GameSystem {
     } else {
       // Check if boss was defeated by looking for all enemies
       // If boss room exists but no boss entity, boss was defeated
-      val hasBossRoom = gameState.dungeon.hasBossRoom
+      val hasBossRoom = gameState.worldMap.primaryDungeon.exists(_.hasBossRoom)
       val bossExists = gameState.entities.exists(entity =>
         entity.entityType == EntityType.Enemy && entity.enemyType.contains(EnemyReference.Boss)
       )
       
       if (hasBossRoom && !bossExists) {
         // Boss was defeated, spawn stairs at endpoint room center
-        gameState.dungeon.endpoint match {
+        gameState.worldMap.primaryDungeon.flatMap(_.endpoint) match {
           case Some(endpoint) =>
             val stairsPosition = Point(
               endpoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,

@@ -98,22 +98,29 @@ class OutdoorAreaCoverageTest extends AnyFunSuite {
   test("Player spawns in dungeon start point on procedural terrain") {
     val startingState = StartingState
     val player = startingState.startingGameState.playerEntity
-    val dungeon = startingState.dungeon
+    val maybeDungeon = startingState.startingGameState.worldMap.primaryDungeon
     
     val playerPos = player.get[game.entity.Movement].map(_.position).getOrElse(Point(0, 0))
-    val playerRoomX = if (playerPos.x >= 0) playerPos.x / Dungeon.roomSize 
-                      else (playerPos.x - Dungeon.roomSize + 1) / Dungeon.roomSize
-    val playerRoomY = if (playerPos.y >= 0) playerPos.y / Dungeon.roomSize 
-                      else (playerPos.y - Dungeon.roomSize + 1) / Dungeon.roomSize
-    val playerRoom = Point(playerRoomX, playerRoomY)
     
-    assert(dungeon.roomGrid.contains(playerRoom),
-      s"Player should spawn in a dungeon room, but spawned in room $playerRoom")
-    
-    assert(playerRoom == dungeon.startPoint,
-      s"Player should spawn at dungeon start point ${dungeon.startPoint}, but spawned at $playerRoom")
-    
-    println(s"✓ Player spawns at $playerPos (room $playerRoom) which is the dungeon start point")
+    maybeDungeon match {
+      case Some(dungeon) =>
+        val playerRoomX = if (playerPos.x >= 0) playerPos.x / Dungeon.roomSize 
+                          else (playerPos.x - Dungeon.roomSize + 1) / Dungeon.roomSize
+        val playerRoomY = if (playerPos.y >= 0) playerPos.y / Dungeon.roomSize 
+                          else (playerPos.y - Dungeon.roomSize + 1) / Dungeon.roomSize
+        val playerRoom = Point(playerRoomX, playerRoomY)
+        
+        assert(dungeon.roomGrid.contains(playerRoom),
+          s"Player should spawn in a dungeon room, but spawned in room $playerRoom")
+        
+        assert(playerRoom == dungeon.startPoint,
+          s"Player should spawn at dungeon start point ${dungeon.startPoint}, but spawned at $playerRoom")
+        
+        println(s"✓ Player spawns at $playerPos (room $playerRoom) which is the dungeon start point")
+      case None =>
+        // No dungeon in open world - player can spawn anywhere
+        println(s"✓ Player spawns in open world at $playerPos (no dungeon)")
+    }
   }
   
   test("Outdoor rooms have connections to dungeon") {

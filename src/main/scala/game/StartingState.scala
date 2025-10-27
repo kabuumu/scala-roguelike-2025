@@ -63,16 +63,6 @@ object StartingState {
   println(s"[StartingState] World map generated with ${worldMap.tiles.size} tiles")
   println(s"[StartingState] Rivers: ${worldMap.rivers.size} river tiles")
   println(s"[StartingState] Tile sample (first 10): ${worldMap.tiles.take(10).map{ case (p, t) => s"$p->$t" }.mkString(", ")}")
-  
-  // Create a simple dummy dungeon for compatibility with existing game state
-  // This is just a placeholder - the player spawns in the open world
-  val dungeon: Dungeon = Dungeon(
-    roomGrid = Set(Point(0, 0)),
-    roomConnections = Set.empty,
-    startPoint = Point(0, 0),
-    outdoorRooms = Set(Point(0, 0)),  // Entire "dungeon" is outdoor
-    seed = System.currentTimeMillis()
-  )
 
   // Create player's starting inventory items as entities
   val playerStartingItems: Set[Entity] = Set(
@@ -207,14 +197,13 @@ object StartingState {
   val items: Set[Entity] = Set.empty
   val lockedDoors: Set[Entity] = Set.empty
 
-  println(s"[StartingState] Creating GameState with worldTiles containing ${worldMap.tiles.size} tiles")
+  println(s"[StartingState] Creating GameState with worldMap containing ${worldMap.tiles.size} tiles")
   
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
     entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment,
-    dungeon = dungeon,
-    worldTiles = Some(worldMap.tiles)
+    worldMap = worldMap
   )
   
-  println(s"[StartingState] GameState created. World tiles present: ${startingGameState.worldTiles.isDefined}, size: ${startingGameState.worldTiles.map(_.size).getOrElse(0)}")
+  println(s"[StartingState] GameState created. WorldMap tiles: ${startingGameState.worldMap.tiles.size}")
 }

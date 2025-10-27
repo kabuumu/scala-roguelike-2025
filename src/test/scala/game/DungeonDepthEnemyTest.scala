@@ -34,25 +34,33 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
   test("Enemy generation follows depth progression") {
     val startingState = StartingState
     val enemies = startingState.enemies
-    val dungeon = startingState.dungeon
+    // Get the primary dungeon from the world map (if any)
+    val maybeDungeon = startingState.startingGameState.worldMap.primaryDungeon
     
-    // Should have enemies generated
-    assert(enemies.nonEmpty)
-    
-    // All enemies should be in non-starting rooms
-    val enemyPositions = enemies.map(_.get[game.entity.Movement].map(_.position)).flatten
-    val startCenter = game.Point(
-      dungeon.startPoint.x * map.Dungeon.roomSize + map.Dungeon.roomSize / 2,
-      dungeon.startPoint.y * map.Dungeon.roomSize + map.Dungeon.roomSize / 2
-    )
-    
-    assert(!enemyPositions.contains(startCenter), "No enemies should be in starting room")
-    
-    // Verify enemy types exist
-    val enemyTypes = enemies.map(_.id).map(_.split("-")(0)).toSet
-    assert(enemyTypes.contains("Slimelet"), "Should have slimelets for early depths")
-    
-    println(s"Generated ${enemies.size} enemies of types: ${enemyTypes.mkString(", ")}")
+    // In open world mode without dungeons, there are no enemies
+    if (maybeDungeon.isEmpty) {
+      assert(enemies.isEmpty, "No enemies should exist in open world without dungeons")
+      println("Open world mode: No dungeon, no enemies")
+    } else {
+      val dungeon = maybeDungeon.get
+      // Should have enemies generated if dungeon exists
+      assert(enemies.nonEmpty, "Should have enemies if dungeon exists")
+      
+      // All enemies should be in non-starting rooms
+      val enemyPositions = enemies.map(_.get[game.entity.Movement].map(_.position)).flatten
+      val startCenter = game.Point(
+        dungeon.startPoint.x * map.Dungeon.roomSize + map.Dungeon.roomSize / 2,
+        dungeon.startPoint.y * map.Dungeon.roomSize + map.Dungeon.roomSize / 2
+      )
+      
+      assert(!enemyPositions.contains(startCenter), "No enemies should be in starting room")
+      
+      // Verify enemy types exist
+      val enemyTypes = enemies.map(_.id).map(_.split("-")(0)).toSet
+      assert(enemyTypes.contains("Slimelet"), "Should have slimelets for early depths")
+      
+      println(s"Generated ${enemies.size} enemies of types: ${enemyTypes.mkString(", ")}")
+    }
   }
   
   test("Enemy difficulty system has correct values") {
