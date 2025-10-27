@@ -11,9 +11,8 @@ import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfi
 
 
 object StartingState {
-  // Generate a simple open world with just grass, dirt, trees, and rivers
-  // No dungeons or enemies for now - just exploring the procedural terrain
-  // Reduced world size for better performance (20x20 rooms = ~105k tiles instead of 1M+)
+  // Generate an open world with grass, dirt, trees, rivers, and dungeons
+  // World size optimized for performance (20x20 rooms = ~45k tiles)
   private val worldBounds = MapBounds(-10, 10, -10, 10)  // Moderate world size
   
   println(s"[StartingState] Generating world map with bounds: $worldBounds")
@@ -29,7 +28,17 @@ object StartingState {
         perimeterTrees = true,
         seed = System.currentTimeMillis()
       ),
-      dungeonConfigs = Seq.empty,  // No dungeons for now
+      dungeonConfigs = Seq(
+        // Add a single dungeon to the world
+        DungeonConfig(
+          bounds = Some(worldBounds),
+          entranceSide = Direction.Up,
+          size = 20,
+          lockedDoorCount = 3,
+          itemCount = 6,
+          seed = System.currentTimeMillis()
+        )
+      ),
       riverConfigs = Seq(
         // Rivers flow through the center of the world so they're visible
         // World bounds in tiles: (-100, 110) x (-100, 110)
@@ -52,9 +61,9 @@ object StartingState {
           seed = System.currentTimeMillis() + 1
         )
       ),
-      generatePathsToDungeons = false,
-      generatePathsBetweenDungeons = false,
-      pathsPerDungeon = 0,
+      generatePathsToDungeons = true,       // Generate paths to dungeon entrance
+      generatePathsBetweenDungeons = false, // Only one dungeon for now
+      pathsPerDungeon = 2,                  // 2 paths leading to the dungeon
       pathWidth = 1,
       minDungeonSpacing = 10
     )
@@ -150,27 +159,62 @@ object StartingState {
     }
   }
 
-  // No enemies for the simple open world demo
-  val enemies: Set[Entity] = Set.empty
-  val allSpitAbilities: Map[String, Entity] = Map.empty
+  // Generate enemies for dungeon rooms
+  private val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.primaryDungeon match {
+    case Some(dung) =>
+      // Assign depth based on distance from start room
+      val startRoom = dung.startPoint
+      dung.roomGrid.zipWithIndex.map { case (room, idx) =>
+        val depth = if (room == dung.endpoint.getOrElse(startRoom)) {
+          Int.MaxValue // Boss room
+        } else if (dung.traderRoom.contains(room)) {
+          -1 // Skip trader room
+        } else {
+          // Calculate depth based on Manhattan distance from start
+          math.abs(room.x - startRoom.x) + math.abs(room.y - startRoom.y) + 1
+        }
+        (room, depth)
+      }.filter(_._2 > 0).toSeq // Filter out trader room
+    case None => Seq.empty
+  }
+  
+  private val (enemiesList, spitAbilitiesMap) = dungeonRoomsWithDepth.zipWithIndex.flatMap { 
+    case ((room, depth), roomIdx) =>
+      if (depth > 0) { // Skip trader rooms and invalid depths
+        val (roomEnemies, roomSpitAbilities) = EnemyGeneration.createEnemiesForRoom(room, depth, roomIdx)
+        Some((roomEnemies, roomSpitAbilities))
+      } else {
+        None
+      }
+  }.unzip
+
+  val enemies: Set[Entity] = enemiesList.flatten.toSet
+  val allSpitAbilities: Map[String, Entity] = spitAbilitiesMap.flatten.toMap
 
   // For backward compatibility, maintain the snakeSpitAbilities val
-  val snakeSpitAbilities: Map[Int, Entity] = Map.empty
+  val snakeSpitAbilities: Map[Int, Entity] = allSpitAbilities.zipWithIndex.map { case ((k, v), idx) => idx -> v }.toMap
 
   val player: Entity = {
-    // Spawn player in the center of the open world
+    // Spawn player at dungeon entrance (if available) or center of world
+    val playerPos = worldMap.primaryDungeon.map { dungeon =>
+      // Convert room coordinates to tile coordinates and place player at center of start room
+      Point(
+        dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+      )
+    }.getOrElse(Point(0, 0)) // Fallback to world center if no dungeon
+    
     // Start with limited sight memory - tiles will be discovered as player explores
     val initialVisibleRange = 15  // Player can initially see 15 tiles in each direction
-    val playerPos = Point(0, 0)
     val initiallyVisibleTiles = worldMap.tiles.keys.filter { tilePos =>
       math.abs(tilePos.x - playerPos.x) <= initialVisibleRange &&
       math.abs(tilePos.y - playerPos.y) <= initialVisibleRange
     }.toSet
     
-    println(s"[StartingState] Creating player with initial sight memory of ${initiallyVisibleTiles.size} nearby tiles (out of ${worldMap.tiles.size} total)")
+    println(s"[StartingState] Creating player at position $playerPos with initial sight memory of ${initiallyVisibleTiles.size} nearby tiles (out of ${worldMap.tiles.size} total)")
     val playerEntity = Entity(
       id = "Player ID",
-      Movement(position = playerPos),  // Center of the world
+      Movement(position = playerPos),
       EntityTypeComponent(EntityType.Player),
       Health(70),
       Initiative(10),
@@ -193,17 +237,42 @@ object StartingState {
     playerEntity
   }
 
-  // No trader, items, or locked doors in the simple open world
-  val items: Set[Entity] = Set.empty
-  val lockedDoors: Set[Entity] = Set.empty
+  // Generate items and locked doors from dungeon
+  val items: Set[Entity] = worldMap.allItems.map { case (point, itemRef) =>
+    val id = s"item-${itemRef.toString}-${point.x}-${point.y}"
+    itemRef.createEntity(id)
+  }
+  
+  val lockedDoors: Set[Entity] = worldMap.primaryDungeon.toSeq.flatMap { dungeon =>
+    dungeon.roomConnections.filter(_.isLocked).map { connection =>
+      // LockedDoor is an EntityType, we need to create an Entity with it
+      val lockType = connection.optLock.get
+      val doorPoint = Point(
+        connection.destinationRoom.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        connection.destinationRoom.y * Dungeon.roomSize + Dungeon.roomSize / 2
+      )
+      Entity(
+        id = s"locked-door-${doorPoint.x}-${doorPoint.y}",
+        Movement(doorPoint),
+        EntityTypeComponent(lockType),
+        Drawable(lockType.keyColour match {
+          case game.entity.KeyColour.Yellow => data.Sprites.yellowDoorSprite
+          case game.entity.KeyColour.Blue => data.Sprites.blueDoorSprite
+          case game.entity.KeyColour.Red => data.Sprites.redDoorSprite
+        }),
+        Hitbox()
+      )
+    }
+  }.toSet
 
   println(s"[StartingState] Creating GameState with worldMap containing ${worldMap.tiles.size} tiles")
+  println(s"[StartingState] Dungeon has ${enemies.size} enemies and ${items.size} items")
   
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values,
     worldMap = worldMap
   )
   
-  println(s"[StartingState] GameState created. WorldMap tiles: ${startingGameState.worldMap.tiles.size}")
+  println(s"[StartingState] GameState created. WorldMap tiles: ${startingGameState.worldMap.tiles.size}, total entities: ${startingGameState.entities.size}")
 }
