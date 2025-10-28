@@ -91,8 +91,9 @@ object WorldMapGenerator {
       val placement = findDungeonPlacement(placements.toSeq, bounds, minSpacing, random)
       placements += placement
       
-      // Generate dungeon without outdoor rooms - it will sit directly on the terrain
-      val baseDungeon = MapGenerator.generateDungeonWithoutOutdoorRooms(config)
+      // Generate dungeon using standard generation (WITH outdoor rooms)
+      // The dungeon will be placed on top of the world terrain
+      val baseDungeon = MapGenerator.generateDungeon(config.size, config.lockedDoorCount, config.itemCount, config.seed)
       
       // Shift dungeon to the placement location
       shiftDungeon(baseDungeon, placement)
@@ -241,8 +242,18 @@ object WorldMapGenerator {
     }
     
     // Apply dungeon tiles (override everything)
+    // But EXCLUDE outdoor room tiles - let world terrain show through instead
     dungeons.foreach { dungeon =>
-      result = result ++ dungeon.tiles
+      val dungeonTilesWithoutOutdoor = dungeon.tiles.filterNot { case (point, tileType) =>
+        // Find which room this tile belongs to
+        val tileRoomX = Math.floor(point.x.toDouble / Dungeon.roomSize).toInt
+        val tileRoomY = Math.floor(point.y.toDouble / Dungeon.roomSize).toInt
+        val tileRoom = Point(tileRoomX, tileRoomY)
+        
+        // Exclude tiles from outdoor rooms
+        dungeon.outdoorRooms.contains(tileRoom)
+      }
+      result = result ++ dungeonTilesWithoutOutdoor
     }
     
     result

@@ -31,9 +31,10 @@ object StartingState {
       ),
       dungeonConfigs = Seq(
         // Add a single dungeon to the world
+        // Use standard dungeon generation (with outdoor rooms and all features)
         DungeonConfig(
           bounds = Some(worldBounds),
-          entranceSide = Direction.Up,
+          entranceSide = Direction.Down,  // Entrance on down side (traditional)
           size = 20,
           lockedDoorCount = 3,
           itemCount = 6,
@@ -187,22 +188,24 @@ object StartingState {
   println(s"[StartingState] World map finalized with ${worldMap.tiles.size} tiles")
   println(s"[StartingState] Player-to-dungeon path: ${playerToDungeonPath.size} tiles")
 
-  // Generate enemies for dungeon rooms
+  // Generate enemies for dungeon rooms (but NOT outdoor rooms)
   private val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.primaryDungeon match {
     case Some(dung) =>
       // Assign depth based on distance from start room
       val startRoom = dung.startPoint
-      dung.roomGrid.zipWithIndex.map { case (room, idx) =>
-        val depth = if (room == dung.endpoint.getOrElse(startRoom)) {
-          Int.MaxValue // Boss room
-        } else if (dung.traderRoom.contains(room)) {
-          -1 // Skip trader room
-        } else {
-          // Calculate depth based on Manhattan distance from start
-          math.abs(room.x - startRoom.x) + math.abs(room.y - startRoom.y) + 1
-        }
-        (room, depth)
-      }.filter(_._2 > 0).toSeq // Filter out trader room
+      dung.roomGrid
+        .filterNot(room => dung.outdoorRooms.contains(room)) // EXCLUDE outdoor rooms
+        .zipWithIndex.map { case (room, idx) =>
+          val depth = if (room == dung.endpoint.getOrElse(startRoom)) {
+            Int.MaxValue // Boss room
+          } else if (dung.traderRoom.contains(room)) {
+            -1 // Skip trader room
+          } else {
+            // Calculate depth based on Manhattan distance from start
+            math.abs(room.x - startRoom.x) + math.abs(room.y - startRoom.y) + 1
+          }
+          (room, depth)
+        }.filter(_._2 > 0).toSeq // Filter out trader room
     case None => Seq.empty
   }
   
