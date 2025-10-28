@@ -273,7 +273,9 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                 case _ => (point, TileType.Grass1)
               }
             }
-        } else if (isStartingRoom) {
+        } else if (isStartingRoom && outdoorRooms.nonEmpty) {
+          // Only apply special starting room treatment if there are outdoor rooms
+          // (for backward compatibility with old dungeons that have outdoor areas)
           if (isDoor(point)) {
             // Check if this door connects to a dungeon room (non-outdoor room)
             val doorConnectsToDungeon = roomConnectionsForWall.exists(conn => 
