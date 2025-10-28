@@ -148,7 +148,38 @@ object MapGenerator {
     }
 
     // Generate dungeon without outdoor rooms - it will sit directly on the terrain
-    recursiveGenerator(Set(Dungeon(seed = config.seed)))
+    val baseDungeon = recursiveGenerator(Set(Dungeon(seed = config.seed)))
+    
+    // Find an edge room to use as the entrance
+    // An edge room is one that has fewer connections than interior rooms
+    val edgeRoom = findEdgeRoomForEntrance(baseDungeon)
+    
+    // Update the dungeon to use the edge room as the start point
+    baseDungeon.copy(startPoint = edgeRoom)
+  }
+  
+  /**
+   * Finds a room on the edge of the dungeon to use as the entrance.
+   * An edge room is defined as a room with fewer than 3 connections to other rooms.
+   */
+  private def findEdgeRoomForEntrance(dungeon: Dungeon): Point = {
+    // Count connections for each room
+    val roomConnectionCounts = dungeon.roomGrid.map { room =>
+      val connectionCount = dungeon.roomConnections.count(_.originRoom == room)
+      (room, connectionCount)
+    }
+    
+    // Find rooms with the fewest connections (edge rooms)
+    val minConnections = roomConnectionCounts.map(_._2).min
+    val edgeRooms = roomConnectionCounts.filter(_._2 == minConnections).map(_._1).toSeq
+    
+    // If current startPoint is already an edge room, keep it
+    if (edgeRooms.contains(dungeon.startPoint)) {
+      dungeon.startPoint
+    } else {
+      // Otherwise, pick an edge room (preferably one closest to origin for consistency)
+      edgeRooms.minBy(room => room.x * room.x + room.y * room.y)
+    }
   }
   
   /**
