@@ -159,6 +159,34 @@ object StartingState {
     }
   }
 
+  // Determine player spawn point
+  private val playerSpawnPoint = findPlayerSpawnPoint(initialWorldMap, worldBounds)
+  
+  // Generate path from player spawn to dungeon entrance
+  private val playerToDungeonPath: Set[Point] = initialWorldMap.primaryDungeon match {
+    case Some(dungeon) =>
+      val dungeonEntranceTile = Point(
+        dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+      )
+      println(s"[StartingState] Generating path from player spawn $playerSpawnPoint to dungeon entrance $dungeonEntranceTile")
+      PathGenerator.generatePath(playerSpawnPoint, dungeonEntranceTile, width = 1, worldBounds)
+    case None => Set.empty
+  }
+  
+  // Combine initial world with player-to-dungeon path
+  private val worldMap = {
+    val pathTilesMap = playerToDungeonPath.map(p => p -> TileType.Dirt).toMap
+    val combinedTiles = initialWorldMap.tiles ++ pathTilesMap
+    initialWorldMap.copy(
+      tiles = combinedTiles,
+      paths = initialWorldMap.paths ++ playerToDungeonPath
+    )
+  }
+  
+  println(s"[StartingState] World map finalized with ${worldMap.tiles.size} tiles")
+  println(s"[StartingState] Player-to-dungeon path: ${playerToDungeonPath.size} tiles")
+
   // Generate enemies for dungeon rooms
   private val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.primaryDungeon match {
     case Some(dung) =>
@@ -257,34 +285,6 @@ object StartingState {
         Point(0, 0)
     }
   }
-
-  // Determine player spawn point
-  private val playerSpawnPoint = findPlayerSpawnPoint(initialWorldMap, worldBounds)
-  
-  // Generate path from player spawn to dungeon entrance
-  private val playerToDungeonPath: Set[Point] = initialWorldMap.primaryDungeon match {
-    case Some(dungeon) =>
-      val dungeonEntranceTile = Point(
-        dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
-      )
-      println(s"[StartingState] Generating path from player spawn $playerSpawnPoint to dungeon entrance $dungeonEntranceTile")
-      PathGenerator.generatePath(playerSpawnPoint, dungeonEntranceTile, width = 1, worldBounds)
-    case None => Set.empty
-  }
-  
-  // Combine initial world with player-to-dungeon path
-  private val worldMap = {
-    val pathTilesMap = playerToDungeonPath.map(p => p -> TileType.Dirt).toMap
-    val combinedTiles = initialWorldMap.tiles ++ pathTilesMap
-    initialWorldMap.copy(
-      tiles = combinedTiles,
-      paths = initialWorldMap.paths ++ playerToDungeonPath
-    )
-  }
-  
-  println(s"[StartingState] World map finalized with ${worldMap.tiles.size} tiles")
-  println(s"[StartingState] Player-to-dungeon path: ${playerToDungeonPath.size} tiles")
 
   val player: Entity = {
     // Spawn player in open world area, not in dungeon
