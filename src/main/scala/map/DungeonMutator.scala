@@ -7,6 +7,10 @@ import game.entity.EntityType.LockedDoor
 
 trait DungeonMutator {
   def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon]
+  def getPossibleMutations(currentDungeon: Dungeon, config: DungeonConfig): Set[Dungeon] = {
+    // Default implementation filters out-of-bounds rooms
+    getPossibleMutations(currentDungeon).filter(d => d.roomGrid.forall(config.isWithinBounds))
+  }
 }
 
 class EndPointMutator(targetRoomCount: Int) extends DungeonMutator {
@@ -18,6 +22,22 @@ class EndPointMutator(targetRoomCount: Int) extends DungeonMutator {
       case Some(endpoint) if currentDungeon.roomGrid.size < targetRoomCount => for {
         (originRoom, direction) <- currentDungeon.availableRooms(endpoint)
       } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(originRoom + direction))
+      case _ =>
+        Set.empty
+    }
+  
+  override def getPossibleMutations(currentDungeon: Dungeon, config: DungeonConfig): Set[Dungeon] =
+    currentDungeon.endpoint match {
+      case None => for {
+        (originRoom, direction) <- currentDungeon.availableRooms
+        newRoom = originRoom + direction
+        if config.isWithinBounds(newRoom)
+      } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(newRoom))
+      case Some(endpoint) if currentDungeon.roomGrid.size < targetRoomCount => for {
+        (originRoom, direction) <- currentDungeon.availableRooms(endpoint)
+        newRoom = originRoom + direction
+        if config.isWithinBounds(newRoom)
+      } yield currentDungeon.addRoom(originRoom, direction).copy(endpoint = Some(newRoom))
       case _ =>
         Set.empty
     }
@@ -43,6 +63,37 @@ class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends Dungeon
         updatedDungeon = currentDungeon.addRoom(originRoom, direction1)
         (_, direction2) <- updatedDungeon.availableRooms(keyRoom1)
         keyRoom2 = keyRoom1 + direction2
+      } yield {
+        val newRoomConnections = currentDungeon.roomConnections - roomConnection + roomConnection.copy(optLock = Some(LockedDoor(Red)))
+
+        currentDungeon
+          .addRoom(originRoom, direction1)
+          .addRoom(keyRoom1, direction2)
+          .lockRoomConnection(roomConnection, LockedDoor(Red))
+          .addItem(keyRoom2, ItemReference.RedKey)
+          .blockRoom(keyRoom2)
+      }
+    }.toSet
+  }
+  
+  override def getPossibleMutations(currentDungeon: Dungeon, config: DungeonConfig): Set[Dungeon] = {
+    if (currentDungeon.lockedDoorCount >= lockedDoorCount
+      || currentDungeon.roomGrid.size < minRoomsPerLockedDoor
+      || currentDungeon.roomGrid.size + 2 > targetRoomCount
+    ) {
+      Set.empty
+    } else {
+      for {
+        roomConnection@RoomConnection(originRoom, direction, destinationRoom, optLock) <- currentDungeon.dungeonPath
+        if originRoom != currentDungeon.startPoint
+        if optLock.isEmpty
+        (originRoom, direction1) <- currentDungeon.availableRooms(originRoom)
+        keyRoom1 = originRoom + direction1
+        if config.isWithinBounds(keyRoom1)
+        updatedDungeon = currentDungeon.addRoom(originRoom, direction1)
+        (_, direction2) <- updatedDungeon.availableRooms(keyRoom1)
+        keyRoom2 = keyRoom1 + direction2
+        if config.isWithinBounds(keyRoom2)
       } yield {
         val newRoomConnections = currentDungeon.roomConnections - roomConnection + roomConnection.copy(optLock = Some(LockedDoor(Red)))
 
@@ -87,6 +138,27 @@ class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) ex
         item <- availableItems
         if !currentDungeon.endpoint.contains(originRoom)
         treasureRoom = originRoom + direction
+      } yield currentDungeon
+        .addRoom(originRoom, direction)
+        .blockRoom(treasureRoom)
+        .addItem(treasureRoom, item)
+    }
+  }
+  
+  override def getPossibleMutations(currentDungeon: Dungeon, config: DungeonConfig): Set[Dungeon] = {
+    if (currentDungeon.nonKeyItems.size >= targetTreasureRoomCount || currentDungeon.roomGrid.size + 1 >= targetRoomCount) {
+      Set.empty
+    } else {
+      // Get items already placed in the dungeon to avoid duplicates
+      val placedItems = currentDungeon.nonKeyItems.map(_._2).toSet
+      val availableItems = possibleItems -- placedItems
+      
+      for {
+        (originRoom, direction) <- currentDungeon.availableRooms
+        item <- availableItems
+        if !currentDungeon.endpoint.contains(originRoom)
+        treasureRoom = originRoom + direction
+        if config.isWithinBounds(treasureRoom)
       } yield currentDungeon
         .addRoom(originRoom, direction)
         .blockRoom(treasureRoom)

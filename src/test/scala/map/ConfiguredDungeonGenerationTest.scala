@@ -15,12 +15,11 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     
     val dungeon = MapGenerator.generateDungeon(config)
     
-    assert(dungeon.roomGrid.size == 16) // 10 dungeon + 6 outdoor
+    assert(dungeon.roomGrid.size == 10)
     assert(dungeon.lockedDoorCount == 1)
     assert(dungeon.nonKeyItems.size == 2)
-    assert(dungeon.outdoorRooms.size == 6)
-    
-    println(s"Generated dungeon: ${dungeon.roomGrid.size} rooms (${dungeon.outdoorRooms.size} outdoor)")
+
+    println(s"Generated dungeon: ${dungeon.roomGrid.size} rooms")
   }
   
   test("generateDungeon with bounds constrains dungeon generation") {
@@ -33,8 +32,8 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     
     val dungeon = MapGenerator.generateDungeon(config)
     
-    // All dungeon rooms (excluding outdoor) should be within bounds
-    val dungeonRooms = dungeon.roomGrid -- dungeon.outdoorRooms
+    // All dungeon rooms should be within bounds
+    val dungeonRooms = dungeon.roomGrid
     dungeonRooms.foreach { room =>
       assert(bounds.contains(room), s"Room $room should be within bounds ${bounds.describe}")
     }
@@ -56,17 +55,14 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     // The dungeon should be built starting from the configured entrance
     val entranceRoom = config.getEntranceRoom
     
-    // After outdoor rooms are added, the start point will be moved to outdoor,
-    // but the dungeon entrance room should be in the dungeon
-    val dungeonRooms = dungeon.roomGrid -- dungeon.outdoorRooms
-    
     // The entrance room should be part of the dungeon structure
-    // Note: Due to outdoor room shifting, we just verify the dungeon is connected
+    val dungeonRooms = dungeon.roomGrid
+    
     assert(dungeonRooms.nonEmpty, "Should have dungeon rooms")
     
     println(s"Configured entrance: $entranceRoom")
     println(s"Dungeon rooms: ${dungeonRooms.size}")
-    println(s"Outdoor start point: ${dungeon.startPoint}")
+    println(s"Start point: ${dungeon.startPoint}")
   }
   
   test("generateDungeon with different entrance sides") {
@@ -84,8 +80,7 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
       
       val dungeon = MapGenerator.generateDungeon(config)
       
-      assert(dungeon.roomGrid.size == 14) // 8 dungeon + 6 outdoor
-      assert(dungeon.outdoorRooms.size == 6)
+      assert(dungeon.roomGrid.size == 8)
       
       println(s"Generated dungeon with entrance side $direction: ${dungeon.roomGrid.size} rooms")
     }
@@ -101,7 +96,6 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     // Same configuration should produce identical dungeons
     assert(dungeon1.roomGrid == dungeon2.roomGrid)
     assert(dungeon1.roomConnections == dungeon2.roomConnections)
-    assert(dungeon1.outdoorRooms == dungeon2.outdoorRooms)
     
     println("Reproducible generation verified with seed 99999")
   }
@@ -115,7 +109,7 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
       seed = 12345
     )
     
-    assert(dungeon.roomGrid.size == 16) // 10 dungeon + 6 outdoor
+    assert(dungeon.roomGrid.size == 10)
     assert(dungeon.lockedDoorCount == 1)
     assert(dungeon.nonKeyItems.size == 2)
     
@@ -144,8 +138,6 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     
     println(s"Result:")
     println(s"  Total rooms: ${dungeon.roomGrid.size}")
-    println(s"  Dungeon rooms: ${dungeon.roomGrid.size - dungeon.outdoorRooms.size}")
-    println(s"  Outdoor rooms: ${dungeon.outdoorRooms.size}")
     println(s"  Connections: ${dungeon.roomConnections.size}")
     println(s"  Locked doors: ${dungeon.lockedDoorCount}")
     println(s"  Items: ${dungeon.nonKeyItems.size}")
@@ -160,7 +152,7 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
   }
   
   test("small bounded dungeon fits within tight constraints") {
-    val bounds = MapBounds(0, 4, -2, 4) // Adjusted bounds to account for outdoor room positioning
+    val bounds = MapBounds(0, 4, -2, 4)
     val config = DungeonConfig(
       bounds = Some(bounds),
       size = 5,
@@ -171,14 +163,11 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     
     val dungeon = MapGenerator.generateDungeon(config)
     
-    // Verify all dungeon rooms (excluding outdoor) are within bounds
-    // Note: Outdoor rooms are intentionally placed outside dungeon bounds
-    val dungeonRooms = dungeon.roomGrid -- dungeon.outdoorRooms
+    // Verify all dungeon rooms are within bounds
+    val dungeonRooms = dungeon.roomGrid
     
-    // Due to the outdoor room shifting, we just verify the dungeon was created
     assert(dungeonRooms.size == config.size, s"Should have ${config.size} dungeon rooms")
-    assert(dungeon.outdoorRooms.size == 6, "Should have 6 outdoor rooms")
     
-    println(s"Small dungeon: ${dungeonRooms.size} dungeon rooms + ${dungeon.outdoorRooms.size} outdoor rooms")
+    println(s"Small dungeon: ${dungeonRooms.size} dungeon rooms")
   }
 }

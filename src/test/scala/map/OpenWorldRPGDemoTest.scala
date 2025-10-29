@@ -139,8 +139,8 @@ class OpenWorldRPGDemoTest extends AnyFunSuite {
     println(s"    Dungeons: ${worldMap.dungeons.size} total")
     
     worldMap.dungeons.zipWithIndex.foreach { case (dungeon, idx) =>
-      val dungeonRooms = dungeon.roomGrid.size - dungeon.outdoorRooms.size
-      println(s"      Dungeon ${idx + 1}: $dungeonRooms indoor rooms, entrance at ${dungeon.startPoint}")
+      val dungeonRooms = dungeon.roomGrid.size
+      println(s"      Dungeon ${idx + 1}: $dungeonRooms rooms, entrance at ${dungeon.startPoint}")
     }
     
     // Step 10: Verify all requirements are met

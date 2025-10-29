@@ -53,6 +53,128 @@ object PathGenerator {
   }
   
   /**
+   * Generates a path from a start point to a target point, avoiding dungeon obstacles.
+   * Uses A* pathfinding to navigate around dungeon walls and rooms.
+   * The path will only connect to the entrance room, not cut through other dungeon areas.
+   * 
+   * @param startPoint Where the path begins (in tile coordinates)
+   * @param targetPoint Where the path should lead (in tile coordinates)
+   * @param obstacles Points that must be avoided (dungeon walls, etc.)
+   * @param width Width of the path in tiles
+   * @param bounds Map bounds to constrain the path
+   * @return Set of Points representing path tiles
+   */
+  def generatePathAroundObstacles(
+    startPoint: Point,
+    targetPoint: Point,
+    obstacles: Set[Point],
+    width: Int = 1,
+    bounds: MapBounds
+  ): Set[Point] = {
+    val pathPoints = scala.collection.mutable.Set[Point]()
+    
+    // Use A* pathfinding to find route around obstacles
+    val mainPath = findPathAroundObstacles(startPoint, targetPoint, obstacles, bounds)
+    
+    // If pathfinding failed, fall back to direct line
+    val finalPath = if (mainPath.isEmpty) {
+      findPathLine(startPoint, targetPoint)
+    } else {
+      mainPath
+    }
+    
+    // Add all points along the main path with width
+    finalPath.foreach { point =>
+      if (isWithinBounds(point, bounds)) {
+        pathPoints += point
+        
+        // Add width to the path
+        for {
+          dx <- -width to width
+          dy <- -width to width
+          if (dx.abs + dy.abs) <= width // Manhattan distance for diamond shape
+        } {
+          val widthPoint = Point(point.x + dx, point.y + dy)
+          if (isWithinBounds(widthPoint, bounds) && !obstacles.contains(widthPoint)) {
+            pathPoints += widthPoint
+          }
+        }
+      }
+    }
+    
+    pathPoints.toSet
+  }
+  
+  /**
+   * Finds a path avoiding obstacles using A* pathfinding.
+   * Returns empty sequence if no path can be found.
+   */
+  private def findPathAroundObstacles(
+    start: Point, 
+    target: Point, 
+    obstacles: Set[Point],
+    bounds: MapBounds
+  ): Seq[Point] = {
+    import scala.collection.mutable
+    
+    case class Node(point: Point, g: Int, h: Int, parent: Option[Node]) {
+      val f: Int = g + h
+    }
+    
+    def heuristic(a: Point, b: Point): Int = 
+      math.abs(a.x - b.x) + math.abs(a.y - b.y)
+    
+    def reconstructPath(node: Node): Seq[Point] = {
+      @tailrec
+      def loop(n: Node, acc: List[Point]): Seq[Point] = n.parent match {
+        case Some(parent) => loop(parent, n.point :: acc)
+        case None => n.point :: acc
+      }
+      loop(node, Nil)
+    }
+    
+    implicit val nodeOrdering: Ordering[Node] = Ordering.by[Node, Int](-_.f)
+    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, target), None))
+    val closedSet = mutable.HashSet[Point]()
+    val gScores = mutable.HashMap[Point, Int](start -> 0)
+    
+    while (openSet.nonEmpty) {
+      val current = openSet.dequeue()
+      
+      if (current.point == target) {
+        return reconstructPath(current)
+      }
+      
+      if (!closedSet.contains(current.point)) {
+        closedSet += current.point
+        
+        // Get neighbors (4-directional movement)
+        val neighbors = Seq(
+          Point(current.point.x + 1, current.point.y),
+          Point(current.point.x - 1, current.point.y),
+          Point(current.point.x, current.point.y + 1),
+          Point(current.point.x, current.point.y - 1)
+        ).filter { neighbor =>
+          isWithinBounds(neighbor, bounds) && !obstacles.contains(neighbor)
+        }
+        
+        neighbors.foreach { neighbor =>
+          val tentativeG = current.g + 1
+          
+          if (tentativeG < gScores.getOrElse(neighbor, Int.MaxValue)) {
+            gScores(neighbor) = tentativeG
+            val h = heuristic(neighbor, target)
+            openSet.enqueue(Node(neighbor, tentativeG, h, Some(current)))
+          }
+        }
+      }
+    }
+    
+    // No path found
+    Seq.empty
+  }
+  
+  /**
    * Finds a line of points from start to target.
    * Uses Bresenham's line algorithm for a smooth path.
    */

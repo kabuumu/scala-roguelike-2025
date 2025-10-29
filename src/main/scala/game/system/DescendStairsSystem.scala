@@ -89,13 +89,13 @@ object DescendStairsSystem extends GameSystem {
         dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      
+
       val newPlayer = currentPlayer.update[Movement](_.copy(position = newPlayerPosition))
       
       // Generate enemies for new floor using depth-based system with floor multiplier
       val (newEnemies, newAbilities) = {
         val dungeonRoomsOnly = dungeon.roomGrid.filterNot(room => 
-          dungeon.outdoorRooms.contains(room) || room == dungeon.startPoint
+          room == dungeon.startPoint
         )
         
         val enemiesAndAbilities = dungeonRoomsOnly.zipWithIndex.map { case (roomPoint, index) =>

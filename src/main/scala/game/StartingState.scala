@@ -13,12 +13,14 @@ import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfi
 object StartingState {
   // Generate an open world with grass, dirt, trees, rivers, and dungeons
   // World size optimized for performance (20x20 rooms = ~45k tiles)
-  private val worldBounds = MapBounds(-10, 10, -10, 10)  // Moderate world size
+  val worldSize = 5  // Reverted to original value for better performance
+  
+  private val worldBounds = MapBounds(-worldSize, worldSize, -worldSize, worldSize)  // Moderate world size
   
   println(s"[StartingState] Generating world map with bounds: $worldBounds")
-  
+  // PERFORMANCE: Make world generation lazy to avoid computation until needed
   // First generate world without paths (we'll add player-to-dungeon path after player spawn is determined)
-  private val initialWorldMap = WorldMapGenerator.generateWorldMap(
+  private lazy val initialWorldMap = WorldMapGenerator.generateWorldMap(
     WorldMapConfig(
       worldConfig = WorldConfig(
         bounds = worldBounds,
@@ -35,9 +37,9 @@ object StartingState {
         DungeonConfig(
           bounds = Some(worldBounds),
           entranceSide = Direction.Down,  // Entrance on down side (traditional)
-          size = 20,
-          lockedDoorCount = 3,
-          itemCount = 6,
+          size = 15,  // Increased to 15 to ensure all features can spawn
+          lockedDoorCount = 1,
+          itemCount = 3,  // Keep 3 items for better loot
           seed = System.currentTimeMillis()
         )
       ),
@@ -48,7 +50,7 @@ object StartingState {
           startPoint = Point(-60, -80),    // Start from upper left area
           flowDirection = (1, 1),           // Flow diagonally down-right
           length = 120,                     // Long river
-          width = 2,                        // Visible width
+          width = 3,                        // Visible width
           curviness = 0.3,                  // 30% chance of curves
           bounds = worldBounds,
           seed = System.currentTimeMillis()
@@ -161,22 +163,70 @@ object StartingState {
   }
 
   // Determine player spawn point
-  private val playerSpawnPoint = findPlayerSpawnPoint(initialWorldMap, worldBounds)
+  private lazy val playerSpawnPoint = findPlayerSpawnPoint(initialWorldMap, worldBounds)
   
   // Generate path from player spawn to dungeon entrance
-  private val playerToDungeonPath: Set[Point] = initialWorldMap.primaryDungeon match {
+  private lazy val playerToDungeonPath: Set[Point] = initialWorldMap.primaryDungeon match {
     case Some(dungeon) =>
-      val dungeonEntranceTile = Point(
-        dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+      // Find an accessible walkable tile in the starting room
+      val startRoomX = dungeon.startPoint.x * Dungeon.roomSize
+      val startRoomY = dungeon.startPoint.y * Dungeon.roomSize
+      
+      // Get all tiles in the starting room
+      val startRoomTiles = (for {
+        x <- startRoomX to (startRoomX + Dungeon.roomSize)
+        y <- startRoomY to (startRoomY + Dungeon.roomSize)
+      } yield Point(x, y)).toSet
+      
+      // Filter to only walkable tiles (not walls, rocks, or water)
+      val walkableTiles = startRoomTiles.filterNot { point =>
+        dungeon.walls.contains(point) || dungeon.rocks.contains(point) || dungeon.water.contains(point)
+      }
+      
+      // Prefer the center point if it's walkable, otherwise find the closest walkable tile to center
+      val centerPoint = Point(
+        startRoomX + Dungeon.roomSize / 2,
+        startRoomY + Dungeon.roomSize / 2
       )
+      
+      val dungeonEntranceTile = if (walkableTiles.contains(centerPoint)) {
+        centerPoint
+      } else {
+        // Find the walkable tile closest to the center
+        walkableTiles.minBy { tile =>
+          val dx = tile.x - centerPoint.x
+          val dy = tile.y - centerPoint.y
+          dx * dx + dy * dy
+        }
+      }
+      
       println(s"[StartingState] Generating path from player spawn $playerSpawnPoint to dungeon entrance $dungeonEntranceTile")
-      PathGenerator.generatePath(playerSpawnPoint, dungeonEntranceTile, width = 1, worldBounds)
+      println(s"[StartingState] Starting room has ${walkableTiles.size} walkable tiles")
+      
+      // Collect ALL dungeon tiles as obstacles, EXCEPT the entrance point and its immediate area
+      // This ensures the path routes around the dungeon and can only reach it at the entrance
+      // We need to allow a small area around the entrance for the path to connect properly
+      val entranceArea = (for {
+        dx <- -2 to 2
+        dy <- -2 to 2
+      } yield Point(dungeonEntranceTile.x + dx, dungeonEntranceTile.y + dy)).toSet
+      
+      val dungeonObstacles = dungeon.tiles.keySet.diff(entranceArea)
+      println(s"[StartingState] Avoiding ${dungeonObstacles.size} dungeon tiles (allowing ${entranceArea.size} tile entrance area)")
+      
+      // Use obstacle-aware pathfinding to navigate around the dungeon
+      PathGenerator.generatePathAroundObstacles(
+        playerSpawnPoint, 
+        dungeonEntranceTile, 
+        dungeonObstacles,
+        width = 1, 
+        worldBounds
+      )
     case None => Set.empty
   }
   
   // Combine initial world with player-to-dungeon path
-  private val worldMap = {
+  private lazy val worldMap = {
     val pathTilesMap = playerToDungeonPath.map(p => p -> TileType.Dirt).toMap
     val combinedTiles = initialWorldMap.tiles ++ pathTilesMap
     initialWorldMap.copy(
@@ -188,13 +238,12 @@ object StartingState {
   println(s"[StartingState] World map finalized with ${worldMap.tiles.size} tiles")
   println(s"[StartingState] Player-to-dungeon path: ${playerToDungeonPath.size} tiles")
 
-  // Generate enemies for dungeon rooms (but NOT outdoor rooms)
+  // Generate enemies for dungeon rooms
   private val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.primaryDungeon match {
     case Some(dung) =>
       // Assign depth based on distance from start room
       val startRoom = dung.startPoint
       dung.roomGrid
-        .filterNot(room => dung.outdoorRooms.contains(room)) // EXCLUDE outdoor rooms
         .zipWithIndex.map { case (room, idx) =>
           val depth = if (room == dung.endpoint.getOrElse(startRoom)) {
             Int.MaxValue // Boss room
@@ -228,6 +277,7 @@ object StartingState {
   /**
    * Find a suitable spawn point for the player in the open world (not in dungeon).
    * Tries to find a walkable grass tile away from the dungeon.
+   * OPTIMIZED: Caches dungeon bounds and uses efficient tile lookup.
    */
   private def findPlayerSpawnPoint(worldMap: map.WorldMap, bounds: MapBounds): Point = {
     // Convert room bounds to tile bounds
@@ -236,52 +286,56 @@ object StartingState {
     // If there's a dungeon, find a spawn point away from it
     worldMap.primaryDungeon match {
       case Some(dungeon) =>
-        // Get dungeon bounds (in tile coordinates)
-        val dungeonRoomPoints = dungeon.roomGrid
-        val dungeonMinX = dungeonRoomPoints.map(_.x).min * Dungeon.roomSize
-        val dungeonMaxX = dungeonRoomPoints.map(_.x).max * Dungeon.roomSize + Dungeon.roomSize
-        val dungeonMinY = dungeonRoomPoints.map(_.y).min * Dungeon.roomSize
-        val dungeonMaxY = dungeonRoomPoints.map(_.y).max * Dungeon.roomSize + Dungeon.roomSize
+        // OPTIMIZED: Calculate dungeon bounds once
+        val dungeonMinX = dungeon.roomGrid.map(_.x).min * Dungeon.roomSize
+        val dungeonMaxX = dungeon.roomGrid.map(_.x).max * Dungeon.roomSize + Dungeon.roomSize
+        val dungeonMinY = dungeon.roomGrid.map(_.y).min * Dungeon.roomSize
+        val dungeonMaxY = dungeon.roomGrid.map(_.y).max * Dungeon.roomSize + Dungeon.roomSize
+        
+        // Calculate dungeon entrance once
+        val entranceTile = Point(
+          dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+          dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+        )
         
         // Try to find a suitable spawn point away from dungeon
         val random = new scala.util.Random(worldMap.tiles.size)
         val maxAttempts = 100
-        var attempt = 0
         
-        while (attempt < maxAttempts) {
-          val x = random.between(minX, maxX)
-          val y = random.between(minY, maxY)
-          val candidate = Point(x, y)
-          
-          // Check if this is a walkable tile (grass or dirt) and not in dungeon area
-          val isWalkable = worldMap.tiles.get(candidate).exists { tileType =>
-            tileType == TileType.Grass1 || tileType == TileType.Grass2 || 
-            tileType == TileType.Grass3 || tileType == TileType.Dirt
-          }
-          
-          val isNotInDungeon = !(x >= dungeonMinX && x <= dungeonMaxX && 
-                                  y >= dungeonMinY && y <= dungeonMaxY)
-          
-          // Check it's reasonably far from dungeon entrance
-          val distanceFromDungeon = {
-            val entranceTile = Point(
-              dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-              dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
-            )
+        // OPTIMIZED: Use tail recursion instead of while loop
+        @scala.annotation.tailrec
+        def tryFindSpawn(attempt: Int): Point = {
+          if (attempt >= maxAttempts) {
+            // Fallback: spawn near world edge
+            Point(minX + 10, minY + 10)
+          } else {
+            val x = random.between(minX, maxX)
+            val y = random.between(minY, maxY)
+            val candidate = Point(x, y)
+            
+            // OPTIMIZED: Use direct map lookup instead of .get().exists()
+            val isWalkable = worldMap.tiles.get(candidate) match {
+              case Some(TileType.Grass1 | TileType.Grass2 | TileType.Grass3 | TileType.Dirt) => true
+              case _ => false
+            }
+            
+            val isNotInDungeon = x < dungeonMinX || x > dungeonMaxX || 
+                                 y < dungeonMinY || y > dungeonMaxY
+            
+            // OPTIMIZED: Calculate distance more efficiently
             val dx = candidate.x - entranceTile.x
             val dy = candidate.y - entranceTile.y
-            math.sqrt(dx * dx + dy * dy)
+            val distanceSquared = dx * dx + dy * dy  // Avoid sqrt, just compare squared distance
+            
+            if (isWalkable && isNotInDungeon && distanceSquared > 400) {  // 400 = 20^2
+              candidate
+            } else {
+              tryFindSpawn(attempt + 1)
+            }
           }
-          
-          if (isWalkable && isNotInDungeon && distanceFromDungeon > 20) {
-            return candidate
-          }
-          
-          attempt += 1
         }
         
-        // Fallback: spawn near world edge
-        Point(minX + 10, minY + 10)
+        tryFindSpawn(0)
         
       case None =>
         // No dungeon, spawn at world center
@@ -293,12 +347,23 @@ object StartingState {
     // Spawn player in open world area, not in dungeon
     val playerPos = playerSpawnPoint
     
-    // Start with limited sight memory - tiles will be discovered as player explores
-    val initialVisibleRange = 15  // Player can initially see 15 tiles in each direction
-    val initiallyVisibleTiles = worldMap.tiles.keys.filter { tilePos =>
-      math.abs(tilePos.x - playerPos.x) <= initialVisibleRange &&
-      math.abs(tilePos.y - playerPos.y) <= initialVisibleRange
-    }.toSet
+    // PERFORMANCE FIX: Start with VERY limited sight memory - only immediate surroundings
+    // Previous code filtered ALL world tiles which is extremely slow with large worlds
+    val initialVisibleRange = 5  // Reduced from 15 - only see immediate surroundings at start
+    
+    // OPTIMIZED: Calculate bounds once and only check tiles in that range
+    val minX = playerPos.x - initialVisibleRange
+    val maxX = playerPos.x + initialVisibleRange
+    val minY = playerPos.y - initialVisibleRange
+    val maxY = playerPos.y + initialVisibleRange
+    
+    // Only check tiles that could possibly be in range (much faster than filtering all tiles)
+    val initiallyVisibleTiles = (for {
+      x <- minX to maxX
+      y <- minY to maxY
+      point = Point(x, y)
+      if worldMap.tiles.contains(point)
+    } yield point).toSet
     
     println(s"[StartingState] Creating player at position $playerPos with initial sight memory of ${initiallyVisibleTiles.size} nearby tiles (out of ${worldMap.tiles.size} total)")
     val playerEntity = Entity(
@@ -327,19 +392,34 @@ object StartingState {
   }
 
   // Generate items and locked doors from dungeon
-  val items: Set[Entity] = worldMap.allItems.map { case (point, itemRef) =>
-    val id = s"item-${itemRef.toString}-${point.x}-${point.y}"
-    itemRef.createEntity(id)
+  val items: Set[Entity] = worldMap.allItems.map { case (roomPoint, itemRef) =>
+    // Convert room coordinates to tile coordinates (center of room)
+    val tilePoint = Point(
+      roomPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+      roomPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
+    )
+    val id = s"item-${itemRef.toString}-${tilePoint.x}-${tilePoint.y}"
+    val baseEntity = itemRef.createEntity(id)
+    // Add Movement component with the item's tile position
+    baseEntity.addComponent(Movement(tilePoint))
   }
   
   val lockedDoors: Set[Entity] = worldMap.primaryDungeon.toSeq.flatMap { dungeon =>
     dungeon.roomConnections.filter(_.isLocked).map { connection =>
       // LockedDoor is an EntityType, we need to create an Entity with it
       val lockType = connection.optLock.get
-      val doorPoint = Point(
-        connection.destinationRoom.x * Dungeon.roomSize + Dungeon.roomSize / 2,
-        connection.destinationRoom.y * Dungeon.roomSize + Dungeon.roomSize / 2
-      )
+      
+      // Position door at the edge of the origin room where it connects
+      val originRoomX = connection.originRoom.x * Dungeon.roomSize
+      val originRoomY = connection.originRoom.y * Dungeon.roomSize
+      
+      val doorPoint = connection.direction match {
+        case Direction.Up => Point(originRoomX + Dungeon.roomSize / 2, originRoomY)
+        case Direction.Down => Point(originRoomX + Dungeon.roomSize / 2, originRoomY + Dungeon.roomSize - 1)
+        case Direction.Left => Point(originRoomX, originRoomY + Dungeon.roomSize / 2)
+        case Direction.Right => Point(originRoomX + Dungeon.roomSize - 1, originRoomY + Dungeon.roomSize / 2)
+      }
+      
       Entity(
         id = s"locked-door-${doorPoint.x}-${doorPoint.y}",
         Movement(doorPoint),

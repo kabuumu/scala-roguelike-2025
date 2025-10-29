@@ -166,8 +166,7 @@ object WorldMapGenerator {
           destinationRoom = Point(rc.destinationRoom.x + shiftX, rc.destinationRoom.y + shiftY)
         )
       ),
-      items = dungeon.items.map { case (p, item) => (Point(p.x + shiftX, p.y + shiftY), item) },
-      outdoorRooms = dungeon.outdoorRooms.map(p => Point(p.x + shiftX, p.y + shiftY))
+      items = dungeon.items.map { case (p, item) => (Point(p.x + shiftX, p.y + shiftY), item) }
     )
   }
   
@@ -244,16 +243,8 @@ object WorldMapGenerator {
     // Apply dungeon tiles (override everything)
     // But EXCLUDE outdoor room tiles - let world terrain show through instead
     dungeons.foreach { dungeon =>
-      val dungeonTilesWithoutOutdoor = dungeon.tiles.filterNot { case (point, tileType) =>
-        // Find which room this tile belongs to
-        val tileRoomX = Math.floor(point.x.toDouble / Dungeon.roomSize).toInt
-        val tileRoomY = Math.floor(point.y.toDouble / Dungeon.roomSize).toInt
-        val tileRoom = Point(tileRoomX, tileRoomY)
-        
-        // Exclude tiles from outdoor rooms
-        dungeon.outdoorRooms.contains(tileRoom)
-      }
-      result = result ++ dungeonTilesWithoutOutdoor
+      // Add dungeon tiles directly to the result
+      result = result ++ dungeon.tiles
     }
     
     result
@@ -369,7 +360,7 @@ object WorldMapGenerator {
     val treePercent = (treeCount.toDouble / totalTiles * 100).toInt
     
     val dungeonInfo = worldMap.dungeons.map { dungeon =>
-      s"    - ${dungeon.roomGrid.size - dungeon.outdoorRooms.size} rooms at ${dungeon.startPoint}"
+      s"    - ${dungeon.roomGrid.size} rooms at ${dungeon.startPoint}"
     }.mkString("\n")
     
     s"""World Map Generation Summary:

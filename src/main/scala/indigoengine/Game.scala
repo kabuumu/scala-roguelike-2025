@@ -132,7 +132,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
         // Use worldMap.tiles which contains all combined tiles (terrain, dungeons, rivers, paths, etc.)
         val tilesToRender = model.gameState.worldMap.tiles
         val tileSprites = tilesToRender.iterator.collect {
-          case (tilePosition, tileType) if sightMemory.contains(tilePosition) =>
+          case (tilePosition, tileType) if sightMemory.contains(tilePosition) || UIConfig.ignoreLineOfSight =>
             val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
             if (visiblePoints.contains(tilePosition)) tileSprite
             else tileSprite.asInstanceOf[Graphic[Material.Bitmap]]

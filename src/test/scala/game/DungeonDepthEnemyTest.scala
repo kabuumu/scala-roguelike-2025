@@ -12,13 +12,8 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
     val dungeon = MapGenerator.generateDungeon(dungeonSize = 5, lockedDoorCount = 0, itemCount = 0)
     val depths = dungeon.roomDepths
     
-    // Outdoor rooms should NOT have depths
-    dungeon.outdoorRooms.foreach { outdoorRoom =>
-      assert(!depths.contains(outdoorRoom), s"Outdoor room $outdoorRoom should not have depth")
-    }
-    
-    // All dungeon rooms (non-outdoor) should have a depth assigned
-    val dungeonRooms = dungeon.roomGrid -- dungeon.outdoorRooms
+    // All dungeon rooms should have a depth assigned
+    val dungeonRooms = dungeon.roomGrid
     assert(dungeonRooms.forall(room => depths.contains(room)), "All dungeon rooms should have depths")
     
     // Depths should be reasonable (non-negative and not too large)
@@ -28,7 +23,7 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
     assert(depths.values.min == 0, "Minimum depth should be 0")
     
     println(s"Room depths: ${depths.toSeq.sortBy(_._2)}")
-    println(s"Outdoor rooms: ${dungeon.outdoorRooms.size}, Dungeon rooms: ${dungeonRooms.size}")
+    println(s"Dungeon rooms: ${dungeonRooms.size}")
   }
   
   test("Enemy generation follows depth progression") {
