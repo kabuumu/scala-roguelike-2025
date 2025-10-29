@@ -25,31 +25,71 @@ object PathGenerator {
     width: Int = 1,
     bounds: MapBounds
   ): Set[Point] = {
-    val pathPoints = scala.collection.mutable.Set[Point]()
-    
     // Generate main path line
     val mainPath = findPathLine(startPoint, targetPoint)
     
-    // Add all points along the main path
-    mainPath.foreach { point =>
+    // Add all points along the main path with width
+    widenPath(mainPath, width, bounds)
+  }
+  
+  /**
+   * Widens a path by adding tiles around each point based on width parameter.
+   * Uses Manhattan distance for diamond-shaped widening.
+   */
+  private def widenPath(pathPoints: Seq[Point], width: Int, bounds: MapBounds): Set[Point] = {
+    val result = scala.collection.mutable.Set[Point]()
+    
+    pathPoints.foreach { point =>
       if (isWithinBounds(point, bounds)) {
-        pathPoints += point
+        result += point
         
-        // Add width to the path
+        // Add width to the path using Manhattan distance for diamond shape
         for {
           dx <- -width to width
           dy <- -width to width
-          if (dx.abs + dy.abs) <= width // Manhattan distance for diamond shape
+          if (dx.abs + dy.abs) <= width
         } {
           val widthPoint = Point(point.x + dx, point.y + dy)
           if (isWithinBounds(widthPoint, bounds)) {
-            pathPoints += widthPoint
+            result += widthPoint
           }
         }
       }
     }
     
-    pathPoints.toSet
+    result.toSet
+  }
+  
+  /**
+   * Widens a path while avoiding obstacle points.
+   */
+  private def widenPathAvoidingObstacles(
+    pathPoints: Seq[Point],
+    width: Int,
+    bounds: MapBounds,
+    obstacles: Set[Point]
+  ): Set[Point] = {
+    val result = scala.collection.mutable.Set[Point]()
+    
+    pathPoints.foreach { point =>
+      if (isWithinBounds(point, bounds)) {
+        result += point
+        
+        // Add width to the path, avoiding obstacles
+        for {
+          dx <- -width to width
+          dy <- -width to width
+          if (dx.abs + dy.abs) <= width
+        } {
+          val widthPoint = Point(point.x + dx, point.y + dy)
+          if (isWithinBounds(widthPoint, bounds) && !obstacles.contains(widthPoint)) {
+            result += widthPoint
+          }
+        }
+      }
+    }
+    
+    result.toSet
   }
   
   /**
@@ -83,26 +123,8 @@ object PathGenerator {
       mainPath
     }
     
-    // Add all points along the main path with width
-    finalPath.foreach { point =>
-      if (isWithinBounds(point, bounds)) {
-        pathPoints += point
-        
-        // Add width to the path
-        for {
-          dx <- -width to width
-          dy <- -width to width
-          if (dx.abs + dy.abs) <= width // Manhattan distance for diamond shape
-        } {
-          val widthPoint = Point(point.x + dx, point.y + dy)
-          if (isWithinBounds(widthPoint, bounds) && !obstacles.contains(widthPoint)) {
-            pathPoints += widthPoint
-          }
-        }
-      }
-    }
-    
-    pathPoints.toSet
+    // Add all points along the path with width, excluding obstacles
+    widenPathAvoidingObstacles(finalPath, width, bounds, obstacles)
   }
   
   /**

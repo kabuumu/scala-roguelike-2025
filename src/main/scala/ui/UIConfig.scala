@@ -3,8 +3,13 @@ package ui
 object UIConfig {
   val spriteScale = 16
   val uiScale = 3
-  val xTiles = 96/uiScale  
-  val yTiles = 48/uiScale  
+  
+  // Viewport dimensions in tiles (at uiScale=1)
+  private val baseViewportWidthTiles = 96
+  private val baseViewportHeightTiles = 48
+  
+  val xTiles = baseViewportWidthTiles / uiScale  
+  val yTiles = baseViewportHeightTiles / uiScale  
   val ignoreLineOfSight = false
 
   val canvasWidth: Int = xTiles * spriteScale
