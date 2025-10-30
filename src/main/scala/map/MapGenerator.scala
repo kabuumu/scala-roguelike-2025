@@ -9,11 +9,24 @@ object MapGenerator {
   private val MaxGenerationIterations = 10000
   
   /**
-   * Generates a dungeon with configurable parameters.
-   * This is the new parameterized API that supports bounds and entrance side configuration.
+   * Generates a dungeon with simplified bounds-only configuration.
+   * All dungeon parameters (size, locked doors, items) are automatically calculated
+   * based on the available space defined by bounds.
+   * 
+   * @param bounds The rectangular bounds defining how much space the dungeon can occupy
+   * @param seed Random seed for reproducible generation
+   * @return Generated Dungeon that fits within the bounds
+   */
+  def generateDungeon(bounds: MapBounds, seed: Long): Dungeon = {
+    val config = DungeonConfig(bounds, seed)
+    generateDungeon(config)
+  }
+  
+  /**
+   * Generates a dungeon with explicit configuration.
    * 
    * @param config DungeonConfig specifying all dungeon parameters
-   * @return Generated Dungeon with outdoor area
+   * @return Generated Dungeon
    */
   def generateDungeon(config: DungeonConfig): Dungeon = {
     val startTime = System.currentTimeMillis()
@@ -31,14 +44,14 @@ object MapGenerator {
       if (openDungeons.isEmpty) {
         throw new IllegalStateException(
           s"Cannot generate dungeon: bounds too restrictive or configuration impossible. " +
-          s"Bounds: ${config.bounds.map(_.describe).getOrElse("None")}, size: ${config.size}"
+          s"Bounds: ${config.bounds.describe}, size: ${config.size}"
         )
       }
       
       if (iterations > MaxGenerationIterations) {
         throw new IllegalStateException(
           s"Dungeon generation exceeded maximum iterations ($MaxGenerationIterations). " +
-          s"Configuration may be impossible to satisfy: ${config.bounds.map(_.describe).getOrElse("None")}, size: ${config.size}"
+          s"Configuration may be impossible to satisfy: ${config.bounds.describe}, size: ${config.size}"
         )
       }
       
@@ -66,17 +79,14 @@ object MapGenerator {
       }
     }
 
-    // Start from configured entrance room if bounds are specified
-    val startRoom = config.bounds match {
-      case Some(_) => config.getEntranceRoom
-      case None => Point(0, 0)
-    }
+    // Start from configured entrance room
+    val startRoom = config.getEntranceRoom
     
     val baseDungeon = recursiveGenerator(Set(Dungeon(startPoint = startRoom, seed = config.seed)))
 
-    println("Generating Dungeon (Configured)")
-    println(s"  Bounds: ${config.bounds.map(_.describe).getOrElse("Unbounded")}")
-    println(s"  Entrance side: ${config.entranceSide}")
+    println("Generating Dungeon (Bounds-based)")
+    println(s"  Bounds: ${config.bounds.describe}")
+    println(s"  Auto-calculated: ${config.size} rooms, ${config.lockedDoorCount} locked doors, ${config.itemCount} items")
     println(s"  Generated dungeon with ${baseDungeon.roomGrid.size} rooms, " +
       s"${baseDungeon.roomConnections.size} connections, " +
       s"${baseDungeon.lockedDoorCount} locked doors, " +
@@ -182,52 +192,8 @@ object MapGenerator {
    * This maintains compatibility with existing code that uses the old signature.
    */
   def generateDungeon(dungeonSize: Int, lockedDoorCount: Int = 0, itemCount: Int = 0, seed: Long = System.currentTimeMillis()): Dungeon = {
-    val startTime = System.currentTimeMillis()
-
-    val mutators: Set[DungeonMutator] = Set(
-      new EndPointMutator(dungeonSize),
-      new TraderRoomMutator(dungeonSize),
-      new KeyLockMutator(lockedDoorCount, dungeonSize),
-      new TreasureRoomMutator(itemCount, dungeonSize),
-      new BossRoomMutator(dungeonSize)
-    )
-
-    @tailrec
-    def recursiveGenerator(openDungeons: Set[Dungeon]): Dungeon = {
-      val currentDungeon: Dungeon = openDungeons.maxBy( dungeon =>
-        dungeon.roomGrid.size + dungeon.lockedDoorCount + dungeon.nonKeyItems.size
-      )
-
-      val newOpenDungeons: Set[Dungeon] = for {
-        mutator <- mutators
-        possibleDungeon <- mutator.getPossibleMutations(currentDungeon)
-      } yield possibleDungeon
-      
-      newOpenDungeons.find(dungeon =>
-        dungeon.lockedDoorCount == lockedDoorCount
-          && dungeon.nonKeyItems.size == itemCount
-//          && dungeon.dungeonPath.size == dungeonPathSize
-          && dungeon.roomGrid.size == dungeonSize
-          && dungeon.traderRoom.isDefined
-          && dungeon.hasBossRoom
-      ) match {
-        case Some(completedDungeon) =>
-          completedDungeon
-        case None =>
-          recursiveGenerator(newOpenDungeons ++ openDungeons - currentDungeon)
-      }
-    }
-
-    val dungeon = recursiveGenerator(Set(Dungeon(seed = seed)))
-
-    println("Generating Dungeon")
-    println(s"  Generated dungeon with ${dungeon.roomGrid.size} rooms, " +
-      s"${dungeon.roomConnections.size} connections, " +
-      s"${dungeon.lockedDoorCount} locked doors, " +
-      s"${dungeon.nonKeyItems.size} items")
-
-    println(s"  Completed dungeon with config took ${System.currentTimeMillis() - startTime}ms")
-
-    dungeon
+    // Use the new bounds-based API with explicit parameters
+    val config = DungeonConfig.withExplicitParams(dungeonSize, lockedDoorCount, itemCount, seed)
+    generateDungeon(config)
   }
 }

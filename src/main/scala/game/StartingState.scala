@@ -34,13 +34,9 @@ object StartingState {
       ),
       dungeonConfigs = Seq(
         // Add a single dungeon to the world
-        // Use standard dungeon generation (with outdoor rooms and all features)
+        // Dungeon size, items, and locked doors are now automatically calculated from bounds
         DungeonConfig(
-          bounds = Some(worldBounds),
-          entranceSide = Direction.Down,  // Entrance on down side (traditional)
-          size = 15,  // Increased to 15 to ensure all features can spawn
-          lockedDoorCount = 1,
-          itemCount = 3,  // Keep 3 items for better loot
+          bounds = worldBounds,
           seed = System.currentTimeMillis()
         )
       ),

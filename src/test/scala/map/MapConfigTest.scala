@@ -83,27 +83,23 @@ class MapConfigTest extends AnyFunSuite {
     println(s"Bounds description: $description")
   }
   
-  test("DungeonConfig default values") {
-    val config = DungeonConfig()
+  test("DungeonConfig auto-calculates size, doors, and items from bounds") {
+    val bounds = MapBounds(-5, 5, -5, 5)  // 11x11 = 121 area
+    val config = DungeonConfig(bounds = bounds, seed = 1)
     
-    assert(config.bounds.isEmpty)
-    assert(config.entranceSide == Direction.Up)
-    assert(config.size == 10)
-    assert(config.lockedDoorCount == 0)
-    assert(config.itemCount == 0)
-  }
-  
-  test("DungeonConfig.isWithinBounds with no bounds returns true") {
-    val config = DungeonConfig()
-    
-    assert(config.isWithinBounds(Point(0, 0)))
-    assert(config.isWithinBounds(Point(100, 100)))
-    assert(config.isWithinBounds(Point(-100, -100)))
+    // Size should be ~40% of 121 = ~48, clamped to 25 max
+    assert(config.size == 25)
+    // Locked doors: size / 15 = 25 / 15 = 1
+    assert(config.lockedDoorCount == 1)
+    // Items: size / 5 = 25 / 5 = 5
+    assert(config.itemCount == 5)
+    // Entrance side defaults to Down
+    assert(config.entranceSide == Direction.Down)
   }
   
   test("DungeonConfig.isWithinBounds checks bounds correctly") {
     val bounds = MapBounds(-5, 5, -5, 5)
-    val config = DungeonConfig(bounds = Some(bounds))
+    val config = DungeonConfig(bounds = bounds, seed = 1)
     
     assert(config.isWithinBounds(Point(0, 0)))
     assert(config.isWithinBounds(Point(5, 5)))
@@ -114,37 +110,17 @@ class MapConfigTest extends AnyFunSuite {
     assert(!config.isWithinBounds(Point(-6, 0)))
   }
   
-  test("DungeonConfig.getEntranceRoom with no bounds") {
-    val config = DungeonConfig()
-    val entrance = config.getEntranceRoom
-    
-    assert(entrance == Point(0, 0))
-  }
-  
-  test("DungeonConfig.getEntranceRoom positions entrance on correct side") {
+  test("DungeonConfig.getEntranceRoom positions entrance correctly") {
     val bounds = MapBounds(-4, 4, -4, 4) // 9x9 grid centered at origin
     
-    val upConfig = DungeonConfig(bounds = Some(bounds), entranceSide = Direction.Up)
-    val upEntrance = upConfig.getEntranceRoom
-    assert(upEntrance.y == -4, s"Up entrance should be at minY, got $upEntrance")
-    assert(upEntrance.x == 0, s"Up entrance should be centered in X, got $upEntrance")
+    val config = DungeonConfig(bounds = bounds, seed = 1)
+    val entrance = config.getEntranceRoom
     
-    val downConfig = DungeonConfig(bounds = Some(bounds), entranceSide = Direction.Down)
-    val downEntrance = downConfig.getEntranceRoom
-    assert(downEntrance.y == 4, s"Down entrance should be at maxY, got $downEntrance")
-    assert(downEntrance.x == 0, s"Down entrance should be centered in X, got $downEntrance")
+    // Entrance side is now fixed to Down
+    assert(entrance.y == 4, s"Down entrance should be at maxY, got $entrance")
+    assert(entrance.x == 0, s"Down entrance should be centered in X, got $entrance")
     
-    val leftConfig = DungeonConfig(bounds = Some(bounds), entranceSide = Direction.Left)
-    val leftEntrance = leftConfig.getEntranceRoom
-    assert(leftEntrance.x == -4, s"Left entrance should be at minX, got $leftEntrance")
-    assert(leftEntrance.y == 0, s"Left entrance should be centered in Y, got $leftEntrance")
-    
-    val rightConfig = DungeonConfig(bounds = Some(bounds), entranceSide = Direction.Right)
-    val rightEntrance = rightConfig.getEntranceRoom
-    assert(rightEntrance.x == 4, s"Right entrance should be at maxX, got $rightEntrance")
-    assert(rightEntrance.y == 0, s"Right entrance should be centered in Y, got $rightEntrance")
-    
-    println(s"Entrance positions: Up=$upEntrance, Down=$downEntrance, Left=$leftEntrance, Right=$rightEntrance")
+    println(s"Entrance position (fixed to Down side): $entrance")
   }
   
   test("WorldConfig validates density requirements") {
@@ -179,11 +155,8 @@ class MapConfigTest extends AnyFunSuite {
   test("Configuration classes are AI-readable") {
     val bounds = MapBounds(-3, 3, -2, 2)
     val dungeonConfig = DungeonConfig(
-      bounds = Some(bounds),
-      entranceSide = Direction.Down,
-      size = 15,
-      lockedDoorCount = 2,
-      itemCount = 5
+      bounds = bounds,
+      seed = 1
     )
     val worldConfig = WorldConfig(
       bounds = bounds,
@@ -194,9 +167,9 @@ class MapConfigTest extends AnyFunSuite {
     
     println("\n=== AI-Readable Configuration Output ===")
     println(s"Bounds: ${bounds.describe}")
-    println(s"DungeonConfig: bounds=${dungeonConfig.bounds.map(_.describe).getOrElse("None")}, " +
-            s"entranceSide=${dungeonConfig.entranceSide}, size=${dungeonConfig.size}, " +
-            s"lockedDoors=${dungeonConfig.lockedDoorCount}, items=${dungeonConfig.itemCount}")
+    println(s"DungeonConfig: bounds=${dungeonConfig.bounds.describe}, " +
+            s"entranceSide=${dungeonConfig.entranceSide}, size=${dungeonConfig.size} (auto-calc), " +
+            s"lockedDoors=${dungeonConfig.lockedDoorCount} (auto-calc), items=${dungeonConfig.itemCount} (auto-calc)")
     println(s"Entrance Room: ${dungeonConfig.getEntranceRoom}")
     println(s"WorldConfig: grass=${worldConfig.grassDensity}, tree=${worldConfig.treeDensity}, " +
             s"dirt=${worldConfig.dirtDensity}, walkablePaths=${worldConfig.ensureWalkablePaths}, " +

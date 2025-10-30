@@ -37,21 +37,17 @@ class OpenWorldRPGDemoTest extends AnyFunSuite {
     
     // Step 3: Configure dungeons
     println("\nStep 3: Place dungeons in the world")
+    val mainDungeonBounds = MapBounds(-5, 5, -5, 5)
+    val sideDungeonBounds = MapBounds(-3, 3, -3, 3)
+    
     val mainDungeon = DungeonConfig(
-      bounds = None,
-      entranceSide = Direction.Down,
-      size = 10,
-      lockedDoorCount = 1,
-      itemCount = 3,
+      bounds = mainDungeonBounds,
       seed = 42
     )
     println(s"  Main dungeon: ${mainDungeon.size} rooms, ${mainDungeon.lockedDoorCount} locked doors, ${mainDungeon.itemCount} items")
     
     val sideDungeon = DungeonConfig(
-      bounds = None,
-      entranceSide = Direction.Left,
-      size = 5,
-      itemCount = 1,
+      bounds = sideDungeonBounds,
       seed = 43
     )
     println(s"  Side dungeon: ${sideDungeon.size} rooms, ${sideDungeon.itemCount} items")
@@ -205,9 +201,9 @@ class OpenWorldRPGDemoTest extends AnyFunSuite {
       seed = 12345
     )
     
+    val dungeonBounds = MapBounds(-3, 3, -3, 3)
     val dungeonConfig = DungeonConfig(
-      bounds = None,
-      size = 5,
+      bounds = dungeonBounds,
       seed = 1
     )
     

@@ -17,9 +17,7 @@ class WorldMapGeneratorTest extends AnyFunSuite {
     )
     
     val dungeonConfig = DungeonConfig(
-      bounds = Some(MapBounds(-5, 5, -8, 0)),
-      entranceSide = Direction.Down,
-      size = 8,
+      bounds = MapBounds(-5, 5, -8, 0),
       seed = 12345
     )
     
@@ -108,9 +106,9 @@ class WorldMapGeneratorTest extends AnyFunSuite {
     )
     
     // Use a single dungeon for simplicity - traversability is still tested
+    val dungeonBounds = MapBounds(-3, 3, -3, 3)
     val dungeonConfig = DungeonConfig(
-      bounds = None,
-      size = 5,
+      bounds = dungeonBounds,
       seed = 1
     )
     
@@ -143,8 +141,7 @@ class WorldMapGeneratorTest extends AnyFunSuite {
     )
     
     val dungeonConfig = DungeonConfig(
-      bounds = Some(MapBounds(-4, 4, -6, 0)),
-      size = 8,
+      bounds = MapBounds(-4, 4, -6, 0),
       seed = 12345
     )
     
@@ -217,10 +214,11 @@ class WorldMapGeneratorTest extends AnyFunSuite {
     
     val worldConfig = WorldConfig(bounds = worldBounds, seed = 12345)
     
+    val smallBounds = MapBounds(-3, 3, -3, 3)
     val dungeons = Seq(
-      DungeonConfig(bounds = None, size = 5, seed = 1),
-      DungeonConfig(bounds = None, size = 5, seed = 2),
-      DungeonConfig(bounds = None, size = 5, seed = 3)
+      DungeonConfig(bounds = smallBounds, seed = 1),
+      DungeonConfig(bounds = smallBounds, seed = 2),
+      DungeonConfig(bounds = smallBounds, seed = 3)
     )
     
     val config = WorldMapConfig(
@@ -334,20 +332,16 @@ class WorldMapGeneratorTest extends AnyFunSuite {
       seed = 42
     )
     
+    val mainDungeonBounds = MapBounds(-5, 5, -5, 5)
+    val sideDungeonBounds = MapBounds(-3, 3, -3, 3)
+    
     val mainDungeon = DungeonConfig(
-      bounds = None,
-      entranceSide = Direction.Down,
-      size = 10,  // Reduced from 12 to avoid iteration limit
-      lockedDoorCount = 1,  // Reduced from 2
-      itemCount = 3,  // Reduced from 5
+      bounds = mainDungeonBounds,
       seed = 42
     )
     
     val sideDungeon = DungeonConfig(
-      bounds = None,
-      entranceSide = Direction.Left,
-      size = 5,  // Reduced from 6
-      itemCount = 1,  // Reduced from 2
+      bounds = sideDungeonBounds,
       seed = 43
     )
     

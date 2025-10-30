@@ -120,8 +120,7 @@ class PathAroundObstaclesTest extends AnyFunSuite {
     // Simulate a dungeon structure with multiple rooms
     val dungeonBounds = MapBounds(-5, 5, -5, 0)
     val dungeonConfig = DungeonConfig(
-      bounds = Some(dungeonBounds),
-      size = 8,
+      bounds = dungeonBounds,
       seed = 12345
     )
     

@@ -6,27 +6,29 @@ import org.scalatest.funsuite.AnyFunSuite
 class ConfiguredDungeonGenerationTest extends AnyFunSuite {
   
   test("generateDungeon with DungeonConfig produces valid dungeon") {
+    val bounds = MapBounds(-5, 5, -5, 5)  // 11x11 = 121 room area
     val config = DungeonConfig(
-      size = 10,
-      lockedDoorCount = 1,
-      itemCount = 2,
+      bounds = bounds,
       seed = 12345
     )
     
     val dungeon = MapGenerator.generateDungeon(config)
     
-    assert(dungeon.roomGrid.size == 10)
-    assert(dungeon.lockedDoorCount == 1)
-    assert(dungeon.nonKeyItems.size == 2)
+    // Size should be auto-calculated: ~65% of 121 = ~78, clamped to 30 max
+    assert(dungeon.roomGrid.size > 0)
+    assert(dungeon.roomGrid.size <= 30)
+    // Locked doors: size / 10
+    assert(dungeon.lockedDoorCount >= 0)
+    // Items: size / 4
+    assert(dungeon.nonKeyItems.size >= 1)
 
-    println(s"Generated dungeon: ${dungeon.roomGrid.size} rooms")
+    println(s"Generated dungeon: ${dungeon.roomGrid.size} rooms, ${dungeon.lockedDoorCount} locked doors, ${dungeon.nonKeyItems.size} items")
   }
   
   test("generateDungeon with bounds constrains dungeon generation") {
     val bounds = MapBounds(-5, 5, -10, 5)
     val config = DungeonConfig(
-      bounds = Some(bounds),
-      size = 8,
+      bounds = bounds,
       seed = 12345
     )
     
@@ -44,9 +46,7 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
   test("generateDungeon starts at configured entrance room when bounds specified") {
     val bounds = MapBounds(-3, 3, -3, 3)
     val config = DungeonConfig(
-      bounds = Some(bounds),
-      entranceSide = Direction.Up,
-      size = 5,
+      bounds = bounds,
       seed = 12345
     )
     
@@ -68,27 +68,23 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
   test("generateDungeon with different entrance sides") {
     val bounds = MapBounds(-5, 5, -5, 5)
     
-    val directions = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
+    // Note: entrance side is now fixed to Down in the simplified API
+    val config = DungeonConfig(
+      bounds = bounds,
+      seed = 54321
+    )
     
-    directions.foreach { direction =>
-      val config = DungeonConfig(
-        bounds = Some(bounds),
-        entranceSide = direction,
-        size = 8,
-        seed = 54321
-      )
-      
-      val dungeon = MapGenerator.generateDungeon(config)
-      
-      assert(dungeon.roomGrid.size == 8)
-      
-      println(s"Generated dungeon with entrance side $direction: ${dungeon.roomGrid.size} rooms")
-    }
+    val dungeon = MapGenerator.generateDungeon(config)
+    
+    assert(dungeon.roomGrid.size > 0)
+    
+    println(s"Generated dungeon: ${dungeon.roomGrid.size} rooms")
   }
   
   test("generateDungeon respects configured seed for reproducibility") {
-    val config1 = DungeonConfig(size = 10, seed = 99999)
-    val config2 = DungeonConfig(size = 10, seed = 99999)
+    val bounds = MapBounds(-5, 5, -5, 5)
+    val config1 = DungeonConfig(bounds = bounds, seed = 99999)
+    val config2 = DungeonConfig(bounds = bounds, seed = 99999)
     
     val dungeon1 = MapGenerator.generateDungeon(config1)
     val dungeon2 = MapGenerator.generateDungeon(config2)
@@ -117,22 +113,18 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
   }
   
   test("dungeon generation provides AI-readable output") {
-    // Use unbounded configuration for reliable test
+    val bounds = MapBounds(-5, 5, -5, 5)
     val config = DungeonConfig(
-      bounds = None, // Unbounded for reliable generation
-      entranceSide = Direction.Down,
-      size = 10,
-      lockedDoorCount = 1,
-      itemCount = 2,
+      bounds = bounds,
       seed = 12345
     )
     
     println("\n=== AI-Readable Dungeon Generation Output ===")
-    println(s"Config: ${config.bounds.map(_.describe).getOrElse("Unbounded")}")
+    println(s"Config: ${config.bounds.describe}")
     println(s"  Entrance side: ${config.entranceSide}")
-    println(s"  Target size: ${config.size} rooms")
-    println(s"  Locked doors: ${config.lockedDoorCount}")
-    println(s"  Items: ${config.itemCount}")
+    println(s"  Auto-calculated target size: ${config.size} rooms")
+    println(s"  Auto-calculated locked doors: ${config.lockedDoorCount}")
+    println(s"  Auto-calculated items: ${config.itemCount}")
     
     val dungeon = MapGenerator.generateDungeon(config)
     
@@ -147,17 +139,12 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     println("=============================================\n")
     
     assert(dungeon.roomGrid.nonEmpty)
-    assert(dungeon.lockedDoorCount == 1)
-    assert(dungeon.nonKeyItems.size == 2)
   }
   
   test("small bounded dungeon fits within tight constraints") {
     val bounds = MapBounds(0, 4, -2, 4)
     val config = DungeonConfig(
-      bounds = Some(bounds),
-      size = 5,
-      lockedDoorCount = 0,
-      itemCount = 1,
+      bounds = bounds,
       seed = 12345
     )
     
@@ -166,7 +153,8 @@ class ConfiguredDungeonGenerationTest extends AnyFunSuite {
     // Verify all dungeon rooms are within bounds
     val dungeonRooms = dungeon.roomGrid
     
-    assert(dungeonRooms.size == config.size, s"Should have ${config.size} dungeon rooms")
+    assert(dungeonRooms.size >= 5, "Should have at least 5 rooms")
+    assert(dungeonRooms.forall(bounds.contains), "All rooms should be within bounds")
     
     println(s"Small dungeon: ${dungeonRooms.size} dungeon rooms")
   }

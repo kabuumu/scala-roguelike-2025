@@ -8,7 +8,7 @@ import game.entity.EntityType.LockedDoor
 trait DungeonMutator {
   def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon]
   def getPossibleMutations(currentDungeon: Dungeon, config: DungeonConfig): Set[Dungeon] = {
-    // Default implementation filters out-of-bounds rooms
+    // Filter mutations to only include those within bounds
     getPossibleMutations(currentDungeon).filter(d => d.roomGrid.forall(config.isWithinBounds))
   }
 }
