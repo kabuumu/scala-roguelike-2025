@@ -15,25 +15,25 @@ case class DungeonConfig(
 ) {
   /**
    * Automatically calculate dungeon size based on available space.
-   * Uses a more conservative 40% of available room area for bounded dungeons.
+   * Uses a very conservative 15% of available room area for bounded dungeons.
    */
   val size: Int = {
     val maxRooms = bounds.roomArea
-    val targetRooms = (maxRooms * 0.4).toInt
-    Math.max(5, Math.min(targetRooms, 25)) // Clamp between 5 and 25 rooms
+    val targetRooms = (maxRooms * 0.15).toInt
+    Math.max(5, Math.min(targetRooms, 12)) // Clamp between 5 and 12 rooms
   }
   
   /**
    * Automatically calculate locked door count based on dungeon size.
-   * Roughly 1 locked door per 15 rooms (more conservative).
+   * Roughly 1 locked door per 20 rooms (very conservative).
    */
-  val lockedDoorCount: Int = Math.max(0, size / 15)
+  val lockedDoorCount: Int = Math.max(0, size / 20)
   
   /**
    * Automatically calculate item count based on dungeon size.
-   * Roughly 1 item per 5 rooms (more conservative).
+   * Roughly 1 item per 6 rooms (very conservative).
    */
-  val itemCount: Int = Math.max(1, size / 5)
+  val itemCount: Int = Math.max(1, size / 6)
   
   /**
    * Entrance side defaults to Down for compatibility.
@@ -75,15 +75,15 @@ object DungeonConfig {
     seed: Long = System.currentTimeMillis()
   ): DungeonConfig = {
     // Calculate bounds that can accommodate the requested size
-    // Assume square-ish layout: sqrt(size) x sqrt(size)
-    val sideLength = Math.ceil(Math.sqrt(size * 1.5)).toInt
+    // Use generous bounds: size * 4 area to ensure generation succeeds
+    val sideLength = Math.ceil(Math.sqrt(size * 4)).toInt
     val bounds = MapBounds(-sideLength, sideLength, -sideLength, sideLength)
     
-    // Create config and override auto-calculated values
+    // Create a custom config with explicit values
     new DungeonConfig(bounds, seed) {
-      override val size = size
-      override val lockedDoorCount = lockedDoorCount
-      override val itemCount = itemCount
+      override val size: Int = size
+      override val lockedDoorCount: Int = lockedDoorCount
+      override val itemCount: Int = itemCount
     }
   }
 }
