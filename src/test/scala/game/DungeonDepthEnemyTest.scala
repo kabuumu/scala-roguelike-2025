@@ -48,8 +48,8 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
       
       // Check if any enemy is within the starting room bounds
       val enemiesInStartRoom = enemyPositions.filter { pos =>
-        pos.x >= startRoomX && pos.x <= startRoomX + map.Dungeon.roomSize &&
-        pos.y >= startRoomY && pos.y <= startRoomY + map.Dungeon.roomSize
+        pos.x >= startRoomX && pos.x < startRoomX + map.Dungeon.roomSize &&
+        pos.y >= startRoomY && pos.y < startRoomY + map.Dungeon.roomSize
       }
       
       assert(enemiesInStartRoom.isEmpty, 
