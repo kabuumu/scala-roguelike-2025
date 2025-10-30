@@ -5,7 +5,12 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class OutdoorSurroundsTest extends AnyFunSuite {
   
-  test("Outdoor area completely surrounds dungeon - OOO/OXO/OOO pattern") {
+  // NOTE: These tests were for the old outdoor room system that has been replaced
+  // by the unified WorldMap architecture (PR #77). Outdoor terrain is now handled
+  // by WorldGenerator, not as part of dungeon.tiles.
+  // See WorldMapGeneratorTest for tests of the new system.
+  
+  ignore("Outdoor area completely surrounds dungeon - OOO/OXO/OOO pattern") {
     val dungeon = MapGenerator.generateDungeon(dungeonSize = 5, lockedDoorCount = 0, itemCount = 0)
     
     // Find dungeon bounds
@@ -63,7 +68,7 @@ class OutdoorSurroundsTest extends AnyFunSuite {
     println(s"✓ Pattern verified: OOO/OXO/OOO ✓")
   }
   
-  test("Outdoor perimeter is continuous and walkable (except tree boundary)") {
+  ignore("Outdoor perimeter is continuous and walkable (except tree boundary)") {
     val dungeon = MapGenerator.generateDungeon(dungeonSize = 5, lockedDoorCount = 0, itemCount = 0)
     
     val minRoomX = dungeon.roomGrid.map(_.x).min
@@ -96,7 +101,7 @@ class OutdoorSurroundsTest extends AnyFunSuite {
     println(s"✓ Found ${grassInLine} grass tiles in horizontal outdoor line")
   }
   
-  test("Starting room is connected to outer outdoor area (no walls blocking)") {
+  ignore("Starting room is connected to outer outdoor area (no walls blocking)") {
     val dungeon = MapGenerator.generateDungeon(dungeonSize = 5, lockedDoorCount = 0, itemCount = 0)
     
     // Find starting room bounds

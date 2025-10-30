@@ -246,7 +246,9 @@ object StartingState {
       val startRoom = dung.startPoint
       dung.roomGrid
         .zipWithIndex.map { case (room, idx) =>
-          val depth = if (room == dung.endpoint.getOrElse(startRoom)) {
+          val depth = if (room == startRoom) {
+            -1 // Skip starting room - no enemies spawn here
+          } else if (room == dung.endpoint.getOrElse(startRoom)) {
             Int.MaxValue // Boss room
           } else if (dung.traderRoom.contains(room)) {
             -1 // Skip trader room
@@ -255,7 +257,7 @@ object StartingState {
             math.abs(room.x - startRoom.x) + math.abs(room.y - startRoom.y) + 1
           }
           (room, depth)
-        }.filter(_._2 > 0).toSeq // Filter out trader room
+        }.filter(_._2 > 0).toSeq // Filter out trader room and starting room
     case None => Seq.empty
   }
   
@@ -437,12 +439,23 @@ object StartingState {
     }
   }.toSet
 
+  // Create trader entity if dungeon has trader room
+  val trader: Option[Entity] = worldMap.primaryDungeon.flatMap { dungeon =>
+    dungeon.traderRoom.map { traderRoom =>
+      val traderPos = Point(
+        traderRoom.x * Dungeon.roomSize + Dungeon.roomSize / 2,
+        traderRoom.y * Dungeon.roomSize + Dungeon.roomSize / 2
+      )
+      data.Entities.trader("trader-floor-1", traderPos)
+    }
+  }
+
   println(s"[StartingState] Creating GameState with worldMap containing ${worldMap.tiles.size} tiles")
   println(s"[StartingState] Dungeon has ${enemies.size} enemies and ${items.size} items")
   
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ trader.toSeq,
     worldMap = worldMap
   )
   

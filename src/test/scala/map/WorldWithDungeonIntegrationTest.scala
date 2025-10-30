@@ -5,8 +5,11 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class WorldWithDungeonIntegrationTest extends AnyFunSuite {
   
-  /** Expected number of outdoor transition rooms added to dungeons */
-  private val OutdoorRoomCount = 6
+  /** Expected number of outdoor transition rooms added to dungeons 
+   * NOTE: As of PR #77, outdoor rooms are no longer part of dungeon generation.
+   * Outdoor terrain is now handled by WorldGenerator. This value is kept at 0.
+   */
+  private val OutdoorRoomCount = 0
   
   test("create world with dungeon in center - basic integration") {
     // Define world bounds (large enough to contain dungeon + surrounding world)

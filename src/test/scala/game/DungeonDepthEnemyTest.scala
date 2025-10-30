@@ -43,12 +43,17 @@ class DungeonDepthEnemyTest extends AnyFunSuite {
       
       // All enemies should be in non-starting rooms
       val enemyPositions = enemies.map(_.get[game.entity.Movement].map(_.position)).flatten
-      val startCenter = game.Point(
-        dungeon.startPoint.x * map.Dungeon.roomSize + map.Dungeon.roomSize / 2,
-        dungeon.startPoint.y * map.Dungeon.roomSize + map.Dungeon.roomSize / 2
-      )
+      val startRoomX = dungeon.startPoint.x * map.Dungeon.roomSize
+      val startRoomY = dungeon.startPoint.y * map.Dungeon.roomSize
       
-      assert(!enemyPositions.contains(startCenter), "No enemies should be in starting room")
+      // Check if any enemy is within the starting room bounds
+      val enemiesInStartRoom = enemyPositions.filter { pos =>
+        pos.x >= startRoomX && pos.x <= startRoomX + map.Dungeon.roomSize &&
+        pos.y >= startRoomY && pos.y <= startRoomY + map.Dungeon.roomSize
+      }
+      
+      assert(enemiesInStartRoom.isEmpty, 
+        s"No enemies should be in starting room, but found ${enemiesInStartRoom.size} at: ${enemiesInStartRoom.mkString(", ")}")
       
       // Verify enemy types exist
       val enemyTypes = enemies.map(_.id).map(_.split("-")(0)).toSet
