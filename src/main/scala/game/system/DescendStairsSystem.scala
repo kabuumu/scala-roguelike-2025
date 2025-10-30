@@ -7,7 +7,7 @@ import game.entity.Inventory.inventoryItems
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
 import ui.InputAction
-import map.{Dungeon, MapGenerator}
+import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig}
 
 /**
  * Handles the player descending stairs to the next dungeon floor.
@@ -23,13 +23,62 @@ object DescendStairsSystem extends GameSystem {
     if (descendEvents.isEmpty) {
       (gameState, Nil)
     } else {
-      // Generate new dungeon for next floor
+      // Generate new dungeon for next floor using the new world map system
       val newFloor = gameState.dungeonFloor + 1
-      val dungeon = MapGenerator.generateDungeon(
-        dungeonSize = 20, 
-        lockedDoorCount = 3, 
-        itemCount = 6
+      val seed = System.currentTimeMillis() + newFloor
+      
+      val worldBounds = MapBounds(-20, 20, -20, 20)
+      
+      val worldMap = WorldMapGenerator.generateWorldMap(
+        WorldMapConfig(
+          worldConfig = WorldConfig(
+            bounds = worldBounds,
+            grassDensity = 0.60,
+            treeDensity = 0.15,
+            dirtDensity = 0.15,
+            ensureWalkablePaths = true,
+            perimeterTrees = true,
+            seed = seed
+          ),
+          dungeonConfigs = Seq(
+            DungeonConfig(
+              bounds = None,
+              size = 20,
+              lockedDoorCount = 3,
+              itemCount = 6,
+              seed = seed
+            )
+          ),
+          riverConfigs = Seq(
+            RiverConfig(
+              startPoint = game.Point(-200, -150),
+              flowDirection = (1, 1),
+              length = 200,
+              width = 1,
+              curviness = 0.3,
+              bounds = worldBounds,
+              seed = seed
+            ),
+            RiverConfig(
+              startPoint = game.Point(200, -150),
+              flowDirection = (-1, 1),
+              length = 200,
+              width = 1,
+              curviness = 0.25,
+              bounds = worldBounds,
+              seed = seed + 1
+            )
+          ),
+          generatePathsToDungeons = false,
+          generatePathsBetweenDungeons = true,
+          pathsPerDungeon = 2,
+          pathWidth = 1,
+          minDungeonSpacing = 10
+        )
       )
+      
+      // Use the dungeon with combined tiles from the world map
+      val dungeon = worldMap.dungeons.head
       
       // Preserve player state but move to new dungeon start
       val currentPlayer = gameState.playerEntity
@@ -40,21 +89,22 @@ object DescendStairsSystem extends GameSystem {
         dungeon.startPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         dungeon.startPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      
+
       val newPlayer = currentPlayer.update[Movement](_.copy(position = newPlayerPosition))
       
       // Generate enemies for new floor using depth-based system with floor multiplier
       val (newEnemies, newAbilities) = {
-        val nonStartRooms = dungeon.roomGrid - dungeon.startPoint
-        val roomDepths = dungeon.roomDepths
+        val dungeonRoomsOnly = dungeon.roomGrid.filterNot(room => 
+          room == dungeon.startPoint
+        )
         
-        val enemiesAndAbilities = nonStartRooms.zipWithIndex.map { case (roomPoint, index) =>
+        val enemiesAndAbilities = dungeonRoomsOnly.zipWithIndex.map { case (roomPoint, index) =>
           if (dungeon.hasBossRoom && dungeon.endpoint.contains(roomPoint)) {
             // Boss room
             StartingState.EnemyGeneration.createEnemiesForRoom(roomPoint, Int.MaxValue, index)
           } else {
             // Scale depth by floor number for increased difficulty
-            val baseDepth = roomDepths.getOrElse(roomPoint, 1)
+            val baseDepth = dungeon.roomDepths.getOrElse(roomPoint, 1)
             val scaledDepth = baseDepth + (newFloor - 1) * 3 // Add 3 depth levels per floor
             StartingState.EnemyGeneration.createEnemiesForRoom(roomPoint, scaledDepth, index)
           }
@@ -118,11 +168,11 @@ object DescendStairsSystem extends GameSystem {
         data.Entities.trader(s"trader-floor-$newFloor", traderPos)
       }
       
-      // Create new game state with new dungeon and preserved player
+      // Create new game state with new world map and preserved player
       val newGameState = GameState(
         playerEntityId = newPlayer.id,
         entities = Vector(newPlayer) ++ playerInventoryEntities ++ newItems ++ newEnemies ++ newLockedDoors ++ newAbilities.values :+ newTrader,
-        dungeon = dungeon,
+        worldMap = worldMap,
         dungeonFloor = newFloor,
         messages = Seq(s"Descended to dungeon floor $newFloor. Enemies grow stronger...")
       )

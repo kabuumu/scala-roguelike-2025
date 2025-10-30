@@ -43,8 +43,18 @@ object Given {
       copy(entities = entities ++ extra)
 
     // Build state and begin story
-    def buildGameState(): GameState =
-      GameState(player.id, entities.filterNot(_.id == player.id) :+ player, Nil, dungeon)
+    def buildGameState(): GameState = {
+      // Wrap the dungeon in a WorldMap
+      val worldMap = map.WorldMap(
+        tiles = dungeon.tiles,
+        dungeons = Seq(dungeon),
+        rivers = Set.empty,
+        paths = Set.empty,
+        bridges = Set.empty,
+        bounds = map.MapBounds(-10, 10, -10, 10)
+      )
+      GameState(player.id, entities.filterNot(_.id == player.id) :+ player, Nil, worldMap)
+    }
 
     def beginStory(initialUI: UIState = Move, startTick: Int = 0): GameStory =
       GameStory.begin(initialUI, buildGameState(), startTick)

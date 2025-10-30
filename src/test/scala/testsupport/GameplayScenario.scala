@@ -270,8 +270,8 @@ object GameplayScenario {
     }
     
     def shouldHaveUpdatedLineOfSight(): Scenario = {
-      // Validate that line of sight has been calculated by checking dungeon state
-      assert(gameState.dungeon != null, "Dungeon should exist for line of sight")
+      // Validate that line of sight has been calculated by checking worldMap state
+      assert(gameState.worldMap != null, "WorldMap should exist for line of sight")
       this
     }
     
@@ -401,7 +401,7 @@ object GameplayScenario {
     
     def shouldMaintainMapMemory(): Scenario = {
       // Map memory should be preserved across rooms
-      assert(gameState.dungeon != null, "Dungeon state should be maintained")
+      assert(gameState.worldMap != null, "WorldMap state should be maintained")
       this
     }
     
@@ -417,7 +417,7 @@ object GameplayScenario {
     
     def shouldRequireKeyOrAlternativeRoute(): Scenario = {
       // Locked door should require key or alternative
-      assert(gameState.dungeon != null, "Should have dungeon with locked areas")
+      assert(gameState.worldMap != null, "Should have worldMap with locked areas")
       this
     }
     
@@ -431,7 +431,7 @@ object GameplayScenario {
     
     def shouldOpenNewAreas(): Scenario = {
       // Should provide access to new areas
-      assert(gameState.dungeon != null, "Should have accessible dungeon areas")
+      assert(gameState.worldMap != null, "Should have accessible worldMap areas")
       this
     }
     

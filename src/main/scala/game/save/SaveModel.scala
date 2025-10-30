@@ -59,11 +59,21 @@ object SaveConversions {
       PersistedEntity(e.id, savedComps)
     }
 
-    // Convert complex Dungeon to simple PersistedDungeon
-    val simpleDungeon = PersistedDungeon(
-      roomGrid = gs.dungeon.roomGrid.map(p => (p.x, p.y)).toVector,
-      seed = gs.dungeon.seed
-    )
+    // Convert complex WorldMap to simple PersistedDungeon
+    // Extract primary dungeon if available, otherwise create a simple one
+    val simpleDungeon = gs.worldMap.primaryDungeon match {
+      case Some(dungeon) =>
+        PersistedDungeon(
+          roomGrid = dungeon.roomGrid.map(p => (p.x, p.y)).toVector,
+          seed = dungeon.seed
+        )
+      case None =>
+        // No dungeon in world map, create minimal placeholder
+        PersistedDungeon(
+          roomGrid = Vector((0, 0)),
+          seed = System.currentTimeMillis()
+        )
+    }
 
     PersistedGameState(
       playerEntityId = gs.playerEntityId,
@@ -92,9 +102,19 @@ object SaveConversions {
           (errsAcc ++ errs) -> (entsAcc :+ entity)
       }
 
-    // Reconstruct basic Dungeon from PersistedDungeon
+    // Reconstruct basic Dungeon from PersistedDungeon and wrap in WorldMap
     val roomGrid = pgs.dungeon.roomGrid.map { case (x, y) => Point(x, y) }.toSet
     val basicDungeon = Dungeon(roomGrid = roomGrid, seed = pgs.dungeon.seed)
+    
+    // Create a WorldMap that wraps the dungeon
+    val worldMap = WorldMap(
+      tiles = basicDungeon.tiles,
+      dungeons = Seq(basicDungeon),
+      rivers = Set.empty,
+      paths = Set.empty,
+      bridges = Set.empty,
+      bounds = MapBounds(-10, 10, -10, 10) // Default bounds
+    )
 
     if (errors.nonEmpty) {
       // Log warnings but still return a valid game state
@@ -105,7 +125,7 @@ object SaveConversions {
       playerEntityId = pgs.playerEntityId,
       entities = entities,
       messages = pgs.messages,
-      dungeon = basicDungeon
+      worldMap = worldMap
     ))
   }
 }

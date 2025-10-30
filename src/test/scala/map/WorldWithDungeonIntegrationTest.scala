@@ -52,9 +52,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     println(s"  Location: ${dungeonBounds.describe}")
     println(s"  Entrance side: ${dungeonConfig.entranceSide}")
     println(s"  Total rooms: ${dungeon.roomGrid.size}")
-    println(s"  Dungeon rooms: ${dungeon.roomGrid.size - dungeon.outdoorRooms.size}")
-    println(s"  Outdoor transition rooms: ${dungeon.outdoorRooms.size}")
-    println(s"  Start point (outdoor): ${dungeon.startPoint}")
+    println(s"  Start point: ${dungeon.startPoint}")
     println(s"  Boss room: ${dungeon.endpoint}")
     println("======================================\n")
   }
@@ -168,14 +166,12 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     println(s"  - Items: ${dungeonConfig.itemCount}")
     println(s"Generated dungeon:")
     println(s"  - Total rooms: ${dungeon.roomGrid.size}")
-    println(s"  - Dungeon rooms: ${dungeon.roomGrid.size - dungeon.outdoorRooms.size}")
-    println(s"  - Outdoor rooms: ${dungeon.outdoorRooms.size}")
     println(s"  - Room connections: ${dungeon.roomConnections.size}")
     println(s"  - Actual locked doors: ${dungeon.lockedDoorCount}")
     println(s"  - Actual items: ${dungeon.nonKeyItems.size}")
     
     println("\n[INTEGRATION POINTS]")
-    println(s"  - Player start: ${dungeon.startPoint} (outdoor area)")
+    println(s"  - Player start: ${dungeon.startPoint}")
     println(s"  - Boss location: ${dungeon.endpoint}")
     println(s"  - Trader location: ${dungeon.traderRoom}")
     

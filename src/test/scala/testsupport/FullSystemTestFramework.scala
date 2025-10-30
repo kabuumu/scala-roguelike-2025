@@ -152,7 +152,7 @@ object FullSystemTestFramework {
       try {
         assert(gameState.entities.nonEmpty, "Game state should have entities for rendering")
         assert(gameState.entities.exists(_.id == gameState.playerEntityId), "Player entity should exist for rendering")
-        assert(Option(gameState.dungeon).isDefined, "Dungeon should exist for rendering")
+        assert(Option(gameState.worldMap).isDefined, "WorldMap should exist for rendering")
         
         // Validate player has required components for rendering
         assert(gameState.playerEntity.get[Movement].isDefined, "Player should have Movement component for rendering")
