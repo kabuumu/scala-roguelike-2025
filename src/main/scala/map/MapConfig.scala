@@ -21,12 +21,13 @@ case class DungeonConfig(
 ) {
   /**
    * Automatically calculate dungeon size based on available space.
-   * Uses a very conservative 15% of available room area for bounded dungeons.
+   * Uses very conservative 7% of available room area for bounded dungeons.
+   * The bounded generation algorithm needs significant extra space for layout constraints.
    */
   val size: Int = explicitSize.getOrElse {
     val maxRooms = bounds.roomArea
-    val targetRooms = (maxRooms * 0.15).toInt
-    Math.max(5, Math.min(targetRooms, 12)) // Clamp between 5 and 12 rooms
+    val targetRooms = (maxRooms * 0.07).toInt
+    Math.max(5, Math.min(targetRooms, 10)) // Clamp between 5 and 10 rooms
   }
   
   /**
@@ -81,9 +82,9 @@ object DungeonConfig {
     seed: Long = System.currentTimeMillis()
   ): DungeonConfig = {
     // Calculate bounds that can accommodate the requested size
-    // Use very generous bounds: size * 20 area to ensure generation succeeds
-    // This gives plenty of space for the algorithm to work with bounded generation
-    val sideLength = Math.ceil(Math.sqrt(size * 20)).toInt
+    // Use extremely generous bounds: size * 50 area for bounded generation
+    // The bounded algorithm needs much more space than unbounded due to layout constraints
+    val sideLength = Math.ceil(Math.sqrt(size * 50)).toInt
     val bounds = MapBounds(-sideLength, sideLength, -sideLength, sideLength)
     
     // Create config with explicit values passed through constructor

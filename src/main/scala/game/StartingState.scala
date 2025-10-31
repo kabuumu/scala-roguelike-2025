@@ -34,13 +34,10 @@ object StartingState {
       ),
       dungeonConfigs = Seq(
         // Add a single dungeon to the world
-        // Use explicit configuration to ensure minimum features for gameplay
+        // Use auto-calculated values based on bounds (conservative for bounded generation)
         DungeonConfig(
           bounds = worldBounds,
-          seed = System.currentTimeMillis(),
-          explicitSize = Some(15),  // Ensure enough rooms for good gameplay
-          explicitLockedDoorCount = Some(1),  // At least one locked door for keys
-          explicitItemCount = Some(3)  // At least 3 items for loot
+          seed = System.currentTimeMillis()
         )
       ),
       riverConfigs = Seq(

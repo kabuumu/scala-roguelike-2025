@@ -87,12 +87,12 @@ class MapConfigTest extends AnyFunSuite {
     val bounds = MapBounds(-5, 5, -5, 5)  // 11x11 = 121 area
     val config = DungeonConfig(bounds = bounds, seed = 1)
     
-    // Size should be ~15% of 121 = ~18, clamped to 12 max
-    assert(config.size == 12)
-    // Locked doors: size / 20 = 12 / 20 = 0
+    // Size should be ~7% of 121 = ~8, clamped between 5 and 10
+    assert(config.size == 8)
+    // Locked doors: size / 20 = 8 / 20 = 0
     assert(config.lockedDoorCount == 0)
-    // Items: size / 6 = 12 / 6 = 2
-    assert(config.itemCount == 2)
+    // Items: max(1, size / 6) = max(1, 1) = 1
+    assert(config.itemCount == 1)
     // Entrance side defaults to Down
     assert(config.entranceSide == Direction.Down)
   }
