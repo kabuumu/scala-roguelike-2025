@@ -41,11 +41,9 @@ object DescendStairsSystem extends GameSystem {
             seed = seed
           ),
           dungeonConfigs = Seq(
+            // Dungeon size, items, and locked doors are automatically calculated from bounds
             DungeonConfig(
-              bounds = None,
-              size = 20,
-              lockedDoorCount = 3,
-              itemCount = 6,
+              bounds = worldBounds,
               seed = seed
             )
           ),

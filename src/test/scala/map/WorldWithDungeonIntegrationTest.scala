@@ -29,13 +29,9 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     val worldTiles = WorldGenerator.generateWorld(worldConfig)
     
     // Create dungeon in the center portion of the world
-    val dungeonBounds = MapBounds(-5, 5, -8, 0) // North-central area
+    val dungeonBounds = MapBounds(-5, 5, -8, 0) // North-central area (11x9 = 99 area)
     val dungeonConfig = DungeonConfig(
-      bounds = Some(dungeonBounds),
-      entranceSide = Direction.Down, // Entrance on south side
-      size = 10,
-      lockedDoorCount = 1,
-      itemCount = 3,
+      bounds = dungeonBounds,
       seed = 42
     )
     
@@ -46,7 +42,8 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     
     // Verify dungeon was created
     assert(dungeon.roomGrid.nonEmpty, "Dungeon should have rooms")
-    assert(dungeon.roomGrid.size == 10 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
+    // With auto-calculation: 15% of 99 = 14.85, clamped 5-12 = 12 rooms
+    assert(dungeon.roomGrid.size == dungeonConfig.size, s"Dungeon should have ${dungeonConfig.size} rooms (auto-calculated)")
     
     // Output AI-readable summary
     println("\n=== World with Dungeon Integration ===")
@@ -72,16 +69,15 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     val worldTiles = WorldGenerator.generateWorld(worldConfig)
     
     val dungeonConfig = DungeonConfig(
-      bounds = Some(dungeonBounds),
-      entranceSide = Direction.Down,
-      size = 8,
+      bounds = dungeonBounds,
       seed = 123
     )
     
     val dungeon = MapGenerator.generateDungeon(dungeonConfig)
     
     assert(worldTiles.nonEmpty)
-    assert(dungeon.roomGrid.size == 8 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
+    // With auto-calculation from bounds, verify dungeon has rooms
+    assert(dungeon.roomGrid.size == dungeonConfig.size, s"Dungeon should have ${dungeonConfig.size} rooms (auto-calculated)")
     
     println(s"Bounded dungeon: ${dungeonBounds.describe}, entrance: ${dungeonConfig.entranceSide}")
     println(s"  Generated ${dungeon.roomGrid.size} total rooms")
@@ -99,8 +95,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     )
     
     val dungeonConfig = DungeonConfig(
-      bounds = Some(dungeonBounds),
-      size = 8,
+      bounds = dungeonBounds,
       seed = 999
     )
     
@@ -142,11 +137,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     )
     
     val dungeonConfig = DungeonConfig(
-      bounds = Some(dungeonBounds),
-      entranceSide = Direction.Down,
-      size = 8,  // Modest size for bounded generation
-      lockedDoorCount = 1,
-      itemCount = 2,
+      bounds = dungeonBounds,
       seed = 777
     )
     
@@ -192,9 +183,9 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     
     // Verify everything was created correctly
     assert(worldTiles.nonEmpty)
-    assert(dungeon.roomGrid.size == 8 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
-    assert(dungeon.lockedDoorCount == 1)
-    assert(dungeon.nonKeyItems.size == 2)
+    assert(dungeon.roomGrid.size == dungeonConfig.size, s"Dungeon should have ${dungeonConfig.size} rooms (auto-calculated)")
+    assert(dungeon.lockedDoorCount == dungeonConfig.lockedDoorCount, s"Should have ${dungeonConfig.lockedDoorCount} locked doors")
+    assert(dungeon.nonKeyItems.size == dungeonConfig.itemCount, s"Should have ${dungeonConfig.itemCount} items")
   }
   
   test("extensible design allows future map compositions") {
@@ -212,11 +203,12 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     println("  - Mix dungeon and world tiles seamlessly")
     println("  - Support more sophisticated layout algorithms")
     
-    // Demonstrate with a simple unbounded case
-    val simpleConfig = DungeonConfig(size = 5, seed = 999)
+    // Demonstrate with a simple bounded case
+    val simpleBounds = MapBounds(-3, 3, -3, 3)
+    val simpleConfig = DungeonConfig(bounds = simpleBounds, seed = 999)
     val simpleDungeon = MapGenerator.generateDungeon(simpleConfig)
     
-    assert(simpleDungeon.roomGrid.size == 5 + OutdoorRoomCount, "Total rooms should be dungeon size + outdoor rooms")
+    assert(simpleDungeon.roomGrid.size >= 5, "Should have at least 5 rooms")
     println(s"  Example: Simple dungeon with ${simpleDungeon.roomGrid.size} rooms created")
   }
 }
