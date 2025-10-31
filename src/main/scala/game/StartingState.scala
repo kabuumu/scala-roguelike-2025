@@ -12,9 +12,9 @@ import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfi
 
 object StartingState {
   // Generate an open world with grass, dirt, trees, rivers, and dungeons
-  // World size: 10x10 rooms (21x21 room grid = ~44k tiles total)
-  // Reduced from initial 50x50 (1M+ tiles) for 95%+ performance improvement
-  val worldSize = 5  // Room radius (full grid is 2*worldSize+1 = 11x11 rooms)
+  // World size: 21x21 room grid to allow bounded dungeon generation
+  // Provides enough space for dungeons with all required features
+  val worldSize = 10  // Room radius (full grid is 2*worldSize+1 = 21x21 rooms)
   
   private val worldBounds = MapBounds(-worldSize, worldSize, -worldSize, worldSize)  // Moderate world size
   
@@ -34,10 +34,13 @@ object StartingState {
       ),
       dungeonConfigs = Seq(
         // Add a single dungeon to the world
-        // Dungeon size, items, and locked doors are now automatically calculated from bounds
+        // Use explicit configuration to ensure minimum features for gameplay
         DungeonConfig(
           bounds = worldBounds,
-          seed = System.currentTimeMillis()
+          seed = System.currentTimeMillis(),
+          explicitSize = Some(15),  // Ensure enough rooms for good gameplay
+          explicitLockedDoorCount = Some(1),  // At least one locked door for keys
+          explicitItemCount = Some(3)  // At least 3 items for loot
         )
       ),
       riverConfigs = Seq(
