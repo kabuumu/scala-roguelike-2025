@@ -76,97 +76,105 @@ object WorldMapGenerator {
   
   /**
    * Places dungeons on the world map ensuring minimum spacing between them.
-   * Returns dungeons without the hardcoded outdoor rooms.
+   * Each dungeon gets its own bounds that don't overlap with other dungeons.
    */
   private def placeDungeonsWithSpacing(
     configs: Seq[DungeonConfig],
-    bounds: MapBounds,
+    worldBounds: MapBounds,
     minSpacing: Int
   ): (Seq[Dungeon], Seq[Point]) = {
     val random = new scala.util.Random(configs.headOption.map(_.seed).getOrElse(System.currentTimeMillis()))
-    val placements = scala.collection.mutable.ArrayBuffer[Point]()
+    val usedBounds = scala.collection.mutable.ArrayBuffer[MapBounds]()
     
-    val dungeons = configs.map { config =>
-      // Find a suitable placement that doesn't overlap with existing dungeons
-      val placement = findDungeonPlacement(placements.toSeq, bounds, minSpacing, random)
-      placements += placement
+    val dungeons = configs.zipWithIndex.map { case (config, idx) =>
+      // Find non-overlapping bounds for this dungeon within the world bounds
+      val dungeonBounds = findNonOverlappingBounds(
+        config.bounds,
+        usedBounds.toSeq,
+        worldBounds,
+        minSpacing,
+        random
+      )
+      usedBounds += dungeonBounds
       
-      // Generate dungeon using standard generation (WITH outdoor rooms)
-      // The dungeon will be placed on top of the world terrain
-      val baseDungeon = MapGenerator.generateDungeon(config.size, config.lockedDoorCount, config.itemCount, config.seed)
-      
-      // Shift dungeon to the placement location
-      shiftDungeon(baseDungeon, placement)
+      // Generate dungeon using the new bounds-based API
+      // Each dungeon will stay within its allocated bounds
+      val dungeonWithBounds = config.copy(bounds = dungeonBounds)
+      MapGenerator.generateDungeon(dungeonWithBounds)
     }
     
-    (dungeons, placements.toSeq)
+    // Extract placements (centers of each dungeon's bounds)
+    val placements = usedBounds.map { bounds =>
+      val centerX = (bounds.minRoomX + bounds.maxRoomX) / 2
+      val centerY = (bounds.minRoomY + bounds.maxRoomY) / 2
+      Point(centerX, centerY)
+    }.toSeq
+    
+    (dungeons, placements)
   }
   
   /**
-   * Finds a suitable placement for a dungeon that maintains spacing from existing dungeons.
+   * Finds non-overlapping bounds for a dungeon within the world bounds.
+   * Ensures the dungeon's bounds don't overlap with existing dungeons' bounds.
    */
-  private def findDungeonPlacement(
-    existingPlacements: Seq[Point],
-    bounds: MapBounds,
+  private def findNonOverlappingBounds(
+    requestedBounds: MapBounds,
+    usedBounds: Seq[MapBounds],
+    worldBounds: MapBounds,
     minSpacing: Int,
     random: scala.util.Random
-  ): Point = {
+  ): MapBounds = {
+    val width = requestedBounds.roomWidth
+    val height = requestedBounds.roomHeight
     val maxAttempts = 100
     var attempt = 0
     
     while (attempt < maxAttempts) {
-      val x = random.between(bounds.minRoomX, bounds.maxRoomX + 1)
-      val y = random.between(bounds.minRoomY, bounds.maxRoomY + 1)
-      val candidate = Point(x, y)
+      // Try to place the dungeon bounds randomly within the world bounds
+      val minX = random.between(worldBounds.minRoomX, worldBounds.maxRoomX - width + 2)
+      val minY = random.between(worldBounds.minRoomY, worldBounds.maxRoomY - height + 2)
+      val maxX = minX + width - 1
+      val maxY = minY + height - 1
       
-      // Check if this placement maintains minimum spacing from all existing dungeons
-      val hasGoodSpacing = existingPlacements.forall { existing =>
-        val distance = math.abs(candidate.x - existing.x) + math.abs(candidate.y - existing.y)
-        distance >= minSpacing
+      val candidate = MapBounds(minX, maxX, minY, maxY)
+      
+      // Check if this bounds overlaps with any existing dungeon bounds (with spacing)
+      val hasNoOverlap = usedBounds.forall { existing =>
+        // Check if there's enough spacing between bounds
+        val xOverlap = !(candidate.maxRoomX + minSpacing < existing.minRoomX || 
+                        candidate.minRoomX > existing.maxRoomX + minSpacing)
+        val yOverlap = !(candidate.maxRoomY + minSpacing < existing.minRoomY || 
+                        candidate.minRoomY > existing.maxRoomY + minSpacing)
+        
+        // No overlap means bounds are separated
+        !(xOverlap && yOverlap)
       }
       
-      if (hasGoodSpacing) {
+      // Also check if candidate is fully within world bounds
+      val withinWorld = candidate.minRoomX >= worldBounds.minRoomX &&
+                       candidate.maxRoomX <= worldBounds.maxRoomX &&
+                       candidate.minRoomY >= worldBounds.minRoomY &&
+                       candidate.maxRoomY <= worldBounds.maxRoomY
+      
+      if (hasNoOverlap && withinWorld) {
         return candidate
       }
       
       attempt += 1
     }
     
-    // If we couldn't find a good placement, return a random one anyway
-    Point(
-      random.between(bounds.minRoomX, bounds.maxRoomX + 1),
-      random.between(bounds.minRoomY, bounds.maxRoomY + 1)
-    )
-  }
-  
-  /**
-   * Shifts a dungeon to a new location.
-   */
-  private def shiftDungeon(dungeon: Dungeon, targetCenter: Point): Dungeon = {
-    // Calculate current center
-    val currentMinX = dungeon.roomGrid.map(_.x).min
-    val currentMaxX = dungeon.roomGrid.map(_.x).max
-    val currentMinY = dungeon.roomGrid.map(_.y).min
-    val currentMaxY = dungeon.roomGrid.map(_.y).max
+    // If we couldn't find a good placement, try to use a smaller bounds or fallback
+    // This is a safety fallback - reduce the size if needed
+    val reducedWidth = Math.max(5, width / 2)
+    val reducedHeight = Math.max(5, height / 2)
+    val minX = random.between(worldBounds.minRoomX, worldBounds.maxRoomX - reducedWidth + 2)
+    val minY = random.between(worldBounds.minRoomY, worldBounds.maxRoomY - reducedHeight + 2)
     
-    val currentCenterX = (currentMinX + currentMaxX) / 2
-    val currentCenterY = (currentMinY + currentMaxY) / 2
-    
-    val shiftX = targetCenter.x - currentCenterX
-    val shiftY = targetCenter.y - currentCenterY
-    
-    dungeon.copy(
-      roomGrid = dungeon.roomGrid.map(p => Point(p.x + shiftX, p.y + shiftY)),
-      startPoint = Point(dungeon.startPoint.x + shiftX, dungeon.startPoint.y + shiftY),
-      endpoint = dungeon.endpoint.map(p => Point(p.x + shiftX, p.y + shiftY)),
-      traderRoom = dungeon.traderRoom.map(p => Point(p.x + shiftX, p.y + shiftY)),
-      roomConnections = dungeon.roomConnections.map(rc => 
-        rc.copy(
-          originRoom = Point(rc.originRoom.x + shiftX, rc.originRoom.y + shiftY),
-          destinationRoom = Point(rc.destinationRoom.x + shiftX, rc.destinationRoom.y + shiftY)
-        )
-      ),
-      items = dungeon.items.map { case (p, item) => (Point(p.x + shiftX, p.y + shiftY), item) }
+    MapBounds(
+      Math.max(worldBounds.minRoomX, minX),
+      Math.min(worldBounds.maxRoomX, minX + reducedWidth - 1),
+      Math.max(worldBounds.minRoomY, minY),
+      Math.min(worldBounds.maxRoomY, minY + reducedHeight - 1)
     )
   }
   
