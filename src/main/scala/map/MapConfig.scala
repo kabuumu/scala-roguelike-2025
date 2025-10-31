@@ -8,16 +8,22 @@ import game.{Direction, Point}
  * 
  * @param bounds The rectangular bounds for the dungeon (defines how much space it can occupy)
  * @param seed Random seed for reproducible generation
+ * @param explicitSize Optional explicit size override (for backward compatibility)
+ * @param explicitLockedDoorCount Optional explicit locked door count override
+ * @param explicitItemCount Optional explicit item count override
  */
 case class DungeonConfig(
   bounds: MapBounds,
-  seed: Long = System.currentTimeMillis()
+  seed: Long = System.currentTimeMillis(),
+  explicitSize: Option[Int] = None,
+  explicitLockedDoorCount: Option[Int] = None,
+  explicitItemCount: Option[Int] = None
 ) {
   /**
    * Automatically calculate dungeon size based on available space.
    * Uses a very conservative 15% of available room area for bounded dungeons.
    */
-  val size: Int = {
+  val size: Int = explicitSize.getOrElse {
     val maxRooms = bounds.roomArea
     val targetRooms = (maxRooms * 0.15).toInt
     Math.max(5, Math.min(targetRooms, 12)) // Clamp between 5 and 12 rooms
@@ -27,13 +33,13 @@ case class DungeonConfig(
    * Automatically calculate locked door count based on dungeon size.
    * Roughly 1 locked door per 20 rooms (very conservative).
    */
-  val lockedDoorCount: Int = Math.max(0, size / 20)
+  val lockedDoorCount: Int = explicitLockedDoorCount.getOrElse(Math.max(0, size / 20))
   
   /**
    * Automatically calculate item count based on dungeon size.
    * Roughly 1 item per 6 rooms (very conservative).
    */
-  val itemCount: Int = Math.max(1, size / 6)
+  val itemCount: Int = explicitItemCount.getOrElse(Math.max(1, size / 6))
   
   /**
    * Entrance side defaults to Down for compatibility.
@@ -75,16 +81,19 @@ object DungeonConfig {
     seed: Long = System.currentTimeMillis()
   ): DungeonConfig = {
     // Calculate bounds that can accommodate the requested size
-    // Use generous bounds: size * 4 area to ensure generation succeeds
-    val sideLength = Math.ceil(Math.sqrt(size * 4)).toInt
+    // Use very generous bounds: size * 20 area to ensure generation succeeds
+    // This gives plenty of space for the algorithm to work with bounded generation
+    val sideLength = Math.ceil(Math.sqrt(size * 20)).toInt
     val bounds = MapBounds(-sideLength, sideLength, -sideLength, sideLength)
     
-    // Create a custom config with explicit values
-    new DungeonConfig(bounds, seed) {
-      override val size: Int = size
-      override val lockedDoorCount: Int = lockedDoorCount
-      override val itemCount: Int = itemCount
-    }
+    // Create config with explicit values passed through constructor
+    DungeonConfig(
+      bounds = bounds,
+      seed = seed,
+      explicitSize = Some(size),
+      explicitLockedDoorCount = Some(lockedDoorCount),
+      explicitItemCount = Some(itemCount)
+    )
   }
 }
 
