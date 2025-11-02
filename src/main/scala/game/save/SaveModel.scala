@@ -104,7 +104,7 @@ object SaveConversions {
 
     // Reconstruct basic Dungeon from PersistedDungeon and wrap in WorldMap
     val roomGrid = pgs.dungeon.roomGrid.map { case (x, y) => Point(x, y) }.toSet
-    val basicDungeon = Dungeon(roomGrid = roomGrid, seed = pgs.dungeon.seed)
+    val basicDungeon = Dungeon(roomGrid = roomGrid, startPoint = Point(0, 0), seed = pgs.dungeon.seed)
     
     // Create a WorldMap that wraps the dungeon
     val worldMap = WorldMap(

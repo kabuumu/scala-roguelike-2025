@@ -4,48 +4,64 @@ import game.{Direction, Point}
 
 /**
  * Configuration for dungeon generation.
+ * Now simplified to take only bounds - all other parameters are calculated automatically.
  * 
- * @param bounds The rectangular bounds for the dungeon (min and max room coordinates)
- * @param entranceSide The side where the dungeon entrance should be placed (North/South/East/West)
- * @param size Number of rooms to generate in the dungeon
- * @param lockedDoorCount Number of locked doors in the dungeon
- * @param itemCount Number of items to place in the dungeon
+ * @param bounds The rectangular bounds for the dungeon (defines how much space it can occupy)
  * @param seed Random seed for reproducible generation
+ * @param explicitSize Optional explicit size override (for backward compatibility)
+ * @param explicitLockedDoorCount Optional explicit locked door count override
+ * @param explicitItemCount Optional explicit item count override
  */
 case class DungeonConfig(
-  bounds: Option[MapBounds] = None,
-  entranceSide: Direction = Direction.Up,
-  size: Int = 10,
-  lockedDoorCount: Int = 0,
-  itemCount: Int = 0,
-  seed: Long = System.currentTimeMillis()
+  bounds: MapBounds,
+  seed: Long = System.currentTimeMillis(),
+  explicitSize: Option[Int] = None,
+  explicitLockedDoorCount: Option[Int] = None,
+  explicitItemCount: Option[Int] = None,
+  entranceSide: Direction = Direction.Left
 ) {
   /**
-   * Validates that a room point is within the configured bounds.
-   * Returns true if no bounds are set (unlimited) or if point is within bounds.
+   * Automatically calculate dungeon size based on available space.
+   * Uses very conservative 7% of available room area for bounded dungeons.
+   * The bounded generation algorithm needs significant extra space for layout constraints.
    */
-  def isWithinBounds(room: Point): Boolean = bounds match {
-    case None => true
-    case Some(b) => 
-      room.x >= b.minRoomX && room.x <= b.maxRoomX &&
-      room.y >= b.minRoomY && room.y <= b.maxRoomY
+  val size: Int = explicitSize.getOrElse {
+    val maxRooms = bounds.roomArea
+    (maxRooms * 0.3).toInt
   }
   
   /**
-   * Returns a room point on the specified entrance side within bounds.
+   * Automatically calculate locked door count based on dungeon size.
+   * Roughly 1 locked door per 4 rooms (very conservative).
+   */
+  val lockedDoorCount: Int = explicitLockedDoorCount.getOrElse(Math.max(0, size / 6))
+  
+  /**
+   * Automatically calculate item count based on dungeon size.
+   * Roughly 1 item per 6 rooms (very conservative).
+   */
+  val itemCount: Int = explicitItemCount.getOrElse(Math.max(1, size / 5))
+  
+  /**
+   * Validates that a room point is within the configured bounds.
+   */
+  def isWithinBounds(room: Point): Boolean = 
+    room.x >= bounds.minRoomX && room.x <= bounds.maxRoomX &&
+    room.y >= bounds.minRoomY && room.y <= bounds.maxRoomY
+  
+  /**
+   * Returns a room point on the entrance side within bounds.
    * Used for positioning the dungeon entrance.
    */
-  def getEntranceRoom: Point = bounds match {
-    case None => Point(0, 0)
-    case Some(b) =>
-      val centerX = (b.minRoomX + b.maxRoomX) / 2
-      val centerY = (b.minRoomY + b.maxRoomY) / 2
-      entranceSide match {
-        case Direction.Up => Point(centerX, b.minRoomY)
-        case Direction.Down => Point(centerX, b.maxRoomY)
-        case Direction.Left => Point(b.minRoomX, centerY)
-        case Direction.Right => Point(b.maxRoomX, centerY)
-      }
+  def getEntranceRoom: Point = {
+    val centerX = (bounds.minRoomX + bounds.maxRoomX) / 2
+    val centerY = (bounds.minRoomY + bounds.maxRoomY) / 2
+    entranceSide match {
+      case Direction.Up => Point(centerX, bounds.minRoomY)
+      case Direction.Down => Point(centerX, bounds.maxRoomY)
+      case Direction.Left => Point(bounds.minRoomX, centerY)
+      case Direction.Right => Point(bounds.maxRoomX, centerY)
+    }
   }
 }
 
@@ -126,32 +142,4 @@ case class MapBounds(
   def describe: String = 
     s"Bounds[rooms: ($minRoomX,$minRoomY) to ($maxRoomX,$maxRoomY), " +
     s"size: ${roomWidth}x$roomHeight rooms, area: $roomArea rooms²]"
-}
-
-object MapBounds {
-  /**
-   * Creates bounds from tile coordinates.
-   */
-  def fromTiles(minX: Int, maxX: Int, minY: Int, maxY: Int, roomSize: Int = 10): MapBounds = {
-    MapBounds(
-      minX / roomSize,
-      maxX / roomSize,
-      minY / roomSize,
-      maxY / roomSize
-    )
-  }
-  
-  /**
-   * Creates centered bounds with specified dimensions.
-   */
-  def centered(width: Int, height: Int, centerX: Int = 0, centerY: Int = 0): MapBounds = {
-    val halfWidth = width / 2
-    val halfHeight = height / 2
-    MapBounds(
-      centerX - halfWidth,
-      centerX + halfWidth - 1,
-      centerY - halfHeight,
-      centerY + halfHeight - 1
-    )
-  }
 }

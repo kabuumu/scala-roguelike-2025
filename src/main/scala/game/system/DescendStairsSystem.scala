@@ -7,7 +7,7 @@ import game.entity.Inventory.inventoryItems
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
 import ui.InputAction
-import map.{Dungeon, MapGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig}
+import map.{Dungeon, DungeonGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig}
 
 /**
  * Handles the player descending stairs to the next dungeon floor.
@@ -41,11 +41,9 @@ object DescendStairsSystem extends GameSystem {
             seed = seed
           ),
           dungeonConfigs = Seq(
+            // Dungeon size, items, and locked doors are automatically calculated from bounds
             DungeonConfig(
-              bounds = None,
-              size = 20,
-              lockedDoorCount = 3,
-              itemCount = 6,
+              bounds = worldBounds,
               seed = seed
             )
           ),

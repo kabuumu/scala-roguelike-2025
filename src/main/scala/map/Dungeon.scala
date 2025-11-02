@@ -329,4 +329,11 @@ case class RoomConnection(originRoom: Point, direction: Direction, destinationRo
 
 object Dungeon {
   val roomSize = 10
+  
+  def roomToTile(room: Point): Point = {
+    Point(
+      room.x * roomSize + roomSize / 2,
+      room.y * roomSize + roomSize / 2
+    )
+  }
 }
