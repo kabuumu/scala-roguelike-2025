@@ -128,7 +128,7 @@ class PathAroundObstaclesTest extends AnyFunSuite {
       seed = 12345
     )
     
-    val dungeon = MapGenerator.generateDungeon(dungeonConfig)
+    val dungeon = DungeonGenerator.generateDungeon(dungeonConfig)
     
     // Player spawn point outside dungeon
     val playerStart = Point(-80, 80) // Far from dungeon

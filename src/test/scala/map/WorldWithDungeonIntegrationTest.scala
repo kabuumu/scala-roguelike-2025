@@ -35,7 +35,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
       seed = 42
     )
     
-    val dungeon = MapGenerator.generateDungeon(dungeonConfig)
+    val dungeon = DungeonGenerator.generateDungeon(dungeonConfig)
     
     // Verify world was created
     assert(worldTiles.nonEmpty, "World should have tiles")
@@ -73,7 +73,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
       seed = 123
     )
     
-    val dungeon = MapGenerator.generateDungeon(dungeonConfig)
+    val dungeon = DungeonGenerator.generateDungeon(dungeonConfig)
     
     assert(worldTiles.nonEmpty)
     // With auto-calculation from bounds, verify dungeon has rooms
@@ -100,7 +100,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     )
     
     val worldTiles = WorldGenerator.generateWorld(worldConfig)
-    val dungeon = MapGenerator.generateDungeon(dungeonConfig)
+    val dungeon = DungeonGenerator.generateDungeon(dungeonConfig)
     
     // In a real integration, dungeon tiles would override world tiles
     // Here we just verify both can coexist
@@ -142,7 +142,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     )
     
     val worldTiles = WorldGenerator.generateWorld(worldConfig)
-    val dungeon = MapGenerator.generateDungeon(dungeonConfig)
+    val dungeon = DungeonGenerator.generateDungeon(dungeonConfig)
     
     println("\n" + "="*60)
     println("COMPLETE WORLD WITH DUNGEON - AI-READABLE OUTPUT")
@@ -206,7 +206,7 @@ class WorldWithDungeonIntegrationTest extends AnyFunSuite {
     // Demonstrate with a simple bounded case
     val simpleBounds = MapBounds(-3, 3, -3, 3)
     val simpleConfig = DungeonConfig(bounds = simpleBounds, seed = 999)
-    val simpleDungeon = MapGenerator.generateDungeon(simpleConfig)
+    val simpleDungeon = DungeonGenerator.generateDungeon(simpleConfig)
     
     assert(simpleDungeon.roomGrid.size >= 5, "Should have at least 5 rooms")
     println(s"  Example: Simple dungeon with ${simpleDungeon.roomGrid.size} rooms created")

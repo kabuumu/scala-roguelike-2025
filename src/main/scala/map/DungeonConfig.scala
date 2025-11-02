@@ -17,7 +17,8 @@ case class DungeonConfig(
   seed: Long = System.currentTimeMillis(),
   explicitSize: Option[Int] = None,
   explicitLockedDoorCount: Option[Int] = None,
-  explicitItemCount: Option[Int] = None
+  explicitItemCount: Option[Int] = None,
+  entranceSide: Direction = Direction.Left
 ) {
   /**
    * Automatically calculate dungeon size based on available space.
@@ -26,26 +27,20 @@ case class DungeonConfig(
    */
   val size: Int = explicitSize.getOrElse {
     val maxRooms = bounds.roomArea
-    val targetRooms = (maxRooms * 0.07).toInt
-    Math.max(5, Math.min(targetRooms, 10)) // Clamp between 5 and 10 rooms
+    (maxRooms * 0.3).toInt
   }
   
   /**
    * Automatically calculate locked door count based on dungeon size.
-   * Roughly 1 locked door per 20 rooms (very conservative).
+   * Roughly 1 locked door per 4 rooms (very conservative).
    */
-  val lockedDoorCount: Int = explicitLockedDoorCount.getOrElse(Math.max(0, size / 20))
+  val lockedDoorCount: Int = explicitLockedDoorCount.getOrElse(Math.max(0, size / 6))
   
   /**
    * Automatically calculate item count based on dungeon size.
    * Roughly 1 item per 6 rooms (very conservative).
    */
-  val itemCount: Int = explicitItemCount.getOrElse(Math.max(1, size / 6))
-  
-  /**
-   * Entrance side defaults to Down for compatibility.
-   */
-  val entranceSide: Direction = Direction.Down
+  val itemCount: Int = explicitItemCount.getOrElse(Math.max(1, size / 5))
   
   /**
    * Validates that a room point is within the configured bounds.
@@ -67,34 +62,6 @@ case class DungeonConfig(
       case Direction.Left => Point(bounds.minRoomX, centerY)
       case Direction.Right => Point(bounds.maxRoomX, centerY)
     }
-  }
-}
-
-object DungeonConfig {
-  /**
-   * Creates a DungeonConfig with explicit size/items/doors for backward compatibility.
-   * Bounds will be calculated to accommodate the requested size.
-   */
-  def withExplicitParams(
-    size: Int,
-    lockedDoorCount: Int = 0,
-    itemCount: Int = 0,
-    seed: Long = System.currentTimeMillis()
-  ): DungeonConfig = {
-    // Calculate bounds that can accommodate the requested size
-    // Use extremely generous bounds: size * 50 area for bounded generation
-    // The bounded algorithm needs much more space than unbounded due to layout constraints
-    val sideLength = Math.ceil(Math.sqrt(size * 50)).toInt
-    val bounds = MapBounds(-sideLength, sideLength, -sideLength, sideLength)
-    
-    // Create config with explicit values passed through constructor
-    DungeonConfig(
-      bounds = bounds,
-      seed = seed,
-      explicitSize = Some(size),
-      explicitLockedDoorCount = Some(lockedDoorCount),
-      explicitItemCount = Some(itemCount)
-    )
   }
 }
 
@@ -175,32 +142,4 @@ case class MapBounds(
   def describe: String = 
     s"Bounds[rooms: ($minRoomX,$minRoomY) to ($maxRoomX,$maxRoomY), " +
     s"size: ${roomWidth}x$roomHeight rooms, area: $roomArea rooms²]"
-}
-
-object MapBounds {
-  /**
-   * Creates bounds from tile coordinates.
-   */
-  def fromTiles(minX: Int, maxX: Int, minY: Int, maxY: Int, roomSize: Int = 10): MapBounds = {
-    MapBounds(
-      minX / roomSize,
-      maxX / roomSize,
-      minY / roomSize,
-      maxY / roomSize
-    )
-  }
-  
-  /**
-   * Creates centered bounds with specified dimensions.
-   */
-  def centered(width: Int, height: Int, centerX: Int = 0, centerY: Int = 0): MapBounds = {
-    val halfWidth = width / 2
-    val halfHeight = height / 2
-    MapBounds(
-      centerX - halfWidth,
-      centerX + halfWidth - 1,
-      centerY - halfHeight,
-      centerY + halfHeight - 1
-    )
-  }
 }

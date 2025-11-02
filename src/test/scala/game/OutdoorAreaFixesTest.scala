@@ -1,6 +1,6 @@
 package game
 
-import map.{Dungeon, MapGenerator, TileType}
+import map.{Dungeon, DungeonGenerator, TileType}
 import org.scalatest.funsuite.AnyFunSuite
 
 class OutdoorAreaFixesTest extends AnyFunSuite {
