@@ -54,16 +54,16 @@ object WorldMapGenerator {
 
     // ===== PASS 3: Create dirt paths from spawn to dungeons and shop =====
     val pathTiles: Set[Point] = (for {
-      dungeonEntrance <- dungeonEntrances
+      dungeonEntrance <- dungeonEntrances :+ shop.entranceTile
       pathPoint <- LineOfSight.getBresenhamLine(startPoint, dungeonEntrance)
-    } yield pathPoint).toSet ++ 
-    LineOfSight.getBresenhamLine(startPoint, shop.entranceTile).toSet
-
-    // Combine all tiles with proper priority:
-    // Dungeons > Shop > Bridges > Paths > Rivers > Terrain
-    // Filter out path tiles that would overlap with shop
-    val pathTilesWithoutShop = pathTiles -- shop.tiles.keySet
-    val combinedTiles: Map[Point, TileType] = Map.empty ++ terrainTiles ++ (pathTilesWithoutShop.map(_ -> TileType.Dirt)) ++ dungeons.flatMap(_.tiles) ++ shop.tiles
+    } yield pathPoint).toSet
+    
+    val combinedTiles: Map[Point, TileType] = 
+      Map.empty 
+        ++ terrainTiles 
+        ++ dungeons.flatMap(_.tiles) 
+        ++ shop.tiles
+        ++ pathTiles.map(_ -> TileType.Dirt)
 
     WorldMap(
       tiles = combinedTiles,
@@ -166,42 +166,4 @@ case class WorldMap(
    * All trader room locations (from all dungeons).
    */
   def allTraderRooms: Seq[Point] = dungeons.flatMap(_.traderRoom)
-}
-
-/**
- * Report on the traversability of a world map.
- * 
- * @param allEntrancesReachable Whether all dungeon entrances can reach each other
- * @param walkableTileCount Number of walkable tiles in the map
- * @param totalTileCount Total number of tiles in the map
- * @param dungeonEntrances All dungeon entrance points
- * @param reachabilityMap Map from each entrance to whether it can reach all others
- */
-case class TraversabilityReport(
-  allEntrancesReachable: Boolean,
-  walkableTileCount: Int,
-  totalTileCount: Int,
-  dungeonEntrances: Seq[Point],
-  reachabilityMap: Map[Point, Boolean]
-) {
-  /**
-   * Provides a human-readable description of the traversability.
-   */
-  def describe: String = {
-    val walkablePercent = (walkableTileCount.toDouble / totalTileCount * 100).toInt
-    val status = if (allEntrancesReachable) "✓ PASS" else "✗ FAIL"
-    
-    val entranceDetails = reachabilityMap.map { case (entrance, reachable) =>
-      val statusSymbol = if (reachable) "✓" else "✗"
-      s"    $statusSymbol Entrance at $entrance"
-    }.mkString("\n")
-    
-    s"""Traversability Report: $status
-       |  Walkable tiles: $walkableTileCount / $totalTileCount ($walkablePercent%)
-       |  Dungeon entrances: ${dungeonEntrances.size}
-       |  All entrances reachable: $allEntrancesReachable
-       |  
-       |  Entrance Reachability:
-       |$entranceDetails""".stripMargin
-  }
 }
