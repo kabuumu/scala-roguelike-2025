@@ -162,6 +162,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
                 ++ keys(model, spriteSheet)
                 ++ equipmentPaperdoll(model, spriteSheet)
                 ++ tradeItemDisplay(model, spriteSheet)
+                ++ conversationWindow(model, spriteSheet)
                 ++ messageWindow(model)
                 ++ versionInfo(model)
             )
