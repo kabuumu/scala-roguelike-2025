@@ -99,12 +99,12 @@ object DescendStairsSystem extends GameSystem {
         val enemiesAndAbilities = dungeonRoomsOnly.zipWithIndex.map { case (roomPoint, index) =>
           if (dungeon.hasBossRoom && dungeon.endpoint.contains(roomPoint)) {
             // Boss room
-            StartingState.EnemyGeneration.createEnemiesForRoom(roomPoint, Int.MaxValue, index)
+            StartingState.EnemyGeneration.createEnemiesForRoom(roomPoint, Int.MaxValue, index, worldMap)
           } else {
             // Scale depth by floor number for increased difficulty
             val baseDepth = dungeon.roomDepths.getOrElse(roomPoint, 1)
             val scaledDepth = baseDepth + (newFloor - 1) * 3 // Add 3 depth levels per floor
-            StartingState.EnemyGeneration.createEnemiesForRoom(roomPoint, scaledDepth, index)
+            StartingState.EnemyGeneration.createEnemiesForRoom(roomPoint, scaledDepth, index, worldMap)
           }
         }
         
