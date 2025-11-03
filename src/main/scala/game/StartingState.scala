@@ -134,6 +134,7 @@ object StartingState {
       val roomMinY = roomPoint.y * Dungeon.roomSize
       val roomMaxY = roomMinY + Dungeon.roomSize
       
+      // Generate all tiles within the room bounds (inclusive to cover room perimeter)
       val roomTiles = for {
         x <- roomMinX to roomMaxX
         y <- roomMinY to roomMaxY
@@ -198,7 +199,8 @@ object StartingState {
           }.filter(walkableTiles.contains)
           
           candidatePositions.headOption.getOrElse {
-            // If no nearby position is available, use any walkable tile
+            // If no nearby position is available, distribute enemies across walkable tiles
+            // Use prime number 13 to avoid clustering when multiple enemies spawn
             walkableTiles((enemyIndex * 13) % walkableTiles.size)
           }
         }
