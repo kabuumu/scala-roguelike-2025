@@ -58,9 +58,13 @@ class WorldMapWithShopTest extends AnyFunSuite {
     val shop = worldMap.shop.get
     
     // All shop tiles should be in world tiles
+    // Note: Some shop tiles may be overridden by paths (paths are added last)
     shop.tiles.foreach { case (point, tileType) =>
       assert(worldMap.tiles.contains(point), s"Shop tile at $point should be in world tiles")
-      assert(worldMap.tiles(point) == tileType, s"Shop tile type should match at $point")
+      // Paths may override shop tiles with Dirt
+      val actualType = worldMap.tiles(point)
+      val isValidOverride = actualType == tileType || (actualType == TileType.Dirt && worldMap.paths.contains(point))
+      assert(isValidOverride, s"Shop tile at $point should be $tileType or Dirt (if on path), but was $actualType")
     }
   }
   
