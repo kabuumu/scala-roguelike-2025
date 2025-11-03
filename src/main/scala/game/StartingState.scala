@@ -126,20 +126,81 @@ object StartingState {
     }
     
     /**
-     * Create enemy entities for a room based on its depth and position.
+     * Find walkable tiles in a room (tiles that are not walls, rocks, or water).
      */
-    def createEnemiesForRoom(roomPoint: Point, depth: Int, roomIndex: Int): (Seq[Entity], Map[String, Entity]) = {
+    def findWalkableTilesInRoom(roomPoint: Point, worldMap: map.WorldMap): Seq[Point] = {
+      val roomMinX = roomPoint.x * Dungeon.roomSize
+      val roomMaxX = roomMinX + Dungeon.roomSize
+      val roomMinY = roomPoint.y * Dungeon.roomSize
+      val roomMaxY = roomMinY + Dungeon.roomSize
+      
+      val roomTiles = for {
+        x <- roomMinX to roomMaxX
+        y <- roomMinY to roomMaxY
+        point = Point(x, y)
+        if worldMap.tiles.contains(point)
+      } yield point
+      
+      // Filter out non-walkable tiles (walls, rocks, water)
+      roomTiles.filterNot { point =>
+        worldMap.walls.contains(point) || worldMap.rocks.contains(point) || worldMap.water.contains(point)
+      }.toSeq
+    }
+    
+    /**
+     * Create enemy entities for a room based on its depth and position.
+     * Ensures enemies spawn on walkable tiles only.
+     */
+    def createEnemiesForRoom(roomPoint: Point, depth: Int, roomIndex: Int, worldMap: map.WorldMap): (Seq[Entity], Map[String, Entity]) = {
       val roomCenter = Point(
         roomPoint.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         roomPoint.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
       
+      // Find all walkable tiles in the room
+      val walkableTiles = findWalkableTilesInRoom(roomPoint, worldMap)
+      
+      if (walkableTiles.isEmpty) {
+        // If no walkable tiles (should not happen in a well-formed dungeon), return empty
+        return (Seq.empty, Map.empty)
+      }
+      
+      // Prefer room center if it's walkable, otherwise use closest walkable tile
+      val centerPosition = if (walkableTiles.contains(roomCenter)) {
+        roomCenter
+      } else {
+        // Find the walkable tile closest to the room center
+        walkableTiles.minBy { tile =>
+          val dx = tile.x - roomCenter.x
+          val dy = tile.y - roomCenter.y
+          dx * dx + dy * dy
+        }
+      }
+      
       val enemyGroup = enemiesForDepth(depth)
       val enemies = enemyGroup.enemies.zipWithIndex.map { case (enemyRef, enemyIndex) =>
         val enemyId = s"${enemyRef.toString}-R$roomIndex-$enemyIndex"
-        val position = if (enemyIndex == 0) roomCenter else {
-          // Offset additional enemies slightly to avoid overlap
-          Point(roomCenter.x + enemyIndex, roomCenter.y + enemyIndex)
+        
+        // Find a walkable position for this enemy
+        val position = if (enemyIndex == 0) {
+          centerPosition
+        } else {
+          // Try to find a walkable tile near the center
+          // Check positions in a spiral pattern around center
+          val offsets = Seq(
+            (1, 0), (-1, 0), (0, 1), (0, -1),
+            (1, 1), (-1, -1), (1, -1), (-1, 1),
+            (2, 0), (-2, 0), (0, 2), (0, -2)
+          )
+          
+          val candidatePositions = offsets.map { case (dx, dy) =>
+            Point(centerPosition.x + dx * enemyIndex, centerPosition.y + dy * enemyIndex)
+          }.filter(walkableTiles.contains)
+          
+          candidatePositions.headOption.getOrElse {
+            // If no nearby position is available, use any walkable tile
+            walkableTiles((enemyIndex * 13) % walkableTiles.size)
+          }
         }
         
         enemyRef match {
@@ -197,7 +258,7 @@ object StartingState {
   private val (enemiesList, spitAbilitiesMap) = dungeonRoomsWithDepth.zipWithIndex.flatMap { 
     case ((room, depth), roomIdx) =>
       if (depth > 0) { // Skip trader rooms and invalid depths
-        val (roomEnemies, roomSpitAbilities) = EnemyGeneration.createEnemiesForRoom(room, depth, roomIdx)
+        val (roomEnemies, roomSpitAbilities) = EnemyGeneration.createEnemiesForRoom(room, depth, roomIdx, worldMap)
         Some((roomEnemies, roomSpitAbilities))
       } else {
         None
