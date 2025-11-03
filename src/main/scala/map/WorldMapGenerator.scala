@@ -61,7 +61,9 @@ object WorldMapGenerator {
 
     // Combine all tiles with proper priority:
     // Dungeons > Shop > Bridges > Paths > Rivers > Terrain
-    val combinedTiles: Map[Point, TileType] = Map.empty ++ terrainTiles ++ dungeons.flatMap(_.tiles) ++ shop.tiles ++ (pathTiles.map(_ -> TileType.Dirt))
+    // Filter out path tiles that would overlap with shop
+    val pathTilesWithoutShop = pathTiles -- shop.tiles.keySet
+    val combinedTiles: Map[Point, TileType] = Map.empty ++ terrainTiles ++ (pathTilesWithoutShop.map(_ -> TileType.Dirt)) ++ dungeons.flatMap(_.tiles) ++ shop.tiles
 
     WorldMap(
       tiles = combinedTiles,
