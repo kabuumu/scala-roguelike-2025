@@ -303,7 +303,7 @@ object StartingState {
   }.toSet
 
   // Create trader entity if dungeon has trader room
-  val trader: Option[Entity] = worldMap.primaryDungeon.flatMap { dungeon =>
+  val dungeonTrader: Option[Entity] = worldMap.primaryDungeon.flatMap { dungeon =>
     dungeon.traderRoom.map { traderRoom =>
       val traderPos = Point(
         traderRoom.x * Dungeon.roomSize + Dungeon.roomSize / 2,
@@ -313,12 +313,18 @@ object StartingState {
     }
   }
 
+  // Create trader entity in shop
+  val shopTrader: Option[Entity] = worldMap.shop.map { shop =>
+    data.Entities.trader("trader-shop", shop.centerTile)
+  }
+
   println(s"[StartingState] Creating GameState with worldMap containing ${worldMap.tiles.size} tiles")
   println(s"[StartingState] Dungeon has ${enemies.size} enemies and ${items.size} items")
+  println(s"[StartingState] Shop trader: ${shopTrader.map(_ => "present").getOrElse("absent")}")
   
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ trader.toSeq,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTrader.toSeq ++ shopTrader.toSeq,
     worldMap = worldMap
   )
   
