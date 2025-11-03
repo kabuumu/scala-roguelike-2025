@@ -952,4 +952,78 @@ object Elements {
     Batch(title, enemiesHeader, stepsText, itemsText, coinsText, equipmentHeader, instructions) ++ 
     enemyDisplayElements.toBatch ++ equipmentElements.toBatch
   }
+
+  def conversationWindow(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] = {
+    model.uiState match {
+      case tradeMenu: UIState.TradeMenu =>
+        // Get the trader entity
+        val trader = tradeMenu.trader
+        val traderName = trader.get[NameComponent].map(_.name).getOrElse("Trader")
+        val traderDescription = trader.get[NameComponent].map(_.description).getOrElse("A friendly merchant")
+        
+        // Get trader sprite
+        val traderSprite = trader.get[Drawable].flatMap(_.sprites.headOption.map(_._2)).getOrElse(data.Sprites.traderSprite)
+        
+        // Window dimensions - centered on screen
+        val windowWidth = spriteScale * 12
+        val windowHeight = spriteScale * 8
+        val windowX = (canvasWidth - windowWidth) / 2
+        val windowY = (canvasHeight - windowHeight) / 2
+        
+        // Background panel
+        val background = BlockBar.getBlockBar(
+          Rectangle(Point(windowX - defaultBorderSize, windowY - defaultBorderSize), 
+                   Size(windowWidth + (defaultBorderSize * 2), windowHeight + (defaultBorderSize * 2))),
+          RGBA.Black.withAlpha(0.9)
+        )
+        
+        // Trader icon on left side (large)
+        val iconSize = spriteScale * 3
+        val iconX = windowX + defaultBorderSize
+        val iconY = windowY + defaultBorderSize
+        val traderIcon = spriteSheet.fromSprite(traderSprite)
+          .moveTo(iconX, iconY)
+          .scaleBy(3.0, 3.0)
+        
+        // Welcome message at top (right of icon)
+        val messageX = iconX + iconSize + defaultBorderSize
+        val messageY = windowY + defaultBorderSize
+        val welcomeText = text(traderName, messageX, messageY)
+        val descriptionY = messageY + spriteScale
+        val maxLineChars = (windowWidth - iconSize - (defaultBorderSize * 3)) / (spriteScale / 3)
+        val wrappedDesc = wrapText(traderDescription, maxLineChars)
+        val descriptionLines = wrappedDesc.zipWithIndex.map { case (line, idx) =>
+          text(line, messageX, descriptionY + (idx * (spriteScale / 2)))
+        }
+        
+        // Options menu - centered below icon and message
+        val optionsY = windowY + iconSize + (defaultBorderSize * 2)
+        val optionHeight = spriteScale + defaultBorderSize
+        val optionsStartY = optionsY
+        
+        val optionElements = tradeMenu.options.zipWithIndex.flatMap { case (option, index) =>
+          val optionY = optionsStartY + (index * optionHeight)
+          val isSelected = index == tradeMenu.selectedOption
+          
+          // Highlight background for selected option
+          val highlight = if (isSelected) {
+            Some(BlockBar.getBlockBar(
+              Rectangle(Point(windowX, optionY - (defaultBorderSize / 2)), 
+                       Size(windowWidth, optionHeight)),
+              RGBA.Orange.withAlpha(0.5)
+            ))
+          } else None
+          
+          // Option text centered
+          val optionText = if (isSelected) s"> $option <" else s"  $option  "
+          val optionTextX = windowX + (windowWidth - (optionText.length * 8)) / 2
+          
+          highlight.toSeq :+ text(optionText, optionTextX, optionY)
+        }
+        
+        Batch(background, traderIcon, welcomeText) ++ descriptionLines.toBatch ++ optionElements.toBatch
+        
+      case _ => Batch.empty
+    }
+  }
 }
