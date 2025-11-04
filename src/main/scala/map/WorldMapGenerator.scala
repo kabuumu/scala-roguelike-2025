@@ -6,74 +6,74 @@ import scala.collection.immutable
 import scala.util.LineOfSight
 
 /**
- * Unified world map that combines terrain, rivers, paths, and dungeons.
- * Uses a 4-pass approach for natural procedural generation:
- * 1st pass - Create grass/dirt based on noise
- * 2nd pass - Place dungeons with spacing
- * 3rd pass - Create paths between dungeons
- * 4th pass - Create rivers with bridges at path crossings
+ * Unified world map generator using extensible mutator pattern.
+ * Similar to DungeonGenerator, uses a list of WorldMutators to build the world step by step.
+ * This makes world generation extensible and composable.
  */
 object WorldMapGenerator {
 
   /**
-   * Generates a complete world map with terrain, rivers, paths, dungeons, and shops.
-   * Uses multi-pass approach for procedural generation.
+   * Generates a complete world map using a list of mutators.
+   * Each mutator transforms the world map in sequence.
    *
    * @param config WorldMapConfig specifying all map generation parameters
    * @return WorldMap containing all generated elements
    */
   def generateWorldMap(config: WorldMapConfig): WorldMap = {
-    // ===== PASS 1: Create base terrain (grass/dirt/trees) =====
-    val terrainTiles = WorldGenerator.generateWorld(config.worldConfig)
-
-    // Currently hardcoded to a single dungeon for ease
-    val dungeons = Seq(DungeonGenerator.generateDungeon(MapBounds(
-      minRoomX = 1,
-      maxRoomX = config.worldConfig.bounds.maxRoomX,
-      minRoomY = config.worldConfig.bounds.minRoomY,
-      maxRoomY = config.worldConfig.bounds.maxRoomY
-    ), seed = 182L))
-
     val startPoint = Point(0, 0)
-
-    // Find dungeon entrance points (use the actual dungeon start points, not outdoor rooms)
-    val dungeonEntrances = dungeons.map(_.startPoint).map(Dungeon.roomToTile)
-
-    // ===== PASS 2.5: Create shop near player spawn =====
-    val dungeonBounds = dungeons.headOption.map { dungeon =>
-      MapBounds(
-        dungeon.roomGrid.map(_.x).min,
-        dungeon.roomGrid.map(_.x).max,
-        dungeon.roomGrid.map(_.y).min,
-        dungeon.roomGrid.map(_.y).max
-      )
-    }.getOrElse(MapBounds(0, 0, 0, 0))
     
-    val shopLocation = Shop.findShopLocation(dungeonBounds, config.worldConfig.bounds)
-    val shop = Shop(shopLocation)
-
-    // ===== PASS 3: Create dirt paths from spawn to dungeons and shop =====
-    val pathTiles: Set[Point] = (for {
-      dungeonEntrance <- dungeonEntrances :+ shop.entranceTile
-      pathPoint <- LineOfSight.getBresenhamLine(startPoint, dungeonEntrance)
-    } yield pathPoint).toSet
+    // Currently hardcoded to a single dungeon for ease
+    val dungeonConfigs = Seq(DungeonConfig(
+      bounds = MapBounds(
+        minRoomX = 1,
+        maxRoomX = config.worldConfig.bounds.maxRoomX,
+        minRoomY = config.worldConfig.bounds.minRoomY,
+        maxRoomY = config.worldConfig.bounds.maxRoomY
+      ),
+      seed = 182L
+    ))
     
-    val combinedTiles: Map[Point, TileType] = 
-      Map.empty 
-        ++ terrainTiles 
-        ++ dungeons.flatMap(_.tiles) 
-        ++ shop.tiles
-        ++ pathTiles.map(_ -> TileType.Dirt)
-
-    WorldMap(
-      tiles = combinedTiles,
-      dungeons = dungeons,
-      shop = Some(shop),
+    // Create list of mutators to apply in sequence
+    val mutators: Seq[WorldMutator] = Seq(
+      new TerrainMutator(config.worldConfig),
+      new DungeonPlacementMutator(dungeonConfigs),
+      new ShopPlacementMutator(config.worldConfig.bounds),
+      new PathGenerationMutator(startPoint),
+      new WalkablePathsMutator(config.worldConfig)
+    )
+    
+    // Start with an empty world map
+    val initialWorldMap = WorldMap(
+      tiles = Map.empty,
+      dungeons = Seq.empty,
+      shop = None,
       rivers = Set.empty,
-      paths = pathTiles,
+      paths = Set.empty,
       bridges = Set.empty,
       bounds = config.worldConfig.bounds
     )
+    
+    // Apply each mutator in sequence
+    mutators.foldLeft(initialWorldMap) { (worldMap, mutator) =>
+      mutator.mutateWorld(worldMap)
+    }
+  }
+  
+  /**
+   * Generates a world map using custom mutators.
+   * Allows for complete customization of the world generation process.
+   *
+   * @param initialWorldMap The starting world map state
+   * @param mutators The list of mutators to apply
+   * @return WorldMap after all mutators have been applied
+   */
+  def generateWorldMapWithMutators(
+    initialWorldMap: WorldMap,
+    mutators: Seq[WorldMutator]
+  ): WorldMap = {
+    mutators.foldLeft(initialWorldMap) { (worldMap, mutator) =>
+      mutator.mutateWorld(worldMap)
+    }
   }
 }
   
