@@ -124,9 +124,20 @@ object WorldMapGenerator {
     )
     
     // Apply each mutator in sequence
-    mutators.foldLeft(initialWorldMap) { (worldMap, mutator) =>
+    val generatedWorldMap = mutators.foldLeft(initialWorldMap) { (worldMap, mutator) =>
       mutator.mutateWorld(worldMap)
     }
+    
+    // Generate cached map view for performance
+    // This is done once at world generation time to avoid per-frame rendering costs
+    val cachedView = indigoengine.view.Elements.generateCachedWorldMapView(
+      generatedWorldMap.tiles,
+      ui.UIConfig.canvasWidth,
+      ui.UIConfig.canvasHeight
+    )
+    
+    // Return world map with cached view
+    generatedWorldMap.copy(cachedMapView = Some(cachedView))
   }
   
   /**
@@ -200,7 +211,8 @@ case class WorldMap(
   rivers: Set[Point],
   paths: Set[Point],
   bridges: Set[Point],
-  bounds: MapBounds
+  bounds: MapBounds,
+  cachedMapView: Option[indigo.Batch[indigo.SceneNode]] = None
 ) {
   /**
    * Points that block line of sight (walls and trees).
