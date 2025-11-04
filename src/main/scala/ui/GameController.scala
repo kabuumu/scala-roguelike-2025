@@ -14,7 +14,7 @@ object GameController {
   val frameTime: Long = ticksPerSecond / allowedActionsPerSecond
 }
 
-case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0) {
+case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime: Long = 0, cachedWorldMapView: Option[indigo.Batch[indigo.SceneNode]] = None) {
   import GameController.*
   
   def init(): GameController = {

@@ -96,7 +96,23 @@ object Game extends IndigoSandbox[Unit, GameController] {
       val time = context.frame.time.running.toMillis.toLong * 1000000L
 
       try {
-        Outcome(model.update(optInput, time))
+        val updatedModel = model.update(optInput, time)
+        
+        // Generate and cache world map view when entering WorldMap state
+        val finalModel = (model.uiState, updatedModel.uiState) match {
+          case (prevState, UIState.WorldMap) if prevState != UIState.WorldMap && updatedModel.cachedWorldMapView.isEmpty =>
+            // Entering WorldMap state for the first time - generate and cache the map
+            val cachedMap = indigoengine.view.Elements.generateCachedWorldMapView(
+              updatedModel.gameState.worldMap.tiles,
+              ui.UIConfig.canvasWidth,
+              ui.UIConfig.canvasHeight
+            )
+            updatedModel.copy(cachedWorldMapView = Some(cachedMap))
+          case _ =>
+            updatedModel
+        }
+        
+        Outcome(finalModel)
       } catch {
         case e: Exception =>
           println(s"Error during model update: ${e.getMessage}")

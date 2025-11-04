@@ -1099,10 +1099,28 @@ object Elements {
   def worldMapView(model: GameController): Batch[SceneNode] = {
     import map.TileType
     
-    // Use cached map view if available, otherwise fall back to generating it
-    model.gameState.worldMap.cachedMapView match {
+    // Use cached map view from GameController if available
+    val mapView = model.cachedWorldMapView.getOrElse {
+      // Generate on first access (will be cached by caller)
+      generateCachedWorldMapView(
+        model.gameState.worldMap.tiles,
+        canvasWidth,
+        canvasHeight
+      )
+    }
+    
+    // Add "Press any key to exit" message
+    val exitMessage = text("Press any key to exit", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
+    mapView :+ exitMessage
+  }
+  
+  // Kept for backward compatibility but not actively used
+  def worldMapViewLegacy(model: GameController): Batch[SceneNode] = {
+    import map.TileType
+    
+    // Fallback: generate on the fly (legacy behavior)
+    model.cachedWorldMapView match {
       case Some(cachedView) =>
-        // Add "Press any key to exit" message to the cached view
         val exitMessage = text("Press any key to exit", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
         cachedView :+ exitMessage
       case None =>
