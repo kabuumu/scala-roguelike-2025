@@ -1064,17 +1064,17 @@ object Elements {
     val offsetX = (canvasWidth - mapPixelWidth) / 2
     val offsetY = (canvasHeight - mapPixelHeight) / 2
     
-    // Map tile types to colors
+    // Map tile types to colors - using darker, more muted colors matching the game aesthetic
     def getTileColor(tileType: TileType): RGBA = tileType match {
-      case TileType.Floor => RGBA(128, 128, 128) // Gray for dungeon floor
-      case TileType.Wall => RGBA(64, 64, 64) // Dark gray for walls
-      case TileType.Water => RGBA(0, 100, 200) // Blue for water
-      case TileType.Bridge => RGBA(139, 90, 43) // Brown for bridges
-      case TileType.Rock => RGBA(80, 80, 80) // Gray for rocks
-      case TileType.Tree => RGBA(34, 139, 34) // Green for trees
-      case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 => RGBA(0, 180, 0) // Green for grass
-      case TileType.Dirt => RGBA(139, 90, 43) // Brown for dirt/paths
-      case TileType.MaybeFloor => RGBA(100, 100, 100) // Light gray
+      case TileType.Floor => RGBA(101, 67, 33) // Brown for dungeon/shop floor
+      case TileType.Wall => RGBA(40, 40, 40) // Dark grey for walls
+      case TileType.Water => RGBA(65, 105, 225) // Blue for water
+      case TileType.Bridge => RGBA(101, 67, 33) // Brown for bridges
+      case TileType.Rock => RGBA(128, 128, 128) // Lighter grey for rocks
+      case TileType.Tree => RGBA(50, 205, 50) // Light green for trees
+      case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 => RGBA(34, 139, 34) // Dark green for grass
+      case TileType.Dirt => RGBA(101, 67, 33) // Brown for dirt/paths
+      case TileType.MaybeFloor => RGBA(101, 67, 33) // Brown for dungeon floor
     }
     
     // Create pixel boxes for each tile
