@@ -233,7 +233,7 @@ class WorldMutatorTest extends AnyFunSuite {
     val mutatedWorld = customMutator.mutateWorld(world)
     
     val (tileMinX, tileMaxX, tileMinY, tileMaxY) = bounds.toTileBounds()
-    val expectedRocks = 2 * (tileMaxX - tileMinX + 1) + 2 * (tileMaxY - tileMinY) - 4
+    val expectedRocks = 2 * (tileMaxX - tileMinX + 1) + 2 * (tileMaxY - tileMinY + 1) - 4
     val actualRocks = mutatedWorld.tiles.values.count(_ == TileType.Rock)
     
     assert(actualRocks >= expectedRocks, s"Should have at least $expectedRocks perimeter rocks")
