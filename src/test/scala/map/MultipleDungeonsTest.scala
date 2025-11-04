@@ -129,4 +129,41 @@ class MultipleDungeonsTest extends AnyFunSuite {
     
     println("\n✅ CONFIRMED: Dungeons are evenly distributed across quadrants")
   }
+  
+  test("Dungeon entrances face toward player spawn (center)") {
+    val bounds = MapBounds(-10, 10, -10, 10)
+    val configs = WorldMapGenerator.calculateDungeonConfigs(bounds, 12345L)
+    
+    println("\n=== Dungeon Entrance Orientation Test ===")
+    println("Player spawns at center (0, 0)")
+    
+    configs.zipWithIndex.foreach { case (config, idx) =>
+      val configCenterX = (config.bounds.minRoomX + config.bounds.maxRoomX) / 2
+      val configCenterY = (config.bounds.minRoomY + config.bounds.maxRoomY) / 2
+      
+      // Determine quadrant
+      val quadrant = if (configCenterX < 0 && configCenterY < 0) "Top-Left"
+                     else if (configCenterX >= 0 && configCenterY < 0) "Top-Right"
+                     else if (configCenterX < 0 && configCenterY >= 0) "Bottom-Left"
+                     else "Bottom-Right"
+      
+      println(s"\nDungeon $idx in $quadrant quadrant:")
+      println(s"  Center: ($configCenterX, $configCenterY)")
+      println(s"  Entrance faces: ${config.entranceSide}")
+      
+      // Verify entrance faces toward center
+      val expectedDirection = if (configCenterX < 0) {
+        // Left side of center: should face Right (toward center)
+        game.Direction.Right
+      } else {
+        // Right side of center: should face Left (toward center)
+        game.Direction.Left
+      }
+      
+      assert(config.entranceSide == expectedDirection,
+        s"Dungeon $idx in $quadrant should face $expectedDirection (toward center), but faces ${config.entranceSide}")
+    }
+    
+    println("\n✅ CONFIRMED: All dungeon entrances face toward player spawn area")
+  }
 }
