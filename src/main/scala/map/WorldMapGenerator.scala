@@ -13,6 +13,68 @@ import scala.util.LineOfSight
 object WorldMapGenerator {
 
   /**
+   * Calculate dungeon configurations based on world size.
+   * For a 20x20 world (-10 to 10), creates 4 dungeons positioned in quadrants.
+   * Scales the number of dungeons based on world area.
+   *
+   * @param worldBounds The bounds of the world
+   * @param baseSeed Base seed for dungeon generation
+   * @return Sequence of DungeonConfig positioned to avoid overlap
+   */
+  def calculateDungeonConfigs(worldBounds: MapBounds, baseSeed: Long = System.currentTimeMillis()): Seq[DungeonConfig] = {
+    val worldArea = worldBounds.roomArea
+    val worldWidth = worldBounds.roomWidth
+    val worldHeight = worldBounds.roomHeight
+    
+    // Calculate number of dungeons based on world size
+    // For 21x21 (441 rooms²), we want 4 dungeons
+    // Scale: 1 dungeon per 100 rooms²
+    val numDungeons = math.max(1, (worldArea / 100.0).round.toInt)
+    
+    // Position dungeons in a grid pattern (2x2 for 4 dungeons)
+    val dungeonsPerRow = math.ceil(math.sqrt(numDungeons)).toInt
+    
+    // Calculate how much space each dungeon region gets
+    val regionWidth = worldWidth / dungeonsPerRow
+    val regionHeight = worldHeight / dungeonsPerRow
+    
+    // Each dungeon should use about 70% of its region, leaving space for terrain
+    val dungeonWidth = math.max(7, (regionWidth * 0.7).toInt)  // Min 7 rooms wide
+    val dungeonHeight = math.max(7, (regionHeight * 0.7).toInt)  // Min 7 rooms tall
+    
+    (0 until numDungeons).map { i =>
+      val row = i / dungeonsPerRow
+      val col = i % dungeonsPerRow
+      
+      // Calculate center of this region
+      val regionCenterX = worldBounds.minRoomX + col * regionWidth + regionWidth / 2
+      val regionCenterY = worldBounds.minRoomY + row * regionHeight + regionHeight / 2
+      
+      // Position dungeon centered in its region
+      val minX = regionCenterX - dungeonWidth / 2
+      val maxX = regionCenterX + dungeonWidth / 2
+      val minY = regionCenterY - dungeonHeight / 2
+      val maxY = regionCenterY + dungeonHeight / 2
+      
+      // Ensure bounds are within world (with margin)
+      val clampedMinX = math.max(minX, worldBounds.minRoomX + 1)
+      val clampedMaxX = math.min(maxX, worldBounds.maxRoomX - 1)
+      val clampedMinY = math.max(minY, worldBounds.minRoomY + 1)
+      val clampedMaxY = math.min(maxY, worldBounds.maxRoomY - 1)
+      
+      // Determine entrance side based on quadrant position
+      // Left column faces Left, right column faces Right
+      val entranceSide = if (col == 0) game.Direction.Left else game.Direction.Right
+      
+      DungeonConfig(
+        bounds = MapBounds(clampedMinX, clampedMaxX, clampedMinY, clampedMaxY),
+        seed = baseSeed + i,
+        entranceSide = entranceSide
+      )
+    }
+  }
+
+  /**
    * Generates a complete world map using a list of mutators.
    * Each mutator transforms the world map in sequence.
    *
@@ -22,16 +84,12 @@ object WorldMapGenerator {
   def generateWorldMap(config: WorldMapConfig): WorldMap = {
     val startPoint = Point(0, 0)
     
-    // Currently hardcoded to a single dungeon for ease
-    val dungeonConfigs = Seq(DungeonConfig(
-      bounds = MapBounds(
-        minRoomX = 1,
-        maxRoomX = config.worldConfig.bounds.maxRoomX,
-        minRoomY = config.worldConfig.bounds.minRoomY,
-        maxRoomY = config.worldConfig.bounds.maxRoomY
-      ),
-      seed = 182L
-    ))
+    // Use provided dungeon configs or calculate based on world size
+    val dungeonConfigs = if (config.dungeonConfigs.nonEmpty) {
+      config.dungeonConfigs
+    } else {
+      calculateDungeonConfigs(config.worldConfig.bounds, config.worldConfig.seed)
+    }
     
     // Create list of mutators to apply in sequence
     val mutators: Seq[WorldMutator] = Seq(
