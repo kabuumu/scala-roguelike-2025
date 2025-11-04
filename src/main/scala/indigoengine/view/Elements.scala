@@ -586,6 +586,8 @@ object Elements {
         "" // No message window content for main menu
       case _: UIState.GameOver =>
         "" // Game over screen handles its own messaging
+      case UIState.WorldMap =>
+        "" // World map handles its own messaging
     }
     
     // Position message window at the very bottom of the visible canvas area
@@ -1025,5 +1027,70 @@ object Elements {
         
       case _ => Batch.empty
     }
+  }
+  
+  def worldMapView(model: GameController): Batch[SceneNode] = {
+    import map.TileType
+    
+    // Get all tiles from the world map
+    val worldTiles = model.gameState.worldMap.tiles
+    
+    // Calculate bounds
+    val allPositions = worldTiles.keys.toSeq
+    if (allPositions.isEmpty) {
+      return Batch.empty
+    }
+    
+    val minX = allPositions.map(_.x).min
+    val maxX = allPositions.map(_.x).max
+    val minY = allPositions.map(_.y).min
+    val maxY = allPositions.map(_.y).max
+    
+    val mapWidth = maxX - minX + 1
+    val mapHeight = maxY - minY + 1
+    
+    // Calculate scaling to fit most of the screen
+    // Leave some margin (10% on each side)
+    val availableWidth = (canvasWidth * 0.8).toInt
+    val availableHeight = (canvasHeight * 0.8).toInt
+    
+    val scaleX = availableWidth.toDouble / mapWidth
+    val scaleY = availableHeight.toDouble / mapHeight
+    val pixelSize = math.max(1, math.min(scaleX, scaleY).toInt) // Each tile is pixelSize pixels
+    
+    // Center the map on screen
+    val mapPixelWidth = mapWidth * pixelSize
+    val mapPixelHeight = mapHeight * pixelSize
+    val offsetX = (canvasWidth - mapPixelWidth) / 2
+    val offsetY = (canvasHeight - mapPixelHeight) / 2
+    
+    // Map tile types to colors
+    def getTileColor(tileType: TileType): RGBA = tileType match {
+      case TileType.Floor => RGBA(128, 128, 128) // Gray for dungeon floor
+      case TileType.Wall => RGBA(64, 64, 64) // Dark gray for walls
+      case TileType.Water => RGBA(0, 100, 200) // Blue for water
+      case TileType.Bridge => RGBA(139, 90, 43) // Brown for bridges
+      case TileType.Rock => RGBA(80, 80, 80) // Gray for rocks
+      case TileType.Tree => RGBA(34, 139, 34) // Green for trees
+      case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 => RGBA(0, 180, 0) // Green for grass
+      case TileType.Dirt => RGBA(139, 90, 43) // Brown for dirt/paths
+      case TileType.MaybeFloor => RGBA(100, 100, 100) // Light gray
+    }
+    
+    // Create pixel boxes for each tile
+    val tilePixels = worldTiles.map { case (pos, tileType) =>
+      val x = offsetX + ((pos.x - minX) * pixelSize)
+      val y = offsetY + ((pos.y - minY) * pixelSize)
+      
+      Shape.Box(
+        Rectangle(Point(x, y), Size(pixelSize, pixelSize)),
+        Fill.Color(getTileColor(tileType))
+      )
+    }.toSeq
+    
+    // Add "Press any key to exit" message at the bottom
+    val exitMessage = text("Press any key to exit", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
+    
+    tilePixels.toBatch :+ exitMessage
   }
 }

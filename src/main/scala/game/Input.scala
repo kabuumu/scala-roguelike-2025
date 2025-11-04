@@ -16,4 +16,5 @@ object Input {
   case object Equip extends Input
   case object Action extends Input
   case object DescendStairs extends Input
+  case object OpenMap extends Input
 }

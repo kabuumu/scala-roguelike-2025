@@ -44,6 +44,8 @@ object InputHandler {
       }
     case UIState.Move =>
       input match {
+        case Input.OpenMap =>
+          (UIState.WorldMap, None)
         case Input.Move(direction) =>
           (UIState.Move, Some(InputAction.Move(direction)))
         case Input.UseItem =>
@@ -271,5 +273,8 @@ object InputHandler {
           (UIState.MainMenu(), None)
         case _ => (uiState, None)
       }
+    case UIState.WorldMap =>
+      // Any key press returns to normal game
+      (UIState.Move, None)
   }
 }
