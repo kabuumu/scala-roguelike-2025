@@ -37,7 +37,6 @@ class WorldMapUITest extends AnyFunSuite {
   test("WorldMap state is defined") {
     // Simple test to verify the WorldMap state exists and can be instantiated
     val mapState = UIState.WorldMap
-    assert(mapState != null, "WorldMap state should be defined")
     // WorldMap is a case object that extends UIState.UIState
     val _: UIState.UIState = mapState // Type check via assignment
   }

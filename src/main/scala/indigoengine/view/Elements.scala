@@ -1056,7 +1056,7 @@ object Elements {
     
     val scaleX = availableWidth.toDouble / mapWidth
     val scaleY = availableHeight.toDouble / mapHeight
-    val pixelSize = math.max(1, math.min(scaleX, scaleY).toInt) // Each tile is pixelSize pixels
+    val pixelSize = math.max(2, math.min(scaleX, scaleY).toInt) // Each tile is pixelSize pixels (minimum 2 for visibility)
     
     // Center the map on screen
     val mapPixelWidth = mapWidth * pixelSize
