@@ -136,10 +136,14 @@ class MultipleDungeonsTest extends AnyFunSuite {
     
     println("\n=== Dungeon Entrance Orientation Test ===")
     println("Player spawns at center (0, 0)")
+    println("Logic: Entrance faces toward center along the axis with greater distance")
     
     configs.zipWithIndex.foreach { case (config, idx) =>
       val configCenterX = (config.bounds.minRoomX + config.bounds.maxRoomX) / 2
       val configCenterY = (config.bounds.minRoomY + config.bounds.maxRoomY) / 2
+      
+      val xDiff = math.abs(configCenterX - 0)
+      val yDiff = math.abs(configCenterY - 0)
       
       // Determine quadrant
       val quadrant = if (configCenterX < 0 && configCenterY < 0) "Top-Left"
@@ -149,21 +153,77 @@ class MultipleDungeonsTest extends AnyFunSuite {
       
       println(s"\nDungeon $idx in $quadrant quadrant:")
       println(s"  Center: ($configCenterX, $configCenterY)")
+      println(s"  X distance from center: $xDiff, Y distance: $yDiff")
       println(s"  Entrance faces: ${config.entranceSide}")
       
-      // Verify entrance faces toward center
-      val expectedDirection = if (configCenterX < 0) {
-        // Left side of center: should face Right (toward center)
-        game.Direction.Right
+      // Verify entrance faces toward center based on larger distance
+      val expectedDirection = if (yDiff > xDiff) {
+        // Y difference is greater: entrance should face Up or Down
+        if (configCenterY > 0) game.Direction.Up    // Below center: face Up
+        else game.Direction.Down                     // Above center: face Down
       } else {
-        // Right side of center: should face Left (toward center)
-        game.Direction.Left
+        // X difference is greater: entrance should face Left or Right
+        if (configCenterX > 0) game.Direction.Left  // Right of center: face Left
+        else game.Direction.Right                    // Left of center: face Right
       }
       
       assert(config.entranceSide == expectedDirection,
-        s"Dungeon $idx in $quadrant should face $expectedDirection (toward center), but faces ${config.entranceSide}")
+        s"Dungeon $idx in $quadrant should face $expectedDirection (toward center on dominant axis), but faces ${config.entranceSide}")
     }
     
-    println("\n✅ CONFIRMED: All dungeon entrances face toward player spawn area")
+    println("\n✅ CONFIRMED: All dungeon entrances face toward player spawn on dominant axis")
+  }
+  
+  test("Dungeon entrance orientation with asymmetric world") {
+    // Test with a wider world (30x20) to get different X/Y distances
+    val bounds = MapBounds(-15, 15, -10, 10)
+    val configs = WorldMapGenerator.calculateDungeonConfigs(bounds, 54321L)
+    
+    println("\n=== Asymmetric World Entrance Test ===")
+    println("World: 31x21 (wider than tall)")
+    println("Player spawns at center (0, 0)")
+    
+    configs.zipWithIndex.foreach { case (config, idx) =>
+      val configCenterX = (config.bounds.minRoomX + config.bounds.maxRoomX) / 2
+      val configCenterY = (config.bounds.minRoomY + config.bounds.maxRoomY) / 2
+      
+      val xDiff = math.abs(configCenterX - 0)
+      val yDiff = math.abs(configCenterY - 0)
+      
+      println(s"\nDungeon $idx:")
+      println(s"  Center: ($configCenterX, $configCenterY)")
+      println(s"  X distance: $xDiff, Y distance: $yDiff")
+      println(s"  Dominant axis: ${if (yDiff > xDiff) "Y" else "X"}")
+      println(s"  Entrance faces: ${config.entranceSide}")
+      
+      // Verify logic
+      if (yDiff > xDiff) {
+        // Y-dominant: should face Up or Down
+        assert(config.entranceSide == game.Direction.Up || config.entranceSide == game.Direction.Down,
+          s"Y-dominant dungeon should face Up or Down, but faces ${config.entranceSide}")
+        
+        if (configCenterY > 0) {
+          assert(config.entranceSide == game.Direction.Up,
+            s"Dungeon below center should face Up, but faces ${config.entranceSide}")
+        } else if (configCenterY < 0) {
+          assert(config.entranceSide == game.Direction.Down,
+            s"Dungeon above center should face Down, but faces ${config.entranceSide}")
+        }
+      } else {
+        // X-dominant: should face Left or Right
+        assert(config.entranceSide == game.Direction.Left || config.entranceSide == game.Direction.Right,
+          s"X-dominant dungeon should face Left or Right, but faces ${config.entranceSide}")
+        
+        if (configCenterX > 0) {
+          assert(config.entranceSide == game.Direction.Left,
+            s"Dungeon right of center should face Left, but faces ${config.entranceSide}")
+        } else if (configCenterX < 0) {
+          assert(config.entranceSide == game.Direction.Right,
+            s"Dungeon left of center should face Right, but faces ${config.entranceSide}")
+        }
+      }
+    }
+    
+    println("\n✅ CONFIRMED: Asymmetric world has correct entrance orientations")
   }
 }

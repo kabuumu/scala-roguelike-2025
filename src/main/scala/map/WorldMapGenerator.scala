@@ -62,16 +62,20 @@ object WorldMapGenerator {
       val clampedMinY = math.max(minY, worldBounds.minRoomY + 1)
       val clampedMaxY = math.min(maxY, worldBounds.maxRoomY - 1)
       
-      // Determine entrance side based on quadrant position
-      // Entrances should face toward the center (player spawn at 0,0)
+      // Determine entrance side based on distance from center (player spawn at 0,0)
+      // Entrances should face toward the center along the axis with greater distance
       // This ensures no rooms are placed between the entrance and player area
-      val entranceSide = (col, row) match {
-        case (0, 0) => game.Direction.Right  // Top-left: face right (toward center)
-        case (1, 0) => game.Direction.Left   // Top-right: face left (toward center)
-        case (0, 1) => game.Direction.Right  // Bottom-left: face right (toward center)
-        case (1, 1) => game.Direction.Left   // Bottom-right: face left (toward center)
-        case (c, _) if c < dungeonsPerRow / 2 => game.Direction.Right  // Left side: face right
-        case _ => game.Direction.Left  // Right side: face left
+      val xDiff = math.abs(regionCenterX - 0)
+      val yDiff = math.abs(regionCenterY - 0)
+      
+      val entranceSide = if (yDiff > xDiff) {
+        // Y difference is greater: entrance should face Up or Down toward center
+        if (regionCenterY > 0) game.Direction.Up      // Dungeon below center: face Up
+        else game.Direction.Down                       // Dungeon above center: face Down
+      } else {
+        // X difference is greater: entrance should face Left or Right toward center
+        if (regionCenterX > 0) game.Direction.Left    // Dungeon right of center: face Left
+        else game.Direction.Right                      // Dungeon left of center: face Right
       }
       
       DungeonConfig(
