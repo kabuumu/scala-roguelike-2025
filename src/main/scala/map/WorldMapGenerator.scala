@@ -14,7 +14,7 @@ object WorldMapGenerator {
 
   /**
    * Calculate dungeon configurations based on world size.
-   * For a 20x20 world (-10 to 10), creates 4 dungeons positioned in quadrants.
+   * For a 21×21 world (-10 to 10), creates 4 dungeons positioned in quadrants.
    * Scales the number of dungeons based on world area.
    *
    * @param worldBounds The bounds of the world
