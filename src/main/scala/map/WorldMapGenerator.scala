@@ -23,9 +23,18 @@ object WorldMapGenerator {
     val startPoint = Point(0, 0)
     
     // Create list of mutators to apply in sequence
-    // DungeonPlacementMutator now analyzes the world map internally
+    // Rivers are placed BEFORE dungeons and shops to avoid clashing
+    // Paths are placed AFTER rivers so bridges can be placed on water tiles
     val mutators: Seq[WorldMutator] = Seq(
       new TerrainMutator(config.worldConfig),
+      new RiverPlacementMutator(
+        numRivers = config.numRivers,
+        initialWidth = config.riverWidth,
+        widthVariance = config.riverWidthVariance,
+        curveVariance = config.riverCurveVariance,
+        varianceStep = config.riverVarianceStep,
+        seed = config.worldConfig.seed
+      ),
       new DungeonPlacementMutator(
         playerStart = startPoint,
         seed = config.worldConfig.seed,
@@ -75,10 +84,26 @@ object WorldMapGenerator {
  * Configuration for world map generation.
  * 
  * @param worldConfig Configuration for the base terrain
+ * @param numRivers Number of rivers to generate (default: 2)
+ * @param riverWidth Initial river width 1-5 (default: 2)
+ * @param riverWidthVariance Probability of width changing at variance steps (default: 0.3)
+ * @param riverCurveVariance Probability of direction changing at variance steps (default: 0.4)
+ * @param riverVarianceStep Number of tiles between variance changes (default: 3)
  */
 case class WorldMapConfig(
-  worldConfig: WorldConfig
-)
+  worldConfig: WorldConfig,
+  numRivers: Int = 2,
+  riverWidth: Int = 3,
+  riverWidthVariance: Double = 0.2,
+  riverCurveVariance: Double = 0.2,
+  riverVarianceStep: Int = 3
+) {
+  require(numRivers >= 0, "numRivers must be non-negative")
+  require(riverWidth >= 1 && riverWidth <= 5, "riverWidth must be between 1 and 5")
+  require(riverWidthVariance >= 0.0 && riverWidthVariance <= 1.0, "riverWidthVariance must be between 0.0 and 1.0")
+  require(riverCurveVariance >= 0.0 && riverCurveVariance <= 1.0, "riverCurveVariance must be between 0.0 and 1.0")
+  require(riverVarianceStep > 0, "riverVarianceStep must be positive")
+}
 
 /**
  * A complete world map with all features.

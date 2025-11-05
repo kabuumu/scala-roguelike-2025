@@ -11,8 +11,10 @@ object RiverGenerator {
   
   /**
    * Generates a river that flows across the map with natural curves.
+   * Rivers follow a step-based pattern: move varianceStep tiles, then randomly
+   * change width and direction.
    * 
-   * @param config RiverConfig specifying start, direction, and curviness
+   * @param config RiverConfig specifying start, direction, and variance parameters
    * @return Set of Points representing river tiles
    */
   def generateRiver(config: RiverConfig): Set[Point] = {
@@ -22,18 +24,17 @@ object RiverGenerator {
     var currentPoint = config.startPoint
     val riverPoints = scala.collection.mutable.Set[Point](currentPoint)
     
-    // Current direction (we'll vary this for curves)
+    // Current direction and width (we'll vary these)
+    val originalDirection = config.flowDirection  // Track original direction
     var currentDirection = config.flowDirection
+    var currentWidth = config.width
     
     // Generate river segments
-    var i = 0
+    var stepsSinceLastChange = 0
+    var totalSteps = 0
     var withinBounds = true
-    while (i < config.length && withinBounds) {
-      // Occasionally change direction for curves (non-straight lines)
-      if (random.nextDouble() < config.curviness) {
-        currentDirection = perturbDirection(currentDirection, random)
-      }
-      
+    
+    while (totalSteps < config.length && withinBounds) {
       // Move in current direction
       currentPoint = moveInDirection(currentPoint, currentDirection)
       
@@ -41,22 +42,48 @@ object RiverGenerator {
       if (isWithinBounds(currentPoint, config.bounds)) {
         riverPoints += currentPoint
         
-        // Add width to the river
-        for (j <- 1 to config.width) {
-          val perpendicular1 = getPerpendicularOffset(currentDirection, j)
-          val perpendicular2 = getPerpendicularOffset(currentDirection, -j)
-          
-          val widthPoint1 = Point(currentPoint.x + perpendicular1._1, currentPoint.y + perpendicular1._2)
-          val widthPoint2 = Point(currentPoint.x + perpendicular2._1, currentPoint.y + perpendicular2._2)
-          
-          if (isWithinBounds(widthPoint1, config.bounds)) {
-            riverPoints += widthPoint1
-          }
-          if (isWithinBounds(widthPoint2, config.bounds)) {
-            riverPoints += widthPoint2
+        // Add all tiles within Manhattan distance (width) from the center point
+        for (dx <- -currentWidth to currentWidth) {
+          for (dy <- -currentWidth to currentWidth) {
+            val manhattanDist = math.abs(dx) + math.abs(dy)
+            if (manhattanDist <= currentWidth && manhattanDist > 0) {
+              val widthPoint = Point(currentPoint.x + dx, currentPoint.y + dy)
+              if (isWithinBounds(widthPoint, config.bounds)) {
+                riverPoints += widthPoint
+              }
+            }
           }
         }
-        i += 1
+        
+        stepsSinceLastChange += 1
+        totalSteps += 1
+        
+        // After varianceStep tiles, randomly change width and direction
+        if (stepsSinceLastChange >= config.varianceStep) {
+          // Randomly change width by ±1 (within bounds)
+          if (random.nextDouble() < config.widthVariance) {
+            val widthChange = if (random.nextBoolean()) 1 else -1
+            currentWidth = math.max(0, math.min(5, currentWidth + widthChange))
+          }
+          
+          // Direction changes are less likely the farther we are from original direction
+          // Calculate angular difference (0 = same direction, higher = more different)
+          val angleDiff = calculateAngleDifference(originalDirection, currentDirection)
+          
+          // Reduce curve probability based on how far we've deviated
+          // angleDiff ranges from 0 (same) to 4 (opposite), so we scale down the variance
+          val adjustedCurveVariance = config.curveVariance * (1.0 - (angleDiff / 8.0))
+          
+          if (random.nextDouble() < adjustedCurveVariance) {
+            // Normal perturbation (rotate left or right)
+            currentDirection = perturbDirection(currentDirection, random)
+          } else if (angleDiff > 0 && random.nextDouble() < 0.3) {
+            // Pull back toward original direction
+            currentDirection = pullTowardDirection(currentDirection, originalDirection)
+          }
+          
+          stepsSinceLastChange = 0
+        }
       } else {
         // River has left the bounds, stop generating
         withinBounds = false
@@ -64,6 +91,55 @@ object RiverGenerator {
     }
     
     riverPoints.toSet
+  }
+  
+  /**
+   * Calculates the angular difference between two directions.
+   * Returns 0 if same direction, higher values for greater differences.
+   */
+  private def calculateAngleDifference(dir1: (Int, Int), dir2: (Int, Int)): Int = {
+    if (dir1 == dir2) return 0
+    
+    // Count rotations needed to get from dir1 to dir2
+    var current = dir1
+    var rotations = 0
+    
+    // Try rotating left
+    var leftRotations = 0
+    current = dir1
+    while (current != dir2 && leftRotations < 8) {
+      current = rotateLeft(current)
+      leftRotations += 1
+    }
+    
+    // Try rotating right
+    var rightRotations = 0
+    current = dir1
+    while (current != dir2 && rightRotations < 8) {
+      current = rotateRight(current)
+      rightRotations += 1
+    }
+    
+    // Return the minimum rotations needed
+    math.min(leftRotations, rightRotations)
+  }
+  
+  /**
+   * Pulls the current direction one step closer to the target direction.
+   * Chooses the shorter rotation path (left or right).
+   */
+  private def pullTowardDirection(current: (Int, Int), target: (Int, Int)): (Int, Int) = {
+    if (current == target) return current
+    
+    // Check if rotating left gets us closer
+    val rotatedLeft = rotateLeft(current)
+    val rotatedRight = rotateRight(current)
+    
+    val leftDiff = calculateAngleDifference(rotatedLeft, target)
+    val rightDiff = calculateAngleDifference(rotatedRight, target)
+    
+    // Rotate in the direction that gets us closer
+    if (leftDiff < rightDiff) rotatedLeft else rotatedRight
   }
   
   /**
@@ -150,6 +226,67 @@ object RiverGenerator {
   }
   
   /**
+   * Generates a river starting from a world map edge, facing toward the center.
+   * 
+   * @param bounds World map bounds
+   * @param edge Which edge to start from (0=top, 1=bottom, 2=left, 3=right)
+   * @param initialWidth Initial river width (1-5)
+   * @param widthVariance Probability of width changing
+   * @param curveVariance Probability of direction changing
+   * @param varianceStep Number of tiles between variance changes
+   * @param seed Random seed
+   * @return RiverConfig for generating the river
+   */
+  def createEdgeRiver(
+    bounds: MapBounds,
+    edge: Int,
+    initialWidth: Int,
+    widthVariance: Double,
+    curveVariance: Double,
+    varianceStep: Int,
+    seed: Long
+  ): RiverConfig = {
+    val random = new Random(seed)
+    val (tileMinX, tileMaxX, tileMinY, tileMaxY) = bounds.toTileBounds()
+    val centerX = (tileMinX + tileMaxX) / 2
+    val centerY = (tileMinY + tileMaxY) / 2
+    
+    // Calculate start point and direction based on edge
+    val (startPoint, flowDirection) = edge match {
+      case 0 => // Top edge - flow downward (toward center)
+        val x = random.between(tileMinX + 10, tileMaxX - 10)
+        (Point(x, tileMinY), (0, 1))
+      case 1 => // Bottom edge - flow upward (toward center)
+        val x = random.between(tileMinX + 10, tileMaxX - 10)
+        (Point(x, tileMaxY), (0, -1))
+      case 2 => // Left edge - flow rightward (toward center)
+        val y = random.between(tileMinY + 10, tileMaxY - 10)
+        (Point(tileMinX, y), (1, 0))
+      case 3 => // Right edge - flow leftward (toward center)
+        val y = random.between(tileMinY + 10, tileMaxY - 10)
+        (Point(tileMaxX, y), (-1, 0))
+      case _ => // Default to top edge
+        (Point(centerX, tileMinY), (0, 1))
+    }
+    
+    // Calculate length: river should be able to cross most of the map
+    val maxDimension = math.max(tileMaxX - tileMinX, tileMaxY - tileMinY)
+    val length = (maxDimension * 1.2).toInt
+    
+    RiverConfig(
+      startPoint = startPoint,
+      flowDirection = flowDirection,
+      length = length,
+      width = initialWidth,
+      widthVariance = widthVariance,
+      curveVariance = curveVariance,
+      varianceStep = varianceStep,
+      bounds = bounds,
+      seed = seed
+    )
+  }
+  
+  /**
    * Provides a human-readable description of generated rivers.
    */
   def describeRivers(rivers: Set[Point], bounds: MapBounds): String = {
@@ -170,21 +307,28 @@ object RiverGenerator {
  * @param startPoint Starting point for the river (in tile coordinates)
  * @param flowDirection Initial direction vector (dx, dy)
  * @param length How many steps the river should flow
- * @param width Width of the river (0 = single tile wide, 1 = 3 tiles wide, etc.)
- * @param curviness Probability (0.0 to 1.0) of changing direction at each step
+ * @param width Initial width of the river (0 = single tile wide, 1 = 3 tiles wide, etc.)
+ * @param widthVariance Probability (0.0 to 1.0) of changing width at each variance step
+ * @param curveVariance Probability (0.0 to 1.0) of changing direction at each variance step
+ * @param varianceStep Number of tiles to move before applying variance changes
  * @param bounds Map bounds to constrain the river
  * @param seed Random seed for reproducible generation
+ * @param curviness Deprecated - use curveVariance instead (maintained for backward compatibility)
  */
 case class RiverConfig(
   startPoint: Point,
-  flowDirection: (Int, Int) = (0, 1),  // Default: flows down
-  length: Int = 50,
-  width: Int = 1,
-  curviness: Double = 0.2,
+  flowDirection: (Int, Int),  // Default: flows down
+  length: Int,
+  width: Int,
+  widthVariance: Double,
+  curveVariance: Double,
+  varianceStep: Int,
   bounds: MapBounds,
-  seed: Long = System.currentTimeMillis()
+  seed: Long,
 ) {
-  require(curviness >= 0.0 && curviness <= 1.0, "curviness must be between 0.0 and 1.0")
+  require(widthVariance >= 0.0 && widthVariance <= 1.0, "widthVariance must be between 0.0 and 1.0")
+  require(curveVariance >= 0.0 && curveVariance <= 1.0, "curveVariance must be between 0.0 and 1.0")
   require(length > 0, "length must be positive")
-  require(width >= 0, "width must be non-negative")
+  require(width >= 0 && width <= 5, "width must be between 0 and 5")
+  require(varianceStep > 0, "varianceStep must be positive")
 }

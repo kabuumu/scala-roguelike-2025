@@ -28,6 +28,55 @@ class TerrainMutator(config: WorldConfig) extends WorldMutator {
 }
 
 /**
+ * Mutator that generates rivers across the world map.
+ * Rivers are placed before dungeons and shops to ensure they don't clash.
+ * 
+ * @param numRivers Number of rivers to generate
+ * @param initialWidth Initial river width (1-5)
+ * @param widthVariance Probability of width changing at variance steps
+ * @param curveVariance Probability of direction changing at variance steps
+ * @param varianceStep Number of tiles between variance changes
+ * @param seed Random seed for deterministic generation
+ */
+class RiverPlacementMutator(
+  numRivers: Int,
+  initialWidth: Int,
+  widthVariance: Double,
+  curveVariance: Double,
+  varianceStep: Int,
+  seed: Long
+) extends WorldMutator {
+  override def mutateWorld(worldMap: WorldMap): WorldMap = {
+    val random = new scala.util.Random(seed)
+    
+    // Generate rivers from different edges
+    val riverConfigs = (0 until numRivers).map { i =>
+      val edge = i % 4  // Cycle through edges: top, bottom, left, right
+      RiverGenerator.createEdgeRiver(
+        bounds = worldMap.bounds,
+        edge = edge,
+        initialWidth = initialWidth,
+        widthVariance = widthVariance,
+        curveVariance = curveVariance,
+        varianceStep = varianceStep,
+        seed = seed + i
+      )
+    }
+    
+    // Generate all rivers
+    val riverPoints = RiverGenerator.generateRivers(riverConfigs)
+    
+    // Create Water tiles for all river points
+    val riverTiles = riverPoints.map(_ -> TileType.Water).toMap
+    
+    worldMap.copy(
+      tiles = worldMap.tiles ++ riverTiles,
+      rivers = worldMap.rivers ++ riverPoints
+    )
+  }
+}
+
+/**
  * Mutator that places dungeons in the world.
  * Analyzes the world map to determine optimal dungeon placement.
  * 
@@ -211,6 +260,7 @@ class ShopPlacementMutator(worldBounds: MapBounds) extends WorldMutator {
 
 /**
  * Mutator that creates dirt paths between key locations (spawn, dungeons, shops).
+ * If paths cross rivers, bridges are placed instead of dirt tiles.
  */
 class PathGenerationMutator(startPoint: Point) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
@@ -226,11 +276,19 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
       pathPoint <- LineOfSight.getBresenhamLine(startPoint, destination)
     } yield pathPoint).toSet
     
-    val pathTileMap = pathTiles.map(_ -> TileType.Dirt).toMap
+    // Separate path tiles into those on water (need bridges) and those on land (need dirt)
+    val pathsOnWater = pathTiles.intersect(worldMap.rivers)
+    val pathsOnLand = pathTiles -- pathsOnWater
+    
+    // Create Bridge tiles for paths crossing rivers, Dirt tiles for other paths
+    val bridgeTiles = pathsOnWater.map(_ -> TileType.Bridge).toMap
+    val dirtTiles = pathsOnLand.map(_ -> TileType.Dirt).toMap
+    val pathTileMap = bridgeTiles ++ dirtTiles
     
     worldMap.copy(
       tiles = worldMap.tiles ++ pathTileMap,
-      paths = worldMap.paths ++ pathTiles
+      paths = worldMap.paths ++ pathTiles,
+      bridges = worldMap.bridges ++ pathsOnWater
     )
   }
 }
