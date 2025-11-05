@@ -96,17 +96,15 @@ object WorldMapGenerator {
   def generateWorldMap(config: WorldMapConfig): WorldMap = {
     val startPoint = Point(0, 0)
     
-    // Use provided dungeon configs or calculate based on world size
-    val dungeonConfigs = if (config.dungeonConfigs.nonEmpty) {
-      config.dungeonConfigs
-    } else {
-      calculateDungeonConfigs(config.worldConfig.bounds, config.worldConfig.seed)
-    }
-    
     // Create list of mutators to apply in sequence
+    // DungeonPlacementMutator now analyzes the world map internally
     val mutators: Seq[WorldMutator] = Seq(
       new TerrainMutator(config.worldConfig),
-      new DungeonPlacementMutator(dungeonConfigs),
+      new DungeonPlacementMutator(
+        playerStart = startPoint,
+        seed = config.worldConfig.seed,
+        exclusionRadius = 10
+      ),
       new ShopPlacementMutator(config.worldConfig.bounds),
       new PathGenerationMutator(startPoint),
       new WalkablePathsMutator(config.worldConfig)
