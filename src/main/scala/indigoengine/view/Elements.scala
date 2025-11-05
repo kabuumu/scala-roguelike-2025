@@ -9,7 +9,7 @@ import indigo.*
 import indigo.Batch.toBatch
 import indigoengine.SpriteExtension.*
 import ui.UIConfig.*
-import ui.{GameController, UIState}
+import ui.{GameController, UIConfig, UIState}
 import generated.PixelFont
 import generated.Assets
 import generated.PixelFontSmall
@@ -1038,16 +1038,17 @@ object Elements {
    * @param canvasHeight Height of the game canvas
    * @return Batch of SceneNodes representing the entire world map
    */
-  def generateCachedWorldMapView(worldTiles: Map[game.Point, map.TileType], canvasWidth: Int, canvasHeight: Int): Batch[SceneNode] = {
+  def worldMapView(worldTiles: Map[game.Point, map.TileType], canvasWidth: Int, canvasHeight: Int): Batch[SceneNode] = {
     import map.TileType
-    
+
+    println("The tiles are: " + worldTiles.groupBy(_._2).map { case (k, v) => (k, v.size) })
+
     println(s"[WorldMap] Generating map with ${worldTiles.size} tiles, canvas: ${canvasWidth}x${canvasHeight}")
     
     // Calculate bounds
     val allPositions = worldTiles.keys.toSeq
     if (allPositions.isEmpty) {
-      println("[WorldMap] WARNING: No tiles to render!")
-      return Batch.empty
+      throw new Exception("[WorldMap] No tiles available to render world map.")
     }
     
     val minX = allPositions.map(_.x).min
@@ -1057,17 +1058,8 @@ object Elements {
     
     val mapWidth = maxX - minX + 1
     val mapHeight = maxY - minY + 1
-    
-    // Calculate scaling to fit most of the screen (80% to leave margins)
-    val availableWidth = (canvasWidth * 0.8).toInt
-    val availableHeight = (canvasHeight * 0.8).toInt
-    
-    val scaleX = availableWidth.toDouble / mapWidth
-    val scaleY = availableHeight.toDouble / mapHeight
-    // IMPORTANT: Use at least 3 pixels per tile to drastically reduce shape count
-    // With 44k tiles and 2px per tile = 44k shapes (too many!)
-    // With 3px per tile and sampling every other tile = ~11k shapes (more manageable)
-    val pixelSize = math.max(3, math.min(scaleX, scaleY).toInt)
+   
+    val pixelSize = 1
     
     // Center the map on screen
     val mapPixelWidth = mapWidth * pixelSize
@@ -1077,46 +1069,29 @@ object Elements {
     
     // Map tile types to colors - matching game aesthetic
     def getTileColor(tileType: TileType): RGBA = tileType match {
-      case TileType.Floor => RGBA(101, 67, 33) // Brown for dungeon/shop floor
-      case TileType.Wall => RGBA(40, 40, 40) // Dark grey for walls
-      case TileType.Water => RGBA(65, 105, 225) // Blue for water
-      case TileType.Bridge => RGBA(101, 67, 33) // Brown for bridges
-      case TileType.Rock => RGBA(128, 128, 128) // Lighter grey for rocks
-      case TileType.Tree => RGBA(50, 205, 50) // Light green for trees
-      case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 => RGBA(34, 139, 34) // Dark green for grass
-      case TileType.Dirt => RGBA(101, 67, 33) // Brown for dirt/paths
-      case TileType.MaybeFloor => RGBA(101, 67, 33) // Brown for dungeon floor
+      case TileType.Floor | TileType.MaybeFloor => RGBA.fromHexString("#847066") // Brown for dungeon/shop floor
+      case TileType.Wall => RGBA.fromHexString("#352f2e") // Dark grey for walls
+      case TileType.Water => RGBA.fromHexString("#194f80") // Blue for water
+      case TileType.Bridge => RGBA.fromHexString("#845425") // Brown for bridges
+      case TileType.Rock => RGBA.fromHexString("#4f4240") // Lighter grey for rocks
+      case TileType.Tree => RGBA.fromHexString("#0f2c0c") // Dark green for trees
+      case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 => RGBA.fromHexString("#399a4d") // Lighter green for grass
+      case TileType.Dirt => RGBA.fromHexString("#b28b78") // Brown for dirt/paths
     }
     
     // Create pixel boxes for each tile
     println(s"[WorldMap] Map bounds: (${minX},${minY}) to (${maxX},${maxY}), size: ${mapWidth}x${mapHeight}, pixelSize: ${pixelSize}")
     println(s"[WorldMap] Rendering at offset (${offsetX},${offsetY})")
     
-    // PERFORMANCE OPTIMIZATION: For very large maps, sample tiles instead of rendering all
-    // Rendering 44k+ shapes causes browser to hang. Sample every Nth tile to stay under ~5000 shapes.
-    val targetMaxShapes = 5000
-    val sampleRate = math.max(1, (worldTiles.size.toDouble / targetMaxShapes).ceil.toInt)
-    
-    println(s"[WorldMap] Total tiles: ${worldTiles.size}, sample rate: 1/${sampleRate}")
-    
-    val sampledTiles = if (sampleRate > 1) {
-      // Sample tiles by skipping positions in a grid pattern
-      worldTiles.filter { case (pos, _) =>
-        ((pos.x - minX) % sampleRate == 0) && ((pos.y - minY) % sampleRate == 0)
-      }
-    } else {
-      worldTiles
-    }
-    
-    val tilePixels = sampledTiles.map { case (pos, tileType) =>
+    val tilePixels = worldTiles
+      .map { case (pos, tileType) =>
       val x = offsetX + ((pos.x - minX) * pixelSize)
       val y = offsetY + ((pos.y - minY) * pixelSize)
       
       // If sampling, make pixels larger to fill gaps
-      val renderSize = pixelSize * sampleRate
-      
+        
       Shape.Box(
-        Rectangle(Point(x, y), Size(renderSize, renderSize)),
+        Rectangle(Point(x, y), Size(pixelSize, pixelSize)),
         Fill.Color(getTileColor(tileType))
       )
     }.toSeq
@@ -1126,94 +1101,14 @@ object Elements {
   }
   
   def worldMapView(model: GameController): Batch[SceneNode] = {
-    import map.TileType
-    
-    // Use cached map view from GameController if available
-    val mapView = model.cachedWorldMapView.getOrElse {
-      // Generate on first access (will be cached by caller)
-      generateCachedWorldMapView(
+    val mapView = worldMapView(
         model.gameState.worldMap.tiles,
         canvasWidth,
         canvasHeight
-      )
-    }
+    )
     
     // Add "Press any key to exit" message
     val exitMessage = text("Press any key to exit", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
     mapView :+ exitMessage
-  }
-  
-  // Kept for backward compatibility but not actively used
-  def worldMapViewLegacy(model: GameController): Batch[SceneNode] = {
-    import map.TileType
-    
-    // Fallback: generate on the fly (legacy behavior)
-    model.cachedWorldMapView match {
-      case Some(cachedView) =>
-        val exitMessage = text("Press any key to exit", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
-        cachedView :+ exitMessage
-      case None =>
-        // Fallback: generate on the fly (legacy behavior)
-        // Get all tiles from the world map
-        val worldTiles = model.gameState.worldMap.tiles
-        
-        // Calculate bounds
-        val allPositions = worldTiles.keys.toSeq
-        if (allPositions.isEmpty) {
-          return Batch.empty
-        }
-        
-        val minX = allPositions.map(_.x).min
-        val maxX = allPositions.map(_.x).max
-        val minY = allPositions.map(_.y).min
-        val maxY = allPositions.map(_.y).max
-        
-        val mapWidth = maxX - minX + 1
-        val mapHeight = maxY - minY + 1
-        
-        // Calculate scaling to fit most of the screen
-        // Leave some margin (10% on each side)
-        val availableWidth = (canvasWidth * 0.8).toInt
-        val availableHeight = (canvasHeight * 0.8).toInt
-        
-        val scaleX = availableWidth.toDouble / mapWidth
-        val scaleY = availableHeight.toDouble / mapHeight
-        val pixelSize = math.max(2, math.min(scaleX, scaleY).toInt) // Each tile is pixelSize pixels (minimum 2 for visibility)
-        
-        // Center the map on screen
-        val mapPixelWidth = mapWidth * pixelSize
-        val mapPixelHeight = mapHeight * pixelSize
-        val offsetX = (canvasWidth - mapPixelWidth) / 2
-        val offsetY = (canvasHeight - mapPixelHeight) / 2
-        
-        // Map tile types to colors - using darker, more muted colors matching the game aesthetic
-        def getTileColor(tileType: TileType): RGBA = tileType match {
-          case TileType.Floor => RGBA(101, 67, 33) // Brown for dungeon/shop floor
-          case TileType.Wall => RGBA(40, 40, 40) // Dark grey for walls
-          case TileType.Water => RGBA(65, 105, 225) // Blue for water
-          case TileType.Bridge => RGBA(101, 67, 33) // Brown for bridges
-          case TileType.Rock => RGBA(128, 128, 128) // Lighter grey for rocks
-          case TileType.Tree => RGBA(50, 205, 50) // Light green for trees
-          case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 => RGBA(34, 139, 34) // Dark green for grass
-          case TileType.Dirt => RGBA(101, 67, 33) // Brown for dirt/paths
-          case TileType.MaybeFloor => RGBA(101, 67, 33) // Brown for dungeon floor
-        }
-        
-        // Create pixel boxes for each tile
-        val tilePixels = worldTiles.map { case (pos, tileType) =>
-          val x = offsetX + ((pos.x - minX) * pixelSize)
-          val y = offsetY + ((pos.y - minY) * pixelSize)
-          
-          Shape.Box(
-            Rectangle(Point(x, y), Size(pixelSize, pixelSize)),
-            Fill.Color(getTileColor(tileType))
-          )
-        }.toSeq
-        
-        // Add "Press any key to exit" message at the bottom
-        val exitMessage = text("Press any key to exit", (canvasWidth - 160) / 2, canvasHeight - spriteScale * 2)
-        
-        tilePixels.toBatch :+ exitMessage
-    }
   }
 }

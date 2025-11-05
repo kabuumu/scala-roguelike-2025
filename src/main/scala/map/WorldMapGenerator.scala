@@ -200,8 +200,7 @@ case class WorldMap(
   rivers: Set[Point],
   paths: Set[Point],
   bridges: Set[Point],
-  bounds: MapBounds,
-  cachedMapView: Option[indigo.Batch[indigo.SceneNode]] = None
+  bounds: MapBounds
 ) {
   /**
    * Points that block line of sight (walls and trees).

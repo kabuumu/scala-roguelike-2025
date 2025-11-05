@@ -43,6 +43,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
     Startup.Success(())
   )
 
+  var cachedMapView: Option[Outcome[_]] = None
+  
   override def initialModel(startupData: Unit): Outcome[GameController] = {
     // Create a minimal dummy game state for the main menu (it won't be used until New Game is selected)
     val dummyDungeon = map.Dungeon(
@@ -96,23 +98,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
       val time = context.frame.time.running.toMillis.toLong * 1000000L
 
       try {
-        val updatedModel = model.update(optInput, time)
-        
-        // Generate and cache world map view when entering WorldMap state
-        val finalModel = (model.uiState, updatedModel.uiState) match {
-          case (prevState, UIState.WorldMap) if prevState != UIState.WorldMap && updatedModel.cachedWorldMapView.isEmpty =>
-            // Entering WorldMap state for the first time - generate and cache the map
-            val cachedMap = indigoengine.view.Elements.generateCachedWorldMapView(
-              updatedModel.gameState.worldMap.tiles,
-              ui.UIConfig.canvasWidth,
-              ui.UIConfig.canvasHeight
-            )
-            updatedModel.copy(cachedWorldMapView = Some(cachedMap))
-          case _ =>
-            updatedModel
-        }
-        
-        Outcome(finalModel)
+        Outcome(model.update(optInput, time))
       } catch {
         case e: Exception =>
           println(s"Error during model update: ${e.getMessage}")
@@ -137,12 +123,18 @@ object Game extends IndigoSandbox[Unit, GameController] {
           )
         )
       case UIState.WorldMap =>
-        // Render world map overlay
-        Outcome(
-          SceneUpdateFragment(
-            Layer.Content(worldMapView(model))
-          )
-        )
+        cachedMapView match {
+          case Some(cached) =>
+            cached.asInstanceOf[Outcome[SceneUpdateFragment]]
+          case None =>
+            val mapViewOutcome = Outcome(
+              SceneUpdateFragment(
+                Layer.Content(worldMapView(model))
+              )
+            )
+            cachedMapView = Some(mapViewOutcome)
+            mapViewOutcome
+        }
       case _ =>
         // Render normal game
         val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
