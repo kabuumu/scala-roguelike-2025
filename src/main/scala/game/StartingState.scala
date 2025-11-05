@@ -191,8 +191,8 @@ object StartingState {
     }
   }
 
-  // Determine player spawn point
-  private lazy val playerSpawnPoint = Point(0, 0)
+  // Determine player spawn point - spawn player in first village building
+  private lazy val playerSpawnPoint = worldMap.playerSpawnPoint
   
   // Generate enemies for dungeon rooms
   private val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.primaryDungeon match {

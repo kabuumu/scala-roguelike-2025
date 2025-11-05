@@ -185,4 +185,13 @@ case class WorldMap(
    * All trader room locations (from all dungeons).
    */
   def allTraderRooms: Seq[Point] = dungeons.flatMap(_.traderRoom)
+  
+  /**
+   * Get the player spawn point - center of first village building if available.
+   * Falls back to origin if no villages exist.
+   */
+  def playerSpawnPoint: Point = villages.headOption match {
+    case Some(village) => village.buildings.head.centerTile
+    case None => Point(0, 0)
+  }
 }
