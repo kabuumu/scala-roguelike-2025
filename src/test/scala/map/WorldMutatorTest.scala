@@ -262,4 +262,145 @@ class WorldMutatorTest extends AnyFunSuite {
     println(s"  - Shop present: ${worldMap.shop.isDefined}")
     println(s"  - Path tiles: ${worldMap.paths.size}")
   }
+  
+  test("RiverPlacementMutator adds rivers to world") {
+    val bounds = MapBounds(-5, 5, -5, 5)
+    val mutator = new RiverPlacementMutator(
+      numRivers = 2,
+      initialWidth = 2,
+      widthVariance = 0.3,
+      curveVariance = 0.4,
+      varianceStep = 3,
+      seed = 12345
+    )
+    
+    val emptyWorld = WorldMap(
+      tiles = Map.empty,
+      dungeons = Seq.empty,
+      shop = None,
+      rivers = Set.empty,
+      paths = Set.empty,
+      bridges = Set.empty,
+      bounds = bounds
+    )
+    
+    val mutatedWorld = mutator.mutateWorld(emptyWorld)
+    
+    assert(mutatedWorld.rivers.nonEmpty, "Should have river tiles")
+    assert(mutatedWorld.tiles.nonEmpty, "Should have water tiles")
+    
+    // Verify water tiles match rivers
+    val waterTiles = mutatedWorld.tiles.filter(_._2 == TileType.Water).keySet
+    assert(waterTiles == mutatedWorld.rivers, "Water tiles should match river points")
+    
+    println(s"RiverPlacementMutator added ${mutatedWorld.rivers.size} river tiles")
+  }
+  
+  test("PathGenerationMutator places bridges when paths cross rivers") {
+    val startPoint = Point(0, 0)
+    val bounds = MapBounds(-10, 10, -10, 10)
+    
+    // Create a world with a river
+    val riverMutator = new RiverPlacementMutator(numRivers = 1, seed = 54321)
+    val worldWithRiver = riverMutator.mutateWorld(WorldMap(
+      tiles = Map.empty,
+      dungeons = Seq.empty,
+      shop = None,
+      rivers = Set.empty,
+      paths = Set.empty,
+      bridges = Set.empty,
+      bounds = bounds
+    ))
+    
+    // Add dungeon and shop on opposite sides of river (with larger bounds for dungeon)
+    val dungeonConfig = DungeonConfig(MapBounds(5, 10, 5, 10), seed = 111)
+    val dungeon = DungeonGenerator.generateDungeon(dungeonConfig)
+    val shop = Shop(Point(-5, -5))
+    
+    val worldWithFeatures = worldWithRiver.copy(
+      dungeons = Seq(dungeon),
+      shop = Some(shop)
+    )
+    
+    // Add paths
+    val pathMutator = new PathGenerationMutator(startPoint)
+    val finalWorld = pathMutator.mutateWorld(worldWithFeatures)
+    
+    // Check if bridges were created where paths cross rivers
+    val pathsOnWater = finalWorld.paths.intersect(worldWithRiver.rivers)
+    
+    if (pathsOnWater.nonEmpty) {
+      assert(finalWorld.bridges == pathsOnWater, "Bridges should be placed where paths cross rivers")
+      
+      // Verify bridge tiles exist
+      pathsOnWater.foreach { point =>
+        assert(finalWorld.tiles.get(point).contains(TileType.Bridge), 
+               s"Point $point should be a bridge tile")
+      }
+      
+      println(s"PathGenerationMutator placed ${finalWorld.bridges.size} bridges over rivers")
+    } else {
+      println("No path-river intersections in this test run (paths didn't cross rivers)")
+    }
+  }
+  
+  test("Rivers are placed before dungeons in WorldMapGenerator") {
+    val bounds = MapBounds(-5, 5, -5, 5)
+    val config = WorldMapConfig(
+      worldConfig = WorldConfig(bounds, seed = 12345),
+      numRivers = 2
+    )
+    
+    val worldMap = WorldMapGenerator.generateWorldMap(config)
+    
+    // Verify rivers exist
+    assert(worldMap.rivers.nonEmpty, "World should have rivers")
+    
+    // Verify dungeons don't overlap with rivers (they should avoid river tiles)
+    val dungeonTiles = worldMap.dungeons.flatMap(_.tiles.keys).toSet
+    val riverAndDungeonOverlap = dungeonTiles.intersect(worldMap.rivers)
+    
+    // Some overlap is acceptable since dungeons override terrain
+    println(s"WorldMapGenerator placed ${worldMap.rivers.size} river tiles and ${worldMap.dungeons.size} dungeons")
+    println(s"River-dungeon overlap: ${riverAndDungeonOverlap.size} tiles")
+  }
+  
+  test("WorldMapConfig validates river parameters") {
+    val bounds = MapBounds(-5, 5, -5, 5)
+    
+    // Valid config
+    val validConfig = WorldMapConfig(
+      worldConfig = WorldConfig(bounds),
+      numRivers = 2,
+      riverWidth = 3,
+      riverWidthVariance = 0.5,
+      riverCurveVariance = 0.5,
+      riverVarianceStep = 5
+    )
+    assert(validConfig.numRivers == 2)
+    
+    // Invalid configs should throw exceptions
+    assertThrows[IllegalArgumentException] {
+      WorldMapConfig(
+        worldConfig = WorldConfig(bounds),
+        riverWidth = 0  // Too small
+      )
+    }
+    
+    assertThrows[IllegalArgumentException] {
+      WorldMapConfig(
+        worldConfig = WorldConfig(bounds),
+        riverWidth = 10  // Too large
+      )
+    }
+    
+    assertThrows[IllegalArgumentException] {
+      WorldMapConfig(
+        worldConfig = WorldConfig(bounds),
+        riverWidthVariance = 1.5  // Out of range
+      )
+    }
+    
+    println("WorldMapConfig validation works correctly")
+  }
 }

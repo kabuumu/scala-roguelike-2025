@@ -11,8 +11,10 @@ object RiverGenerator {
   
   /**
    * Generates a river that flows across the map with natural curves.
+   * Rivers follow a step-based pattern: move varianceStep tiles, then randomly
+   * change width and direction.
    * 
-   * @param config RiverConfig specifying start, direction, and curviness
+   * @param config RiverConfig specifying start, direction, and variance parameters
    * @return Set of Points representing river tiles
    */
   def generateRiver(config: RiverConfig): Set[Point] = {
@@ -22,18 +24,16 @@ object RiverGenerator {
     var currentPoint = config.startPoint
     val riverPoints = scala.collection.mutable.Set[Point](currentPoint)
     
-    // Current direction (we'll vary this for curves)
+    // Current direction and width (we'll vary these)
     var currentDirection = config.flowDirection
+    var currentWidth = config.width
     
     // Generate river segments
-    var i = 0
+    var stepsSinceLastChange = 0
+    var totalSteps = 0
     var withinBounds = true
-    while (i < config.length && withinBounds) {
-      // Occasionally change direction for curves (non-straight lines)
-      if (random.nextDouble() < config.curviness) {
-        currentDirection = perturbDirection(currentDirection, random)
-      }
-      
+    
+    while (totalSteps < config.length && withinBounds) {
       // Move in current direction
       currentPoint = moveInDirection(currentPoint, currentDirection)
       
@@ -42,7 +42,7 @@ object RiverGenerator {
         riverPoints += currentPoint
         
         // Add width to the river
-        for (j <- 1 to config.width) {
+        for (j <- 1 to currentWidth) {
           val perpendicular1 = getPerpendicularOffset(currentDirection, j)
           val perpendicular2 = getPerpendicularOffset(currentDirection, -j)
           
@@ -56,7 +56,25 @@ object RiverGenerator {
             riverPoints += widthPoint2
           }
         }
-        i += 1
+        
+        stepsSinceLastChange += 1
+        totalSteps += 1
+        
+        // After varianceStep tiles, randomly change width and direction
+        if (stepsSinceLastChange >= config.varianceStep) {
+          // Randomly change width by ±1 (within bounds)
+          if (random.nextDouble() < config.widthVariance) {
+            val widthChange = if (random.nextBoolean()) 1 else -1
+            currentWidth = math.max(0, math.min(5, currentWidth + widthChange))
+          }
+          
+          // Randomly change direction by small amount (<45 degrees)
+          if (random.nextDouble() < config.curveVariance) {
+            currentDirection = perturbDirection(currentDirection, random)
+          }
+          
+          stepsSinceLastChange = 0
+        }
       } else {
         // River has left the bounds, stop generating
         withinBounds = false
@@ -150,6 +168,67 @@ object RiverGenerator {
   }
   
   /**
+   * Generates a river starting from a world map edge, facing toward the center.
+   * 
+   * @param bounds World map bounds
+   * @param edge Which edge to start from (0=top, 1=bottom, 2=left, 3=right)
+   * @param initialWidth Initial river width (1-5)
+   * @param widthVariance Probability of width changing
+   * @param curveVariance Probability of direction changing
+   * @param varianceStep Number of tiles between variance changes
+   * @param seed Random seed
+   * @return RiverConfig for generating the river
+   */
+  def createEdgeRiver(
+    bounds: MapBounds,
+    edge: Int,
+    initialWidth: Int = 2,
+    widthVariance: Double = 0.3,
+    curveVariance: Double = 0.4,
+    varianceStep: Int = 3,
+    seed: Long = System.currentTimeMillis()
+  ): RiverConfig = {
+    val random = new Random(seed)
+    val (tileMinX, tileMaxX, tileMinY, tileMaxY) = bounds.toTileBounds()
+    val centerX = (tileMinX + tileMaxX) / 2
+    val centerY = (tileMinY + tileMaxY) / 2
+    
+    // Calculate start point and direction based on edge
+    val (startPoint, flowDirection) = edge match {
+      case 0 => // Top edge - flow downward (toward center)
+        val x = random.between(tileMinX + 10, tileMaxX - 10)
+        (Point(x, tileMinY), (0, 1))
+      case 1 => // Bottom edge - flow upward (toward center)
+        val x = random.between(tileMinX + 10, tileMaxX - 10)
+        (Point(x, tileMaxY), (0, -1))
+      case 2 => // Left edge - flow rightward (toward center)
+        val y = random.between(tileMinY + 10, tileMaxY - 10)
+        (Point(tileMinX, y), (1, 0))
+      case 3 => // Right edge - flow leftward (toward center)
+        val y = random.between(tileMinY + 10, tileMaxY - 10)
+        (Point(tileMaxX, y), (-1, 0))
+      case _ => // Default to top edge
+        (Point(centerX, tileMinY), (0, 1))
+    }
+    
+    // Calculate length: river should be able to cross most of the map
+    val maxDimension = math.max(tileMaxX - tileMinX, tileMaxY - tileMinY)
+    val length = (maxDimension * 1.2).toInt
+    
+    RiverConfig(
+      startPoint = startPoint,
+      flowDirection = flowDirection,
+      length = length,
+      width = initialWidth,
+      widthVariance = widthVariance,
+      curveVariance = curveVariance,
+      varianceStep = varianceStep,
+      bounds = bounds,
+      seed = seed
+    )
+  }
+  
+  /**
    * Provides a human-readable description of generated rivers.
    */
   def describeRivers(rivers: Set[Point], bounds: MapBounds): String = {
@@ -170,21 +249,30 @@ object RiverGenerator {
  * @param startPoint Starting point for the river (in tile coordinates)
  * @param flowDirection Initial direction vector (dx, dy)
  * @param length How many steps the river should flow
- * @param width Width of the river (0 = single tile wide, 1 = 3 tiles wide, etc.)
- * @param curviness Probability (0.0 to 1.0) of changing direction at each step
+ * @param width Initial width of the river (0 = single tile wide, 1 = 3 tiles wide, etc.)
+ * @param widthVariance Probability (0.0 to 1.0) of changing width at each variance step
+ * @param curveVariance Probability (0.0 to 1.0) of changing direction at each variance step
+ * @param varianceStep Number of tiles to move before applying variance changes
  * @param bounds Map bounds to constrain the river
  * @param seed Random seed for reproducible generation
+ * @param curviness Deprecated - use curveVariance instead (maintained for backward compatibility)
  */
 case class RiverConfig(
   startPoint: Point,
   flowDirection: (Int, Int) = (0, 1),  // Default: flows down
   length: Int = 50,
   width: Int = 1,
-  curviness: Double = 0.2,
+  widthVariance: Double = 0.3,
+  curveVariance: Double = 0.4,
+  varianceStep: Int = 3,
   bounds: MapBounds,
-  seed: Long = System.currentTimeMillis()
+  seed: Long = System.currentTimeMillis(),
+  curviness: Double = 0.2  // Deprecated, kept for backward compatibility
 ) {
+  require(widthVariance >= 0.0 && widthVariance <= 1.0, "widthVariance must be between 0.0 and 1.0")
+  require(curveVariance >= 0.0 && curveVariance <= 1.0, "curveVariance must be between 0.0 and 1.0")
   require(curviness >= 0.0 && curviness <= 1.0, "curviness must be between 0.0 and 1.0")
   require(length > 0, "length must be positive")
-  require(width >= 0, "width must be non-negative")
+  require(width >= 0 && width <= 5, "width must be between 0 and 5")
+  require(varianceStep > 0, "varianceStep must be positive")
 }
