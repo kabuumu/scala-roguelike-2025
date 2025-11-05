@@ -39,12 +39,12 @@ class TerrainMutator(config: WorldConfig) extends WorldMutator {
  * @param seed Random seed for deterministic generation
  */
 class RiverPlacementMutator(
-  numRivers: Int = 2,
-  initialWidth: Int = 2,
-  widthVariance: Double = 0.3,
-  curveVariance: Double = 0.4,
-  varianceStep: Int = 3,
-  seed: Long = System.currentTimeMillis()
+  numRivers: Int,
+  initialWidth: Int,
+  widthVariance: Double,
+  curveVariance: Double,
+  varianceStep: Int,
+  seed: Long
 ) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
     val random = new scala.util.Random(seed)

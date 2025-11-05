@@ -93,9 +93,9 @@ object WorldMapGenerator {
 case class WorldMapConfig(
   worldConfig: WorldConfig,
   numRivers: Int = 2,
-  riverWidth: Int = 2,
-  riverWidthVariance: Double = 0.3,
-  riverCurveVariance: Double = 0.4,
+  riverWidth: Int = 3,
+  riverWidthVariance: Double = 0.2,
+  riverCurveVariance: Double = 0.2,
   riverVarianceStep: Int = 3
 ) {
   require(numRivers >= 0, "numRivers must be non-negative")
