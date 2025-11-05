@@ -43,6 +43,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
     Startup.Success(())
   )
 
+  var cachedMapView: Option[Outcome[_]] = None
+  
   override def initialModel(startupData: Unit): Outcome[GameController] = {
     // Create a minimal dummy game state for the main menu (it won't be used until New Game is selected)
     val dummyDungeon = map.Dungeon(
@@ -120,6 +122,19 @@ object Game extends IndigoSandbox[Unit, GameController] {
             Layer.Content(gameOverScreen(model, gameOver.player))
           )
         )
+      case UIState.WorldMap =>
+        cachedMapView match {
+          case Some(cached) =>
+            cached.asInstanceOf[Outcome[SceneUpdateFragment]]
+          case None =>
+            val mapViewOutcome = Outcome(
+              SceneUpdateFragment(
+                Layer.Content(worldMapView(model))
+              )
+            )
+            cachedMapView = Some(mapViewOutcome)
+            mapViewOutcome
+        }
       case _ =>
         // Render normal game
         val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))

@@ -21,6 +21,7 @@ object InputMappings {
     KeyInputs(Key.ESCAPE)       -> Cancel,
     KeyInputs(Key.SPACE)        -> Action,
     KeyInputs(Key.ENTER)        -> Action,
-    KeyInputs(Key.KEY_L)        -> LevelUp
+    KeyInputs(Key.KEY_L)        -> LevelUp,
+    KeyInputs(Key.KEY_M)        -> OpenMap
   )
 }

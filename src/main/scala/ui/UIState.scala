@@ -122,4 +122,6 @@ object UIState {
     
     def canConfirmCurrentSelection: Boolean = isOptionEnabled(selectedOption)
   }
+  
+  case object WorldMap extends UIState
 }

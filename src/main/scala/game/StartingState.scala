@@ -1,13 +1,8 @@
 package game
 
-import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
-import data.Entities.EntityReference.Slimelet
 import data.{Enemies, Items, Sprites}
 import game.entity.*
-import game.entity.Experience.experienceForLevel
-import game.entity.Movement.position
-import game.system.event.GameSystemEvent.{AddExperienceEvent, SpawnEntityWithCollisionCheckEvent}
-import map.{Dungeon, DungeonGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig, PathGenerator, TileType}
+import map.*
 
 
 object StartingState {
@@ -96,8 +91,8 @@ object StartingState {
    * Deeper rooms have harder enemies and larger groups.
    */
   object EnemyGeneration {
+    import Enemies.EnemyDifficulty.*
     import Enemies.EnemyReference
-    import Enemies.EnemyDifficulty._
     
     case class EnemyGroup(enemies: Seq[EnemyReference])
     
