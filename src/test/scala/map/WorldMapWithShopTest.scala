@@ -51,7 +51,8 @@ class WorldMapWithShopTest extends AnyFunSuite {
       worldConfig = WorldConfig(
         bounds = MapBounds(-5, 5, -5, 5),
         seed = 54321
-      )
+      ),
+      numRivers = 0  // Disable rivers for this test to avoid seed conflicts
     )
     
     val worldMap = WorldMapGenerator.generateWorldMap(config)
@@ -61,10 +62,12 @@ class WorldMapWithShopTest extends AnyFunSuite {
     // Note: Some shop tiles may be overridden by paths (paths are added last)
     shop.tiles.foreach { case (point, tileType) =>
       assert(worldMap.tiles.contains(point), s"Shop tile at $point should be in world tiles")
-      // Paths may override shop tiles with Dirt
+      // Paths may override shop tiles with Dirt or Bridge (if crossing a river)
       val actualType = worldMap.tiles(point)
-      val isValidOverride = actualType == tileType || (actualType == TileType.Dirt && worldMap.paths.contains(point))
-      assert(isValidOverride, s"Shop tile at $point should be $tileType or Dirt (if on path), but was $actualType")
+      val isValidOverride = actualType == tileType || 
+                           (actualType == TileType.Dirt && worldMap.paths.contains(point)) ||
+                           (actualType == TileType.Bridge && worldMap.bridges.contains(point))
+      assert(isValidOverride, s"Shop tile at $point should be $tileType, Dirt (if on path), or Bridge (if on river crossing), but was $actualType")
     }
   }
   
