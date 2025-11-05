@@ -35,8 +35,11 @@ class WorldMutatorTest extends AnyFunSuite {
   
   test("DungeonPlacementMutator adds dungeon to world") {
     val bounds = MapBounds(-5, 5, -5, 5)
-    val dungeonConfig = DungeonConfig(bounds, seed = 54321)
-    val mutator = new DungeonPlacementMutator(Seq(dungeonConfig))
+    val mutator = new DungeonPlacementMutator(
+      playerStart = Point(0, 0),
+      seed = 54321,
+      exclusionRadius = 10
+    )
     
     val worldWithTerrain = WorldMap(
       tiles = Map(Point(0, 0) -> TileType.Grass1),
@@ -114,11 +117,9 @@ class WorldMutatorTest extends AnyFunSuite {
     val config = WorldConfig(bounds, seed = 99999)
     val startPoint = Point(0, 0)
     
-    val dungeonConfig = DungeonConfig(MapBounds(1, 3, -3, 0), seed = 333)
-    
     val mutators: Seq[WorldMutator] = Seq(
       new TerrainMutator(config),
-      new DungeonPlacementMutator(Seq(dungeonConfig)),
+      new DungeonPlacementMutator(playerStart = startPoint, seed = 333, exclusionRadius = 10),
       new ShopPlacementMutator(bounds),
       new PathGenerationMutator(startPoint)
     )

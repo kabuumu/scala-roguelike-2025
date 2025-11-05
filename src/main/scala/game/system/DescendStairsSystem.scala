@@ -7,7 +7,7 @@ import game.entity.Inventory.inventoryItems
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.GameSystemEvent
 import ui.InputAction
-import map.{Dungeon, DungeonGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds, RiverConfig, DungeonConfig}
+import map.{Dungeon, DungeonGenerator, WorldMapGenerator, WorldMapConfig, WorldConfig, MapBounds}
 
 /**
  * Handles the player descending stairs to the next dungeon floor.
@@ -29,6 +29,7 @@ object DescendStairsSystem extends GameSystem {
       
       val worldBounds = MapBounds(-20, 20, -20, 20)
       
+      // Dungeons are now calculated automatically based on world size
       val worldMap = WorldMapGenerator.generateWorldMap(
         WorldMapConfig(
           worldConfig = WorldConfig(
@@ -39,39 +40,7 @@ object DescendStairsSystem extends GameSystem {
             ensureWalkablePaths = true,
             perimeterTrees = true,
             seed = seed
-          ),
-          dungeonConfigs = Seq(
-            // Dungeon size, items, and locked doors are automatically calculated from bounds
-            DungeonConfig(
-              bounds = worldBounds,
-              seed = seed
-            )
-          ),
-          riverConfigs = Seq(
-            RiverConfig(
-              startPoint = game.Point(-200, -150),
-              flowDirection = (1, 1),
-              length = 200,
-              width = 1,
-              curviness = 0.3,
-              bounds = worldBounds,
-              seed = seed
-            ),
-            RiverConfig(
-              startPoint = game.Point(200, -150),
-              flowDirection = (-1, 1),
-              length = 200,
-              width = 1,
-              curviness = 0.25,
-              bounds = worldBounds,
-              seed = seed + 1
-            )
-          ),
-          generatePathsToDungeons = false,
-          generatePathsBetweenDungeons = true,
-          pathsPerDungeon = 2,
-          pathWidth = 1,
-          minDungeonSpacing = 10
+          )
         )
       )
       

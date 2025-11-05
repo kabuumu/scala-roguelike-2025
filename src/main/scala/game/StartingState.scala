@@ -26,7 +26,8 @@ object StartingState {
   println(s"[StartingState] Dungeon entrance side: $dungeonEntranceSide")
   
   // PERFORMANCE: Make world generation lazy to avoid computation until needed
-  // First generate world without paths (we'll add player-to-dungeon path after player spawn is determined)
+  // Dungeons are now calculated automatically based on world size
+  // For a 21x21 world (-10 to 10), this will create 4 dungeons
   private lazy val worldMap = WorldMapGenerator.generateWorldMap(
     WorldMapConfig(
       worldConfig = WorldConfig(
@@ -37,37 +38,7 @@ object StartingState {
         ensureWalkablePaths = true,
         perimeterTrees = true,
         seed = System.currentTimeMillis()
-      ),
-      // dungeonConfigs left empty - will be calculated automatically based on world size
-      // For a 21x21 world (-10 to 10), this will create 4 dungeons
-      dungeonConfigs = Seq.empty,
-      riverConfigs = Seq(
-        // Rivers flow through the center of the world so they're visible
-        // World bounds in tiles: (-100, 110) x (-100, 110)
-        RiverConfig(
-          startPoint = Point(-60, -80),    // Start from upper left area
-          flowDirection = (1, 1),           // Flow diagonally down-right
-          length = 120,                     // Long river
-          width = 3,                        // Visible width
-          curviness = 0.3,                  // 30% chance of curves
-          bounds = worldBounds,
-          seed = System.currentTimeMillis()
-        ),
-        RiverConfig(
-          startPoint = Point(80, -70),      // Start from upper right area
-          flowDirection = (-1, 1),          // Flow diagonally down-left
-          length = 110,                     // Long river
-          width = 2,                        // Visible width
-          curviness = 0.25,                 // 25% chance of curves
-          bounds = worldBounds,
-          seed = System.currentTimeMillis() + 1
-        )
-      ),
-      generatePathsToDungeons = false,      // We'll add player-to-dungeon path manually
-      generatePathsBetweenDungeons = false, // Only one dungeon
-      pathsPerDungeon = 0,
-      pathWidth = 1,
-      minDungeonSpacing = 10
+      )
     )
   )
   
