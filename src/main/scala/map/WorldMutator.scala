@@ -154,6 +154,7 @@ class DungeonPlacementMutator(
           else Direction.Right                               // Dungeon left of player: face Right
         }
         
+        // Create dungeon config with calculated bounds and entrance orientation
         Some(DungeonConfig(
           bounds = MapBounds(clampedMinX, clampedMaxX, clampedMinY, clampedMaxY),
           seed = seed + i,
