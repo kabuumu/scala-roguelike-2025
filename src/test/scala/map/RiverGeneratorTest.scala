@@ -12,7 +12,9 @@ class RiverGeneratorTest extends AnyFunSuite {
       flowDirection = (0, 1),    // Flow downward
       length = 30,
       width = 0,                 // Single tile wide
-      curviness = 0.0,           // Straight line
+      widthVariance = 0.0,       // No width changes
+      curveVariance = 0.0,       // Straight line
+      varianceStep = 3,
       bounds = bounds,
       seed = 12345
     )
@@ -32,7 +34,9 @@ class RiverGeneratorTest extends AnyFunSuite {
       flowDirection = (1, 1),
       length = 100,
       width = 0,
-      curviness = 0.0,
+      widthVariance = 0.0,
+      curveVariance = 0.0,
+      varianceStep = 3,
       bounds = bounds,
       seed = 12345
     )
@@ -48,7 +52,7 @@ class RiverGeneratorTest extends AnyFunSuite {
     println(s"All ${river.size} river tiles within bounds")
   }
   
-  test("generateRiver creates curves with non-zero curviness") {
+  test("generateRiver creates curves with non-zero curveVariance") {
     val bounds = MapBounds(0, 10, 0, 10)
     
     // Generate straight river
@@ -57,14 +61,16 @@ class RiverGeneratorTest extends AnyFunSuite {
       flowDirection = (0, 1),
       length = 50,
       width = 0,
-      curviness = 0.0,
+      widthVariance = 0.0,
+      curveVariance = 0.0,
+      varianceStep = 3,
       bounds = bounds,
       seed = 12345
     )
     val straightRiver = RiverGenerator.generateRiver(straightConfig)
     
     // Generate curved river
-    val curvedConfig = straightConfig.copy(curviness = 0.3, seed = 67890)
+    val curvedConfig = straightConfig.copy(curveVariance = 0.8, seed = 67890)
     val curvedRiver = RiverGenerator.generateRiver(curvedConfig)
     
     // Curved river should explore more X coordinates (not perfectly vertical)
@@ -85,7 +91,9 @@ class RiverGeneratorTest extends AnyFunSuite {
       flowDirection = (0, 1),
       length = 20,
       width = 0,
-      curviness = 0.0,
+      widthVariance = 0.0,
+      curveVariance = 0.0,
+      varianceStep = 3,
       bounds = bounds,
       seed = 12345
     )
@@ -111,6 +119,7 @@ class RiverGeneratorTest extends AnyFunSuite {
         width = 0,
         widthVariance = 0.1,
         curveVariance = 0.1,
+        varianceStep = 3,
         bounds = bounds,
         seed = 1
       ),
@@ -121,6 +130,7 @@ class RiverGeneratorTest extends AnyFunSuite {
         width = 0,
         widthVariance = 0.1,
         curveVariance = 0.1,
+        varianceStep = 3,
         bounds = bounds,
         seed = 2
       ),
@@ -131,6 +141,7 @@ class RiverGeneratorTest extends AnyFunSuite {
         width = 0,
         widthVariance = 0.1,
         curveVariance = 0.1,
+        varianceStep = 3,
         bounds = bounds,
         seed = 3
       )
@@ -149,7 +160,9 @@ class RiverGeneratorTest extends AnyFunSuite {
       flowDirection = (0, 1),
       length = 30,
       width = 1,
-      curviness = 0.2,
+      widthVariance = 0.2,
+      curveVariance = 0.2,
+      varianceStep = 3,
       bounds = bounds,
       seed = 12345
     )
@@ -173,6 +186,7 @@ class RiverGeneratorTest extends AnyFunSuite {
       width = 1,
       widthVariance = 0.3,
       curveVariance = 0.3,
+      varianceStep = 3,
       bounds = bounds,
       seed = 99999
     )
@@ -183,6 +197,7 @@ class RiverGeneratorTest extends AnyFunSuite {
       width = 1,
       widthVariance = 0.3,
       curveVariance = 0.3,
+      varianceStep = 3,
       bounds = bounds,
       seed = 99999
     )
@@ -203,6 +218,7 @@ class RiverGeneratorTest extends AnyFunSuite {
       width = 1,
       widthVariance = 0.3,
       curveVariance = 0.3,
+      varianceStep = 3,
       bounds = bounds,
       seed = 11111
     )
@@ -213,6 +229,7 @@ class RiverGeneratorTest extends AnyFunSuite {
       width = 1,
       widthVariance = 0.3,
       curveVariance = 0.3,
+      varianceStep = 3,
       bounds = bounds,
       seed = 22222
     )
@@ -220,7 +237,7 @@ class RiverGeneratorTest extends AnyFunSuite {
     val river1 = RiverGenerator.generateRiver(config1)
     val river2 = RiverGenerator.generateRiver(config2)
     
-    // With curviness, different seeds should produce different rivers
+    // With variance, different seeds should produce different rivers
     assert(river1 != river2, "Different seeds should produce different rivers")
     println(s"Different seeds: river1=${river1.size} tiles, river2=${river2.size} tiles")
   }
@@ -232,7 +249,9 @@ class RiverGeneratorTest extends AnyFunSuite {
       flowDirection = (1, 1),     // Diagonal - will leave bounds
       length = 100,               // Request long river
       width = 0,
-      curviness = 0.0,
+      widthVariance = 0.0,
+      curveVariance = 0.0,
+      varianceStep = 3,
       bounds = bounds,
       seed = 12345
     )
@@ -258,7 +277,15 @@ class RiverGeneratorTest extends AnyFunSuite {
     // Test each edge
     val edges = Seq(0, 1, 2, 3) // Top, bottom, left, right
     edges.foreach { edge =>
-      val config = RiverGenerator.createEdgeRiver(bounds, edge, initialWidth = 2, seed = 12345 + edge)
+      val config = RiverGenerator.createEdgeRiver(
+        bounds = bounds, 
+        edge = edge, 
+        initialWidth = 2, 
+        widthVariance = 0.3,
+        curveVariance = 0.4,
+        varianceStep = 3,
+        seed = 12345 + edge
+      )
       val river = RiverGenerator.generateRiver(config)
       
       assert(river.nonEmpty, s"River from edge $edge should have tiles")

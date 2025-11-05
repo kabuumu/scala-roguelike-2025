@@ -301,7 +301,14 @@ class WorldMutatorTest extends AnyFunSuite {
     val bounds = MapBounds(-10, 10, -10, 10)
     
     // Create a world with a river
-    val riverMutator = new RiverPlacementMutator(numRivers = 1, seed = 54321)
+    val riverMutator = new RiverPlacementMutator(
+      numRivers = 1,
+      initialWidth = 2,
+      widthVariance = 0.3,
+      curveVariance = 0.4,
+      varianceStep = 3,
+      seed = 54321
+    )
     val worldWithRiver = riverMutator.mutateWorld(WorldMap(
       tiles = Map.empty,
       dungeons = Seq.empty,
