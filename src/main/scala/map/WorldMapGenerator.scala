@@ -23,7 +23,7 @@ object WorldMapGenerator {
     val startPoint = Point(0, 0)
     
     // Create list of mutators to apply in sequence
-    // Rivers are placed BEFORE dungeons and shops to avoid clashing
+    // Rivers are placed BEFORE dungeons and villages to avoid clashing
     // Paths are placed AFTER rivers so bridges can be placed on water tiles
     val mutators: Seq[WorldMutator] = Seq(
       new TerrainMutator(config.worldConfig),
@@ -38,9 +38,14 @@ object WorldMapGenerator {
       new DungeonPlacementMutator(
         playerStart = startPoint,
         seed = config.worldConfig.seed,
-        exclusionRadius = 10
+        exclusionRadius = 10,
+        numDungeonsOverride = config.numDungeons
       ),
-      new ShopPlacementMutator(config.worldConfig.bounds),
+      new VillagePlacementMutator(
+        worldBounds = config.worldConfig.bounds,
+        numVillages = config.numVillages,
+        seed = config.worldConfig.seed
+      ),
       new PathGenerationMutator(startPoint),
       new WalkablePathsMutator(config.worldConfig)
     )
@@ -50,6 +55,7 @@ object WorldMapGenerator {
       tiles = Map.empty,
       dungeons = Seq.empty,
       shop = None,
+      villages = Seq.empty,
       rivers = Set.empty,
       paths = Set.empty,
       bridges = Set.empty,
@@ -89,6 +95,8 @@ object WorldMapGenerator {
  * @param riverWidthVariance Probability of width changing at variance steps (default: 0.3)
  * @param riverCurveVariance Probability of direction changing at variance steps (default: 0.4)
  * @param riverVarianceStep Number of tiles between variance changes (default: 3)
+ * @param numDungeons Number of dungeons to generate (None = auto-calculate based on world size)
+ * @param numVillages Number of villages to generate (default: 1)
  */
 case class WorldMapConfig(
   worldConfig: WorldConfig,
@@ -96,13 +104,17 @@ case class WorldMapConfig(
   riverWidth: Int = 3,
   riverWidthVariance: Double = 0.2,
   riverCurveVariance: Double = 0.2,
-  riverVarianceStep: Int = 3
+  riverVarianceStep: Int = 3,
+  numDungeons: Option[Int] = None,
+  numVillages: Int = 1
 ) {
   require(numRivers >= 0, "numRivers must be non-negative")
   require(riverWidth >= 1 && riverWidth <= 5, "riverWidth must be between 1 and 5")
   require(riverWidthVariance >= 0.0 && riverWidthVariance <= 1.0, "riverWidthVariance must be between 0.0 and 1.0")
   require(riverCurveVariance >= 0.0 && riverCurveVariance <= 1.0, "riverCurveVariance must be between 0.0 and 1.0")
   require(riverVarianceStep > 0, "riverVarianceStep must be positive")
+  require(numVillages >= 0, "numVillages must be non-negative")
+  require(numDungeons.isEmpty || numDungeons.get >= 0, "numDungeons must be non-negative if specified")
 }
 
 /**
@@ -122,7 +134,8 @@ case class WorldMapConfig(
  * 
  * @param tiles All tiles in the world (terrain, dungeons, rivers, paths, etc.)
  * @param dungeons The dungeon structures included in this world (for spawning, items, etc.)
- * @param shop Optional shop building in the world
+ * @param shop Optional shop building in the world (deprecated, use villages instead)
+ * @param villages Collection of villages in the world
  * @param rivers Points that are part of rivers
  * @param paths Points that are part of paths
  * @param bridges Points where bridges cross rivers
@@ -132,6 +145,7 @@ case class WorldMap(
   tiles: Map[Point, TileType],
   dungeons: Seq[Dungeon],
   shop: Option[Shop] = None,
+  villages: Seq[Village] = Seq.empty,
   rivers: Set[Point],
   paths: Set[Point],
   bridges: Set[Point],

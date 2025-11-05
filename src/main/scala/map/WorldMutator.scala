@@ -83,11 +83,13 @@ class RiverPlacementMutator(
  * @param playerStart The player's starting position (default: Point(0,0))
  * @param seed Random seed for deterministic generation
  * @param exclusionRadius Minimum distance in tiles from player start where dungeons cannot be placed
+ * @param numDungeonsOverride Optional override for number of dungeons to place
  */
 class DungeonPlacementMutator(
   playerStart: Point = Point(0, 0),
   seed: Long = System.currentTimeMillis(),
-  exclusionRadius: Int = 10
+  exclusionRadius: Int = 10,
+  numDungeonsOverride: Option[Int] = None
 ) extends WorldMutator {
   
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
@@ -120,7 +122,10 @@ class DungeonPlacementMutator(
     val availableArea = math.max(0, worldArea - exclusionArea)
     
     // Calculate number of dungeons: 1 per 100 rooms² of available area
-    val numDungeons = math.max(1, (availableArea / 100.0).round.toInt)
+    // Or use the override if provided
+    val numDungeons = numDungeonsOverride.getOrElse(
+      math.max(1, (availableArea / 100.0).round.toInt)
+    )
     
     // Position dungeons in a grid pattern avoiding player start
     val dungeonsPerRow = math.ceil(math.sqrt(numDungeons)).toInt
@@ -236,6 +241,7 @@ class DungeonPlacementMutator(
 
 /**
  * Mutator that places a shop in the world near the spawn point.
+ * DEPRECATED: Use VillagePlacementMutator instead.
  */
 class ShopPlacementMutator(worldBounds: MapBounds) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
@@ -259,16 +265,72 @@ class ShopPlacementMutator(worldBounds: MapBounds) extends WorldMutator {
 }
 
 /**
- * Mutator that creates dirt paths between key locations (spawn, dungeons, shops).
+ * Mutator that places villages in the world.
+ * Villages are collections of 3-5 buildings, with one building being a shop.
+ * 
+ * @param worldBounds The bounds of the world
+ * @param numVillages Number of villages to generate
+ * @param seed Random seed for deterministic generation
+ */
+class VillagePlacementMutator(
+  worldBounds: MapBounds,
+  numVillages: Int = 1,
+  seed: Long = System.currentTimeMillis()
+) extends WorldMutator {
+  override def mutateWorld(worldMap: WorldMap): WorldMap = {
+    val dungeonBounds = worldMap.dungeons.map { dungeon =>
+      MapBounds(
+        dungeon.roomGrid.map(_.x).min,
+        dungeon.roomGrid.map(_.x).max,
+        dungeon.roomGrid.map(_.y).min,
+        dungeon.roomGrid.map(_.y).max
+      )
+    }
+    
+    val random = new scala.util.Random(seed)
+    
+    // Generate villages at different locations
+    val villages = (0 until numVillages).map { i =>
+      val villageLocation = Village.findVillageLocation(dungeonBounds, worldBounds, preferredDistance = 30 + i * 50)
+      Village.generateVillage(villageLocation, seed + i)
+    }
+    
+    // Combine all village tiles
+    val villageTiles = villages.flatMap(_.tiles).toMap
+    
+    worldMap.copy(
+      tiles = worldMap.tiles ++ villageTiles,
+      villages = worldMap.villages ++ villages,
+      // Maintain backward compatibility: set shop to first village's shop if it exists
+      shop = villages.headOption.map { village =>
+        val shopBuilding = village.shopBuilding
+        Shop(
+          location = Point(shopBuilding.location.x / 10, shopBuilding.location.y / 10), // Approximate room coords
+          size = 10
+        )
+      }.orElse(worldMap.shop)
+    )
+  }
+}
+
+/**
+ * Mutator that creates dirt paths between key locations (spawn, dungeons, villages).
  * If paths cross rivers, bridges are placed instead of dirt tiles.
  */
 class PathGenerationMutator(startPoint: Point) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
     import scala.util.LineOfSight
     
-    // Find all dungeon entrances and shop entrance
+    // Find all dungeon entrances
     val dungeonEntrances = worldMap.dungeons.map(_.startPoint).map(Dungeon.roomToTile)
-    val destinations = worldMap.shop.map(_.entranceTile).toSeq ++ dungeonEntrances
+    
+    // Find all village entrances (all buildings in all villages)
+    val villageEntrances = worldMap.villages.flatMap(_.entrances)
+    
+    // Legacy shop support (for backward compatibility)
+    val shopEntrances = worldMap.shop.map(_.entranceTile).toSeq
+    
+    val destinations = dungeonEntrances ++ villageEntrances ++ shopEntrances
     
     // Create paths from start point to all destinations
     val pathTiles: Set[Point] = (for {
