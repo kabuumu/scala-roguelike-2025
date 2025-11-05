@@ -95,11 +95,11 @@ class DungeonPlacementMutator(
       val regionCenterX = bounds.minRoomX + col * regionWidth + regionWidth / 2
       val regionCenterY = bounds.minRoomY + row * regionHeight + regionHeight / 2
       
-      // Generate varied dungeon size (70-90% of region with some randomness)
-      // For large regions, use 70% to allow variation
-      // For small regions, use up to 90% to ensure viability
-      val baseSizeRatio = if (regionWidth * regionHeight > 100) 0.7 else 0.8
-      val sizeVariation = baseSizeRatio + random.nextDouble() * 0.2
+      // Generate varied dungeon size (60-85% of region with some randomness)
+      // Use conservative sizing to ensure dungeon generation succeeds
+      // For small regions (< 100 rooms²), use even more conservative 60-75%
+      val baseSizeRatio = if (regionWidth * regionHeight > 100) 0.7 else 0.6
+      val sizeVariation = baseSizeRatio + random.nextDouble() * 0.15
       val dungeonWidth = math.max(7, (regionWidth * sizeVariation).toInt)
       val dungeonHeight = math.max(7, (regionHeight * sizeVariation).toInt)
       
