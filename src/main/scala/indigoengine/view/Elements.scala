@@ -1041,9 +1041,12 @@ object Elements {
   def generateCachedWorldMapView(worldTiles: Map[game.Point, map.TileType], canvasWidth: Int, canvasHeight: Int): Batch[SceneNode] = {
     import map.TileType
     
+    println(s"[WorldMap] Generating map with ${worldTiles.size} tiles, canvas: ${canvasWidth}x${canvasHeight}")
+    
     // Calculate bounds
     val allPositions = worldTiles.keys.toSeq
     if (allPositions.isEmpty) {
+      println("[WorldMap] WARNING: No tiles to render!")
       return Batch.empty
     }
     
@@ -1061,7 +1064,10 @@ object Elements {
     
     val scaleX = availableWidth.toDouble / mapWidth
     val scaleY = availableHeight.toDouble / mapHeight
-    val pixelSize = math.max(2, math.min(scaleX, scaleY).toInt) // Minimum 2 for visibility
+    // IMPORTANT: Use at least 3 pixels per tile to drastically reduce shape count
+    // With 44k tiles and 2px per tile = 44k shapes (too many!)
+    // With 3px per tile and sampling every other tile = ~11k shapes (more manageable)
+    val pixelSize = math.max(3, math.min(scaleX, scaleY).toInt)
     
     // Center the map on screen
     val mapPixelWidth = mapWidth * pixelSize
@@ -1083,16 +1089,39 @@ object Elements {
     }
     
     // Create pixel boxes for each tile
-    val tilePixels = worldTiles.map { case (pos, tileType) =>
+    println(s"[WorldMap] Map bounds: (${minX},${minY}) to (${maxX},${maxY}), size: ${mapWidth}x${mapHeight}, pixelSize: ${pixelSize}")
+    println(s"[WorldMap] Rendering at offset (${offsetX},${offsetY})")
+    
+    // PERFORMANCE OPTIMIZATION: For very large maps, sample tiles instead of rendering all
+    // Rendering 44k+ shapes causes browser to hang. Sample every Nth tile to stay under ~5000 shapes.
+    val targetMaxShapes = 5000
+    val sampleRate = math.max(1, (worldTiles.size.toDouble / targetMaxShapes).ceil.toInt)
+    
+    println(s"[WorldMap] Total tiles: ${worldTiles.size}, sample rate: 1/${sampleRate}")
+    
+    val sampledTiles = if (sampleRate > 1) {
+      // Sample tiles by skipping positions in a grid pattern
+      worldTiles.filter { case (pos, _) =>
+        ((pos.x - minX) % sampleRate == 0) && ((pos.y - minY) % sampleRate == 0)
+      }
+    } else {
+      worldTiles
+    }
+    
+    val tilePixels = sampledTiles.map { case (pos, tileType) =>
       val x = offsetX + ((pos.x - minX) * pixelSize)
       val y = offsetY + ((pos.y - minY) * pixelSize)
       
+      // If sampling, make pixels larger to fill gaps
+      val renderSize = pixelSize * sampleRate
+      
       Shape.Box(
-        Rectangle(Point(x, y), Size(pixelSize, pixelSize)),
+        Rectangle(Point(x, y), Size(renderSize, renderSize)),
         Fill.Color(getTileColor(tileType))
       )
     }.toSeq
     
+    println(s"[WorldMap] Generated ${tilePixels.length} tile pixels (sampled from ${worldTiles.size})")
     tilePixels.toBatch
   }
   
