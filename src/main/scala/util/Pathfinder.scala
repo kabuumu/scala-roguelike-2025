@@ -4,10 +4,14 @@ import game.entity.Movement.position
 import game.{Direction, GameState, Point}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.HashSet
 import scala.collection.mutable
 
 object Pathfinder {
+  /**
+   * A* pathfinding algorithm for entities of arbitrary size.
+   * Note: Uses mutable collections for performance. Not thread-safe.
+   * This is acceptable as the game runs in a single-threaded environment.
+   */
   def findPathWithSize(start: Point, end: Point, blockers: Seq[Point], entitySize: Point): Seq[Point] = {
     def heuristic(a: Point, b: Point): Int = Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
@@ -16,7 +20,7 @@ object Pathfinder {
     implicit val nodeOrdering: Ordering[Node] = Ordering.by(-_.f)
 
     val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, end), None))
-    val closedSet = HashSet.empty[Point]
+    val closedSet = mutable.HashSet.empty[Point]
 
     // Check if all tiles for an entity of given size at position are clear
     def isPositionValid(position: Point): Boolean = {
@@ -44,7 +48,7 @@ object Pathfinder {
     }
 
     @tailrec
-    def search(openSet: mutable.PriorityQueue[Node], closedSet: HashSet[Point]): Seq[Point] = {
+    def search(openSet: mutable.PriorityQueue[Node], closedSet: mutable.HashSet[Point]): Seq[Point] = {
       if (openSet.isEmpty) {
         Seq.empty
       } else {
@@ -52,10 +56,10 @@ object Pathfinder {
         if (current.point == end) {
           reconstructPath(current)
         } else {
-          val newClosedSet = closedSet + current.point
+          closedSet += current.point
           val neighbors = current.point.neighbors
             .filter(isPositionValid) // Use the new validation that checks entity size
-            .filterNot(newClosedSet.contains)
+            .filterNot(closedSet.contains)
 
           neighbors.foreach { neighbor =>
             val tentativeG = current.g + 1
@@ -65,7 +69,7 @@ object Pathfinder {
             }
           }
 
-          search(openSet, newClosedSet)
+          search(openSet, closedSet)
         }
       }
     }
