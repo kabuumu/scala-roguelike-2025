@@ -370,14 +370,15 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
     
     val destinations = dungeonEntrances ++ villageEntrances ++ shopEntrances
     
-    // Collect all obstacles (dungeon walls, building walls, rocks)
+    // Collect all obstacles (ALL dungeon tiles, building walls, rocks)
+    // Paths should avoid ALL dungeon tiles (walls AND floors) except entrance areas
     // Note: We don't include trees as obstacles for paths - paths can clear trees
-    val dungeonWalls = worldMap.dungeons.flatMap(_.walls).toSet
+    val dungeonTiles = worldMap.dungeons.flatMap(_.tiles.keySet).toSet
     val buildingWalls = worldMap.villages.flatMap(_.walls).toSet
     val rocks = worldMap.rocks
     
     // Base obstacles that paths must avoid (but can cross rivers)
-    val baseObstacles = dungeonWalls ++ buildingWalls ++ rocks
+    val baseObstacles = dungeonTiles ++ buildingWalls ++ rocks
     
     // Generate paths to each destination using pathfinding
     val allPathTiles = destinations.flatMap { destination =>
@@ -392,11 +393,12 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
       val obstaclesForThisPath = baseObstacles -- entranceArea
       
       // Use pathfinding to generate path around obstacles
+      // Use width = 0 for single-tile wide paths to avoid diagonal spreading
       PathGenerator.generatePathAroundObstacles(
         startPoint,
         destination,
         obstaclesForThisPath,
-        width = 1,
+        width = 0,
         worldMap.bounds
       )
     }.toSet
