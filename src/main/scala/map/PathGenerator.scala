@@ -10,57 +10,6 @@ import scala.annotation.tailrec
 object PathGenerator {
   
   /**
-   * Generates a path from a start point to a target point.
-   * The path is not perfectly straight but wanders slightly for a natural look.
-   * 
-   * @param startPoint Where the path begins (in tile coordinates)
-   * @param targetPoint Where the path should lead (in tile coordinates)
-   * @param width Width of the path in tiles
-   * @param bounds Map bounds to constrain the path
-   * @return Set of Points representing path tiles
-   */
-  def generatePath(
-    startPoint: Point,
-    targetPoint: Point,
-    width: Int = 1,
-    bounds: MapBounds
-  ): Set[Point] = {
-    // Generate main path line
-    val mainPath = findPathLine(startPoint, targetPoint)
-    
-    // Add all points along the main path with width
-    widenPath(mainPath, width, bounds)
-  }
-  
-  /**
-   * Widens a path by adding tiles around each point based on width parameter.
-   * Uses Manhattan distance for diamond-shaped widening.
-   */
-  private def widenPath(pathPoints: Seq[Point], width: Int, bounds: MapBounds): Set[Point] = {
-    val result = scala.collection.mutable.Set[Point]()
-    
-    pathPoints.foreach { point =>
-      if (isWithinBounds(point, bounds)) {
-        result += point
-        
-        // Add width to the path using Manhattan distance for diamond shape
-        for {
-          dx <- -width to width
-          dy <- -width to width
-          if (dx.abs + dy.abs) <= width
-        } {
-          val widthPoint = Point(point.x + dx, point.y + dy)
-          if (isWithinBounds(widthPoint, bounds)) {
-            result += widthPoint
-          }
-        }
-      }
-    }
-    
-    result.toSet
-  }
-  
-  /**
    * Widens a path while avoiding obstacle points.
    */
   private def widenPathAvoidingObstacles(
@@ -108,16 +57,15 @@ object PathGenerator {
     startPoint: Point,
     targetPoint: Point,
     obstacles: Set[Point],
-    width: Int = 1,
+    width: Int,
     bounds: MapBounds
   ): Set[Point] = {
-    val pathPoints = scala.collection.mutable.Set[Point]()
-    
     // Use A* pathfinding to find route around obstacles
     val mainPath = findPathAroundObstacles(startPoint, targetPoint, obstacles, bounds)
     
     // If pathfinding failed, fall back to direct line
     val finalPath = if (mainPath.isEmpty) {
+      println(s"Falling back to direct line from $startPoint to $targetPoint")
       findPathLine(startPoint, targetPoint)
     } else {
       mainPath
@@ -130,6 +78,7 @@ object PathGenerator {
   /**
    * Finds a path avoiding obstacles using A* pathfinding.
    * Returns empty sequence if no path can be found.
+   * Prefers straight paths and minimizes corners.
    */
   private def findPathAroundObstacles(
     start: Point, 
@@ -139,12 +88,36 @@ object PathGenerator {
   ): Seq[Point] = {
     import scala.collection.mutable
     
-    case class Node(point: Point, g: Int, h: Int, parent: Option[Node]) {
+    // Check if start or target is an obstacle or out of bounds
+    if (obstacles.contains(start)) {
+      println(s"A* pathfinding failed: Start point $start is an obstacle")
+      return Seq.empty
+    }
+    if (obstacles.contains(target)) {
+      println(s"A* pathfinding failed: Target point $target is an obstacle")
+      return Seq.empty
+    }
+    if (!isWithinBounds(start, bounds)) {
+      println(s"A* pathfinding failed: Start point $start is outside bounds")
+      return Seq.empty
+    }
+    if (!isWithinBounds(target, bounds)) {
+      println(s"A* pathfinding failed: Target point $target is outside bounds")
+      return Seq.empty
+    }
+    
+    case class Node(point: Point, g: Int, h: Int, parent: Option[Node], direction: Option[(Int, Int)]) {
       val f: Int = g + h
     }
     
     def heuristic(a: Point, b: Point): Int = 
       math.abs(a.x - b.x) + math.abs(a.y - b.y)
+    
+    def getDirection(from: Point, to: Point): (Int, Int) = {
+      val dx = if (to.x > from.x) 1 else if (to.x < from.x) -1 else 0
+      val dy = if (to.y > from.y) 1 else if (to.y < from.y) -1 else 0
+      (dx, dy)
+    }
     
     def reconstructPath(node: Node): Seq[Point] = {
       @tailrec
@@ -156,7 +129,7 @@ object PathGenerator {
     }
     
     implicit val nodeOrdering: Ordering[Node] = Ordering.by[Node, Int](-_.f)
-    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, target), None))
+    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, target), None, None))
     val closedSet = mutable.HashSet[Point]()
     val gScores = mutable.HashMap[Point, Int](start -> 0)
     
@@ -181,111 +154,64 @@ object PathGenerator {
         }
         
         neighbors.foreach { neighbor =>
-          val tentativeG = current.g + 1
+          val neighborDirection = getDirection(current.point, neighbor)
+          
+          // Base cost is 1 for movement
+          var movementCost = 1
+          
+          // Add a small penalty for changing direction (prefer straight lines)
+          // This helps minimize corners in the path
+          current.direction match {
+            case Some(prevDir) if prevDir != neighborDirection =>
+              // Direction change: add small penalty (0.1 * 10 = 1 as integer)
+              movementCost += 1
+            case _ =>
+              // Same direction or first move: no penalty
+          }
+          
+          val tentativeG = current.g + movementCost
           
           if (tentativeG < gScores.getOrElse(neighbor, Int.MaxValue)) {
             gScores(neighbor) = tentativeG
             val h = heuristic(neighbor, target)
-            openSet.enqueue(Node(neighbor, tentativeG, h, Some(current)))
+            openSet.enqueue(Node(neighbor, tentativeG, h, Some(current), Some(neighborDirection)))
           }
         }
       }
     }
     
-    // No path found
+    // No path found - all options exhausted
+    println(s"A* pathfinding failed: No path found from $start to $target (checked ${closedSet.size} tiles)")
     Seq.empty
   }
   
   /**
-   * Finds a line of points from start to target.
-   * Uses Bresenham's line algorithm for a smooth path.
+   * Finds a line of points from start to target using orthogonal (4-directional) movement.
+   * Creates an L-shaped path: moves horizontally first, then vertically.
+   * This ensures no diagonal movement, only straight lines.
    */
   private def findPathLine(start: Point, target: Point): Seq[Point] = {
     val points = scala.collection.mutable.ArrayBuffer[Point]()
     
-    val dx = math.abs(target.x - start.x)
-    val dy = math.abs(target.y - start.y)
-    val sx = if (start.x < target.x) 1 else -1
-    val sy = if (start.y < target.y) 1 else -1
-    var err = dx - dy
-    
+    // Move horizontally first
+    val xStep = if (start.x < target.x) 1 else if (start.x > target.x) -1 else 0
     var x = start.x
-    var y = start.y
-    
-    while (x != target.x || y != target.y) {
-      points += Point(x, y)
-      
-      val e2 = 2 * err
-      if (e2 > -dy) {
-        err -= dy
-        x += sx
-      }
-      if (e2 < dx) {
-        err += dx
-        y += sy
-      }
+    while (x != target.x) {
+      points += Point(x, start.y)
+      x += xStep
     }
     
+    // Then move vertically
+    val yStep = if (start.y < target.y) 1 else if (start.y > target.y) -1 else 0
+    var y = start.y
+    while (y != target.y) {
+      points += Point(target.x, y)
+      y += yStep
+    }
+    
+    // Add the final target point
     points += target
     points.toSeq
-  }
-  
-  /**
-   * Generates paths from multiple starting points to a single target.
-   * Useful for creating paths that converge on a dungeon entrance.
-   * 
-   * @param startingPoints Multiple points from which paths should originate
-   * @param targetPoint The dungeon entrance or point of interest
-   * @param width Width of each path
-   * @param bounds Map bounds
-   * @return Set of all path Points
-   */
-  def generateConvergingPaths(
-    startingPoints: Seq[Point],
-    targetPoint: Point,
-    width: Int = 1,
-    bounds: MapBounds
-  ): Set[Point] = {
-    startingPoints.flatMap { start =>
-      generatePath(start, targetPoint, width, bounds)
-    }.toSet
-  }
-  
-  /**
-   * Generates paths that lead to all dungeon entrances in a world.
-   * Creates paths from the world edges towards each dungeon.
-   * 
-   * @param dungeonEntrances Points where dungeons can be entered
-   * @param bounds World bounds
-   * @param pathsPerEntrance Number of paths leading to each entrance
-   * @param seed Random seed for path start point selection
-   * @return Set of all path Points
-   */
-  def generateDungeonPaths(
-    dungeonEntrances: Seq[Point],
-    bounds: MapBounds,
-    pathsPerEntrance: Int = 2,
-    width: Int = 1,
-    seed: Long = System.currentTimeMillis()
-  ): Set[Point] = {
-    val random = new scala.util.Random(seed)
-    val (tileMinX, tileMaxX, tileMinY, tileMaxY) = bounds.toTileBounds()
-    
-    dungeonEntrances.flatMap { entrance =>
-      // For each entrance, create paths from random edge points
-      (0 until pathsPerEntrance).flatMap { _ =>
-        // Choose a random edge (0=top, 1=bottom, 2=left, 3=right)
-        val edge = random.nextInt(4)
-        val startPoint = edge match {
-          case 0 => Point(random.between(tileMinX, tileMaxX + 1), tileMinY) // Top edge
-          case 1 => Point(random.between(tileMinX, tileMaxX + 1), tileMaxY) // Bottom edge
-          case 2 => Point(tileMinX, random.between(tileMinY, tileMaxY + 1)) // Left edge
-          case 3 => Point(tileMaxX, random.between(tileMinY, tileMaxY + 1)) // Right edge
-        }
-        
-        generatePath(startPoint, entrance, width, bounds)
-      }
-    }.toSet
   }
   
   /**
@@ -295,19 +221,5 @@ object PathGenerator {
     val (tileMinX, tileMaxX, tileMinY, tileMaxY) = bounds.toTileBounds()
     point.x >= tileMinX && point.x <= tileMaxX &&
     point.y >= tileMinY && point.y <= tileMaxY
-  }
-  
-  /**
-   * Provides a human-readable description of generated paths.
-   */
-  def describePaths(paths: Set[Point], bounds: MapBounds): String = {
-    val (tileMinX, tileMaxX, tileMinY, tileMaxY) = bounds.toTileBounds()
-    val totalArea = (tileMaxX - tileMinX + 1) * (tileMaxY - tileMinY + 1)
-    val pathPercent = (paths.size.toDouble / totalArea * 100).toInt
-    
-    s"""Path Generation Summary:
-       |  Total path tiles: ${paths.size}
-       |  Coverage: $pathPercent% of map area
-       |  Bounds: ${bounds.describe}""".stripMargin
   }
 }

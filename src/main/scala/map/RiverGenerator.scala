@@ -25,7 +25,6 @@ object RiverGenerator {
     val riverPoints = scala.collection.mutable.Set[Point](currentPoint)
     
     // Current direction and width (we'll vary these)
-    val originalDirection = config.flowDirection  // Track original direction
     var currentDirection = config.flowDirection
     var currentWidth = config.width
     
@@ -66,20 +65,9 @@ object RiverGenerator {
             currentWidth = math.max(0, math.min(5, currentWidth + widthChange))
           }
           
-          // Direction changes are less likely the farther we are from original direction
-          // Calculate angular difference (0 = same direction, higher = more different)
-          val angleDiff = calculateAngleDifference(originalDirection, currentDirection)
-          
-          // Reduce curve probability based on how far we've deviated
-          // angleDiff ranges from 0 (same) to 4 (opposite), so we scale down the variance
-          val adjustedCurveVariance = config.curveVariance * (1.0 - (angleDiff / 8.0))
-          
-          if (random.nextDouble() < adjustedCurveVariance) {
-            // Normal perturbation (rotate left or right)
+          // Randomly change direction by small amount (<45 degrees)
+          if (random.nextDouble() < config.curveVariance) {
             currentDirection = perturbDirection(currentDirection, random)
-          } else if (angleDiff > 0 && random.nextDouble() < 0.3) {
-            // Pull back toward original direction
-            currentDirection = pullTowardDirection(currentDirection, originalDirection)
           }
           
           stepsSinceLastChange = 0
@@ -91,55 +79,6 @@ object RiverGenerator {
     }
     
     riverPoints.toSet
-  }
-  
-  /**
-   * Calculates the angular difference between two directions.
-   * Returns 0 if same direction, higher values for greater differences.
-   */
-  private def calculateAngleDifference(dir1: (Int, Int), dir2: (Int, Int)): Int = {
-    if (dir1 == dir2) return 0
-    
-    // Count rotations needed to get from dir1 to dir2
-    var current = dir1
-    var rotations = 0
-    
-    // Try rotating left
-    var leftRotations = 0
-    current = dir1
-    while (current != dir2 && leftRotations < 8) {
-      current = rotateLeft(current)
-      leftRotations += 1
-    }
-    
-    // Try rotating right
-    var rightRotations = 0
-    current = dir1
-    while (current != dir2 && rightRotations < 8) {
-      current = rotateRight(current)
-      rightRotations += 1
-    }
-    
-    // Return the minimum rotations needed
-    math.min(leftRotations, rightRotations)
-  }
-  
-  /**
-   * Pulls the current direction one step closer to the target direction.
-   * Chooses the shorter rotation path (left or right).
-   */
-  private def pullTowardDirection(current: (Int, Int), target: (Int, Int)): (Int, Int) = {
-    if (current == target) return current
-    
-    // Check if rotating left gets us closer
-    val rotatedLeft = rotateLeft(current)
-    val rotatedRight = rotateRight(current)
-    
-    val leftDiff = calculateAngleDifference(rotatedLeft, target)
-    val rightDiff = calculateAngleDifference(rotatedRight, target)
-    
-    // Rotate in the direction that gets us closer
-    if (leftDiff < rightDiff) rotatedLeft else rotatedRight
   }
   
   /**

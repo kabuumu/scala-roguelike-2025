@@ -355,13 +355,15 @@ class VillagePlacementMutator(
 /**
  * Mutator that creates dirt paths between key locations (spawn, dungeons, villages).
  * If paths cross rivers, bridges are placed instead of dirt tiles.
+ * Uses pathfinding to avoid obstacles (dungeon walls, building walls).
  */
 class PathGenerationMutator(startPoint: Point) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
-    import scala.util.LineOfSight
-    
-    // Find all dungeon entrances
-    val dungeonEntrances = worldMap.dungeons.map(_.startPoint).map(Dungeon.roomToTile)
+    // Calculate dungeon approach tiles (tiles in front of entrance doors)
+    // These are outside the dungeon to prevent paths cutting through walls
+    val dungeonApproachTiles = worldMap.dungeons.map { dungeon =>
+      Dungeon.getApproachTile(dungeon.startPoint, dungeon.entranceSide)
+    }
     
     // Find all village entrances (all buildings in all villages)
     val villageEntrances = worldMap.villages.flatMap(_.entrances)
@@ -369,17 +371,65 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
     // Legacy shop support (for backward compatibility)
     val shopEntrances = worldMap.shop.map(_.entranceTile).toSeq
     
-    val destinations = dungeonEntrances ++ villageEntrances ++ shopEntrances
+    // Main destinations are approach tiles for dungeons, plus village/shop entrances
+    val destinations = dungeonApproachTiles ++ villageEntrances ++ shopEntrances
     
-    // Create paths from start point to all destinations
-    val pathTiles: Set[Point] = (for {
-      destination <- destinations
-      pathPoint <- LineOfSight.getBresenhamLine(startPoint, destination)
-    } yield pathPoint).toSet
+    // Collect all obstacles (ALL dungeon tiles, building walls, rocks)
+    // Paths should avoid ALL dungeon tiles (walls AND floors) except entrance areas
+    // Note: We don't include trees as obstacles for paths - paths can clear trees
+    val dungeonTiles = worldMap.dungeons.flatMap(_.tiles.keySet).toSet
+    val buildingWalls = worldMap.villages.flatMap(_.walls).toSet
+    val rocks = worldMap.rocks
+    
+    // Base obstacles that paths must avoid (but can cross rivers)
+    val baseObstacles = dungeonTiles ++ buildingWalls ++ rocks
+    
+    // Create an entrance area around the spawn point (5x5 area)
+    // This prevents the spawn from being blocked by obstacles
+    val spawnArea = (for {
+      dx <- -2 to 2
+      dy <- -2 to 2
+    } yield Point(startPoint.x + dx, startPoint.y + dy)).toSet
+    
+    // Generate main paths to approach tiles/entrances using pathfinding
+    val mainPathTiles = destinations.flatMap { destination =>
+      // Create an entrance area around the destination (5x5 area)
+      // This allows the path to connect to the entrance without being blocked
+      val destinationArea = (for {
+        dx <- -2 to 2
+        dy <- -2 to 2
+      } yield Point(destination.x + dx, destination.y + dy)).toSet
+      
+      // Remove both spawn and destination areas from obstacles to allow path to connect
+      val obstaclesForThisPath = baseObstacles -- spawnArea -- destinationArea
+
+      // Use pathfinding to generate path around obstacles
+      // Use width = 0 for single-tile wide paths to avoid diagonal spreading
+      PathGenerator.generatePathAroundObstacles(
+        startPoint,
+        destination,
+        obstaclesForThisPath,
+        width = 0,
+        worldMap.bounds
+      )
+    }.toSet
+    
+    // Generate short connecting paths from approach tiles to actual dungeon entrance doors
+    val dungeonConnectingPaths = worldMap.dungeons.flatMap { dungeon =>
+      val entranceDoor = Dungeon.getEntranceDoor(dungeon.startPoint, dungeon.entranceSide)
+      val approachTile = Dungeon.getApproachTile(dungeon.startPoint, dungeon.entranceSide)
+      
+      // Create a short straight path from approach tile to entrance door
+      // This ensures there's always a clear path into the dungeon
+      Set(approachTile, entranceDoor)
+    }.toSet
+    
+    // Combine main paths and dungeon connecting paths
+    val allPathTiles = mainPathTiles ++ dungeonConnectingPaths
     
     // Separate path tiles into those on water (need bridges) and those on land (need dirt)
-    val pathsOnWater = pathTiles.intersect(worldMap.rivers)
-    val pathsOnLand = pathTiles -- pathsOnWater
+    val pathsOnWater = allPathTiles.intersect(worldMap.rivers)
+    val pathsOnLand = allPathTiles -- pathsOnWater
     
     // Create Bridge tiles for paths crossing rivers, Dirt tiles for other paths
     val bridgeTiles = pathsOnWater.map(_ -> TileType.Bridge).toMap
@@ -388,7 +438,7 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
     
     worldMap.copy(
       tiles = worldMap.tiles ++ pathTileMap,
-      paths = worldMap.paths ++ pathTiles,
+      paths = worldMap.paths ++ allPathTiles,
       bridges = worldMap.bridges ++ pathsOnWater
     )
   }

@@ -15,7 +15,8 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
                    traderRoom: Option[Point] = None,
                    hasBossRoom: Boolean = false,
                    testMode: Boolean = false,
-                   seed: Long = System.currentTimeMillis()) {
+                   seed: Long = System.currentTimeMillis(),
+                   entranceSide: Direction = Direction.Left) {
   def lockRoomConnection(roomConnection: RoomConnection, lock: LockedDoor): Dungeon = {
     copy(
       roomConnections = roomConnections - roomConnection + roomConnection.copy(
@@ -335,5 +336,40 @@ object Dungeon {
       room.x * roomSize + roomSize / 2,
       room.y * roomSize + roomSize / 2
     )
+  }
+  
+  /**
+   * Calculates the entrance door position for a dungeon room.
+   * The door is placed on the edge of the room in the direction of entranceSide.
+   */
+  def getEntranceDoor(startRoom: Point, entranceSide: Direction): Point = {
+    val roomX = startRoom.x * roomSize
+    val roomY = startRoom.y * roomSize
+    
+    entranceSide match {
+      case Direction.Up => Point(roomX + roomSize / 2, roomY)
+      case Direction.Down => Point(roomX + roomSize / 2, roomY + roomSize - 1)
+      case Direction.Left => Point(roomX, roomY + roomSize / 2)
+      case Direction.Right => Point(roomX + roomSize - 1, roomY + roomSize / 2)
+    }
+  }
+  
+  /**
+   * Calculates the approach tile - the tile just in front of the dungeon entrance door.
+   * This is used for pathfinding to avoid paths cutting through dungeon walls.
+   * The approach tile is one tile outside the entrance door.
+   * 
+   * For example, if entrance faces Left, the approach tile is one tile to the left of the door.
+   */
+  def getApproachTile(startRoom: Point, entranceSide: Direction): Point = {
+    val doorPosition = getEntranceDoor(startRoom, entranceSide)
+    
+    // The approach tile is one step outside the door in the direction the entrance faces
+    entranceSide match {
+      case Direction.Up => Point(doorPosition.x, doorPosition.y - 1)    // One tile above door
+      case Direction.Down => Point(doorPosition.x, doorPosition.y + 1)  // One tile below door
+      case Direction.Left => Point(doorPosition.x - 1, doorPosition.y)  // One tile left of door
+      case Direction.Right => Point(doorPosition.x + 1, doorPosition.y) // One tile right of door
+    }
   }
 }
