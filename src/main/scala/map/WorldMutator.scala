@@ -265,11 +265,45 @@ class ShopPlacementMutator(worldBounds: MapBounds) extends WorldMutator {
 }
 
 /**
+ * Mutator that places a village at the player spawn point (origin).
+ * This ensures the player starts in a safe settlement.
+ * Must be placed BEFORE DungeonPlacementMutator so dungeons avoid this area.
+ * 
+ * @param spawnPoint The player's spawn location (typically Point(0,0))
+ * @param seed Random seed for deterministic generation
+ */
+class SpawnVillageMutator(
+  spawnPoint: Point = Point(0, 0),
+  seed: Long = System.currentTimeMillis()
+) extends WorldMutator {
+  override def mutateWorld(worldMap: WorldMap): WorldMap = {
+    // Generate a village at the spawn point
+    val spawnVillage = Village.generateVillage(spawnPoint, seed)
+    
+    // Combine village tiles
+    val villageTiles = spawnVillage.tiles
+    
+    worldMap.copy(
+      tiles = worldMap.tiles ++ villageTiles,
+      villages = worldMap.villages :+ spawnVillage,
+      // Maintain backward compatibility: set shop to this village's shop
+      shop = Some({
+        val shopBuilding = spawnVillage.shopBuilding
+        Shop(
+          location = Point(shopBuilding.location.x / 10, shopBuilding.location.y / 10),
+          size = 10
+        )
+      })
+    )
+  }
+}
+
+/**
  * Mutator that places villages in the world.
  * Villages are collections of 3-5 buildings, with one building being a shop.
  * 
  * @param worldBounds The bounds of the world
- * @param numVillages Number of villages to generate
+ * @param numVillages Total number of villages desired (including spawn village)
  * @param seed Random seed for deterministic generation
  */
 class VillagePlacementMutator(
@@ -289,8 +323,13 @@ class VillagePlacementMutator(
     
     val random = new scala.util.Random(seed)
     
+    // Calculate how many additional villages to generate
+    // Subtract 1 if spawn village already exists, otherwise generate all
+    val existingVillages = worldMap.villages.length
+    val additionalVillages = math.max(0, numVillages - existingVillages)
+    
     // Generate villages at different locations
-    val villages = (0 until numVillages).map { i =>
+    val villages = (0 until additionalVillages).map { i =>
       val villageLocation = Village.findVillageLocation(dungeonBounds, worldBounds, preferredDistance = 30 + i * 50)
       Village.generateVillage(villageLocation, seed + i)
     }
