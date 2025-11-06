@@ -7,6 +7,11 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Pathfinder {
+  /**
+   * A* pathfinding algorithm for entities of arbitrary size.
+   * Note: Uses mutable collections for performance. Not thread-safe.
+   * This is acceptable as the game runs in a single-threaded environment.
+   */
   def findPathWithSize(start: Point, end: Point, blockers: Seq[Point], entitySize: Point): Seq[Point] = {
     def heuristic(a: Point, b: Point): Int = Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
