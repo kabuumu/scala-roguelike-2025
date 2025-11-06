@@ -43,7 +43,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
     Startup.Success(())
   )
 
-  var cachedMapView: Option[Outcome[_]] = None
+  var cachedMapView: Option[Outcome[?]] = None
   
   override def initialModel(startupData: Unit): Outcome[GameController] = {
     // Create a minimal dummy game state for the main menu (it won't be used until New Game is selected)

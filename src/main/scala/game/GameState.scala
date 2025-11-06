@@ -104,9 +104,12 @@ case class GameState(playerEntityId: String,
     copy(entities = entities.updated(entities.indexWhere(_.id == entityId), newEntity))
 
   def updateEntity(entityId: String, update: Entity => Entity): GameState = {
-    copy(
-      entities = entities.updated(entities.indexWhere(_.id == entityId), update(entities.find(_.id == entityId).get))
-    )
+    val index = entities.indexWhere(_.id == entityId)
+    if (index >= 0) {
+      copy(entities = entities.updated(index, update(entities(index))))
+    } else {
+      this
+    }
   }
 
   def getActor(point: Point): Option[Entity] = {
