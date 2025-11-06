@@ -84,6 +84,6 @@ object DungeonGenerator {
 
     // Start from configured entrance room
     val startRoom = config.getEntranceRoom
-    recursiveGenerator(Set(Dungeon(roomGrid = Set(startRoom), startPoint = startRoom, seed = config.seed)))
+    recursiveGenerator(Set(Dungeon(roomGrid = Set(startRoom), startPoint = startRoom, seed = config.seed, entranceSide = config.entranceSide)))
   }
 }

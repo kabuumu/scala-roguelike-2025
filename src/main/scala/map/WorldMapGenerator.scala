@@ -72,23 +72,6 @@ object WorldMapGenerator {
       mutator.mutateWorld(worldMap)
     }
   }
-  
-  /**
-   * Generates a world map using custom mutators.
-   * Allows for complete customization of the world generation process.
-   *
-   * @param initialWorldMap The starting world map state
-   * @param mutators The list of mutators to apply
-   * @return WorldMap after all mutators have been applied
-   */
-  def generateWorldMapWithMutators(
-    initialWorldMap: WorldMap,
-    mutators: Seq[WorldMutator]
-  ): WorldMap = {
-    mutators.foldLeft(initialWorldMap) { (worldMap, mutator) =>
-      mutator.mutateWorld(worldMap)
-    }
-  }
 }
   
 /**
