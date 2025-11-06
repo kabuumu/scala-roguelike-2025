@@ -140,23 +140,42 @@ case class WorldMap(
   bounds: MapBounds
 ) {
   /**
+   * Computed tile sets for efficient lookups.
+   * Single pass through tiles map to extract all relevant sets.
+   */
+  private lazy val tileSets: (Set[Point], Set[Point], Set[Point]) = {
+    val wallsBuilder = Set.newBuilder[Point]
+    val rocksBuilder = Set.newBuilder[Point]
+    val waterBuilder = Set.newBuilder[Point]
+    
+    tiles.foreach { case (point, tileType) =>
+      tileType match {
+        case TileType.Wall | TileType.Tree => wallsBuilder += point
+        case TileType.Rock => rocksBuilder += point
+        case TileType.Water => waterBuilder += point
+        case _ => // ignore other tile types
+      }
+    }
+    
+    (wallsBuilder.result(), rocksBuilder.result(), waterBuilder.result())
+  }
+  
+  /**
    * Points that block line of sight (walls and trees).
    * Trees block sight in open world areas.
    */
-  lazy val walls: Set[Point] = tiles.filter { case (_, tileType) =>
-    tileType == TileType.Wall || tileType == TileType.Tree
-  }.keySet
+  lazy val walls: Set[Point] = tileSets._1
   
   /**
    * Points that are rocks (impassable terrain features).
    */
-  lazy val rocks: Set[Point] = tiles.filter(_._2 == TileType.Rock).keySet
+  lazy val rocks: Set[Point] = tileSets._2
   
   /**
    * Points that are water (impassable unless bridged).
    * Bridges make water passable, so we exclude bridge points.
    */
-  lazy val water: Set[Point] = tiles.filter(_._2 == TileType.Water).keySet -- bridges
+  lazy val water: Set[Point] = tileSets._3 -- bridges
   
   /**
    * Get the primary dungeon (first dungeon if multiple exist).
