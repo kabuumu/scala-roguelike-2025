@@ -103,8 +103,8 @@ class WorldMapPathfindingTest extends AnyFunSuite {
       bounds = bounds
     ))
     
-    // Create a village with buildings
-    val village = Village.generateVillage(Point(50, 50), seed = 54321)
+    // Create a village with buildings (within world bounds)
+    val village = Village.generateVillage(Point(30, 30), seed = 54321)
     val worldWithVillage = worldWithTerrain.copy(
       tiles = worldWithTerrain.tiles ++ village.tiles,
       villages = Seq(village)
@@ -208,9 +208,9 @@ class WorldMapPathfindingTest extends AnyFunSuite {
   test("paths prefer straight lines and minimize corners") {
     val bounds = MapBounds(-5, 5, -5, 5)
     
-    // Create a simple test with minimal obstacles
+    // Create a simple test with minimal obstacles (within bounds)
     val start = Point(0, 0)
-    val target = Point(50, 50)
+    val target = Point(40, 40)
     
     // Add some obstacles that don't block direct path
     val obstacles = Set(
