@@ -355,11 +355,10 @@ class VillagePlacementMutator(
 /**
  * Mutator that creates dirt paths between key locations (spawn, dungeons, villages).
  * If paths cross rivers, bridges are placed instead of dirt tiles.
+ * Uses pathfinding to avoid obstacles (dungeon walls, building walls).
  */
 class PathGenerationMutator(startPoint: Point) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
-    import scala.util.LineOfSight
-    
     // Find all dungeon entrances
     val dungeonEntrances = worldMap.dungeons.map(_.startPoint).map(Dungeon.roomToTile)
     
@@ -371,15 +370,40 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
     
     val destinations = dungeonEntrances ++ villageEntrances ++ shopEntrances
     
-    // Create paths from start point to all destinations
-    val pathTiles: Set[Point] = (for {
-      destination <- destinations
-      pathPoint <- LineOfSight.getBresenhamLine(startPoint, destination)
-    } yield pathPoint).toSet
+    // Collect all obstacles (dungeon walls, building walls, rocks)
+    // Note: We don't include trees as obstacles for paths - paths can clear trees
+    val dungeonWalls = worldMap.dungeons.flatMap(_.walls).toSet
+    val buildingWalls = worldMap.villages.flatMap(_.walls).toSet
+    val rocks = worldMap.rocks
+    
+    // Base obstacles that paths must avoid (but can cross rivers)
+    val baseObstacles = dungeonWalls ++ buildingWalls ++ rocks
+    
+    // Generate paths to each destination using pathfinding
+    val allPathTiles = destinations.flatMap { destination =>
+      // Create an entrance area around the destination (5x5 area)
+      // This allows the path to connect to the entrance without being blocked
+      val entranceArea = (for {
+        dx <- -2 to 2
+        dy <- -2 to 2
+      } yield Point(destination.x + dx, destination.y + dy)).toSet
+      
+      // Remove entrance area from obstacles to allow path to connect
+      val obstaclesForThisPath = baseObstacles -- entranceArea
+      
+      // Use pathfinding to generate path around obstacles
+      PathGenerator.generatePathAroundObstacles(
+        startPoint,
+        destination,
+        obstaclesForThisPath,
+        width = 1,
+        worldMap.bounds
+      )
+    }.toSet
     
     // Separate path tiles into those on water (need bridges) and those on land (need dirt)
-    val pathsOnWater = pathTiles.intersect(worldMap.rivers)
-    val pathsOnLand = pathTiles -- pathsOnWater
+    val pathsOnWater = allPathTiles.intersect(worldMap.rivers)
+    val pathsOnLand = allPathTiles -- pathsOnWater
     
     // Create Bridge tiles for paths crossing rivers, Dirt tiles for other paths
     val bridgeTiles = pathsOnWater.map(_ -> TileType.Bridge).toMap
@@ -388,7 +412,7 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
     
     worldMap.copy(
       tiles = worldMap.tiles ++ pathTileMap,
-      paths = worldMap.paths ++ pathTiles,
+      paths = worldMap.paths ++ allPathTiles,
       bridges = worldMap.bridges ++ pathsOnWater
     )
   }

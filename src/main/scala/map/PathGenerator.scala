@@ -130,6 +130,7 @@ object PathGenerator {
   /**
    * Finds a path avoiding obstacles using A* pathfinding.
    * Returns empty sequence if no path can be found.
+   * Prefers straight paths and minimizes corners.
    */
   private def findPathAroundObstacles(
     start: Point, 
@@ -139,12 +140,18 @@ object PathGenerator {
   ): Seq[Point] = {
     import scala.collection.mutable
     
-    case class Node(point: Point, g: Int, h: Int, parent: Option[Node]) {
+    case class Node(point: Point, g: Int, h: Int, parent: Option[Node], direction: Option[(Int, Int)]) {
       val f: Int = g + h
     }
     
     def heuristic(a: Point, b: Point): Int = 
       math.abs(a.x - b.x) + math.abs(a.y - b.y)
+    
+    def getDirection(from: Point, to: Point): (Int, Int) = {
+      val dx = if (to.x > from.x) 1 else if (to.x < from.x) -1 else 0
+      val dy = if (to.y > from.y) 1 else if (to.y < from.y) -1 else 0
+      (dx, dy)
+    }
     
     def reconstructPath(node: Node): Seq[Point] = {
       @tailrec
@@ -156,7 +163,7 @@ object PathGenerator {
     }
     
     implicit val nodeOrdering: Ordering[Node] = Ordering.by[Node, Int](-_.f)
-    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, target), None))
+    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, target), None, None))
     val closedSet = mutable.HashSet[Point]()
     val gScores = mutable.HashMap[Point, Int](start -> 0)
     
@@ -181,12 +188,27 @@ object PathGenerator {
         }
         
         neighbors.foreach { neighbor =>
-          val tentativeG = current.g + 1
+          val neighborDirection = getDirection(current.point, neighbor)
+          
+          // Base cost is 1 for movement
+          var movementCost = 1
+          
+          // Add a small penalty for changing direction (prefer straight lines)
+          // This helps minimize corners in the path
+          current.direction match {
+            case Some(prevDir) if prevDir != neighborDirection =>
+              // Direction change: add small penalty (0.1 * 10 = 1 as integer)
+              movementCost += 1
+            case _ =>
+              // Same direction or first move: no penalty
+          }
+          
+          val tentativeG = current.g + movementCost
           
           if (tentativeG < gScores.getOrElse(neighbor, Int.MaxValue)) {
             gScores(neighbor) = tentativeG
             val h = heuristic(neighbor, target)
-            openSet.enqueue(Node(neighbor, tentativeG, h, Some(current)))
+            openSet.enqueue(Node(neighbor, tentativeG, h, Some(current), Some(neighborDirection)))
           }
         }
       }
