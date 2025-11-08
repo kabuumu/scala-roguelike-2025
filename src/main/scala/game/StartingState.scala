@@ -335,11 +335,6 @@ object StartingState {
     }
   }
 
-  // Create trader entity in shop (for backward compatibility)
-  val shopTrader: Option[Entity] = worldMap.shop.map { shop =>
-    data.Entities.trader("trader-shop", shop.centerTile)
-  }
-
   // Create traders for all village buildings except the player's starting building
   val villageTraders: Seq[Entity] = worldMap.villages.zipWithIndex.flatMap { case (village, villageIdx) =>
     village.buildings.zipWithIndex.flatMap { case (building, buildingIdx) =>
@@ -360,12 +355,11 @@ object StartingState {
 
   println(s"[StartingState] Creating GameState with worldMap containing ${worldMap.tiles.size} tiles")
   println(s"[StartingState] Dungeon has ${enemies.size} enemies and ${items.size} items")
-  println(s"[StartingState] Shop trader: ${shopTrader.map(_ => "present").getOrElse("absent")}")
   println(s"[StartingState] Village traders: ${villageTraders.size} traders created")
   
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTrader.toSeq ++ shopTrader.toSeq ++ villageTraders,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTrader.toSeq ++ villageTraders,
     worldMap = worldMap
   )
   
