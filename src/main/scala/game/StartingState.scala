@@ -335,18 +335,31 @@ object StartingState {
     }
   }
 
-  // Create trader entity in shop
-  val shopTrader: Option[Entity] = worldMap.shop.map { shop =>
-    data.Entities.trader("trader-shop", shop.centerTile)
+  // Create traders for all village buildings except the player's starting building
+  val villageTraders: Seq[Entity] = worldMap.villages.zipWithIndex.flatMap { case (village, villageIdx) =>
+    village.buildings.zipWithIndex.flatMap { case (building, buildingIdx) =>
+      // Check if this building contains the player spawn point
+      val (minBounds, maxBounds) = building.bounds
+      val containsPlayerSpawn = 
+        playerSpawnPoint.x >= minBounds.x && playerSpawnPoint.x <= maxBounds.x &&
+        playerSpawnPoint.y >= minBounds.y && playerSpawnPoint.y <= maxBounds.y
+      
+      // Create trader for this building if it doesn't contain the player spawn point
+      if (!containsPlayerSpawn) {
+        Some(data.Entities.trader(s"trader-village-$villageIdx-building-$buildingIdx", building.centerTile))
+      } else {
+        None
+      }
+    }
   }
 
   println(s"[StartingState] Creating GameState with worldMap containing ${worldMap.tiles.size} tiles")
   println(s"[StartingState] Dungeon has ${enemies.size} enemies and ${items.size} items")
-  println(s"[StartingState] Shop trader: ${shopTrader.map(_ => "present").getOrElse("absent")}")
+  println(s"[StartingState] Village traders: ${villageTraders.size} traders created")
   
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTrader.toSeq ++ shopTrader.toSeq,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTrader.toSeq ++ villageTraders,
     worldMap = worldMap
   )
   
