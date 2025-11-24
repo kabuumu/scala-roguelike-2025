@@ -23,7 +23,7 @@ object LineOfSight {
     val sy = if (start.y < end.y) 1 else -1
     var (x, y) = (start.x, start.y)
     var err = dx - dy
-    val points = scala.collection.mutable.ArrayBuffer(Point(x, y))
+    var points = List(Point(x, y))
     while (x != end.x || y != end.y) {
       val e2 = 2 * err
       if (e2 > -dy) {
@@ -34,8 +34,8 @@ object LineOfSight {
         err += dx
         y += sy
       }
-      points += Point(x, y)
+      points = Point(x, y) :: points
     }
-    points.toSeq
+    points
   }
 }
