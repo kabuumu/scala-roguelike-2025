@@ -18,8 +18,22 @@ case class Village(
   
   /**
    * All tiles from all buildings in the village.
+   * When buildings overlap, walls take precedence over floors.
    */
-  lazy val tiles: Map[Point, TileType] = buildings.flatMap(_.tiles).toMap
+  lazy val tiles: Map[Point, TileType] = {
+    val allTiles = buildings.flatMap(_.tiles)
+    // Group by point and select walls over floors when there are conflicts
+    allTiles.groupBy(_._1).map { case (point, tiles) =>
+      val tileTypes = tiles.map(_._2)
+      // Prefer walls over floors
+      val finalType = if (tileTypes.contains(TileType.Wall)) {
+        TileType.Wall
+      } else {
+        tileTypes.head
+      }
+      point -> finalType
+    }
+  }
   
   /**
    * All wall points from all buildings.
