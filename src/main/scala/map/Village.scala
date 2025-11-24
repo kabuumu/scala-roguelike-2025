@@ -29,7 +29,7 @@ case class Village(
       val finalType = if (tileTypes.contains(TileType.Wall)) {
         TileType.Wall
       } else {
-        tileTypes.head
+        tileTypes.headOption.getOrElse(TileType.Floor) // Default to Floor if empty (shouldn't happen)
       }
       point -> finalType
     }

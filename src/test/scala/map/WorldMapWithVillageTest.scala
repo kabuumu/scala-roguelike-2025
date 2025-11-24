@@ -65,7 +65,7 @@ class WorldMapWithVillageTest extends AnyFunSuite {
       val isValidOverride = actualType == tileType || 
                            (actualType == TileType.Dirt && worldMap.paths.contains(point)) ||
                            (actualType == TileType.Bridge && worldMap.bridges.contains(point)) ||
-                           (actualType == TileType.Water && worldMap.rivers.contains(point)) || // River under village
+                           (actualType == TileType.Water && worldMap.rivers.contains(point)) || // Village placed over river
                            ((actualType == TileType.Floor || actualType == TileType.Wall) && 
                             (tileType == TileType.Floor || tileType == TileType.Wall)) // Building overlap
       assert(isValidOverride, s"Village tile at $point should be compatible with $tileType, but was $actualType")
