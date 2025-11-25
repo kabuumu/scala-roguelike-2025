@@ -212,11 +212,32 @@ case class Dungeon(roomGrid: Set[Point] = Set(Point(0, 0)),
     regularTiles
   }
 
-  lazy val walls: Set[Point] = tiles.filter(t => t._2 == TileType.Wall || t._2 == TileType.Tree).keySet
-  
-  lazy val rocks: Set[Point] = tiles.filter(_._2 == TileType.Rock).keySet
+  /**
+   * Computed tile sets for efficient lookups.
+   * Single pass through tiles map to extract all relevant sets.
+   */
+  private lazy val tileSets: (Set[Point], Set[Point], Set[Point]) = {
+    val wallsBuilder = Set.newBuilder[Point]
+    val rocksBuilder = Set.newBuilder[Point]
+    val waterBuilder = Set.newBuilder[Point]
+    
+    tiles.foreach { case (point, tileType) =>
+      tileType match {
+        case TileType.Wall | TileType.Tree => wallsBuilder += point
+        case TileType.Rock => rocksBuilder += point
+        case TileType.Water => waterBuilder += point
+        case _ => // ignore other tile types
+      }
+    }
+    
+    (wallsBuilder.result(), rocksBuilder.result(), waterBuilder.result())
+  }
 
-  lazy val water: Set[Point] = tiles.filter(_._2 == TileType.Water).keySet
+  lazy val walls: Set[Point] = tileSets._1
+  
+  lazy val rocks: Set[Point] = tileSets._2
+
+  lazy val water: Set[Point] = tileSets._3
 
   val lockedDoorCount: Int = roomConnections.count(_.isLocked)
 
