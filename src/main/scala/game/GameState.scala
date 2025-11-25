@@ -19,7 +19,7 @@ case class GameState(playerEntityId: String,
   // Index for O(1) entity lookup by ID
   private lazy val entityIndex: Map[String, Entity] = entities.map(e => e.id -> e).toMap
   
-  val playerEntity: Entity = entityIndex.getOrElse(playerEntityId, entities.find(_.id == playerEntityId).get)
+  val playerEntity: Entity = entityIndex(playerEntityId)
 
   def getEntity(entityId: String): Option[Entity] = {
     entityIndex.get(entityId)
