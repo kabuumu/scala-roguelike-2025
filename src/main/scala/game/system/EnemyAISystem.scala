@@ -62,11 +62,22 @@ object EnemyAISystem extends GameSystem {
   }
 
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+    val target = gameState.playerEntity
+    val playerPosition = target.position
+    
+    // Pre-compute player's visible points once for all enemies
+    // This is much faster than computing LOS for each enemy individually
+    val playerVisiblePoints = gameState.getVisiblePointsFor(target)
+    
     val aiEvents = gameState.entities.collect {
       case enemy if enemy.entityType == EntityType.Enemy && enemy.isReady =>
-        val target = gameState.playerEntity
         
-        if (gameState.getVisiblePointsFor(enemy).contains(target.position)) {
+        // Optimization: Check if enemy is in player's line of sight instead of computing enemy's LOS
+        // This is equivalent since LOS is symmetric, and we only compute player's LOS once
+        val enemyPosition = enemy.position
+        val enemyIsVisibleToPlayer = playerVisiblePoints.contains(enemyPosition)
+        
+        if (enemyIsVisibleToPlayer) {
           if (isBoss(enemy)) {
             // Use boss-specific AI
             getBossAction(enemy, target, gameState)
