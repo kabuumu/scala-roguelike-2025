@@ -12,7 +12,7 @@ object Pathfinder {
    * Note: Uses mutable collections for performance. Not thread-safe.
    * This is acceptable as the game runs in a single-threaded environment.
    */
-  def findPathWithSize(start: Point, end: Point, blockers: Seq[Point], entitySize: Point): Seq[Point] = {
+  def findPathWithSize(start: Point, end: Point, blockers: Set[Point], entitySize: Point): Seq[Point] = {
     def heuristic(a: Point, b: Point): Int = Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
     case class Node(point: Point, g: Int, f: Int, parent: Option[Node])
@@ -31,8 +31,8 @@ object Pathfinder {
         dy <- 0 until entitySize.y
       } yield Point(position.x + dx, position.y + dy)
       
-      // All tiles must be clear (not in blockers list) for position to be valid
-      // Also ensure we don't go out of reasonable bounds
+      // All tiles must be clear (not in blockers set) for position to be valid
+      // Using Set for O(1) lookup instead of Seq with O(n) lookup
       entityTiles.forall { tile =>
         !blockers.contains(tile)
       }
@@ -109,7 +109,7 @@ object Pathfinder {
     val path = Pathfinder.findPathWithSize(
       startPosition,
       targetPosition,
-      adjustedBlockers.toSeq,
+      adjustedBlockers,
       entitySize
     )
 
