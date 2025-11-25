@@ -45,29 +45,27 @@ case class GameController(uiState: UIState, gameState: GameState, lastUpdateTime
       // Check for special state transitions that require immediate return
       GameStateTransitions.handleSpecialStateTransitions(uiState, newUiState, optAction, gameState, currentTime)
         .getOrElse {
-          // Only run game systems if there's an action to process
-          // This is a major performance optimization - skips 21 systems when idle
-          optAction match {
-            case Some(action) =>
-              // Continue with normal flow
-              GameStateTransitions.performAutosave(uiState, gameState, optAction)
-              
-              val newGameState = gameState.updateWithSystems(Seq(InputEvent(gameState.playerEntity.id, action)))
+          // Continue with normal flow
+          GameStateTransitions.performAutosave(uiState, gameState, optAction)
+          
+          val newGameState = gameState.updateWithSystems(optAction.map(
+            action => InputEvent(gameState.playerEntity.id, action)
+          ).toSeq)
 
-              // Check for player death transition
-              GameStateTransitions.handlePlayerDeathTransition(uiState, newGameState, currentTime)
-                .getOrElse {
-                  // Normal game state update - action was taken so update time
-                  GameController(newUiState, newGameState, currentTime)
-                }
-            case None =>
-              // No action - just update UI state if needed, skip expensive system updates
-              if (newUiState != uiState) {
-                GameController(newUiState, gameState, currentTime)
-              } else {
-                this
-              }
-          }
+          // Check for player death transition
+          GameStateTransitions.handlePlayerDeathTransition(uiState, newGameState, currentTime)
+            .getOrElse {
+              // Normal game state update
+              val newUpdateTime = if (
+                newGameState.drawableChanges != gameState.drawableChanges
+                  || newUiState != uiState
+                  || newGameState.messages != gameState.messages
+              ) {
+                currentTime
+              } else lastUpdateTime
+
+              GameController(newUiState, newGameState, newUpdateTime)
+            }
         }
     } else this
   }
