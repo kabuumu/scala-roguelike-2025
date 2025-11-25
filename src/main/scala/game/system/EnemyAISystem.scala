@@ -63,7 +63,6 @@ object EnemyAISystem extends GameSystem {
 
   override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
     val target = gameState.playerEntity
-    val playerPosition = target.position
     
     // Pre-compute player's visible points once for all enemies
     // This is much faster than computing LOS for each enemy individually
