@@ -15,10 +15,14 @@ case class GameState(playerEntityId: String,
                      messages: Seq[String] = Nil,
                      worldMap: map.WorldMap,
                      dungeonFloor: Int = 1) {
-  val playerEntity: Entity = entities.find(_.id == playerEntityId).get
+  
+  // Index for O(1) entity lookup by ID
+  private lazy val entityIndex: Map[String, Entity] = entities.map(e => e.id -> e).toMap
+  
+  val playerEntity: Entity = entityIndex.getOrElse(playerEntityId, entities.find(_.id == playerEntityId).get)
 
   def getEntity(entityId: String): Option[Entity] = {
-    entities.find(_.id == entityId)
+    entityIndex.get(entityId)
   }
 
   // Phased system execution ordering for explicit lifecycle management  
