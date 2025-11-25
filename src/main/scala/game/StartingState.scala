@@ -194,27 +194,25 @@ object StartingState {
   // Determine player spawn point
   private lazy val playerSpawnPoint = Point(0, 0)
   
-  // Generate enemies for dungeon rooms
-  private val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.primaryDungeon match {
-    case Some(dung) =>
-      // Assign depth based on distance from start room
-      val startRoom = dung.startPoint
-      dung.roomGrid
-        .zipWithIndex.map { case (room, idx) =>
-          val depth = if (room == startRoom) {
-            -1 // Skip starting room - no enemies spawn here
-          } else if (room == dung.endpoint.getOrElse(startRoom)) {
-            Int.MaxValue // Boss room
-          } else if (dung.traderRoom.contains(room)) {
-            -1 // Skip trader room
-          } else {
-            // Calculate depth based on Manhattan distance from start
-            math.abs(room.x - startRoom.x) + math.abs(room.y - startRoom.y) + 1
-          }
-          (room, depth)
-        }.filter(_._2 > 0).toSeq // Filter out trader room and starting room
-    case None => Seq.empty
-  }
+  // Generate enemies for ALL dungeon rooms (not just primary dungeon)
+  private val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.dungeons.flatMap { dung =>
+    // Assign depth based on distance from start room
+    val startRoom = dung.startPoint
+    dung.roomGrid
+      .zipWithIndex.map { case (room, idx) =>
+        val depth = if (room == startRoom) {
+          -1 // Skip starting room - no enemies spawn here
+        } else if (room == dung.endpoint.getOrElse(startRoom)) {
+          Int.MaxValue // Boss room
+        } else if (dung.traderRoom.contains(room)) {
+          -1 // Skip trader room
+        } else {
+          // Calculate depth based on Manhattan distance from start
+          math.abs(room.x - startRoom.x) + math.abs(room.y - startRoom.y) + 1
+        }
+        (room, depth)
+      }.filter(_._2 > 0) // Filter out trader room and starting room
+  }.toSeq
   
   private val (enemiesList, spitAbilitiesMap) = dungeonRoomsWithDepth.zipWithIndex.flatMap { 
     case ((room, depth), roomIdx) =>
@@ -294,7 +292,8 @@ object StartingState {
     baseEntity.addComponent(Movement(tilePoint))
   }
   
-  val lockedDoors: Set[Entity] = worldMap.primaryDungeon.toSeq.flatMap { dungeon =>
+  // Create locked doors for ALL dungeons (not just primary)
+  val lockedDoors: Set[Entity] = worldMap.dungeons.flatMap { dungeon =>
     dungeon.roomConnections.filter(_.isLocked).map { connection =>
       // LockedDoor is an EntityType, we need to create an Entity with it
       val lockType = connection.optLock.get
@@ -324,14 +323,14 @@ object StartingState {
     }
   }.toSet
 
-  // Create trader entity if dungeon has trader room
-  val dungeonTrader: Option[Entity] = worldMap.primaryDungeon.flatMap { dungeon =>
+  // Create trader entities for ALL dungeons that have trader rooms (not just primary)
+  val dungeonTraders: Seq[Entity] = worldMap.dungeons.zipWithIndex.flatMap { case (dungeon, dungeonIdx) =>
     dungeon.traderRoom.map { traderRoom =>
       val traderPos = Point(
         traderRoom.x * Dungeon.roomSize + Dungeon.roomSize / 2,
         traderRoom.y * Dungeon.roomSize + Dungeon.roomSize / 2
       )
-      data.Entities.trader("trader-floor-1", traderPos)
+      data.Entities.trader(s"trader-dungeon-$dungeonIdx", traderPos)
     }
   }
 
@@ -354,12 +353,13 @@ object StartingState {
   }
 
   println(s"[StartingState] Creating GameState with worldMap containing ${worldMap.tiles.size} tiles")
-  println(s"[StartingState] Dungeon has ${enemies.size} enemies and ${items.size} items")
+  println(s"[StartingState] All dungeons have ${enemies.size} enemies and ${items.size} items")
+  println(s"[StartingState] Dungeon traders: ${dungeonTraders.size} traders created")
   println(s"[StartingState] Village traders: ${villageTraders.size} traders created")
   
   val startingGameState: GameState = GameState(
     playerEntityId = player.id,
-    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTrader.toSeq ++ villageTraders,
+    entities = Vector(player) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTraders ++ villageTraders,
     worldMap = worldMap
   )
   
