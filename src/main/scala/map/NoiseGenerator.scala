@@ -1,6 +1,5 @@
 package map
 
-import scala.annotation.tailrec
 import scala.util.Random
 
 object NoiseGenerator {
@@ -8,35 +7,39 @@ object NoiseGenerator {
 
   def getNoise(minX: Int, maxX: Int, minY: Int, maxY: Int, seed: Long = System.currentTimeMillis()): Map[(Int, Int), Int] = {
     val random = new Random(seed)
-    val totalSize = (maxX - minX + 1) * (maxY - minY + 1)
-
-    @tailrec
-    def loop(currentMap: Map[(Int, Int), Int] = Map.empty, currentX: Int, currentY: Int): Map[(Int, Int), Int] = {
-      //print current x and current Y
-      if (currentMap.size > totalSize) {
-        currentMap
-      } else {
-        val newN = (currentMap.get((currentX - 1) -> currentY), currentMap.get(currentX -> (currentY - 1))) match {
-          case (Some(xNeighbour), Some(yNeighbour)) =>
-            val chosenNeighbour = if (random.nextBoolean) xNeighbour else yNeighbour
-            noisify(chosenNeighbour, random) // Randomly choose between the two neighbours
-          case (Some(xNeighbour), None) =>
-            noisify(xNeighbour, random)
-          case (None, Some(yNeighbour)) =>
-            noisify(yNeighbour, random)
+    val width = maxX - minX + 1
+    val height = maxY - minY + 1
+    
+    // Use mutable map for better performance during construction
+    val noiseMap = scala.collection.mutable.HashMap.empty[(Int, Int), Int]
+    noiseMap.sizeHint(width * height)
+    
+    var currentY = minY
+    while (currentY <= maxY) {
+      var currentX = minX
+      while (currentX <= maxX) {
+        val xNeighbour = noiseMap.get((currentX - 1, currentY))
+        val yNeighbour = noiseMap.get((currentX, currentY - 1))
+        
+        val newN = (xNeighbour, yNeighbour) match {
+          case (Some(x), Some(y)) =>
+            val chosenNeighbour = if (random.nextBoolean()) x else y
+            noisify(chosenNeighbour, random)
+          case (Some(x), None) =>
+            noisify(x, random)
+          case (None, Some(y)) =>
+            noisify(y, random)
           case (None, None) =>
-            noisify(random.nextInt(enumLimit + 1), random) // Default value for the first cell
+            noisify(random.nextInt(enumLimit + 1), random)
         }
-        val newCoordinates = (currentX, currentY)
-        val newMap = currentMap + (newCoordinates -> newN)
-        val newX = if (currentX == maxX) minX else currentX + 1
-        val newY = if (currentX == maxX) currentY + 1 else currentY
-
-        loop(newMap, newX, newY)
+        
+        noiseMap((currentX, currentY)) = newN
+        currentX += 1
       }
+      currentY += 1
     }
-
-    loop(Map.empty, minX, minY)
+    
+    noiseMap.toMap
   }
 
   def noisify(n: Int, random: Random): Int = random.nextInt(3) match {
