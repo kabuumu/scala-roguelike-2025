@@ -345,7 +345,15 @@ object StartingState {
       
       // Create trader for this building if it doesn't contain the player spawn point
       if (!containsPlayerSpawn) {
-        Some(data.Entities.trader(s"trader-village-$villageIdx-building-$buildingIdx", building.centerTile))
+        val id = s"npc-village-$villageIdx-building-$buildingIdx"
+        val position = building.centerTile
+        val entity = building.buildingType match {
+          case map.BuildingType.Healer => data.Entities.healer(id, position)
+          case map.BuildingType.PotionShop => data.Entities.potionMerchant(id, position)
+          case map.BuildingType.EquipmentShop => data.Entities.equipmentMerchant(id, position)
+          case map.BuildingType.Generic => data.Entities.villager(id, position)
+        }
+        Some(entity)
       } else {
         None
       }

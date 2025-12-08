@@ -35,8 +35,8 @@ class WorldMapWithVillageTest extends AnyFunSuite {
     // Village should have walls
     assert(village.walls.nonEmpty, "Village should have walls")
     
-    // Village should have exactly one shop building
-    assert(village.buildings.count(_.isShop) == 1, "Village should have exactly one shop")
+    // Village should have at least one shop building
+    assert(village.buildings.count(_.isShop) >= 1, "Village should have at least one shop")
     
     println(s"Village has ${village.buildings.length} buildings")
     println(s"Village has ${village.tiles.size} tiles and ${village.walls.size} walls")

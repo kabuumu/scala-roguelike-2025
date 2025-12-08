@@ -14,7 +14,6 @@ case class Village(
   centerLocation: Point
 ) {
   require(buildings.length >= 3 && buildings.length <= 5, "Village must have 3-5 buildings")
-  require(buildings.count(_.isShop) == 1, "Village must have exactly one shop building")
   
   /**
    * All tiles from all buildings in the village.
@@ -41,9 +40,9 @@ case class Village(
   lazy val walls: Set[Point] = buildings.flatMap(_.walls).toSet
   
   /**
-   * The shop building in this village.
+   * The shop building in this village (helper for backward compatibility).
    */
-  lazy val shopBuilding: Building = buildings.find(_.isShop).get
+  lazy val shopBuilding: Building = buildings.find(_.isShop).getOrElse(buildings.head)
   
   /**
    * Get all entrance tiles for all buildings.

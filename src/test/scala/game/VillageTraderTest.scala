@@ -12,7 +12,7 @@ class VillageTraderTest extends AnyFunSuite {
     
     // Find all trader entities in villages
     val villageTraders = gameState.entities.filter { entity =>
-      entity.isTrader && entity.id.startsWith("trader-village")
+      (entity.isTrader || entity.has[game.entity.NameComponent]) && entity.id.startsWith("npc-village")
     }
     
     // There should be traders in village buildings

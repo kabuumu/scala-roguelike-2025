@@ -3,6 +3,12 @@ package map
 import game.Point
 import map.TileType._
 
+enum BuildingType:
+  case Healer
+  case PotionShop
+  case EquipmentShop
+  case Generic
+
 /**
  * Represents a single building in a village.
  * Buildings are rectangular structures with configurable dimensions.
@@ -10,17 +16,22 @@ import map.TileType._
  * @param location The room coordinate where the building is located
  * @param width Width of the building in tiles (internal space)
  * @param height Height of the building in tiles (internal space)
- * @param isShop Whether this building contains a shop/trader
+ * @param buildingType The type of building (Healer, Shop, etc.)
  */
 case class Building(
   location: Point,
   width: Int,
   height: Int,
-  isShop: Boolean = false
+  buildingType: BuildingType = BuildingType.Generic
 ) {
   require(width >= 5, "Building width must be at least 5")
   require(height >= 5, "Building height must be at least 5")
   
+  /**
+   * Helper for backward compatibility or general shop check
+   */
+  def isShop: Boolean = buildingType != BuildingType.Generic
+
   /**
    * Calculate the center tile position of the building.
    */

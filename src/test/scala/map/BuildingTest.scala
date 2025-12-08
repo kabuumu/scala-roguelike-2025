@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 class BuildingTest extends AnyFunSuite {
   
   test("Building generates correct size") {
-    val building = Building(Point(0, 0), width = 5, height = 7, isShop = false)
+    val building = Building(Point(0, 0), width = 5, height = 7, buildingType = BuildingType.Generic)
     
     // Building should be (width+1) x (height+1) tiles (0 to size inclusive)
     val expectedTiles = 6 * 8
