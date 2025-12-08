@@ -11,7 +11,11 @@ class VillageTraderTest extends AnyFunSuite {
     val gameState = StartingState.startingGameState
     
     // Find all trader entities in villages
+<<<<<<< HEAD
     val villageNPCs = gameState.entities.filter { entity =>
+=======
+    val villageTraders = gameState.entities.filter { entity =>
+>>>>>>> cc286fe (Refactor village generation to include diverse NPCs and dialogue.)
       (entity.isTrader || entity.has[game.entity.NameComponent]) && entity.id.startsWith("npc-village")
     }
     

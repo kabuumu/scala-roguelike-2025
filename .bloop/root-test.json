@@ -1,0 +1,778 @@
+{
+    "version": "1.4.0",
+    "project": {
+        "name": "root-test",
+        "directory": "/Users/robhawkes/Documents/personal/scala-roguelike-2025",
+        "workspaceDir": "/Users/robhawkes/Documents/personal/scala-roguelike-2025",
+        "sources": [
+            "/Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala",
+            "/Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala-3",
+            "/Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/java",
+            "/Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/src_managed/test"
+        ],
+        "dependencies": [
+            "root"
+        ],
+        "classpath": [
+            "/Users/robhawkes/Documents/personal/scala-roguelike-2025/.bloop/root/scala-3.6.4/classes",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_sjs1_3/3.6.4/scala3-library_sjs1_3-3.6.4.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-library_2.13/1.19.0/scalajs-library_2.13-1.19.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-test-bridge_2.13/1.19.0/scalajs-test-bridge_2.13-1.19.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest_sjs1_3/3.2.19/scalatest_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/indigoengine/indigo_sjs1_3/0.22.0/indigo_sjs1_3-0.22.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle_sjs1_3/3.3.0/upickle_sjs1_3-3.3.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-javalib/1.19.0/scalajs-javalib-1.19.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-scalalib_2.13/2.13.16%2B1.19.0/scalajs-scalalib_2.13-2.13.16%2B1.19.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-test-interface_2.13/1.19.0/scalajs-test-interface_2.13-1.19.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-core_sjs1_3/3.2.19/scalatest-core_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-featurespec_sjs1_3/3.2.19/scalatest-featurespec_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-flatspec_sjs1_3/3.2.19/scalatest-flatspec_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-freespec_sjs1_3/3.2.19/scalatest-freespec_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funsuite_sjs1_3/3.2.19/scalatest-funsuite_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funspec_sjs1_3/3.2.19/scalatest-funspec_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-propspec_sjs1_3/3.2.19/scalatest-propspec_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-refspec_sjs1_3/3.2.19/scalatest-refspec_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-wordspec_sjs1_3/3.2.19/scalatest-wordspec_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-diagrams_sjs1_3/3.2.19/scalatest-diagrams_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-matchers-core_sjs1_3/3.2.19/scalatest-matchers-core_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-shouldmatchers_sjs1_3/3.2.19/scalatest-shouldmatchers_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-mustmatchers_sjs1_3/3.2.19/scalatest-mustmatchers_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scala-js-macrotask-executor_sjs1_3/1.1.1/scala-js-macrotask-executor_sjs1_3-1.1.1.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/indigoengine/ultraviolet_sjs1_3/0.6.0/ultraviolet_sjs1_3-0.6.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-dom_sjs1_3/2.8.0/scalajs-dom_sjs1_3-2.8.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/ujson_sjs1_3/3.3.0/ujson_sjs1_3-3.3.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upack_sjs1_3/3.3.0/upack_sjs1_3-3.3.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-implicits_sjs1_3/3.3.0/upickle-implicits_sjs1_3-3.3.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalactic/scalactic_sjs1_3/3.2.19/scalactic_sjs1_3-3.2.19.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-xml_sjs1_3/2.1.0/scala-xml_sjs1_3-2.1.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_sjs1_3/3.3.0/upickle-core_sjs1_3-3.3.0.jar",
+            "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_sjs1_3/1.1.0/geny_sjs1_3-1.1.0.jar"
+        ],
+        "out": "/Users/robhawkes/Documents/personal/scala-roguelike-2025/.bloop/root",
+        "classesDir": "/Users/robhawkes/Documents/personal/scala-roguelike-2025/.bloop/root/scala-3.6.4/test-classes",
+        "resources": [
+            "/Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/resources",
+            "/Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/resource_managed/test"
+        ],
+        "scala": {
+            "organization": "org.scala-lang",
+            "name": "scala-compiler",
+            "version": "3.6.4",
+            "options": [
+                "-scalajs"
+            ],
+            "jars": [
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.6.4/scala3-library_3-3.6.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-compiler_3/3.6.4/scala3-compiler_3-3.6.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-interfaces/3.6.4/scala3-interfaces-3.6.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/tasty-core_3/3.6.4/tasty-core_3-3.6.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-asm/9.7.1-scala-1/scala-asm-9.7.1-scala-1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-sbt/compiler-interface/1.10.4/compiler-interface-1.10.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/jline/jline-reader/3.27.1/jline-reader-3.27.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/jline/jline-terminal/3.27.1/jline-terminal-3.27.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/jline/jline-terminal-jni/3.27.1/jline-terminal-jni-3.27.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-sbt/util-interface/1.10.4/util-interface-1.10.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/jline/jline-native/3.27.1/jline-native-3.27.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scaladoc_3/3.6.4/scaladoc_3-3.6.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-tasty-inspector_3/3.6.4/scala3-tasty-inspector_3-3.6.4.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark/0.62.2/flexmark-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-ast/0.62.2/flexmark-util-ast-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-data/0.62.2/flexmark-util-data-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-html/0.62.2/flexmark-util-html-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-anchorlink/0.62.2/flexmark-ext-anchorlink-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-autolink/0.62.2/flexmark-ext-autolink-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-emoji/0.62.2/flexmark-ext-emoji-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-gfm-strikethrough/0.62.2/flexmark-ext-gfm-strikethrough-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-gfm-tasklist/0.62.2/flexmark-ext-gfm-tasklist-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-wikilink/0.62.2/flexmark-ext-wikilink-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-tables/0.62.2/flexmark-ext-tables-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-yaml-front-matter/0.62.2/flexmark-ext-yaml-front-matter-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/nl/big-o/liqp/0.8.2/liqp-0.8.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/jsoup/jsoup/1.17.2/jsoup-1.17.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.15.1/jackson-dataformat-yaml-2.15.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-builder/0.62.2/flexmark-util-builder-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-collection/0.62.2/flexmark-util-collection-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-dependency/0.62.2/flexmark-util-dependency-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-format/0.62.2/flexmark-util-format-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-misc/0.62.2/flexmark-util-misc-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-sequence/0.62.2/flexmark-util-sequence-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-visitor/0.62.2/flexmark-util-visitor-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/jetbrains/annotations/15.0/annotations-15.0.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util/0.62.2/flexmark-util-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/nibor/autolink/autolink/0.6.0/autolink-0.6.0.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-jira-converter/0.62.2/flexmark-jira-converter-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.7.2/antlr4-runtime-4.7.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.15.1/jackson-annotations-2.15.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.15.1/jackson-core-2.15.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.1/jackson-databind-2.15.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.12.1/jackson-datatype-jsr310-2.12.1.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/ua/co/k/strftime4j/1.0.5/strftime4j-1.0.5.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/yaml/snakeyaml/2.0/snakeyaml-2.0.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-util-options/0.62.2/flexmark-util-options-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-ins/0.62.2/flexmark-ext-ins-0.62.2.jar",
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/vladsch/flexmark/flexmark-ext-superscript/0.62.2/flexmark-ext-superscript-0.62.2.jar"
+            ],
+            "setup": {
+                "order": "mixed",
+                "addLibraryToBootClasspath": false,
+                "addCompilerToClasspath": false,
+                "addExtraJarsToClasspath": false,
+                "manageBootClasspath": false,
+                "filterLibraryFromClasspath": false
+            },
+            "bridgeJars": [
+                "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-sbt-bridge/3.6.4/scala3-sbt-bridge-3.6.4.jar"
+            ]
+        },
+        "java": {
+            "options": [
+                
+            ]
+        },
+        "test": {
+            "frameworks": [
+                {
+                    "names": [
+                        "org.scalacheck.ScalaCheckFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "org.specs2.runner.Specs2Framework",
+                        "org.specs2.runner.SpecsFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "org.specs.runner.SpecsFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "org.scalatest.tools.Framework",
+                        "org.scalatest.tools.ScalaTestFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "com.novocode.junit.JUnitFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "munit.Framework"
+                    ]
+                },
+                {
+                    "names": [
+                        "zio.test.sbt.ZTestFramework"
+                    ]
+                },
+                {
+                    "names": [
+                        "weaver.framework.CatsEffect"
+                    ]
+                },
+                {
+                    "names": [
+                        "hedgehog.sbt.Framework"
+                    ]
+                }
+            ],
+            "options": {
+                "excludes": [
+                    
+                ],
+                "arguments": [
+                    
+                ]
+            }
+        },
+        "platform": {
+            "name": "js",
+            "config": {
+                "version": "1.19.0",
+                "mode": "debug",
+                "kind": "none",
+                "emitSourceMaps": true,
+                "jsdom": false,
+                "toolchain": [
+                    
+                ]
+            },
+            "mainClass": [
+                
+            ]
+        },
+        "resolution": {
+            "modules": [
+                {
+                    "organization": "org.scala-lang",
+                    "name": "scala3-library_sjs1_3",
+                    "version": "3.6.4",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala3-library_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_sjs1_3/3.6.4/scala3-library_sjs1_3-3.6.4.jar"
+                        },
+                        {
+                            "name": "scala3-library_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_sjs1_3/3.6.4/scala3-library_sjs1_3-3.6.4-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-js",
+                    "name": "scalajs-library_2.13",
+                    "version": "1.19.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalajs-library_2.13",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-library_2.13/1.19.0/scalajs-library_2.13-1.19.0.jar"
+                        },
+                        {
+                            "name": "scalajs-library_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-library_2.13/1.19.0/scalajs-library_2.13-1.19.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "io.indigoengine",
+                    "name": "indigo_sjs1_3",
+                    "version": "0.22.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "indigo_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/indigoengine/indigo_sjs1_3/0.22.0/indigo_sjs1_3-0.22.0.jar"
+                        },
+                        {
+                            "name": "indigo_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/indigoengine/indigo_sjs1_3/0.22.0/indigo_sjs1_3-0.22.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upickle_sjs1_3",
+                    "version": "3.3.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upickle_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle_sjs1_3/3.3.0/upickle_sjs1_3-3.3.0.jar"
+                        },
+                        {
+                            "name": "upickle_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle_sjs1_3/3.3.0/upickle_sjs1_3-3.3.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-lang",
+                    "name": "scala-library",
+                    "version": "2.13.16",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala-library",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16.jar"
+                        },
+                        {
+                            "name": "scala-library",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.16/scala-library-2.13.16-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-js",
+                    "name": "scalajs-javalib",
+                    "version": "1.19.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalajs-javalib",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-javalib/1.19.0/scalajs-javalib-1.19.0.jar"
+                        },
+                        {
+                            "name": "scalajs-javalib",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-javalib/1.19.0/scalajs-javalib-1.19.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-js",
+                    "name": "scalajs-scalalib_2.13",
+                    "version": "2.13.16+1.19.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalajs-scalalib_2.13",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-scalalib_2.13/2.13.16%2B1.19.0/scalajs-scalalib_2.13-2.13.16%2B1.19.0.jar"
+                        },
+                        {
+                            "name": "scalajs-scalalib_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-scalalib_2.13/2.13.16%2B1.19.0/scalajs-scalalib_2.13-2.13.16%2B1.19.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-js",
+                    "name": "scala-js-macrotask-executor_sjs1_3",
+                    "version": "1.1.1",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala-js-macrotask-executor_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scala-js-macrotask-executor_sjs1_3/1.1.1/scala-js-macrotask-executor_sjs1_3-1.1.1.jar"
+                        },
+                        {
+                            "name": "scala-js-macrotask-executor_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scala-js-macrotask-executor_sjs1_3/1.1.1/scala-js-macrotask-executor_sjs1_3-1.1.1-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "io.indigoengine",
+                    "name": "ultraviolet_sjs1_3",
+                    "version": "0.6.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "ultraviolet_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/indigoengine/ultraviolet_sjs1_3/0.6.0/ultraviolet_sjs1_3-0.6.0.jar"
+                        },
+                        {
+                            "name": "ultraviolet_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/indigoengine/ultraviolet_sjs1_3/0.6.0/ultraviolet_sjs1_3-0.6.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-js",
+                    "name": "scalajs-dom_sjs1_3",
+                    "version": "2.8.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalajs-dom_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-dom_sjs1_3/2.8.0/scalajs-dom_sjs1_3-2.8.0.jar"
+                        },
+                        {
+                            "name": "scalajs-dom_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-dom_sjs1_3/2.8.0/scalajs-dom_sjs1_3-2.8.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "ujson_sjs1_3",
+                    "version": "3.3.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "ujson_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/ujson_sjs1_3/3.3.0/ujson_sjs1_3-3.3.0.jar"
+                        },
+                        {
+                            "name": "ujson_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/ujson_sjs1_3/3.3.0/ujson_sjs1_3-3.3.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upack_sjs1_3",
+                    "version": "3.3.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upack_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upack_sjs1_3/3.3.0/upack_sjs1_3-3.3.0.jar"
+                        },
+                        {
+                            "name": "upack_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upack_sjs1_3/3.3.0/upack_sjs1_3-3.3.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upickle-implicits_sjs1_3",
+                    "version": "3.3.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upickle-implicits_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-implicits_sjs1_3/3.3.0/upickle-implicits_sjs1_3-3.3.0.jar"
+                        },
+                        {
+                            "name": "upickle-implicits_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-implicits_sjs1_3/3.3.0/upickle-implicits_sjs1_3-3.3.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "upickle-core_sjs1_3",
+                    "version": "3.3.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "upickle-core_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_sjs1_3/3.3.0/upickle-core_sjs1_3-3.3.0.jar"
+                        },
+                        {
+                            "name": "upickle-core_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_sjs1_3/3.3.0/upickle-core_sjs1_3-3.3.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "com.lihaoyi",
+                    "name": "geny_sjs1_3",
+                    "version": "1.1.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "geny_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_sjs1_3/1.1.0/geny_sjs1_3-1.1.0.jar"
+                        },
+                        {
+                            "name": "geny_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_sjs1_3/1.1.0/geny_sjs1_3-1.1.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-js",
+                    "name": "scalajs-test-bridge_2.13",
+                    "version": "1.19.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalajs-test-bridge_2.13",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-test-bridge_2.13/1.19.0/scalajs-test-bridge_2.13-1.19.0.jar"
+                        },
+                        {
+                            "name": "scalajs-test-bridge_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-test-bridge_2.13/1.19.0/scalajs-test-bridge_2.13-1.19.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest_sjs1_3/3.2.19/scalatest_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest_sjs1_3/3.2.19/scalatest_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-js",
+                    "name": "scalajs-test-interface_2.13",
+                    "version": "1.19.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalajs-test-interface_2.13",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-test-interface_2.13/1.19.0/scalajs-test-interface_2.13-1.19.0.jar"
+                        },
+                        {
+                            "name": "scalajs-test-interface_2.13",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-js/scalajs-test-interface_2.13/1.19.0/scalajs-test-interface_2.13-1.19.0-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-core_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-core_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-core_sjs1_3/3.2.19/scalatest-core_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-core_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-core_sjs1_3/3.2.19/scalatest-core_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-featurespec_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-featurespec_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-featurespec_sjs1_3/3.2.19/scalatest-featurespec_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-featurespec_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-featurespec_sjs1_3/3.2.19/scalatest-featurespec_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-flatspec_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-flatspec_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-flatspec_sjs1_3/3.2.19/scalatest-flatspec_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-flatspec_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-flatspec_sjs1_3/3.2.19/scalatest-flatspec_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-freespec_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-freespec_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-freespec_sjs1_3/3.2.19/scalatest-freespec_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-freespec_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-freespec_sjs1_3/3.2.19/scalatest-freespec_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-funsuite_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-funsuite_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funsuite_sjs1_3/3.2.19/scalatest-funsuite_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-funsuite_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funsuite_sjs1_3/3.2.19/scalatest-funsuite_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-funspec_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-funspec_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funspec_sjs1_3/3.2.19/scalatest-funspec_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-funspec_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-funspec_sjs1_3/3.2.19/scalatest-funspec_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-propspec_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-propspec_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-propspec_sjs1_3/3.2.19/scalatest-propspec_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-propspec_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-propspec_sjs1_3/3.2.19/scalatest-propspec_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-refspec_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-refspec_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-refspec_sjs1_3/3.2.19/scalatest-refspec_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-refspec_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-refspec_sjs1_3/3.2.19/scalatest-refspec_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-wordspec_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-wordspec_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-wordspec_sjs1_3/3.2.19/scalatest-wordspec_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-wordspec_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-wordspec_sjs1_3/3.2.19/scalatest-wordspec_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-diagrams_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-diagrams_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-diagrams_sjs1_3/3.2.19/scalatest-diagrams_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-diagrams_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-diagrams_sjs1_3/3.2.19/scalatest-diagrams_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-matchers-core_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-matchers-core_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-matchers-core_sjs1_3/3.2.19/scalatest-matchers-core_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-matchers-core_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-matchers-core_sjs1_3/3.2.19/scalatest-matchers-core_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-shouldmatchers_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-shouldmatchers_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-shouldmatchers_sjs1_3/3.2.19/scalatest-shouldmatchers_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-shouldmatchers_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-shouldmatchers_sjs1_3/3.2.19/scalatest-shouldmatchers_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalatest",
+                    "name": "scalatest-mustmatchers_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalatest-mustmatchers_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-mustmatchers_sjs1_3/3.2.19/scalatest-mustmatchers_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalatest-mustmatchers_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalatest/scalatest-mustmatchers_sjs1_3/3.2.19/scalatest-mustmatchers_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scalactic",
+                    "name": "scalactic_sjs1_3",
+                    "version": "3.2.19",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scalactic_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalactic/scalactic_sjs1_3/3.2.19/scalactic_sjs1_3-3.2.19.jar"
+                        },
+                        {
+                            "name": "scalactic_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scalactic/scalactic_sjs1_3/3.2.19/scalactic_sjs1_3-3.2.19-sources.jar"
+                        }
+                    ]
+                },
+                {
+                    "organization": "org.scala-lang.modules",
+                    "name": "scala-xml_sjs1_3",
+                    "version": "2.1.0",
+                    "configurations": "default",
+                    "artifacts": [
+                        {
+                            "name": "scala-xml_sjs1_3",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-xml_sjs1_3/2.1.0/scala-xml_sjs1_3-2.1.0.jar"
+                        },
+                        {
+                            "name": "scala-xml_sjs1_3",
+                            "classifier": "sources",
+                            "path": "/Users/robhawkes/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/modules/scala-xml_sjs1_3/2.1.0/scala-xml_sjs1_3-2.1.0-sources.jar"
+                        }
+                    ]
+                }
+            ]
+        },
+        "tags": [
+            "test"
+        ]
+    }
+}
