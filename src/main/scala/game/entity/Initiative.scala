@@ -11,6 +11,11 @@ case class Initiative(maxInitiative: Int, currentInitiative: Int) extends Compon
     val newInitiative = math.max(currentInitiative - 1, 0)
     copy(currentInitiative = newInitiative)
   }
+
+  def decrement(amount: Int): Initiative = {
+    val newInitiative = math.max(currentInitiative - amount, 0)
+    copy(currentInitiative = newInitiative)
+  }
 }
 
 object Initiative {
@@ -28,5 +33,8 @@ object Initiative {
 
     def decreaseInitiative(): Entity =
       entity.update[Initiative](_.decrement())
+
+    def decreaseInitiative(amount: Int): Entity =
+      entity.update[Initiative](_.decrement(amount))
   }
 }

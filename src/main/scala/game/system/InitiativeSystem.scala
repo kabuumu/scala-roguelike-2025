@@ -22,8 +22,38 @@ object InitiativeSystem extends GameSystem {
     }
     
     // Then handle normal initiative progression
-    val updatedGamestate = if stateAfterResets.playerEntity.isReady then stateAfterResets
-    else stateAfterResets.copy(entities = stateAfterResets.entities.map(_.decreaseInitiative()))
+    val updatedGamestate = if (stateAfterResets.playerEntity.isReady) {
+      stateAfterResets
+    } else {
+      // Check if any entity is ready
+      val anyReady = stateAfterResets.entities.exists(_.isReady)
+
+      if (anyReady) {
+        // Someone is ready (likely acted this frame and is waiting for next frame, or multiple entities acting)
+        // Standard progression by 1
+        stateAfterResets.copy(entities = stateAfterResets.entities.map(_.decreaseInitiative()))
+      } else {
+        // No one is ready. We can potentially fast-forward.
+
+        // Check for real-time entities (like projectiles) that need smooth updates
+        val hasRealTimeEntities = stateAfterResets.entities.exists(_.has[game.entity.Projectile])
+
+        val decrementAmount = if (hasRealTimeEntities) {
+          1
+        } else {
+          // Find minimum initiative to make someone ready
+          // Filter entities that have Initiative component
+          val minInit = stateAfterResets.entities
+            .flatMap(_.get[Initiative].map(_.currentInitiative))
+            .minOption
+            .getOrElse(1) // Default to 1 if no entities with initiative (shouldn't happen)
+
+          if (minInit > 0) minInit else 1
+        }
+
+        stateAfterResets.copy(entities = stateAfterResets.entities.map(_.decreaseInitiative(decrementAmount)))
+      }
+    }
     
     (updatedGamestate, Nil)
   }

@@ -176,6 +176,18 @@ case class WorldMap(
    * Bridges make water passable, so we exclude bridge points.
    */
   lazy val water: Set[Point] = tileSets._3 -- bridges
+
+  /**
+   * Pre-calculated set of points that block line of sight (walls + rocks).
+   * Used by GameState to avoid re-calculating this set every frame.
+   */
+  lazy val staticLineOfSightBlockingPoints: Set[Point] = walls ++ rocks
+
+  /**
+   * Pre-calculated set of points that block movement (walls + water + rocks).
+   * Used by GameState to avoid re-calculating this set every frame.
+   */
+  lazy val staticMovementBlockingPoints: Set[Point] = walls ++ water ++ rocks
   
   /**
    * Get the primary dungeon (first dungeon if multiple exist).
