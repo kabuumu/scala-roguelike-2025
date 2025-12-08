@@ -2,6 +2,7 @@ package data
 
 import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
 import game.entity.*
+import game.entity.Dialogue
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
 

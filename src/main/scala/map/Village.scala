@@ -65,10 +65,13 @@ object Village {
     // Determine number of buildings (3-5)
     val numBuildings = 3 + random.nextInt(3)  // 3, 4, or 5
     
-    // Randomly choose which building will be the shop
-    val shopIndex = random.nextInt(numBuildings)
-    
     // Generate buildings in a cluster pattern
+    val buildingTypes = random.shuffle(Seq(
+      BuildingType.Healer,
+      BuildingType.PotionShop,
+      BuildingType.EquipmentShop
+    ) ++ Seq.fill(numBuildings - 3)(BuildingType.Generic))
+
     val buildings = (0 until numBuildings).map { i =>
       // Create varied building sizes (5-10 internal space)
       val width = 5 + random.nextInt(6)   // 5-10
@@ -96,7 +99,7 @@ object Village {
         location = buildingLocation,
         width = width,
         height = height,
-        isShop = i == shopIndex
+        buildingType = buildingTypes(i)
       )
     }
     
