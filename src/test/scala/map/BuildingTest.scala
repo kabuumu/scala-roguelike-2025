@@ -15,16 +15,16 @@ class BuildingTest extends AnyFunSuite {
   
   test("Building enforces minimum size") {
     assertThrows[IllegalArgumentException] {
-      Building(Point(0, 0), width = 4, height = 5, isShop = false)
+      Building(Point(0, 0), width = 4, height = 5, buildingType = BuildingType.Generic)
     }
     
     assertThrows[IllegalArgumentException] {
-      Building(Point(0, 0), width = 5, height = 4, isShop = false)
+      Building(Point(0, 0), width = 5, height = 4, buildingType = BuildingType.Generic)
     }
   }
   
   test("Building has walls on perimeter") {
-    val building = Building(Point(10, 10), width = 5, height = 5, isShop = false)
+    val building = Building(Point(10, 10), width = 5, height = 5, buildingType = BuildingType.Generic)
     val baseX = 10
     val baseY = 10
     
@@ -36,14 +36,14 @@ class BuildingTest extends AnyFunSuite {
   }
   
   test("Building has floor inside") {
-    val building = Building(Point(0, 0), width = 5, height = 5, isShop = true)
+    val building = Building(Point(0, 0), width = 5, height = 5, buildingType = BuildingType.EquipmentShop)
     val centerTile = building.centerTile
     
     assert(building.tiles(centerTile) == TileType.Floor, "Center should be floor")
   }
   
   test("Building has entrance") {
-    val building = Building(Point(30, 0), width = 6, height = 8, isShop = false)
+    val building = Building(Point(30, 0), width = 6, height = 8, buildingType = BuildingType.Generic)
     val entrance = building.entranceTile
     
     // Entrance should be floor (not wall)
@@ -59,7 +59,7 @@ class BuildingTest extends AnyFunSuite {
   }
   
   test("Building center tile calculation is correct") {
-    val building = Building(Point(20, 30), width = 6, height = 8, isShop = false)
+    val building = Building(Point(20, 30), width = 6, height = 8, buildingType = BuildingType.Generic)
     val center = building.centerTile
     
     // Center should be at location + width/2, location + height/2
@@ -68,7 +68,7 @@ class BuildingTest extends AnyFunSuite {
   }
   
   test("Building walls set is correct") {
-    val building = Building(Point(0, 0), width = 5, height = 5, isShop = false)
+    val building = Building(Point(0, 0), width = 5, height = 5, buildingType = BuildingType.Generic)
     
     // All walls should be Wall type
     building.walls.foreach { wallPoint =>
@@ -82,7 +82,7 @@ class BuildingTest extends AnyFunSuite {
   }
   
   test("Building can be rectangular (non-square)") {
-    val building = Building(Point(0, 0), width = 5, height = 10, isShop = false)
+    val building = Building(Point(0, 0), width = 5, height = 10, buildingType = BuildingType.Generic)
     
     assert(building.tiles.nonEmpty, "Rectangular building should have tiles")
     assert(building.walls.nonEmpty, "Rectangular building should have walls")
@@ -94,9 +94,9 @@ class BuildingTest extends AnyFunSuite {
   }
   
   test("Building.overlap detects overlapping buildings") {
-    val building1 = Building(Point(0, 0), width = 5, height = 5, isShop = false)
-    val building2 = Building(Point(3, 3), width = 5, height = 5, isShop = false)
-    val building3 = Building(Point(10, 10), width = 5, height = 5, isShop = false)
+    val building1 = Building(Point(0, 0), width = 5, height = 5, buildingType = BuildingType.Generic)
+    val building2 = Building(Point(3, 3), width = 5, height = 5, buildingType = BuildingType.Generic)
+    val building3 = Building(Point(10, 10), width = 5, height = 5, buildingType = BuildingType.Generic)
     
     assert(Building.overlap(building1, building2), "Buildings should overlap")
     assert(!Building.overlap(building1, building3), "Buildings should not overlap")
@@ -104,10 +104,10 @@ class BuildingTest extends AnyFunSuite {
   
   test("Building in different quadrants has entrance facing origin") {
     // Test building in each quadrant
-    val buildingQ1 = Building(Point(30, 30), width = 5, height = 5, isShop = false)   // Quadrant I (bottom-right)
-    val buildingQ2 = Building(Point(-30, 30), width = 5, height = 5, isShop = false)  // Quadrant II (bottom-left)
-    val buildingQ3 = Building(Point(-30, -30), width = 5, height = 5, isShop = false) // Quadrant III (top-left)
-    val buildingQ4 = Building(Point(30, -30), width = 5, height = 5, isShop = false)  // Quadrant IV (top-right)
+    val buildingQ1 = Building(Point(30, 30), width = 5, height = 5, buildingType = BuildingType.Generic)   // Quadrant I (bottom-right)
+    val buildingQ2 = Building(Point(-30, 30), width = 5, height = 5, buildingType = BuildingType.Generic)  // Quadrant II (bottom-left)
+    val buildingQ3 = Building(Point(-30, -30), width = 5, height = 5, buildingType = BuildingType.Generic) // Quadrant III (top-left)
+    val buildingQ4 = Building(Point(30, -30), width = 5, height = 5, buildingType = BuildingType.Generic)  // Quadrant IV (top-right)
     
     // All entrances should be floor tiles
     assert(buildingQ1.tiles(buildingQ1.entranceTile) == TileType.Floor)
