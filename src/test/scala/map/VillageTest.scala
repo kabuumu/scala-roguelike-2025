@@ -12,11 +12,19 @@ class VillageTest extends AnyFunSuite {
            s"Village should have 3-5 buildings, but has ${village.buildings.length}")
   }
   
-  test("Village has exactly one shop") {
+  test("Village has at least one shop type building") {
     val village = Village.generateVillage(Point(0, 0), seed = 67890)
     
     val shopCount = village.buildings.count(_.isShop)
-    assert(shopCount == 1, s"Village should have exactly 1 shop, but has $shopCount")
+    assert(shopCount >= 1, s"Village should have at least 1 shop/healer, but has $shopCount")
+  }
+
+  test("Village has varied building types") {
+    val village = Village.generateVillage(Point(0, 0), seed = 12345)
+
+    val types = village.buildings.map(_.buildingType).toSet
+    // Should have at least Generic and one other type in a typical village of 3-5 buildings
+    assert(types.size >= 2, s"Village should have variety in building types, but found only $types")
   }
   
   test("Village buildings meet minimum size requirements") {

@@ -29,6 +29,7 @@ object Items {
     case BasicSword
     case IronSword
     case Coin
+    case HealingService
 
   extension (itemRef: ItemReference) {
     def createEntity(id: String): Entity = itemRef match {
@@ -50,8 +51,17 @@ object Items {
       case ItemReference.BasicSword => basicSword(id)
       case ItemReference.IronSword => ironSword(id)
       case ItemReference.Coin => coin(id)
+      case ItemReference.HealingService => healingService(id)
     }
   }
+
+  def healingService(id: String): Entity = Entity(
+    id = id,
+    NameComponent("Healing Service", "Fully restores your health immediately"),
+    UsableItem(Self, SingleUse, Heal(100)),
+    Hitbox(),
+    Drawable(Sprites.potionSprite) // Reuse potion sprite
+  )
 
   def healingPotion(id: String): Entity = Entity(
     id = id,

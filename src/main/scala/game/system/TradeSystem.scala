@@ -31,49 +31,60 @@ object TradeSystem extends GameSystem {
     import game.entity.Equippable.isEquippable
     import game.entity.Movement
     import game.entity.Movement.position
+    import game.entity.Health._
     
     trader.get[Trader] match {
       case Some(traderComponent) =>
         traderComponent.buyPrice(itemRef) match {
           case Some(price) if gameState.playerEntity.coins >= price =>
-            // Create the item
-            val newItemId = s"item-${Random.nextString(8)}"
-            val newItem = itemRef.createEntity(newItemId)
-            
-            // Check if the item is equippable
-            if (newItem.isEquippable) {
-              // Auto-equip the item
-              newItem.get[game.entity.Equippable] match {
-                case Some(equippable) =>
-                  val (playerWithNewEquipment, previousEquippable) = gameState.playerEntity.equipItemComponent(equippable)
-                  val updatedPlayer = playerWithNewEquipment.removeCoins(price)
-                  
-                  // Drop previously equipped item nearby if there was one
-                  val droppedItemEntities = previousEquippable.map { prevEquip =>
-                    val droppedItemId = s"dropped-${Random.nextString(8)}"
-                    val droppedItem = createEquipmentEntity(droppedItemId, prevEquip)
-                    // Place item adjacent to player
-                    val playerPos = gameState.playerEntity.position
-                    val dropPos = game.Point(playerPos.x + 1, playerPos.y)
-                    droppedItem.addComponent(Movement(position = dropPos))
-                  }.toSeq
-                  
-                  val updatedEntities = (gameState.entities
-                    .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer) ++ droppedItemEntities
-                  
-                  gameState.copy(entities = updatedEntities)
-                case None => gameState
-              }
-            } else {
-              // Non-equippable item, just add to inventory
-              val updatedPlayer = gameState.playerEntity
-                .removeCoins(price)
-                .addItemEntity(newItemId)
-              
+            // Check for special services like healing
+            if (itemRef == ItemReference.HealingService) {
+              val player = gameState.playerEntity
+              val healedPlayer = player.heal(100).removeCoins(price)
               val updatedEntities = gameState.entities
-                .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer :+ newItem
+                .filterNot(_.id == player.id) :+ healedPlayer
               
               gameState.copy(entities = updatedEntities)
+            } else {
+              // Create the item
+              val newItemId = s"item-${Random.nextString(8)}"
+              val newItem = itemRef.createEntity(newItemId)
+
+              // Check if the item is equippable
+              if (newItem.isEquippable) {
+                // Auto-equip the item
+                newItem.get[game.entity.Equippable] match {
+                  case Some(equippable) =>
+                    val (playerWithNewEquipment, previousEquippable) = gameState.playerEntity.equipItemComponent(equippable)
+                    val updatedPlayer = playerWithNewEquipment.removeCoins(price)
+
+                    // Drop previously equipped item nearby if there was one
+                    val droppedItemEntities = previousEquippable.map { prevEquip =>
+                      val droppedItemId = s"dropped-${Random.nextString(8)}"
+                      val droppedItem = createEquipmentEntity(droppedItemId, prevEquip)
+                      // Place item adjacent to player
+                      val playerPos = gameState.playerEntity.position
+                      val dropPos = game.Point(playerPos.x + 1, playerPos.y)
+                      droppedItem.addComponent(Movement(position = dropPos))
+                    }.toSeq
+
+                    val updatedEntities = (gameState.entities
+                      .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer) ++ droppedItemEntities
+
+                    gameState.copy(entities = updatedEntities)
+                  case None => gameState
+                }
+              } else {
+                // Non-equippable item, just add to inventory
+                val updatedPlayer = gameState.playerEntity
+                  .removeCoins(price)
+                  .addItemEntity(newItemId)
+
+                val updatedEntities = gameState.entities
+                  .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer :+ newItem
+
+                gameState.copy(entities = updatedEntities)
+              }
             }
           case _ => gameState // Can't afford or item not for sale
         }
