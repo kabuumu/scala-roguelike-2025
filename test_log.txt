@@ -1,0 +1,51 @@
+[info] welcome to sbt 1.10.2 (Eclipse Adoptium Java 11.0.19)
+[info] loading global plugins from /Users/robhawkes/.sbt/1.0/plugins
+[info] loading settings for project scala-roguelike-2025-build-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project/project
+[info] loading settings for project scala-roguelike-2025-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project
+[success] Generated .bloop/scala-roguelike-2025-build-build.json
+[success] Total time: 1 s, completed 18 Dec 2025, 15:38:55
+[info] loading settings for project scala-roguelike-2025-build from metals.sbt,plugins.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project
+[success] Generated .bloop/scala-roguelike-2025-build.json
+[success] Total time: 0 s, completed 18 Dec 2025, 15:38:56
+[info] loading settings for project root from build.sbt ...
+[info] set current project to scala-roguelike (in build file:/Users/robhawkes/Documents/personal/scala-roguelike-2025/)
+[info] compiling 1 Scala source to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[info] done compiling
+[info] Fast optimizing /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/scala-roguelike-test-fastopt
+[StartingState] Generating world map with bounds: MapBounds(-10,10,-10,10)
+[StartingState] Dungeon entrance side: Left
+[StartingState] Creating player at position 0:0 with initial sight memory of 121 nearby tiles (out of 44521 total)
+[StartingState] Player created with 121 seen points
+[StartingState] Creating GameState with worldMap containing 44521 tiles
+[StartingState] All dungeons have 75 enemies and 16 items
+[StartingState] Dungeon traders: 4 traders created
+[StartingState] Village traders: 3 traders created
+[StartingState] GameState created. WorldMap tiles: 44521, total entities: 127
+Found 3 village NPCs
+
+Village 0 has 3 buildings:
+  Building 0: Has NPC (correct)
+  Building 1: Has NPC (correct)
+  Building 2: Has NPC (correct)
+
+Total buildings with player spawn: 0
+Total buildings with NPCs: 3
+Player spawns in open space - all buildings have NPCs
+All 3 NPCs are correctly positioned at building centers
+[info] VillageTraderTest:
+[info] - Village buildings have NPCs except player's starting building
+[info] - NPCs are positioned at building centers
+[info] - NPCs have appropriate inventories *** FAILED ***
+[info]   Expression was false Villager npc-village-0-building-1 should have Dialogue component (VillageTraderTest.scala:126)
+[info] Run completed in 1 second, 816 milliseconds.
+[info] Total number of tests run: 3
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 2, failed 1, canceled 0, ignored 0, pending 0
+[info] *** 1 TEST FAILED ***
+[error] Failed tests:
+[error] 	game.VillageTraderTest
+[error] (Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 13 s, completed 18 Dec 2025, 15:39:09

@@ -4,7 +4,11 @@ import game.GameState
 import game.entity.{Entity, Trader, Coins, Inventory, NameComponent}
 import game.entity.Coins.{addCoins, removeCoins, coins}
 import game.entity.Inventory.{addItemEntity, removeItemEntity}
-import game.system.event.GameSystemEvent.{GameSystemEvent, InputEvent}
+import game.system.event.GameSystemEvent.{
+  GameSystemEvent,
+  InputEvent,
+  SpawnEntityWithCollisionCheckEvent
+}
 import ui.InputAction
 import data.Items.ItemReference
 import scala.util.Random
@@ -16,24 +20,30 @@ object TradeSystem extends GameSystem {
   ): (GameState, Seq[GameSystemEvent]) = {
     val inputEvents = events.collect { case e: InputEvent => e }
 
-    val updatedGameState = inputEvents.foldLeft(gameState) { (state, event) =>
-      event.input match {
-        case InputAction.BuyItem(traderEntity, itemRef) =>
-          handleBuyItem(state, traderEntity, itemRef)
-        case InputAction.SellItem(traderEntity, itemEntity) =>
-          handleSellItem(state, traderEntity, itemEntity)
-        case _ => state
+    val (updatedGameState, newEvents) =
+      inputEvents.foldLeft((gameState, Seq.empty[GameSystemEvent])) {
+        case ((state, currentEvents), event) =>
+          event.input match {
+            case InputAction.BuyItem(traderEntity, itemRef) =>
+              val (newState, actionEvents) =
+                handleBuyItem(state, traderEntity, itemRef)
+              (newState, currentEvents ++ actionEvents)
+            case InputAction.SellItem(traderEntity, itemEntity) =>
+              val (newState, actionEvents) =
+                handleSellItem(state, traderEntity, itemEntity)
+              (newState, currentEvents ++ actionEvents)
+            case _ => (state, currentEvents)
+          }
       }
-    }
 
-    (updatedGameState, Seq.empty)
+    (updatedGameState, newEvents)
   }
 
   private def handleBuyItem(
       gameState: GameState,
       trader: Entity,
       itemRef: ItemReference
-  ): GameState = {
+  ): (GameState, Seq[GameSystemEvent]) = {
     import game.entity.Equipment.equipItemComponent
     import game.entity.Equippable.isEquippable
     import game.entity.Movement
@@ -47,7 +57,7 @@ object TradeSystem extends GameSystem {
             // Check for special services like healing
             if (itemRef == ItemReference.HealingService) {
               // Healing service is now handled via ConversationSystem
-              gameState
+              (gameState, Seq.empty)
             } else {
               // Create the item
               val newItemId = s"item-${Random.nextString(8)}"
@@ -64,24 +74,36 @@ object TradeSystem extends GameSystem {
                       playerWithNewEquipment.removeCoins(price)
 
                     // Drop previously equipped item nearby if there was one
-                    val droppedItemEntities = previousEquippable.map {
-                      prevEquip =>
-                        val droppedItemId = s"dropped-${Random.nextString(8)}"
-                        val droppedItem =
-                          createEquipmentEntity(droppedItemId, prevEquip)
-                        // Place item adjacent to player
-                        val playerPos = gameState.playerEntity.position
-                        val dropPos = game.Point(playerPos.x + 1, playerPos.y)
-                        droppedItem.addComponent(Movement(position = dropPos))
+                    val spawnEvents = previousEquippable.map { prevEquip =>
+                      val droppedItemId = s"dropped-${Random.nextString(8)}"
+                      val droppedItem =
+                        createEquipmentEntity(droppedItemId, prevEquip)
+
+                      val playerPos = gameState.playerEntity.position
+                      val preferredPositions = Seq(
+                        game.Point(playerPos.x + 1, playerPos.y),
+                        game.Point(playerPos.x - 1, playerPos.y),
+                        game.Point(playerPos.x, playerPos.y + 1),
+                        game.Point(playerPos.x, playerPos.y - 1),
+                        game.Point(playerPos.x + 1, playerPos.y + 1),
+                        game.Point(playerPos.x + 1, playerPos.y - 1),
+                        game.Point(playerPos.x - 1, playerPos.y + 1),
+                        game.Point(playerPos.x - 1, playerPos.y - 1)
+                      )
+
+                      SpawnEntityWithCollisionCheckEvent(
+                        droppedItem,
+                        preferredPositions
+                      )
                     }.toSeq
 
                     val updatedEntities = (gameState.entities
                       .filterNot(
                         _.id == gameState.playerEntity.id
-                      ) :+ updatedPlayer) ++ droppedItemEntities
+                      ) :+ updatedPlayer)
 
-                    gameState.copy(entities = updatedEntities)
-                  case None => gameState
+                    (gameState.copy(entities = updatedEntities), spawnEvents)
+                  case None => (gameState, Seq.empty)
                 }
               } else {
                 // Non-equippable item, just add to inventory
@@ -94,12 +116,12 @@ object TradeSystem extends GameSystem {
                     _.id == gameState.playerEntity.id
                   ) :+ updatedPlayer :+ newItem
 
-                gameState.copy(entities = updatedEntities)
+                (gameState.copy(entities = updatedEntities), Seq.empty)
               }
             }
-          case _ => gameState // Can't afford or item not for sale
+          case _ => (gameState, Seq.empty) // Can't afford or item not for sale
         }
-      case None => gameState
+      case None => (gameState, Seq.empty)
     }
   }
 
@@ -138,7 +160,7 @@ object TradeSystem extends GameSystem {
       gameState: GameState,
       trader: Entity,
       itemEntity: Entity
-  ): GameState = {
+  ): (GameState, Seq[GameSystemEvent]) = {
     import game.entity.Equipment.{equipment, unequipItem}
 
     // Find the corresponding ItemReference for this item
@@ -193,10 +215,10 @@ object TradeSystem extends GameSystem {
                 )
               ) :+ updatedPlayer
 
-            gameState.copy(entities = updatedEntities)
-          case None => gameState // Trader doesn't buy this item
+            (gameState.copy(entities = updatedEntities), Seq.empty)
+          case None => (gameState, Seq.empty) // Trader doesn't buy this item
         }
-      case _ => gameState
+      case _ => (gameState, Seq.empty)
     }
   }
 
