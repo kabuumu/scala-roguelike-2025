@@ -12,9 +12,9 @@ lazy val gameOptions: IndigoOptions =
     .withWindowSize(1536, 768)
     .withAssetDirectory("assets")
     .excludeAssets {
-      //ignore hidden files
+      // ignore hidden files
       case p if p.last.startsWith(".") => true
-      case _                                            => false
+      case _                           => false
     }
 
 lazy val root = (project in file("."))
@@ -62,23 +62,33 @@ lazy val root = (project in file("."))
         .generateConfig("Config", gameOptions)
         .listAssets("Assets", gameOptions.assets)
         .toSourceFiles((Compile / sourceManaged).value) ++ {
-          // Generate version info with current git commit
-          val gitCommit = try {
-            scala.sys.process.Process("git rev-parse --short HEAD").lineStream.headOption.getOrElse("unknown")
+        // Generate version info with current git commit
+        val gitCommit =
+          try {
+            scala.sys.process
+              .Process("git rev-parse --short HEAD")
+              .lineStream
+              .headOption
+              .getOrElse("unknown")
           } catch {
             case _: Exception => "unknown"
           }
-          
-          val versionFile = (Compile / sourceManaged).value / "generated" / "Version.scala"
-          IO.write(versionFile, s"""package generated
+
+        val versionFile =
+          (Compile / sourceManaged).value / "generated" / "Version.scala"
+        IO.write(
+          versionFile,
+          s"""package generated
                                   |
                                   |object Version {
                                   |  val gitCommit: String = "$gitCommit"
-                                  |  val buildTime: String = "${java.time.Instant.now()}"
+                                  |  val buildTime: String = "${java.time.Instant
+              .now()}"
                                   |}
-                                  |""".stripMargin)
-          Seq(versionFile)
-        }
+                                  |""".stripMargin
+        )
+        Seq(versionFile)
+      }
     }
   )
 

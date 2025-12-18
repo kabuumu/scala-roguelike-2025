@@ -14,32 +14,32 @@ object Sprites {
   val traderSprite: Sprite = Sprite(24, 0, entityLayer)
   val playerSprite: Sprite = Sprite(25, 0, entityLayer)
   val enemySprite: Sprite = Sprite(26, 0, entityLayer)
-  
+
   val wallSprite: Sprite = Sprite(10, 17, entityLayer)
   val floorSprite: Sprite = Sprite(2, 0, floorLayer)
   val maybeFloorSprite: Sprite = Sprite(1, 0, floorLayer)
   val waterSprite: Sprite = Sprite(8, 5, floorLayer)
   val bridgeSprite: Sprite = Sprite(16, 5, floorLayer)
   val rockSprite: Sprite = Sprite(5, 2, floorLayer)
-  
+
   // Outdoor area sprites
   val treeSprite: Sprite = Sprite(3, 1, entityLayer)
   val grass1Sprite: Sprite = Sprite(5, 0, floorLayer)
   val grass2Sprite: Sprite = Sprite(6, 0, floorLayer)
   val grass3Sprite: Sprite = Sprite(7, 0, floorLayer)
   val dirtSprite: Sprite = Sprite(3, 0, floorLayer)
-  
+
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)
   val slimeSprite: Sprite = Sprite(29, 8, entityLayer)
   val slimeletSprite: Sprite = Sprite(30, 8, entityLayer)
   val deadSprite: Sprite = Sprite(0, 15, backgroundLayer)
-  
+
   val bossSpriteTL: Sprite = Sprite(25, 2, entityLayer)
   val bossSpriteTR: Sprite = Sprite(26, 2, entityLayer)
   val bossSpriteBL: Sprite = Sprite(25, 3, entityLayer)
   val bossSpriteBR: Sprite = Sprite(26, 3, entityLayer)
-  
+
   val fullHeartSprite: Sprite = Sprite(42, 10, uiLayer)
   val halfHeartSprite: Sprite = Sprite(41, 10, uiLayer)
   val emptyHeartSprite: Sprite = Sprite(40, 10, uiLayer)
@@ -61,18 +61,24 @@ object Sprites {
   val ironHelmetSprite: Sprite = Sprite(36, 0, uiLayer)
   val chainmailArmorSprite: Sprite = Sprite(32, 1, uiLayer)
   val plateArmorSprite: Sprite = Sprite(33, 1, uiLayer)
-  
+
   // New equipment sprites - using default sprite for items without specific sprites
-  val leatherBootsSprite: Sprite = Sprite(39, 1, uiLayer) // using defaultItemSprite
-  val ironBootsSprite: Sprite = Sprite(39, 0, uiLayer) // using defaultItemSprite  
-  val leatherGlovesSprite: Sprite = Sprite(41, 1, uiLayer) // using defaultItemSprite
-  val ironGlovesSprite: Sprite = Sprite(41, 0, uiLayer) // using defaultItemSprite
-  val basicSwordSprite: Sprite = Sprite(32, 6, uiLayer) // using defaultItemSprite
-  val ironSwordSprite: Sprite = Sprite(32, 7, uiLayer) // using defaultItemSprite
-  
+  val leatherBootsSprite: Sprite =
+    Sprite(39, 1, uiLayer) // using defaultItemSprite
+  val ironBootsSprite: Sprite =
+    Sprite(39, 0, uiLayer) // using defaultItemSprite
+  val leatherGlovesSprite: Sprite =
+    Sprite(41, 1, uiLayer) // using defaultItemSprite
+  val ironGlovesSprite: Sprite =
+    Sprite(41, 0, uiLayer) // using defaultItemSprite
+  val basicSwordSprite: Sprite =
+    Sprite(32, 6, uiLayer) // using defaultItemSprite
+  val ironSwordSprite: Sprite =
+    Sprite(32, 7, uiLayer) // using defaultItemSprite
+
   val defaultItemSprite: Sprite = Sprite(37, 13, uiLayer)
   val coinSprite: Sprite = Sprite(22, 4, entityLayer)
-  
+
   val stairsSprite: Sprite = Sprite(5, 17, entityLayer)
 
   val errorSprite: Sprite = Sprite(35, 21, uiLayer)
