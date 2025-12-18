@@ -1281,8 +1281,7 @@ object Elements {
   }
 
   /** Generates a cached map view at world generation time for performance. This
-    * creates the map visualization once and stores it, eliminating per-frame
-    * rendering costs.
+    * uses CloneBatches to efficiently render thousands of tiles.
     *
     * @param worldTiles
     *   Map of tile positions to tile types
@@ -1291,18 +1290,14 @@ object Elements {
     * @param canvasHeight
     *   Height of the game canvas
     * @return
-    *   Batch of SceneNodes representing the entire world map
+    *   SceneUpdateFragment representing the entire world map
     */
   def worldMapView(
       worldTiles: Map[game.Point, map.TileType],
       canvasWidth: Int,
       canvasHeight: Int
-  ): Batch[SceneNode] = {
+  ): SceneUpdateFragment = {
     import map.TileType
-
-    println("The tiles are: " + worldTiles.groupBy(_._2).map { case (k, v) =>
-      (k, v.size)
-    })
 
     println(
       s"[WorldMap] Generating map with ${worldTiles.size} tiles, canvas: ${canvasWidth}x${canvasHeight}"
@@ -1330,7 +1325,6 @@ object Elements {
     val offsetX = (canvasWidth - mapPixelWidth) / 2
     val offsetY = (canvasHeight - mapPixelHeight) / 2
 
-    // Map tile types to colors - matching game aesthetic
     def getTileColor(tileType: TileType): RGBA = tileType match {
       case TileType.Floor | TileType.MaybeFloor =>
         RGBA.fromHexString("#847066") // Brown for dungeon/shop floor
@@ -1347,31 +1341,52 @@ object Elements {
         RGBA.fromHexString("#b28b78") // Brown for dirt/paths
     }
 
-    // Create pixel boxes for each tile
-    println(
-      s"[WorldMap] Map bounds: (${minX},${minY}) to (${maxX},${maxY}), size: ${mapWidth}x${mapHeight}, pixelSize: ${pixelSize}"
-    )
-    println(s"[WorldMap] Rendering at offset (${offsetX},${offsetY})")
+    // Group tiles by color to create batches
+    val tilesByColor = worldTiles.groupBy { case (_, tileType) =>
+      getTileColor(tileType)
+    }
 
-    val tilePixels = worldTiles.map { case (pos, tileType) =>
-      val x = offsetX + ((pos.x - minX) * pixelSize)
-      val y = offsetY + ((pos.y - minY) * pixelSize)
-
-      // If sampling, make pixels larger to fill gaps
-
-      Shape.Box(
-        Rectangle(Point(x, y), Size(pixelSize, pixelSize)),
-        Fill.Color(getTileColor(tileType))
+    // Create CloneIds and Blanks for each color
+    val cloneData = tilesByColor.keys.map { color =>
+      val id = CloneId(s"map_tile_${color.hashCode}")
+      val blank = CloneBlank(
+        id,
+        Shape.Box(
+          Rectangle(Point.zero, Size(pixelSize, pixelSize)),
+          Fill.Color(color)
+        )
       )
-    }.toSeq
+      (color, id, blank)
+    }.toList
+
+    val cloneBlanks = cloneData.map(_._3)
+    val colorToId = cloneData.map(d => d._1 -> d._2).toMap
+
+    // Create CloneBatches
+    val batches = tilesByColor
+      .map { case (color, tiles) =>
+        val cloneId = colorToId(color)
+        val transformData = tiles.map { case (pos, _) =>
+          val x = offsetX + ((pos.x - minX) * pixelSize)
+          val y = offsetY + ((pos.y - minY) * pixelSize)
+          CloneBatchData(x, y)
+        }.toSeq
+
+        CloneBatch(cloneId, transformData.toBatch)
+      }
+      .toSeq
+      .toBatch
 
     println(
-      s"[WorldMap] Generated ${tilePixels.length} tile pixels (sampled from ${worldTiles.size})"
+      s"[WorldMap] Generated ${batches.length} render batches for ${worldTiles.size} tiles"
     )
-    tilePixels.toBatch
+
+    SceneUpdateFragment(
+      Layer.Content(batches)
+    ).addCloneBlanks(cloneBlanks.toBatch)
   }
 
-  def worldMapView(model: GameController): Batch[SceneNode] = {
+  def worldMapView(model: GameController): SceneUpdateFragment = {
     val mapView = worldMapView(
       model.gameState.worldMap.tiles,
       canvasWidth,
@@ -1384,6 +1399,7 @@ object Elements {
       (canvasWidth - 160) / 2,
       canvasHeight - spriteScale * 2
     )
-    mapView :+ exitMessage
+
+    mapView |+| SceneUpdateFragment(Layer.Content(exitMessage))
   }
 }

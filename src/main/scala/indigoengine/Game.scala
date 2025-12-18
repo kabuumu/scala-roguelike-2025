@@ -143,9 +143,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
             cached.asInstanceOf[Outcome[SceneUpdateFragment]]
           case None =>
             val mapViewOutcome = Outcome(
-              SceneUpdateFragment(
-                Layer.Content(worldMapView(model))
-              )
+              worldMapView(model)
             )
             cachedMapView = Some(mapViewOutcome)
             mapViewOutcome

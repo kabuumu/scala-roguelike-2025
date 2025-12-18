@@ -30,3 +30,4 @@ __pycache__/
 .metals/
 .vscode/
 .bloop/
+metals.sbt
