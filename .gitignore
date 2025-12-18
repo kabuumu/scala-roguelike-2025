@@ -26,3 +26,8 @@ coverage-output.txt
 __pycache__/
 *.pyc
 
+# Editor specific
+.metals/
+.vscode/
+.bloop/
+

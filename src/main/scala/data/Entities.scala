@@ -3,6 +3,9 @@ package data
 import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
 import game.entity.*
 import game.entity.Dialogue
+import game.entity.Conversation
+import game.entity.ConversationChoice
+import game.entity.ConversationAction.*
 import game.entity.Experience.experienceForLevel
 import game.entity.Movement.position
 
@@ -13,7 +16,13 @@ object Entities {
     case Coin
     case Trader
 
-  def explosionEffect(creatorId: String, position: game.Point, targetType: EntityType, damage: Int = 10, size: Int = 2): Entity = {
+  def explosionEffect(
+      creatorId: String,
+      position: game.Point,
+      targetType: EntityType,
+      damage: Int = 10,
+      size: Int = 2
+  ): Entity = {
     Entity(
       s"Explosion ($creatorId)",
       Hitbox(),
@@ -21,15 +30,17 @@ object Entities {
       Movement(position = position),
       Drawable(Sprites.projectileSprite),
       Wave(size),
-      EntityTypeComponent(EntityType.Projectile),
+      EntityTypeComponent(EntityType.Projectile)
     )
   }
-  
+
   def slimelet(position: game.Point): Entity = {
-    val health = 5 
+    val health = 5
     val damage = 1
     Entity(
-      Movement(position = position), // Position will be set by SpawnEntitySystem
+      Movement(position =
+        position
+      ), // Position will be set by SpawnEntitySystem
       EntityTypeComponent(EntityType.Enemy),
       Health(10),
       Initiative(8),
@@ -44,31 +55,45 @@ object Entities {
       )
     )
   }
-  
+
   def trader(id: String, position: game.Point): Entity = {
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Trader),
       Trader(Trader.defaultInventory),
-      NameComponent("Trader", "A friendly merchant willing to buy and sell items"),
+      NameComponent(
+        "Trader",
+        "A friendly merchant willing to buy and sell items"
+      ),
+      Conversation(
+        "Greetings, adventure! Would you like to see my wares?",
+        Seq(
+          ConversationChoice("Browse goods", TradeAction),
+          ConversationChoice("Goodbye", CloseAction)
+        )
+      ),
       Hitbox(),
       Drawable(Sprites.traderSprite)
     )
   }
 
   def healer(id: String, position: game.Point): Entity = {
-    val inventory = Map(
-      Items.ItemReference.HealingService -> (50, 0) // Cost 50, cannot sell back
-    )
     Entity(
       id = id,
       Movement(position = position),
       EntityTypeComponent(EntityType.Trader),
-      Trader(inventory),
+      Healer(healAmount = 100, cost = 50),
       NameComponent("Village Healer", "Can heal your wounds for a price"),
+      Conversation(
+        "Greetings, traveler. You look wounded. Shall I heal you for 50 gold?",
+        Seq(
+          ConversationChoice("Heal (50g)", HealAction(100, 50)),
+          ConversationChoice("No thanks", CloseAction)
+        )
+      ),
       Hitbox(),
-      Drawable(Sprites.traderSprite) // Use same sprite for now
+      Drawable(Sprites.traderSprite)
     )
   }
 
@@ -83,6 +108,13 @@ object Entities {
       EntityTypeComponent(EntityType.Trader),
       Trader(inventory),
       NameComponent("Alchemist", "Sells potions and scrolls"),
+      Conversation(
+        "Potions and scrolls for the discerning mage! Take a look?",
+        Seq(
+          ConversationChoice("Browse goods", TradeAction),
+          ConversationChoice("Goodbye", CloseAction)
+        )
+      ),
       Hitbox(),
       Drawable(Sprites.traderSprite)
     )
@@ -109,6 +141,13 @@ object Entities {
       EntityTypeComponent(EntityType.Trader),
       Trader(inventory),
       NameComponent("Blacksmith", "Sells weapons and armor"),
+      Conversation(
+        "Fine steel for your battles. Need a new blade?",
+        Seq(
+          ConversationChoice("Browse goods", TradeAction),
+          ConversationChoice("Goodbye", CloseAction)
+        )
+      ),
       Hitbox(),
       Drawable(Sprites.traderSprite)
     )
@@ -119,7 +158,10 @@ object Entities {
       id = id,
       Movement(position = position),
       NameComponent("Villager", "A simple villager"),
-      Dialogue("Welcome to our humble village, adventurer!"),
+      Conversation(
+        "Welcome to our humble village, adventurer! It's not much, but it's home.",
+        Seq(ConversationChoice("Goodbye", CloseAction))
+      ),
       Hitbox(),
       Drawable(Sprites.playerSprite) // Use player sprite as placeholder
     )

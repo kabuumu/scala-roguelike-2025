@@ -25,7 +25,10 @@ object Game extends IndigoSandbox[Unit, GameController] {
     .noResize
 
   override def assets: Set[AssetType] = Set(
-    AssetType.Image(AssetName("sprites"), AssetPath("assets/sprites/sprites.png"))
+    AssetType.Image(
+      AssetName("sprites"),
+      AssetPath("assets/sprites/sprites.png")
+    )
   ) ++ generated.Assets.assets.generated.assetSet
 
   override def fonts: Set[FontInfo] = Set(
@@ -36,15 +39,18 @@ object Game extends IndigoSandbox[Unit, GameController] {
   override def animations: Set[Animation] = Set.empty
 
   override def shaders: Set[ShaderProgram] = Set(
-    CustomShader.shader,
+    CustomShader.shader
   )
 
-  override def setup(assetCollection: AssetCollection, dice: Dice): Outcome[Startup[Unit]] = Outcome(
+  override def setup(
+      assetCollection: AssetCollection,
+      dice: Dice
+  ): Outcome[Startup[Unit]] = Outcome(
     Startup.Success(())
   )
 
   var cachedMapView: Option[Outcome[?]] = None
-  
+
   override def initialModel(startupData: Unit): Outcome[GameController] = {
     // Create a minimal dummy game state for the main menu (it won't be used until New Game is selected)
     val dummyDungeon = map.Dungeon(
@@ -57,7 +63,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
       testMode = true,
       seed = 0L
     )
-    
+
     // Create a dummy world map with the dummy dungeon
     val dummyWorldMap = map.WorldMap(
       tiles = dummyDungeon.tiles,
@@ -67,7 +73,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
       bridges = Set.empty,
       bounds = map.MapBounds(-1, 1, -1, 1)
     )
-    
+
     val dummyPlayer = game.entity.Entity(
       id = "dummy",
       game.entity.Movement(position = game.Point(0, 0)),
@@ -79,22 +85,28 @@ object Game extends IndigoSandbox[Unit, GameController] {
       game.entity.Hitbox(),
       game.entity.DeathEvents()
     )
-    
+
     val dummyGameState = game.GameState(
       playerEntityId = "dummy",
       entities = Vector(dummyPlayer),
       worldMap = dummyWorldMap
     )
-    
-    Outcome(GameController(
-      UIState.MainMenu(),
-      dummyGameState
-    ))
+
+    Outcome(
+      GameController(
+        UIState.MainMenu(),
+        dummyGameState
+      )
+    )
   }
 
-  override def updateModel(context: Context[Unit], model: GameController): GlobalEvent => Outcome[GameController] =
+  override def updateModel(
+      context: Context[Unit],
+      model: GameController
+  ): GlobalEvent => Outcome[GameController] =
     _ =>
-      val optInput = context.frame.input.mapInputsOption(InputMappings.inputMapping)
+      val optInput =
+        context.frame.input.mapInputsOption(InputMappings.inputMapping)
       val time = context.frame.time.running.toMillis.toLong * 1000000L
 
       try {
@@ -106,7 +118,10 @@ object Game extends IndigoSandbox[Unit, GameController] {
           Outcome(model)
       }
 
-  override def present(context: Context[Unit], model: GameController): Outcome[SceneUpdateFragment] = {
+  override def present(
+      context: Context[Unit],
+      model: GameController
+  ): Outcome[SceneUpdateFragment] = {
     model.uiState match {
       case _: UIState.MainMenu =>
         // Render main menu screen
@@ -137,7 +152,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
         }
       case _ =>
         // Render normal game
-        val spriteSheet = Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+        val spriteSheet =
+          Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
         val player = model.gameState.playerEntity
         val game.Point(playerX, playerY) = player.position
         val visiblePoints = model.gameState.getVisiblePointsFor(player)
@@ -147,11 +163,16 @@ object Game extends IndigoSandbox[Unit, GameController] {
         // Use worldMap.tiles which contains all combined tiles (terrain, dungeons, rivers, paths, etc.)
         val tilesToRender = model.gameState.worldMap.tiles
         val tileSprites = tilesToRender.iterator.collect {
-          case (tilePosition, tileType) if sightMemory.contains(tilePosition) || UIConfig.ignoreLineOfSight =>
+          case (tilePosition, tileType)
+              if sightMemory.contains(
+                tilePosition
+              ) || UIConfig.ignoreLineOfSight =>
             val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
             if (visiblePoints.contains(tilePosition)) tileSprite
-            else tileSprite.asInstanceOf[Graphic[Material.Bitmap]]
-              .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
+            else
+              tileSprite
+                .asInstanceOf[Graphic[Material.Bitmap]]
+                .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
         }.toSeq
 
         // Filter and map entities in one pass
@@ -161,13 +182,17 @@ object Game extends IndigoSandbox[Unit, GameController] {
           .flatMap(entity =>
             spriteSheet.fromEntity(entity) ++ enemyHealthBar(entity)
           )
-    
+
         val cursor = drawUIElements(spriteSheet, model)
 
         Outcome(
           SceneUpdateFragment(
-            Layer.Content((tileSprites ++ cursor).toBatch ++ entitySprites)
-              .withCamera(Camera.LookAt(Point(playerX * spriteScale, playerY * spriteScale))),
+            Layer
+              .Content((tileSprites ++ cursor).toBatch ++ entitySprites)
+              .withCamera(
+                Camera
+                  .LookAt(Point(playerX * spriteScale, playerY * spriteScale))
+              ),
             Layer.Content(
               healthBar(model)
                 ++ experienceBar(model)
@@ -186,20 +211,23 @@ object Game extends IndigoSandbox[Unit, GameController] {
     }
   }
 
-  private def drawUIElements(spriteSheet: Graphic[?], model: GameController): Seq[SceneNode] = {
+  private def drawUIElements(
+      spriteSheet: Graphic[?],
+      model: GameController
+  ): Seq[SceneNode] = {
     // Don't show targeting for trade-related lists (buying/selling)
     val optCursorTargetInfo = model.uiState match {
       case scrollSelect: UIState.ScrollSelectState =>
         Some((scrollSelect.cursor, None)) // Position only, no entity
-      
+
       // Skip targeting for buying/selling - these are inventory/shop UIs
       case _: UIState.BuyItemSelect | _: UIState.SellItemSelect =>
         None
-      
+
       // Show cursor for using items (when they have entity targets)
       case useItemSelect: UIState.UseItemSelect =>
         None // Item use targeting is handled by ScrollSelect transition
-      
+
       // Handle action target selection (for attacks, equipping, trading, etc.)
       case actionTargetSelect: UIState.ActionTargetSelect =>
         if (actionTargetSelect.list.nonEmpty) {
@@ -208,7 +236,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
         } else {
           None
         }
-      
+
       // Handle enemy targeting (for ranged attacks, spells, etc.)
       case enemyTargetSelect: UIState.EnemyTargetSelect =>
         if (enemyTargetSelect.list.nonEmpty) {
@@ -217,7 +245,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
         } else {
           None
         }
-      
+
       case _ =>
         None
     }
@@ -226,16 +254,17 @@ object Game extends IndigoSandbox[Unit, GameController] {
 
     optCursorTargetInfo.toSeq.flatMap {
       case (game.Point(cursorX, cursorY), optTargetEntity) =>
-        val line = LineOfSight.getBresenhamLine(playerPosition, game.Point(cursorX, cursorY)).dropRight(1)
-          .map {
-            point =>
-              Shape.Box(
-                Rectangle(
-                  Point(point.x * spriteScale, point.y * spriteScale),
-                  Size(spriteScale)
-                ),
-                Fill.Color(RGBA.Red.withAlpha(0.5f))
-              )
+        val line = LineOfSight
+          .getBresenhamLine(playerPosition, game.Point(cursorX, cursorY))
+          .dropRight(1)
+          .map { point =>
+            Shape.Box(
+              Rectangle(
+                Point(point.x * spriteScale, point.y * spriteScale),
+                Size(spriteScale)
+              ),
+              Fill.Color(RGBA.Red.withAlpha(0.5f))
+            )
           }
 
         // Get cursor positions based on entity hitbox or single position
@@ -245,7 +274,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
             import game.entity.Hitbox.*
             entity.get[game.entity.Hitbox] match {
               case Some(hitbox) =>
-                hitbox.points.map(hitboxPoint => 
+                hitbox.points.map(hitboxPoint =>
                   game.Point(cursorX + hitboxPoint.x, cursorY + hitboxPoint.y)
                 )
               case None =>
@@ -273,10 +302,14 @@ object Game extends IndigoSandbox[Unit, GameController] {
               case Some(hitbox) if hitbox.points.size > 1 =>
                 // Multi-tile entity: draw red box for each hitbox point
                 hitbox.points.map { hitboxPoint =>
-                  val highlightPos = game.Point(cursorX + hitboxPoint.x, cursorY + hitboxPoint.y)
+                  val highlightPos =
+                    game.Point(cursorX + hitboxPoint.x, cursorY + hitboxPoint.y)
                   Shape.Box(
                     Rectangle(
-                      Point(highlightPos.x * spriteScale, highlightPos.y * spriteScale),
+                      Point(
+                        highlightPos.x * spriteScale,
+                        highlightPos.y * spriteScale
+                      ),
                       Size(spriteScale)
                     ),
                     Fill.Color(RGBA.Red.withAlpha(0.5f))

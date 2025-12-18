@@ -10,9 +10,12 @@ import data.Items.ItemReference
 import scala.util.Random
 
 object TradeSystem extends GameSystem {
-  override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+  override def update(
+      gameState: GameState,
+      events: Seq[GameSystemEvent]
+  ): (GameState, Seq[GameSystemEvent]) = {
     val inputEvents = events.collect { case e: InputEvent => e }
-    
+
     val updatedGameState = inputEvents.foldLeft(gameState) { (state, event) =>
       event.input match {
         case InputAction.BuyItem(traderEntity, itemRef) =>
@@ -22,29 +25,29 @@ object TradeSystem extends GameSystem {
         case _ => state
       }
     }
-    
+
     (updatedGameState, Seq.empty)
   }
-  
-  private def handleBuyItem(gameState: GameState, trader: Entity, itemRef: ItemReference): GameState = {
+
+  private def handleBuyItem(
+      gameState: GameState,
+      trader: Entity,
+      itemRef: ItemReference
+  ): GameState = {
     import game.entity.Equipment.equipItemComponent
     import game.entity.Equippable.isEquippable
     import game.entity.Movement
     import game.entity.Movement.position
     import game.entity.Health._
-    
+
     trader.get[Trader] match {
       case Some(traderComponent) =>
         traderComponent.buyPrice(itemRef) match {
           case Some(price) if gameState.playerEntity.coins >= price =>
             // Check for special services like healing
             if (itemRef == ItemReference.HealingService) {
-              val player = gameState.playerEntity
-              val healedPlayer = player.heal(100).removeCoins(price)
-              val updatedEntities = gameState.entities
-                .filterNot(_.id == player.id) :+ healedPlayer
-              
-              gameState.copy(entities = updatedEntities)
+              // Healing service is now handled via ConversationSystem
+              gameState
             } else {
               // Create the item
               val newItemId = s"item-${Random.nextString(8)}"
@@ -55,21 +58,27 @@ object TradeSystem extends GameSystem {
                 // Auto-equip the item
                 newItem.get[game.entity.Equippable] match {
                   case Some(equippable) =>
-                    val (playerWithNewEquipment, previousEquippable) = gameState.playerEntity.equipItemComponent(equippable)
-                    val updatedPlayer = playerWithNewEquipment.removeCoins(price)
+                    val (playerWithNewEquipment, previousEquippable) =
+                      gameState.playerEntity.equipItemComponent(equippable)
+                    val updatedPlayer =
+                      playerWithNewEquipment.removeCoins(price)
 
                     // Drop previously equipped item nearby if there was one
-                    val droppedItemEntities = previousEquippable.map { prevEquip =>
-                      val droppedItemId = s"dropped-${Random.nextString(8)}"
-                      val droppedItem = createEquipmentEntity(droppedItemId, prevEquip)
-                      // Place item adjacent to player
-                      val playerPos = gameState.playerEntity.position
-                      val dropPos = game.Point(playerPos.x + 1, playerPos.y)
-                      droppedItem.addComponent(Movement(position = dropPos))
+                    val droppedItemEntities = previousEquippable.map {
+                      prevEquip =>
+                        val droppedItemId = s"dropped-${Random.nextString(8)}"
+                        val droppedItem =
+                          createEquipmentEntity(droppedItemId, prevEquip)
+                        // Place item adjacent to player
+                        val playerPos = gameState.playerEntity.position
+                        val dropPos = game.Point(playerPos.x + 1, playerPos.y)
+                        droppedItem.addComponent(Movement(position = dropPos))
                     }.toSeq
 
                     val updatedEntities = (gameState.entities
-                      .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer) ++ droppedItemEntities
+                      .filterNot(
+                        _.id == gameState.playerEntity.id
+                      ) :+ updatedPlayer) ++ droppedItemEntities
 
                     gameState.copy(entities = updatedEntities)
                   case None => gameState
@@ -81,7 +90,9 @@ object TradeSystem extends GameSystem {
                   .addItemEntity(newItemId)
 
                 val updatedEntities = gameState.entities
-                  .filterNot(_.id == gameState.playerEntity.id) :+ updatedPlayer :+ newItem
+                  .filterNot(
+                    _.id == gameState.playerEntity.id
+                  ) :+ updatedPlayer :+ newItem
 
                 gameState.copy(entities = updatedEntities)
               }
@@ -91,21 +102,26 @@ object TradeSystem extends GameSystem {
       case None => gameState
     }
   }
-  
+
   // Helper to create an equipment entity from an Equippable component
-  private def createEquipmentEntity(id: String, equippable: game.entity.Equippable): Entity = {
+  private def createEquipmentEntity(
+      id: String,
+      equippable: game.entity.Equippable
+  ): Entity = {
     import game.entity.{NameComponent, Drawable, Hitbox, Movement}
     import data.Sprites
-    
+
     // Find the matching ItemReference to create the entity properly
     val itemRefOpt = ItemReference.values.find { ref =>
       val tempEntity = ref.createEntity("temp")
-      tempEntity.get[game.entity.Equippable].exists(_.itemName == equippable.itemName)
+      tempEntity
+        .get[game.entity.Equippable]
+        .exists(_.itemName == equippable.itemName)
     }
-    
+
     itemRefOpt match {
       case Some(itemRef) => itemRef.createEntity(id)
-      case None =>
+      case None          =>
         // Fallback: create a basic entity with the equippable component
         Entity(
           id = id,
@@ -117,35 +133,41 @@ object TradeSystem extends GameSystem {
         )
     }
   }
-  
-  private def handleSellItem(gameState: GameState, trader: Entity, itemEntity: Entity): GameState = {
+
+  private def handleSellItem(
+      gameState: GameState,
+      trader: Entity,
+      itemEntity: Entity
+  ): GameState = {
     import game.entity.Equipment.{equipment, unequipItem}
-    
+
     // Find the corresponding ItemReference for this item
     val itemRefOpt = findItemReference(itemEntity)
-    
+
     (trader.get[Trader], itemRefOpt) match {
       case (Some(traderComponent), Some(itemRef)) =>
         traderComponent.sellPrice(itemRef) match {
           case Some(price) =>
             // Check if item is currently equipped and unequip it first
-            val (playerWithUnequipped, wasEquipped) = itemEntity.get[game.entity.Equippable] match {
-              case Some(equippable) =>
-                // Check if this item is currently equipped
-                val currentEquipment = gameState.playerEntity.equipment
-                val isEquipped = currentEquipment.getEquippedItem(equippable.slot)
-                  .exists(_.itemName == equippable.itemName)
-                
-                if (isEquipped) {
-                  // Unequip the item before selling
-                  (gameState.playerEntity.unequipItem(equippable.slot), true)
-                } else {
+            val (playerWithUnequipped, wasEquipped) =
+              itemEntity.get[game.entity.Equippable] match {
+                case Some(equippable) =>
+                  // Check if this item is currently equipped
+                  val currentEquipment = gameState.playerEntity.equipment
+                  val isEquipped = currentEquipment
+                    .getEquippedItem(equippable.slot)
+                    .exists(_.itemName == equippable.itemName)
+
+                  if (isEquipped) {
+                    // Unequip the item before selling
+                    (gameState.playerEntity.unequipItem(equippable.slot), true)
+                  } else {
+                    (gameState.playerEntity, false)
+                  }
+                case None =>
                   (gameState.playerEntity, false)
-                }
-              case None =>
-                (gameState.playerEntity, false)
-            }
-            
+              }
+
             // Remove item from player's inventory and add coins
             // For equipped items (temporary entities), they were created for display only and don't exist in game world
             // For inventory items, remove from inventory list and from entities
@@ -155,22 +177,29 @@ object TradeSystem extends GameSystem {
               (playerWithUnequipped.addCoins(price), Set.empty[String])
             } else {
               // Item was in inventory - remove from inventory list and add coins
-              (playerWithUnequipped
-                .addCoins(price)
-                .removeItemEntity(itemEntity.id), Set(itemEntity.id))
+              (
+                playerWithUnequipped
+                  .addCoins(price)
+                  .removeItemEntity(itemEntity.id),
+                Set(itemEntity.id)
+              )
             }
-            
+
             // Remove the item entity from the world if it was in inventory
             val updatedEntities = gameState.entities
-              .filterNot(e => e.id == gameState.playerEntity.id || entitiesToRemove.contains(e.id)) :+ updatedPlayer
-            
+              .filterNot(e =>
+                e.id == gameState.playerEntity.id || entitiesToRemove.contains(
+                  e.id
+                )
+              ) :+ updatedPlayer
+
             gameState.copy(entities = updatedEntities)
           case None => gameState // Trader doesn't buy this item
         }
       case _ => gameState
     }
   }
-  
+
   private def findItemReference(itemEntity: Entity): Option[ItemReference] = {
     itemEntity.get[NameComponent].flatMap { nameComp =>
       ItemReference.values.find { ref =>
