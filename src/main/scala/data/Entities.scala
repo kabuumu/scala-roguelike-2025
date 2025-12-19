@@ -3,6 +3,7 @@ package data
 import data.DeathEvents.DeathEventReference.{GiveExperience, SpawnEntity}
 import game.entity.*
 import game.entity.Dialogue
+import game.Sprite
 import game.entity.Conversation
 import game.entity.ConversationChoice
 import game.entity.ConversationAction.*
@@ -74,7 +75,8 @@ object Entities {
         )
       ),
       Hitbox(),
-      Drawable(Sprites.traderSprite)
+      Drawable(Sprites.traderSprite),
+      Portrait(Sprite(0, 0, 0))
     )
   }
 
@@ -93,7 +95,8 @@ object Entities {
         )
       ),
       Hitbox(),
-      Drawable(Sprites.traderSprite)
+      Drawable(Sprites.traderSprite),
+      Portrait(Sprite(1, 1, 0))
     )
   }
 
@@ -116,7 +119,8 @@ object Entities {
         )
       ),
       Hitbox(),
-      Drawable(Sprites.traderSprite)
+      Drawable(Sprites.traderSprite),
+      Portrait(Sprite(0, 0, 0))
     )
   }
 
@@ -149,7 +153,8 @@ object Entities {
         )
       ),
       Hitbox(),
-      Drawable(Sprites.traderSprite)
+      Drawable(Sprites.traderSprite),
+      Portrait(Sprite(0, 1, 0))
     )
   }
 
@@ -163,7 +168,8 @@ object Entities {
         Seq(ConversationChoice("Goodbye", CloseAction))
       ),
       Hitbox(),
-      Drawable(Sprites.playerSprite) // Use player sprite as placeholder
+      Drawable(Sprites.playerSprite), // Use player sprite as placeholder
+      Portrait(Sprite(1, 0, 0))
     )
   }
 }

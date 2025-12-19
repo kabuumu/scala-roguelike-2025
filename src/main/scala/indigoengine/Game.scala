@@ -28,6 +28,10 @@ object Game extends IndigoSandbox[Unit, GameController] {
     AssetType.Image(
       AssetName("sprites"),
       AssetPath("assets/sprites/sprites.png")
+    ),
+    AssetType.Image(
+      AssetName("portraits"),
+      AssetPath("assets/sprites/portraits.png")
     )
   ) ++ generated.Assets.assets.generated.assetSet
 

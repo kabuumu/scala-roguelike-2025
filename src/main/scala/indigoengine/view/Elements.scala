@@ -3,7 +3,14 @@ package indigoengine.view
 import game.entity
 import game.entity.ChargeType.SingleUse
 import game.entity.EquipmentSlot.Weapon
-import game.entity.{ChargeType, Drawable, Entity, Equipment, NameComponent}
+import game.entity.{
+  ChargeType,
+  Drawable,
+  Entity,
+  Equipment,
+  NameComponent,
+  Portrait
+}
 import game.status.StatusEffect
 import indigo.*
 import indigo.Batch.toBatch
@@ -1190,12 +1197,6 @@ object Elements {
           .map(_.description)
           .getOrElse("")
 
-        // Get sprite
-        val entitySprite = entity
-          .get[Drawable]
-          .flatMap(_.sprites.headOption.map(_._2))
-          .getOrElse(data.Sprites.playerSprite) // Fallback
-
         // Window dimensions - centered on screen
         val windowWidth = spriteScale * 12
         val windowHeight = spriteScale * 8
@@ -1218,10 +1219,36 @@ object Elements {
         val iconSize = spriteScale * 3
         val iconX = windowX + defaultBorderSize
         val iconY = windowY + defaultBorderSize
-        val icon = spriteSheet
-          .fromSprite(entitySprite)
-          .moveTo(iconX, iconY)
-          .scaleBy(3.0, 3.0)
+
+        val icon = entity.get[Portrait] match {
+          case Some(portrait) =>
+            val portraitSheet =
+              Graphic(0, 0, 192, 192, Material.Bitmap(AssetName("portraits")))
+
+            // Image is 192x192, grid is 2x2, so each cell is 96x96
+            val cellSize = 96
+            val pX = portrait.sprite.x * cellSize
+            val pY = portrait.sprite.y * cellSize
+
+            portraitSheet
+              .withCrop(pX, pY, cellSize, cellSize)
+              .moveTo(iconX, iconY)
+              .scaleBy(
+                iconSize.toDouble / cellSize.toDouble,
+                iconSize.toDouble / cellSize.toDouble
+              )
+
+          case None =>
+            val entitySprite = entity
+              .get[Drawable]
+              .flatMap(_.sprites.headOption.map(_._2))
+              .getOrElse(data.Sprites.playerSprite) // Fallback
+
+            spriteSheet
+              .fromSprite(entitySprite)
+              .moveTo(iconX, iconY)
+              .scaleBy(3.0, 3.0)
+        }
 
         // Name at top (right of icon)
         val messageX = iconX + iconSize + defaultBorderSize
