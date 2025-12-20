@@ -6,41 +6,42 @@ import game.*
 import game.entity.*
 import map.*
 
-/**
- * DTOs used only for persistence. Keeps save/load logic isolated from gameplay logic.
- */
+/** DTOs used only for persistence. Keeps save/load logic isolated from gameplay
+  * logic.
+  */
 final case class PersistedGameState(
-  playerEntityId: String,
-  entities: Vector[PersistedEntity],
-  messages: Vector[String],
-  dungeon: PersistedDungeon
+    playerEntityId: String,
+    entities: Vector[PersistedEntity],
+    messages: Vector[String],
+    dungeon: PersistedDungeon,
+    dungeonFloor: Int = 1,
+    gameMode: String = "Adventure"
 )
 
 final case class PersistedEntity(
-  id: String,
-  components: Vector[SavedComponent]
+    id: String,
+    components: Vector[SavedComponent]
 )
 
-/**
- * A single component serialized as:
- * - tag: stable string key (e.g. "Health", "Movement", ...)
- * - data: the component payload as JSON AST
- */
+/** A single component serialized as:
+  *   - tag: stable string key (e.g. "Health", "Movement", ...)
+  *   - data: the component payload as JSON AST
+  */
 final case class SavedComponent(tag: String, data: Value)
 
 // Simplified persistence models that don't depend on complex game types
 final case class PersistedDungeon(
-  roomGrid: Vector[(Int, Int)], // Set[Point] -> Vector[(Int, Int)]
-  seed: Long
+    roomGrid: Vector[(Int, Int)], // Set[Point] -> Vector[(Int, Int)]
+    seed: Long
 )
 
-/**
- * Local implicit ReadWriters for save package only - automatic derivation where possible
- */
+/** Local implicit ReadWriters for save package only - automatic derivation
+  * where possible
+  */
 object SavePickle {
   // Automatic derivation for simple DTOs
   implicit val savedComponentRW: ReadWriter[SavedComponent] = macroRW
-  implicit val persistedEntityRW: ReadWriter[PersistedEntity] = macroRW  
+  implicit val persistedEntityRW: ReadWriter[PersistedEntity] = macroRW
   implicit val persistedDungeonRW: ReadWriter[PersistedDungeon] = macroRW
   implicit val persistedGameStateRW: ReadWriter[PersistedGameState] = macroRW
 }
@@ -48,10 +49,9 @@ object SavePickle {
 object SaveConversions {
   import SavePickle.*
 
-  /**
-   * Convert a live GameState to a persistable DTO.
-   * All components that have a registry entry will be saved.
-   */
+  /** Convert a live GameState to a persistable DTO. All components that have a
+    * registry entry will be saved.
+    */
   def toPersisted(gs: GameState): PersistedGameState = {
     val persistedEntities = gs.entities.toVector.map { e =>
       val savedComps = e.components.values.toVector
@@ -79,33 +79,46 @@ object SaveConversions {
       playerEntityId = gs.playerEntityId,
       entities = persistedEntities,
       messages = gs.messages.toVector,
-      dungeon = simpleDungeon
+      dungeon = simpleDungeon,
+      dungeonFloor = gs.dungeonFloor,
+      gameMode = gs.gameMode.toString
     )
   }
 
-  /**
-   * Convert a persisted DTO back to a live GameState.
-   * Unknown component tags are skipped with an error collection.
-   */
-  def fromPersisted(pgs: PersistedGameState): Either[List[String], GameState] = {
+  /** Convert a persisted DTO back to a live GameState. Unknown component tags
+    * are skipped with an error collection.
+    */
+  def fromPersisted(
+      pgs: PersistedGameState
+  ): Either[List[String], GameState] = {
     val (errors, entities) =
       pgs.entities.foldLeft(List.empty[String] -> Vector.empty[Entity]) {
         case ((errsAcc, entsAcc), pe) =>
-          val (errs, comps) = pe.components.foldLeft(List.empty[String] -> Vector.empty[Component]) {
-            case ((ce, cc), sc) =>
-              ComponentRegistry.fromSaved(sc) match {
-                case Right(c) => ce -> (cc :+ c)
-                case Left(err) => (ce :+ err) -> cc
-              }
+          val (errs, comps) = pe.components.foldLeft(
+            List.empty[String] -> Vector.empty[Component]
+          ) { case ((ce, cc), sc) =>
+            ComponentRegistry.fromSaved(sc) match {
+              case Right(c)  => ce -> (cc :+ c)
+              case Left(err) => (ce :+ err) -> cc
+            }
           }
-          val entity = Entity(id = pe.id, components = comps.map(c => c.getClass.asInstanceOf[Class[? <: Component]] -> c).toMap)
+          val entity = Entity(
+            id = pe.id,
+            components = comps
+              .map(c => c.getClass.asInstanceOf[Class[? <: Component]] -> c)
+              .toMap
+          )
           (errsAcc ++ errs) -> (entsAcc :+ entity)
       }
 
     // Reconstruct basic Dungeon from PersistedDungeon and wrap in WorldMap
     val roomGrid = pgs.dungeon.roomGrid.map { case (x, y) => Point(x, y) }.toSet
-    val basicDungeon = Dungeon(roomGrid = roomGrid, startPoint = Point(0, 0), seed = pgs.dungeon.seed)
-    
+    val basicDungeon = Dungeon(
+      roomGrid = roomGrid,
+      startPoint = Point(0, 0),
+      seed = pgs.dungeon.seed
+    )
+
     // Create a WorldMap that wraps the dungeon
     val worldMap = WorldMap(
       tiles = basicDungeon.tiles,
@@ -120,20 +133,25 @@ object SaveConversions {
       // Log warnings but still return a valid game state
       println(s"Save deserialization warnings: ${errors.mkString(", ")}")
     }
-    
-    Right(GameState(
-      playerEntityId = pgs.playerEntityId,
-      entities = entities,
-      messages = pgs.messages,
-      worldMap = worldMap
-    ))
+
+    Right(
+      GameState(
+        playerEntityId = pgs.playerEntityId,
+        entities = entities,
+        messages = pgs.messages,
+        worldMap = worldMap,
+        dungeonFloor = pgs.dungeonFloor,
+        gameMode =
+          if (pgs.gameMode == "Gauntlet") GameMode.Gauntlet
+          else GameMode.Adventure
+      )
+    )
   }
 }
 
-/**
- * Public API for save/load JSON.
- * Self-contained within save package using automatic derivation where possible.
- */
+/** Public API for save/load JSON. Self-contained within save package using
+  * automatic derivation where possible.
+  */
 object SaveGameJson {
   import SaveConversions.*
   import SavePickle.*
@@ -147,10 +165,12 @@ object SaveGameJson {
     val persisted = read[PersistedGameState](json)
     fromPersisted(persisted) match {
       case Right(gameState) => gameState
-      case Left(errors) =>
+      case Left(errors)     =>
         // Should not happen with current implementation but handle gracefully
         println(s"Save deserialization errors: ${errors.mkString(", ")}")
-        throw new RuntimeException(s"Failed to deserialize save: ${errors.head}")
+        throw new RuntimeException(
+          s"Failed to deserialize save: ${errors.head}"
+        )
     }
   }
 }

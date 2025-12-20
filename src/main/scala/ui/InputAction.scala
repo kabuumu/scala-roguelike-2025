@@ -27,4 +27,6 @@ enum InputAction {
   case BuyItem(trader: Entity, itemRef: data.Items.ItemReference)
   case SellItem(trader: Entity, itemEntity: Entity)
   case ConversationAction(entity: Entity, action: ActionDetails)
+  case NewAdventure
+  case NewGauntlet
 }

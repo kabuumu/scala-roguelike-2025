@@ -15,7 +15,8 @@ case class GameState(
     entities: Seq[Entity],
     messages: Seq[String] = Nil,
     worldMap: map.WorldMap,
-    dungeonFloor: Int = 1
+    dungeonFloor: Int = 1,
+    gameMode: GameMode = GameMode.Adventure
 ) {
 
   // Index for O(1) entity lookup by ID

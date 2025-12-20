@@ -34,11 +34,16 @@ object InputHandler {
         case Input.UseItem | Input.Attack(_) | Input.Confirm | Input.Action =>
           if (mainMenu.canConfirmCurrentSelection) {
             mainMenu.getSelectedOption match {
-              case "New Game" =>
+              case "New Adventure" =>
                 (
                   UIState.Move,
-                  None
-                ) // Just transition to Move, update() will handle creating new game
+                  Some(InputAction.NewAdventure)
+                )
+              case "New Gauntlet" =>
+                (
+                  UIState.Move,
+                  Some(InputAction.NewGauntlet)
+                )
               case "Continue Game" =>
                 (UIState.Move, Some(InputAction.LoadGame)) // Load saved game
               case _ => (mainMenu, None)

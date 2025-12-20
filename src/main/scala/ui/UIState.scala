@@ -139,7 +139,7 @@ object UIState {
     import game.save.SaveGameSystem
 
     val options: Seq[String] = {
-      val baseOptions = Seq("New Game")
+      val baseOptions = Seq("New Adventure", "New Gauntlet")
       if (SaveGameSystem.hasSaveGame()) {
         baseOptions :+ "Continue Game"
       } else {
@@ -157,8 +157,8 @@ object UIState {
 
     def isOptionEnabled(index: Int): Boolean = {
       index match {
-        case 0 => true // New Game is always enabled
-        case 1 =>
+        case 0 | 1 => true // New Game options are always enabled
+        case 2     =>
           SaveGameSystem
             .hasSaveGame() // Continue Game only enabled if save exists
         case _ => false
