@@ -29,4 +29,9 @@ enum InputAction {
   case ConversationAction(entity: Entity, action: ActionDetails)
   case NewAdventure
   case NewGauntlet
+  case DebugGiveItem(itemRef: data.Items.ItemReference)
+  case DebugGiveGold(amount: Int)
+  case DebugGiveExperience(amount: Int)
+  case DebugRestoreHealth
+  case DebugGivePerk(perk: StatusEffect)
 }

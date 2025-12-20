@@ -36,6 +36,7 @@ case class GameState(
     // Phase 1: Input processing and early systems
     Seq(
       DeathHandlerSystem,
+      DebugSystem,
       StairsSpawnSystem,
       ExperienceSystem,
       EnemyAISystem,

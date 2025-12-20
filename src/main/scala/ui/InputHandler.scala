@@ -257,28 +257,88 @@ object InputHandler {
           } else {
             (UIState.Move, None)
           }
-        case Input.Wait => (UIState.Move, Some(InputAction.Wait))
-        case _          => (uiState, None)
+        case Input.Wait      => (UIState.Move, Some(InputAction.Wait))
+        case Input.DebugMenu =>
+          // Toggle Debug Menu
+          (UIState.DebugMenu(), None)
+        case _ => (uiState, None)
+      }
+    case debugMenu: UIState.DebugMenu =>
+      input match {
+        case Input.Move(Direction.Up)     => (debugMenu.selectPrevious, None)
+        case Input.Move(Direction.Down)   => (debugMenu.selectNext, None)
+        case Input.Confirm | Input.Action =>
+          debugMenu.getSelectedOption match {
+            case "Give Item" =>
+              val allItems = data.Items.ItemReference.values.toSeq
+              (
+                UIState.DebugGiveItemSelect(
+                  list = allItems,
+                  effect = itemRef =>
+                    (
+                      uiState, // Return to debug menu
+                      Some(InputAction.DebugGiveItem(itemRef))
+                    )
+                ),
+                None
+              )
+            case "Give Gold" =>
+              (
+                uiState,
+                Some(InputAction.DebugGiveGold(100))
+              )
+            case "Give Experience" =>
+              (
+                uiState,
+                Some(InputAction.DebugGiveExperience(50))
+              )
+            case "Restore Health" =>
+              (
+                uiState,
+                Some(InputAction.DebugRestoreHealth)
+              )
+            case "Give Perk" =>
+              val allPerks = game.perk.Perks.allPerks.map(_.perk)
+              (
+                UIState.DebugGivePerkSelect(
+                  list = allPerks,
+                  effect = perk =>
+                    (
+                      uiState, // Return to debug menu
+                      Some(InputAction.DebugGivePerk(perk))
+                    )
+                ),
+                None
+              )
+            case _ => (uiState, None)
+          }
+        case Input.Cancel | Input.DebugMenu =>
+          (UIState.Move, None) // Close menu
+        case _ => (debugMenu, None)
       }
     case listSelect: UIState.ListSelectState =>
       input match {
-        case Input.Move(Direction.Down | Direction.Left) =>
+        case Input.Move(Direction.Up | Direction.Left) =>
           listSelect match {
-            case s: UIState.UseItemSelect      => (s.iterateDown, None)
-            case s: UIState.BuyItemSelect      => (s.iterateDown, None)
-            case s: UIState.SellItemSelect     => (s.iterateDown, None)
-            case s: UIState.StatusEffectSelect => (s.iterateDown, None)
-            case s: UIState.ActionTargetSelect => (s.iterateDown, None)
-            case s: UIState.EnemyTargetSelect  => (s.iterateDown, None)
+            case s: UIState.UseItemSelect       => (s.iterateDown, None)
+            case s: UIState.BuyItemSelect       => (s.iterateDown, None)
+            case s: UIState.SellItemSelect      => (s.iterateDown, None)
+            case s: UIState.StatusEffectSelect  => (s.iterateDown, None)
+            case s: UIState.ActionTargetSelect  => (s.iterateDown, None)
+            case s: UIState.EnemyTargetSelect   => (s.iterateDown, None)
+            case s: UIState.DebugGiveItemSelect => (s.iterateDown, None)
+            case s: UIState.DebugGivePerkSelect => (s.iterateDown, None)
           }
-        case Input.Move(Direction.Up | Direction.Right) =>
+        case Input.Move(Direction.Down | Direction.Right) =>
           listSelect match {
-            case s: UIState.UseItemSelect      => (s.iterate, None)
-            case s: UIState.BuyItemSelect      => (s.iterate, None)
-            case s: UIState.SellItemSelect     => (s.iterate, None)
-            case s: UIState.StatusEffectSelect => (s.iterate, None)
-            case s: UIState.ActionTargetSelect => (s.iterate, None)
-            case s: UIState.EnemyTargetSelect  => (s.iterate, None)
+            case s: UIState.UseItemSelect       => (s.iterate, None)
+            case s: UIState.BuyItemSelect       => (s.iterate, None)
+            case s: UIState.SellItemSelect      => (s.iterate, None)
+            case s: UIState.StatusEffectSelect  => (s.iterate, None)
+            case s: UIState.ActionTargetSelect  => (s.iterate, None)
+            case s: UIState.EnemyTargetSelect   => (s.iterate, None)
+            case s: UIState.DebugGiveItemSelect => (s.iterate, None)
+            case s: UIState.DebugGivePerkSelect => (s.iterate, None)
           }
         case Input.UseItem | Input.Action =>
           listSelect.action

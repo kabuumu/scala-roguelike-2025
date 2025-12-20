@@ -168,5 +168,47 @@ object UIState {
     def canConfirmCurrentSelection: Boolean = isOptionEnabled(selectedOption)
   }
 
+  case class DebugMenu(selectedOption: Int = 0) extends UIState {
+    val options: Seq[String] = Seq(
+      "Give Item",
+      "Give Gold",
+      "Give Experience",
+      "Restore Health",
+      "Give Perk"
+    )
+
+    def selectNext: DebugMenu =
+      copy(selectedOption = (selectedOption + 1) % options.length)
+    def selectPrevious: DebugMenu = copy(selectedOption =
+      (selectedOption - 1 + options.length) % options.length
+    )
+
+    def getSelectedOption: String = options(selectedOption)
+  }
+
+  case class DebugGiveItemSelect(
+      list: Seq[data.Items.ItemReference],
+      index: Int = 0,
+      effect: data.Items.ItemReference => (UIState, Option[InputAction])
+  ) extends ListSelectState {
+    def iterate: DebugGiveItemSelect = copy(index = nextIndex)
+    def iterateDown: DebugGiveItemSelect = copy(index = prevIndex)
+    def listLength: Int = list.length
+    def action: (UIState, Option[InputAction]) = effect(list(index))
+    def currentItem: data.Items.ItemReference = list(index)
+  }
+
+  case class DebugGivePerkSelect(
+      list: Seq[game.status.StatusEffect],
+      index: Int = 0,
+      effect: game.status.StatusEffect => (UIState, Option[InputAction])
+  ) extends ListSelectState {
+    def iterate: DebugGivePerkSelect = copy(index = nextIndex)
+    def iterateDown: DebugGivePerkSelect = copy(index = prevIndex)
+    def listLength: Int = list.length
+    def action: (UIState, Option[InputAction]) = effect(list(index))
+    def currentItem: game.status.StatusEffect = list(index)
+  }
+
   case object WorldMap extends UIState
 }
