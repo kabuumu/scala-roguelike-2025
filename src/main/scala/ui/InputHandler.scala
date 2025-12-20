@@ -290,7 +290,7 @@ object InputHandler {
             case "Give Experience" =>
               (
                 uiState,
-                Some(InputAction.DebugGiveExperience(50))
+                Some(InputAction.DebugGiveExperience(experienceForLevel(2)))
               )
             case "Restore Health" =>
               (
