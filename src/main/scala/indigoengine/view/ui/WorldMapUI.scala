@@ -18,41 +18,42 @@ object WorldMapUI {
     *   Width of the game canvas
     * @param canvasHeight
     *   Height of the game canvas
+    * @param playerPosition
+    *   Current position of the player (in grid coordinates)
+    * @param seenPoints
+    *   Set of points the player has visited/seen
     * @return
-    *   SceneUpdateFragment representing the entire world map
+    *   SceneUpdateFragment representing the visible world map
     */
   def worldMapView(
       worldTiles: Map[game.Point, map.TileType],
       canvasWidth: Int,
-      canvasHeight: Int
+      canvasHeight: Int,
+      playerPosition: game.Point,
+      seenPoints: Set[game.Point]
   ): SceneUpdateFragment = {
     import map.TileType
 
-    println(
-      s"[WorldMap] Generating map with ${worldTiles.size} tiles, canvas: ${canvasWidth}x${canvasHeight}"
-    )
-
-    // Calculate bounds
-    val allPositions = worldTiles.keys.toSeq
-    if (allPositions.isEmpty) {
-      throw new Exception("[WorldMap] No tiles available to render world map.")
+    // Filter tiles: only include those relevant to the map that have been seen
+    val visibleTiles = worldTiles.filter { case (pos, _) =>
+      seenPoints.contains(pos)
     }
 
-    val minX = allPositions.map(_.x).min
-    val maxX = allPositions.map(_.x).max
-    val minY = allPositions.map(_.y).min
-    val maxY = allPositions.map(_.y).max
+    if (visibleTiles.isEmpty) {
+      // Return empty fragment if nothing seen yet (shouldn't happen if player is somewhere)
+      return SceneUpdateFragment.empty
+    }
 
-    val mapWidth = maxX - minX + 1
-    val mapHeight = maxY - minY + 1
+    val pixelSize = 2 // Increased pixel size for better visibility
 
-    val pixelSize = 1
+    // Calculate offsets to center the player
+    // playerPosition * pixelSize gives the player's location in "map pixels"
+    // We want that location to be at (canvasWidth / 2, canvasHeight / 2)
+    val centerX = canvasWidth / 2
+    val centerY = canvasHeight / 2
 
-    // Center the map on screen
-    val mapPixelWidth = mapWidth * pixelSize
-    val mapPixelHeight = mapHeight * pixelSize
-    val offsetX = (canvasWidth - mapPixelWidth) / 2
-    val offsetY = (canvasHeight - mapPixelHeight) / 2
+    val offsetX = centerX - (playerPosition.x * pixelSize)
+    val offsetY = centerY - (playerPosition.y * pixelSize)
 
     def getTileColor(tileType: TileType): RGBA = tileType match {
       case TileType.Floor | TileType.MaybeFloor =>
@@ -71,7 +72,7 @@ object WorldMapUI {
     }
 
     // Group tiles by color to create batches
-    val tilesByColor = worldTiles.groupBy { case (_, tileType) =>
+    val tilesByColor = visibleTiles.groupBy { case (_, tileType) =>
       getTileColor(tileType)
     }
 
@@ -96,8 +97,8 @@ object WorldMapUI {
       .map { case (color, tiles) =>
         val cloneId = colorToId(color)
         val transformData = tiles.map { case (pos, _) =>
-          val x = offsetX + ((pos.x - minX) * pixelSize)
-          val y = offsetY + ((pos.y - minY) * pixelSize)
+          val x = offsetX + (pos.x * pixelSize)
+          val y = offsetY + (pos.y * pixelSize)
           CloneBatchData(x, y)
         }.toSeq
 
@@ -106,20 +107,32 @@ object WorldMapUI {
       .toSeq
       .toBatch
 
-    println(
-      s"[WorldMap] Generated ${batches.length} render batches for ${worldTiles.size} tiles"
-    )
-
     SceneUpdateFragment(
       Layer.Content(batches)
     ).addCloneBlanks(cloneBlanks.toBatch)
   }
 
   def render(model: GameController): SceneUpdateFragment = {
+    val player = model.gameState.playerEntity
+    val playerPos = player
+      .get[game.entity.Movement]
+      .map(_.position)
+      .getOrElse(game.Point(0, 0))
+    val sightMemory = player.get[game.entity.SightMemory]
+
+    // Default to empty set if no sight memory component (shouldn't happen for player)
+    val seenPoints = sightMemory.map(_.seenPoints).getOrElse(Set.empty)
+
+    // Also include current field of view in "seen" points for the map
+    // (Optional, but generally map shows what you can see right now too)
+    // For now assuming existing unseen/seen logic in SightMemory handles this persistence.
+
     val mapView = worldMapView(
       model.gameState.worldMap.tiles,
       canvasWidth,
-      canvasHeight
+      canvasHeight,
+      playerPos,
+      seenPoints
     )
 
     // Add "Press any key to exit" message

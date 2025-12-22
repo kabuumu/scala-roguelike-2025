@@ -18,66 +18,152 @@ trait WorldMutator {
   def mutateWorld(worldMap: WorldMap): WorldMap
 }
 
-/** Mutator that generates the base terrain (grass, dirt, trees).
+/** Mutator that generates the base terrain (grass, dirt, trees) using
+  * SharedTerrainGenerator.
   */
 class TerrainMutator(config: WorldConfig) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
-    val terrainTiles = WorldGenerator.generateWorld(config)
+    // Determine the tile bounds from the world config
+    val (minX, maxX, minY, maxY) = config.bounds.toTileBounds(Dungeon.roomSize)
+
+    // Generate terrain for the entire valid area
+    // Note: This relies on SharedTerrainGenerator logic which is consistent with ChunkManager
+    val terrainTiles = (for {
+      x <- minX to maxX
+      y <- minY to maxY
+      tile = SharedTerrainGenerator.generateTile(x, y, config.seed)
+    } yield Point(x, y) -> tile).toMap
+
     worldMap.copy(tiles = worldMap.tiles ++ terrainTiles)
   }
 }
 
-/** Mutator that generates rivers across the world map. Rivers are placed before
-  * dungeons and shops to ensure they don't clash.
-  *
-  * @param numRivers
-  *   Number of rivers to generate
-  * @param initialWidth
-  *   Initial river width (1-5)
-  * @param widthVariance
-  *   Probability of width changing at variance steps
-  * @param curveVariance
-  *   Probability of direction changing at variance steps
-  * @param varianceStep
-  *   Number of tiles between variance changes
-  * @param seed
-  *   Random seed for deterministic generation
+/** Mutator that applies GlobalFeaturePlanner features (Dungeons, Villages,
+  * Paths) to the visible world map area.
   */
-class RiverPlacementMutator(
-    numRivers: Int,
-    initialWidth: Int,
-    widthVariance: Double,
-    curveVariance: Double,
-    varianceStep: Int,
-    seed: Long
-) extends WorldMutator {
+class RegionFeaturesMutator(config: WorldConfig) extends WorldMutator {
   override def mutateWorld(worldMap: WorldMap): WorldMap = {
-    val random = new scala.util.Random(seed)
+    val (minX, maxX, minY, maxY) = config.bounds.toTileBounds(Dungeon.roomSize)
 
-    // Generate rivers from different edges
-    val riverConfigs = (0 until numRivers).map { i =>
-      val edge = i % 4 // Cycle through edges: top, bottom, left, right
-      RiverGenerator.createEdgeRiver(
-        bounds = worldMap.bounds,
-        edge = edge,
-        initialWidth = initialWidth,
-        widthVariance = widthVariance,
-        curveVariance = curveVariance,
-        varianceStep = varianceStep,
-        seed = seed + i
+    // Identify which regions intersect with the world bounds
+    val startRegionX =
+      Math.floor(minX.toDouble / GlobalFeaturePlanner.RegionSizeTiles).toInt
+    val endRegionX =
+      Math.floor(maxX.toDouble / GlobalFeaturePlanner.RegionSizeTiles).toInt
+    val startRegionY =
+      Math.floor(minY.toDouble / GlobalFeaturePlanner.RegionSizeTiles).toInt
+    val endRegionY =
+      Math.floor(maxY.toDouble / GlobalFeaturePlanner.RegionSizeTiles).toInt
+
+    var updatedMap = worldMap
+
+    for {
+      rX <- startRegionX to endRegionX
+      rY <- startRegionY to endRegionY
+    } {
+      val plan = GlobalFeaturePlanner.planRegion(rX, rY, config.seed)
+
+      // 1. Dungeons
+      plan.dungeonConfig.foreach { dConfig =>
+        // Check if this dungeon is relevant to our bounds (intersects)
+        // Even if it intersects slightly, we should generate it if it's "in" the world
+        // Ideally GlobalFeaturePlanner ensures unique dungeons.
+        // We just need to check if we've already added it (maybe from another region iteration?)
+        // Actually, dungeon belongs to one region.
+
+        // Check if dungeon is inside our generation bounds (at least partially)
+        val dBounds = dConfig.bounds
+        val dMinX = dBounds.minRoomX * Dungeon.roomSize
+        val dMaxX = dBounds.maxRoomX * Dungeon.roomSize
+        val dMinY = dBounds.minRoomY * Dungeon.roomSize
+        val dMaxY = dBounds.maxRoomY * Dungeon.roomSize
+
+        val intersects =
+          dMaxX >= minX && dMinX <= maxX && dMaxY >= minY && dMinY <= maxY
+
+        if (intersects) {
+          // Generate if not exists
+          val exists = updatedMap.dungeons.exists(_.seed == dConfig.seed)
+          if (!exists) {
+            try {
+
+              val dungeon = DungeonGenerator.generateDungeon(dConfig)
+              updatedMap = updatedMap.copy(
+                dungeons = updatedMap.dungeons :+ dungeon,
+                tiles = updatedMap.tiles ++ dungeon.tiles
+              )
+            } catch {
+              case e: Exception =>
+                println(
+                  s"RegionFeaturesMutator: Failed to generate dungeon: ${e.getMessage}"
+                )
+            }
+          }
+        }
+      }
+
+      // 2. Villages
+      plan.villagePlan.foreach { vPlan =>
+        val center = vPlan.centerLocation
+        // Check if village center is roughly in bounds (village is small)
+        if (
+          center.x >= minX - 50 && center.x <= maxX + 50 &&
+          center.y >= minY - 50 && center.y <= maxY + 50
+        ) {
+
+          // Check if village already exists
+          val exists =
+            updatedMap.villages.exists(v => v.centerLocation == center)
+
+          if (!exists) {
+            try {
+              val village = Village.generateVillage(center, vPlan.seed)
+              updatedMap = updatedMap.copy(
+                villages = updatedMap.villages :+ village,
+                tiles = updatedMap.tiles ++ village.tiles
+              )
+            } catch {
+              case e: Exception =>
+                println(
+                  s"RegionFeaturesMutator: Failed to generate village: ${e.getMessage}"
+                )
+            }
+          }
+        }
+      }
+
+      // 3. Global Paths
+      // Filter paths that are within world bounds
+      val relevantPaths = plan.globalPaths.filter { p =>
+        val margin = 50
+        p.x >= minX - margin && p.x <= maxX + margin && p.y >= minY - margin && p.y <= maxY + margin
+      }
+
+      val pathTiles = relevantPaths.map { p =>
+        val currentTile = updatedMap.tiles.getOrElse(p, TileType.Grass1)
+        val pathTile =
+          if (currentTile == TileType.Water) TileType.Bridge else TileType.Dirt
+        p -> pathTile
+      }
+
+      updatedMap = updatedMap.copy(
+        tiles = updatedMap.tiles ++ pathTiles,
+        // We can also update 'paths' and 'bridges' sets if needed, but 'tiles' is primary for visual
+        paths = updatedMap.paths ++ relevantPaths
       )
     }
 
-    // Generate all rivers
-    val riverPoints = RiverGenerator.generateRivers(riverConfigs)
+    // Legacy support: Populate 'shop' from the first village (usually spawn village)
+    val shop = updatedMap.villages.headOption.map { v =>
+      val shopBuilding = v.shopBuilding
+      Shop(
+        location =
+          Point(shopBuilding.location.x / 10, shopBuilding.location.y / 10),
+        size = 10
+      )
+    }
 
-    // Create Water tiles for all river points
-    val riverTiles = riverPoints.map(_ -> TileType.Water).toMap
-
-    worldMap.copy(
-      tiles = worldMap.tiles ++ riverTiles,
-      rivers = worldMap.rivers ++ riverPoints
-    )
+    updatedMap.copy(shop = shop)
   }
 }
 
@@ -447,7 +533,8 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
     val allPathTiles = mainPathTiles ++ dungeonConnectingPaths
 
     // Separate path tiles into those on water (need bridges) and those on land (need dirt)
-    val pathsOnWater = allPathTiles.intersect(worldMap.rivers)
+    val pathsOnWater =
+      allPathTiles.filter(p => worldMap.tiles.get(p).contains(TileType.Water))
     val pathsOnLand = allPathTiles -- pathsOnWater
 
     // Create Bridge tiles for paths crossing rivers, Dirt tiles for other paths

@@ -34,4 +34,5 @@ enum InputAction {
   case DebugGiveExperience(amount: Int)
   case DebugRestoreHealth
   case DebugGivePerk(perk: StatusEffect)
+  case DebugRevealMap
 }

@@ -1,0 +1,31 @@
+[info] welcome to sbt 1.10.2 (Eclipse Adoptium Java 11.0.19)
+[info] loading global plugins from /Users/robhawkes/.sbt/1.0/plugins
+[info] loading settings for project scala-roguelike-2025-build-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project/project
+[info] loading settings for project scala-roguelike-2025-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project
+[success] Generated .bloop/scala-roguelike-2025-build-build.json
+[success] Total time: 1 s, completed 21 Dec 2025, 20:13:32
+[info] loading settings for project scala-roguelike-2025-build from metals.sbt,plugins.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project
+[success] Generated .bloop/scala-roguelike-2025-build.json
+[success] Total time: 0 s, completed 21 Dec 2025, 20:13:33
+[info] loading settings for project root from build.sbt ...
+[info] set current project to scala-roguelike (in build file:/Users/robhawkes/Documents/personal/scala-roguelike-2025/)
+[info] compiling 1 Scala source to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[info] done compiling
+[info] Fast optimizing /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/scala-roguelike-test-fastopt
+DEBUG: Starting Test 3
+✓ Bridges created: 30 bridge tiles
+[info] WorldMapPathfindingTest:
+[info] - PathGenerationMutator creates bridges over rivers *** FAILED ***
+[info]   Test failed with exception: Bridges should be on river tiles. Found invalid bridges: HashSet(0:31, 0:22, 0:16, 0:21, 0:23, 0:28, 0:27, 0:25, 0:29, 13:74, 0:15, 0:30, 0:32, 0:33, 12:74, 0:35, 0:24, 0:26, 0:34) (WorldMapPathfindingTest.scala:263)
+[info] Run completed in 326 milliseconds.
+[info] Total number of tests run: 1
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 0, failed 1, canceled 0, ignored 0, pending 0
+[info] *** 1 TEST FAILED ***
+[error] Failed tests:
+[error] 	map.WorldMapPathfindingTest
+[error] (Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 12 s, completed 21 Dec 2025, 20:13:45

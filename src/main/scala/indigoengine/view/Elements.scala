@@ -59,9 +59,17 @@ object Elements {
   def worldMapView(
       worldTiles: Map[game.Point, map.TileType],
       canvasWidth: Int,
-      canvasHeight: Int
+      canvasHeight: Int,
+      playerPosition: game.Point,
+      seenPoints: Set[game.Point]
   ): SceneUpdateFragment =
-    WorldMapUI.worldMapView(worldTiles, canvasWidth, canvasHeight)
+    WorldMapUI.worldMapView(
+      worldTiles,
+      canvasWidth,
+      canvasHeight,
+      playerPosition,
+      seenPoints
+    )
 
   def worldMapView(model: GameController): SceneUpdateFragment =
     WorldMapUI.render(model)

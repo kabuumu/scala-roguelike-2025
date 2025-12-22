@@ -123,7 +123,6 @@ object SaveConversions {
     val worldMap = WorldMap(
       tiles = basicDungeon.tiles,
       dungeons = Seq(basicDungeon),
-      rivers = Set.empty,
       paths = Set.empty,
       bridges = Set.empty,
       bounds = MapBounds(-10, 10, -10, 10) // Default bounds

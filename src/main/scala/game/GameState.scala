@@ -56,6 +56,7 @@ case class GameState(
       MessageSystem, // Handles message events
       SpawnEntitySystem, // Enhanced to handle collision-checked spawning
       SpawnProjectileSystem,
+      WorldGenerationSystem,
       WaitSystem,
       OpenDoorSystem
     ),

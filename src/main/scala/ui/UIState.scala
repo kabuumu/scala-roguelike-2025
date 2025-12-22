@@ -174,7 +174,8 @@ object UIState {
       "Give Gold",
       "Give Experience",
       "Restore Health",
-      "Give Perk"
+      "Give Perk",
+      "Reveal Map"
     )
 
     def selectNext: DebugMenu =

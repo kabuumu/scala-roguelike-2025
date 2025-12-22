@@ -12,6 +12,7 @@ import game.status.StatusEffect
 import game.status.StatusEffect.addStatusEffect
 import game.Point
 import scala.util.Random
+import game.entity.SightMemory
 
 object DebugSystem extends GameSystem {
   override def update(
@@ -167,6 +168,34 @@ object DebugSystem extends GameSystem {
                 currentState.updateEntity(entityId, _.addStatusEffect(perk))
               val msg =
                 GameSystemEvent.MessageEvent(s"Debug: Gave Perk ${perk.name}")
+              (finalState, currentEvents :+ msg)
+
+            case InputAction.DebugRevealMap =>
+              val player = currentState.playerEntity
+              val playerPos = player.position
+              val radius = 100
+
+              // Generate all points within radius 100
+              val newSeenPoints = (for {
+                x <- (playerPos.x - radius) to (playerPos.x + radius)
+                y <- (playerPos.y - radius) to (playerPos.y + radius)
+                if Math.pow(x - playerPos.x, 2) + Math.pow(
+                  y - playerPos.y,
+                  2
+                ) <= Math.pow(radius, 2)
+              } yield Point(x, y)).toSet
+
+              // Update player's SightMemory
+              val updatedPlayer = player.update[SightMemory] { sightMemory =>
+                sightMemory.copy(seenPoints =
+                  sightMemory.seenPoints ++ newSeenPoints
+                )
+              }
+
+              val finalState =
+                currentState.updateEntity(entityId, updatedPlayer)
+              val msg =
+                GameSystemEvent.MessageEvent("Debug: Revealed Map (100 tiles)")
               (finalState, currentEvents :+ msg)
 
             case _ =>

@@ -25,7 +25,7 @@ object StartingState {
     */
   def startAdventure(): GameState = {
     // Generate standard open world
-    val worldSize = 10
+    val worldSize = 15
     val worldBounds = MapBounds(-worldSize, worldSize, -worldSize, worldSize)
 
     val worldMap = WorldMapGenerator.generateWorldMap(
@@ -36,18 +36,22 @@ object StartingState {
           treeDensity = 0.20,
           dirtDensity = 0.10,
           ensureWalkablePaths = true,
-          perimeterTrees = true,
+          perimeterTrees = false,
           seed = System.currentTimeMillis()
         )
       )
     )
 
     // Player starts at (0,0) in Adventure mode (Village)
-    val playerSpawnPoint = Point(0, 0)
+    // We want to spawn in the first village we find
+    val playerSpawnPoint = worldMap.villages.headOption match {
+      case Some(village) => village.centerLocation
+      case None          => Point(0, 0)
+    }
 
     createGameState(
       worldMap,
-      playerSpawnPoint,
+      findSafeSpawn(playerSpawnPoint, worldMap),
       GameMode.Adventure,
       dungeonFloor = 0
     )
@@ -70,10 +74,37 @@ object StartingState {
 
     createGameState(
       worldMap,
-      playerSpawnPoint,
+      findSafeSpawn(playerSpawnPoint, worldMap),
       GameMode.Gauntlet,
       dungeonFloor = 1
     )
+  }
+
+  /** Finds the nearest safe spawn point to the target. Safe means not water,
+    * wall, tree, or rock.
+    */
+  private[game] def findSafeSpawn(target: Point, worldMap: WorldMap): Point = {
+    // Spiral out from target to find a safe spot
+    val maxRadius = 50
+    val spiral = for {
+      r <- (0 to maxRadius).view
+      x <- -r to r
+      y <- -r to r
+      if Math.max(Math.abs(x), Math.abs(y)) == r
+    } yield Point(target.x + x, target.y + y)
+
+    spiral
+      .find { p =>
+        worldMap.tiles.get(p) match {
+          case Some(TileType.Floor) | Some(TileType.MaybeFloor) |
+              Some(TileType.Dirt) | Some(TileType.Grass1) |
+              Some(TileType.Grass2) | Some(TileType.Grass3) |
+              Some(TileType.Bridge) =>
+            true
+          case _ => false
+        }
+      }
+      .getOrElse(target) // Fallback to target if nothing found (unlikely)
   }
 
   /** Helper to create a world map that contains ONLY a single dungeon. Used for
@@ -98,7 +129,6 @@ object StartingState {
     WorldMap(
       tiles = dungeon.tiles, // Only dungeon tiles
       dungeons = Seq(dungeon),
-      rivers = Set.empty,
       paths = Set.empty,
       bridges = Set.empty,
       bounds = bounds // Restrict map bounds to dungeon area

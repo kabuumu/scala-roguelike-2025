@@ -310,6 +310,11 @@ object InputHandler {
                 ),
                 None
               )
+            case "Reveal Map" =>
+              (
+                uiState,
+                Some(InputAction.DebugRevealMap)
+              )
             case _ => (uiState, None)
           }
         case Input.Cancel | Input.DebugMenu =>

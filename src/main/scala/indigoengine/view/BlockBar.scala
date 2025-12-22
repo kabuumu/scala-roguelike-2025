@@ -2,8 +2,8 @@ package indigoengine.view
 
 import indigo.*
 import indigoengine.shaders.{CustomShader, RGBAData}
-import ui.UIConfig
-import ui.UIConfig.defaultBorderSize
+import _root_.ui.UIConfig
+import _root_.ui.UIConfig.defaultBorderSize
 import ultraviolet.syntax.*
 
 object BlockBar {
@@ -11,13 +11,25 @@ object BlockBar {
     BlankEntity(
       bounds = bounds,
       shaderData = ShaderData(
-        CustomShader.customShaderId, RGBAData(
-          vec4((colour.r * colour.a).toFloat, (colour.g * colour.a).toFloat, (colour.b * colour.a).toFloat, colour.a.toFloat)
+        CustomShader.customShaderId,
+        RGBAData(
+          vec4(
+            (colour.r * colour.a).toFloat,
+            (colour.g * colour.a).toFloat,
+            (colour.b * colour.a).toFloat,
+            colour.a.toFloat
+          )
         )
       )
     )
 
-  def attributeBar(bounds: Rectangle, filledWidth: Int, fullColour: RGBA, emptyColour: RGBA, borderWidth: Int = defaultBorderSize): Batch[BlankEntity] = {
+  def attributeBar(
+      bounds: Rectangle,
+      filledWidth: Int,
+      fullColour: RGBA,
+      emptyColour: RGBA,
+      borderWidth: Int = defaultBorderSize
+  ): Batch[BlankEntity] = {
     Batch(
       getBlockBar(
         bounds + Rectangle(
@@ -32,7 +44,7 @@ object BlockBar {
       ),
       getBlockBar(
         bounds.withSize(
-          if(filledWidth == 0) 0 else filledWidth + borderWidth,
+          if (filledWidth == 0) 0 else filledWidth + borderWidth,
           bounds.height
         ),
         RGBA.Black
@@ -43,7 +55,7 @@ object BlockBar {
           bounds.height
         ),
         fullColour
-      ),
+      )
     )
   }
 }
