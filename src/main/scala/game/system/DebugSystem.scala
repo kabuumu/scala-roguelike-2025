@@ -57,7 +57,7 @@ object DebugSystem extends GameSystem {
                 // Auto-equip logic
                 val equippableComp = itemWithPos.equippable.get
                 val (playerWithEquipment, previousItem) =
-                  player.equipItemComponent(equippableComp)
+                  player.equipItemComponent(itemWithPos.id, equippableComp)
 
                 // Add the new valid item reference to inventory as well (Inventory tracks IDs)
                 val finalPlayer =
@@ -73,7 +73,8 @@ object DebugSystem extends GameSystem {
 
                 // Handle swapped item
                 previousItem match {
-                  case Some(oldEquippable) =>
+                  case Some(equippedItem) =>
+                    val oldEquippable = equippedItem.stats
                     // Create entity for old item
                     val oldItemId =
                       s"unequipped-${oldEquippable.itemName.replace(" ", "-")}-${Random.nextString(6)}"

@@ -1,0 +1,34 @@
+[info] welcome to sbt 1.10.2 (Eclipse Adoptium Java 11.0.19)
+[info] loading global plugins from /Users/robhawkes/.sbt/1.0/plugins
+[info] loading settings for project scala-roguelike-2025-build-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project/project
+[info] loading settings for project scala-roguelike-2025-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project
+[success] Generated .bloop/scala-roguelike-2025-build-build.json
+[success] Total time: 1 s, completed 22 Dec 2025, 11:36:18
+[info] loading settings for project scala-roguelike-2025-build from metals.sbt,plugins.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project
+[success] Generated .bloop/scala-roguelike-2025-build.json
+[success] Total time: 0 s, completed 22 Dec 2025, 11:36:19
+[info] loading settings for project root from build.sbt ...
+[info] set current project to scala-roguelike (in build file:/Users/robhawkes/Documents/personal/scala-roguelike-2025/)
+[info] Executing in batch mode. For better performance use sbt's shell
+[info] compiling 31 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[warn] -- [E121] Pattern Match Warning: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/indigoengine/view/components/MenuComponent.scala:78:13 
+[warn] 78 |        case other => other
+[warn]    |             ^^^^^
+[warn]    |Unreachable case except for null (if this is intentional, consider writing case null => instead).
+[warn] one warning found
+[info] done compiling
+[info] compiling 60 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[warn] -- [E029] Pattern Match Exhaustivity Warning: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/indigoengine/view/ui/HUD.scala:53:31 
+[warn] 53 |    val messageContent = model.uiState match {
+[warn]    |                         ^^^^^^^^^^^^^
+[warn]    |match may not be exhaustive.
+[warn]    |
+[warn]    |It would fail on pattern case: ui.UIState.Inventory(_), ui.UIState.InventoryActionState(_, _, _)
+[warn]    |
+[warn]    | longer explanation available when compiling with `-explain`
+[warn] two warnings found
+[info] done compiling
+[success] Total time: 18 s, completed 22 Dec 2025, 11:36:37

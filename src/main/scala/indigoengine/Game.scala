@@ -13,6 +13,7 @@ import indigoengine.view.Elements.*
 import ui.UIConfig.*
 import ui.{GameController, UIConfig, UIState}
 import util.LineOfSight
+import indigoengine.view.ui.InventoryMenu
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
@@ -142,68 +143,85 @@ object Game extends IndigoSandbox[Unit, GameController] {
         Outcome(
           worldMapView(model)
         )
-      case _ =>
-        // Render normal game
-        val spriteSheet =
-          Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
-        val player = model.gameState.playerEntity
-        val game.Point(playerX, playerY) = player.position
-        val visiblePoints = model.gameState.getVisiblePointsFor(player)
-        val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
-
-        // Combine filtering and mapping for tileSprites
-        // Use worldMap.tiles which contains all combined tiles (terrain, dungeons, rivers, paths, etc.)
-        val tilesToRender = model.gameState.worldMap.tiles
-        val tileSprites = tilesToRender.iterator.collect {
-          case (tilePosition, tileType)
-              if sightMemory.contains(
-                tilePosition
-              ) || UIConfig.ignoreLineOfSight =>
-            val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
-            if (visiblePoints.contains(tilePosition)) tileSprite
-            else
-              tileSprite
-                .asInstanceOf[Graphic[Material.Bitmap]]
-                .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
-        }.toSeq
-
-        // Filter and map entities in one pass
-        val entitySprites: Batch[SceneNode] = model.gameState.entities
-          .filter(e => visiblePoints.contains(e.position))
-          .toBatch
-          .flatMap(entity =>
-            spriteSheet.fromEntity(entity) ++ enemyHealthBar(entity)
-          )
-
-        val cursor = drawUIElements(spriteSheet, model)
-
+      case _: UIState.Inventory | _: UIState.InventoryActionState =>
         Outcome(
-          SceneUpdateFragment(
-            Layer
-              .Content((tileSprites ++ cursor).toBatch ++ entitySprites)
-              .withCamera(
-                Camera
-                  .LookAt(Point(playerX * spriteScale, playerY * spriteScale))
-              ),
+          presentGame(context, model) |+| SceneUpdateFragment(
             Layer.Content(
-              healthBar(model)
-                ++ experienceBar(model)
-                ++ coins(model, spriteSheet)
-                ++ usableItems(model, spriteSheet)
-                ++ perkSelection(model)
-                ++ keys(model, spriteSheet)
-                ++ equipmentPaperdoll(model, spriteSheet)
-                ++ tradeItemDisplay(model, spriteSheet)
-                ++ conversationWindow(model, spriteSheet)
-                ++ messageWindow(model)
-                ++ versionInfo(model)
-                ++ renderDebugMenu(model)
-                ++ debugItemSelection(model, spriteSheet)
-                ++ debugPerkSelection(model)
+              InventoryMenu.render(
+                model,
+                Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+              )
             )
           )
         )
+
+      case _ =>
+        Outcome(presentGame(context, model))
     }
+  }
+
+  def presentGame(
+      context: Context[Unit],
+      model: GameController
+  ): SceneUpdateFragment = {
+    // Render normal game
+    val spriteSheet =
+      Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+    val player = model.gameState.playerEntity
+    val game.Point(playerX, playerY) = player.position
+    val visiblePoints = model.gameState.getVisiblePointsFor(player)
+    val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
+
+    // Combine filtering and mapping for tileSprites
+    // Use worldMap.tiles which contains all combined tiles (terrain, dungeons, rivers, paths, etc.)
+    val tilesToRender = model.gameState.worldMap.tiles
+    val tileSprites = tilesToRender.iterator.collect {
+      case (tilePosition, tileType)
+          if sightMemory.contains(
+            tilePosition
+          ) || UIConfig.ignoreLineOfSight =>
+        val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
+        if (visiblePoints.contains(tilePosition)) tileSprite
+        else
+          tileSprite
+            .asInstanceOf[Graphic[Material.Bitmap]]
+            .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
+    }.toSeq
+
+    // Filter and map entities in one pass
+    val entitySprites: Batch[SceneNode] = model.gameState.entities
+      .filter(e => visiblePoints.contains(e.position))
+      .toBatch
+      .flatMap(entity =>
+        spriteSheet.fromEntity(entity) ++ enemyHealthBar(entity)
+      )
+
+    val cursor = drawUIElements(spriteSheet, model)
+
+    SceneUpdateFragment(
+      Layer
+        .Content((tileSprites ++ cursor).toBatch ++ entitySprites)
+        .withCamera(
+          Camera
+            .LookAt(Point(playerX * spriteScale, playerY * spriteScale))
+        ),
+      Layer.Content(
+        healthBar(model)
+          ++ experienceBar(model)
+          ++ coins(model, spriteSheet)
+          ++ usableItems(model, spriteSheet)
+          ++ perkSelection(model)
+          ++ keys(model, spriteSheet)
+          ++ equipmentPaperdoll(model, spriteSheet)
+          ++ tradeItemDisplay(model, spriteSheet)
+          ++ conversationWindow(model, spriteSheet)
+          ++ messageWindow(model)
+          ++ versionInfo(model)
+          ++ renderDebugMenu(model)
+          ++ debugItemSelection(model, spriteSheet)
+          ++ debugPerkSelection(model)
+      )
+    )
   }
 
   private def drawUIElements(

@@ -10,23 +10,23 @@ object GameSystemEvent {
   sealed trait GameSystemEvent
 
   case class MoveAction(
-    entityId: String,
-    direction: Direction
+      entityId: String,
+      direction: Direction
   ) extends GameSystemEvent
 
   case class CollisionEvent(
-    entityId: String,
-    collidedWith: CollisionTarget
+      entityId: String,
+      collidedWith: CollisionTarget
   ) extends GameSystemEvent
 
   enum CollisionTarget {
     case Entity(entityId: String)
     case Wall
   }
-  
+
   case class InputEvent(
-    entityId: String,
-    input: InputAction
+      entityId: String,
+      input: InputAction
   ) extends GameSystemEvent
 
   enum DamageSource {
@@ -34,59 +34,64 @@ object GameSystemEvent {
   }
 
   case class DamageEvent(
-    targetId: String,
-    attackerId: String,
-    baseDamage: Int,
-    source: DamageSource = DamageSource.Melee
+      targetId: String,
+      attackerId: String,
+      baseDamage: Int,
+      source: DamageSource = DamageSource.Melee
   ) extends GameSystemEvent
 
   case class SpawnEntityEvent(
-    newEntity: EntityReference,
-    creator: Entity,                         
-    spawnPosition: game.Point,
-    forceSpawn: Boolean = true
+      newEntity: EntityReference,
+      creator: Entity,
+      spawnPosition: game.Point,
+      forceSpawn: Boolean = true
   ) extends GameSystemEvent
-  
+
   case class SpawnEntityWithCollisionCheckEvent(
-    entityTemplate: Entity,
-    preferredPositions: Seq[game.Point]
+      entityTemplate: Entity,
+      preferredPositions: Seq[game.Point]
   ) extends GameSystemEvent
-  
+
   case class AddExperienceEvent(
-    entityId: String,
-    experience: Int
+      entityId: String,
+      experience: Int
   ) extends GameSystemEvent
-  
+
   case class EquipEvent(
-    entityId: String
+      entityId: String
   ) extends GameSystemEvent
-  
+
   case class EquipSpecificEvent(
-    entityId: String,
-    targetEntity: Entity
+      entityId: String,
+      targetEntity: Entity
   ) extends GameSystemEvent
-  
+
+  case class UnequipEvent(
+      entityId: String,
+      slot: game.entity.EquipmentSlot
+  ) extends GameSystemEvent
+
   case class HealEvent(
-    entityId: String,
-    healAmount: Int
+      entityId: String,
+      healAmount: Int
   ) extends GameSystemEvent
-  
+
   case class MessageEvent(
-    message: String
+      message: String
   ) extends GameSystemEvent
-  
+
   case class RemoveItemEntityEvent(
-    playerId: String,
-    itemEntityId: String
+      playerId: String,
+      itemEntityId: String
   ) extends GameSystemEvent
-  
+
   case class ResetInitiativeEvent(
-    entityId: String
+      entityId: String
   ) extends GameSystemEvent
 
   case class SpawnProjectileEvent(
-                                   projectile: ProjectileReference,
-                                   creator: Entity,
-                                   targetPoint: game.Point
-                                 ) extends GameSystemEvent
+      projectile: ProjectileReference,
+      creator: Entity,
+      targetPoint: game.Point
+  ) extends GameSystemEvent
 }

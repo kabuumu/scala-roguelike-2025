@@ -1,0 +1,62 @@
+[info] welcome to sbt 1.10.2 (Eclipse Adoptium Java 11.0.19)
+[info] loading global plugins from /Users/robhawkes/.sbt/1.0/plugins
+[info] loading settings for project scala-roguelike-2025-build-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project/project
+[info] loading settings for project scala-roguelike-2025-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project
+[success] Generated .bloop/scala-roguelike-2025-build-build.json
+[success] Total time: 1 s, completed 22 Dec 2025, 11:35:34
+[info] loading settings for project scala-roguelike-2025-build from metals.sbt,plugins.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project
+[success] Generated .bloop/scala-roguelike-2025-build.json
+[success] Total time: 0 s, completed 22 Dec 2025, 11:35:34
+[info] loading settings for project root from build.sbt ...
+[info] set current project to scala-roguelike (in build file:/Users/robhawkes/Documents/personal/scala-roguelike-2025/)
+[info] Executing in batch mode. For better performance use sbt's shell
+[info] compiling 30 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[warn] -- [E121] Pattern Match Warning: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/indigoengine/view/components/MenuComponent.scala:78:13 
+[warn] 78 |        case other => other
+[warn]    |             ^^^^^
+[warn]    |Unreachable case except for null (if this is intentional, consider writing case null => instead).
+[warn] one warning found
+[info] done compiling
+[info] compiling 59 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[error] -- [E172] Type Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/game/save/ComponentRegistry.scala:113:52 
+[error] 113 |  implicit val equipmentRW: ReadWriter[Equipment] = macroRW
+[error]     |                                                    ^^^^^^^
+[error]     |No given instance of type ReadersVersionSpecific_this.Reader[Option[game.entity.EquippedItem]] was found.
+[error]     |I found:
+[error]     |
+[error]     |    upickle.default.SeqLikeReader[Option, game.entity.EquippedItem](
+[error]     |      upickle.default.superTypeReader[game.entity.EquippedItem, V](
+[error]     |        game.entity.EquippedItem.$asInstanceOf[
+[error]     |          
+[error]     |            scala.deriving.Mirror.Product{
+[error]     |              type MirroredMonoType = game.entity.EquippedItem;
+[error]     |                type MirroredType = game.entity.EquippedItem;
+[error]     |                type MirroredLabel = ("EquippedItem" : String);
+[error]     |                type MirroredElemTypes = (String, game.entity.Equippable);
+[error]     |                type MirroredElemLabels = (("id" : String), ("stats" : String))
+[error]     |            }
+[error]     |          
+[error]     |        ],
+[error]     |      /* missing */summon[upickle.default.Reader[V]], ???, ???),
+[error]     |    ???)
+[error]     |
+[error]     |But no implicit values were found that match type upickle.default.Reader[V].
+[error]     |
+[error]     |The following import might make progress towards fixing the problem:
+[error]     |
+[error]     |  import upickle.default.ReadWriter.join
+[error]     |
+[error]     |---------------------------------------------------------------------------
+[error]     |Inline stack trace
+[error]     |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+[error]     |This location contains code that was inlined from Readers.scala:71
+[error]     |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+[error]     |This location contains code that was inlined from Readers.scala:71
+[error]      ---------------------------------------------------------------------------
+[warn] one warning found
+[error] one error found
+[error] (Compile / compileIncremental) Compilation failed
+[error] Total time: 12 s, completed 22 Dec 2025, 11:35:47

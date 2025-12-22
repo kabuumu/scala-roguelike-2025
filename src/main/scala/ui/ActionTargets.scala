@@ -23,20 +23,6 @@ object ActionTargets {
     }
   }
 
-  case class EquipTarget(entity: Entity) extends ActionTarget {
-    def description: String = {
-      entity.get[Equippable] match {
-        case Some(equippable) =>
-          if (equippable.slot == EquipmentSlot.Weapon) {
-            s"Equip ${equippable.itemName} (Damage bonus +${equippable.damageBonus})"
-          } else {
-            s"Equip ${equippable.itemName} (Damage reduction +${equippable.damageReduction})"
-          }
-        case None => s"Equip ${entity.name.getOrElse("Item")}"
-      }
-    }
-  }
-
   case class DescendStairsTarget(entity: Entity) extends ActionTarget {
     def description: String = "Descend stairs to next floor"
   }

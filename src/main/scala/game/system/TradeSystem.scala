@@ -69,7 +69,10 @@ object TradeSystem extends GameSystem {
                 newItem.get[game.entity.Equippable] match {
                   case Some(equippable) =>
                     val (playerWithNewEquipment, previousEquippable) =
-                      gameState.playerEntity.equipItemComponent(equippable)
+                      gameState.playerEntity.equipItemComponent(
+                        newItemId,
+                        equippable
+                      )
                     val updatedPlayer =
                       playerWithNewEquipment.removeCoins(price)
 
@@ -77,7 +80,7 @@ object TradeSystem extends GameSystem {
                     val spawnEvents = previousEquippable.map { prevEquip =>
                       val droppedItemId = s"dropped-${Random.nextString(8)}"
                       val droppedItem =
-                        createEquipmentEntity(droppedItemId, prevEquip)
+                        createEquipmentEntity(droppedItemId, prevEquip.stats)
 
                       val playerPos = gameState.playerEntity.position
                       val preferredPositions = Seq(
@@ -178,7 +181,7 @@ object TradeSystem extends GameSystem {
                   val currentEquipment = gameState.playerEntity.equipment
                   val isEquipped = currentEquipment
                     .getEquippedItem(equippable.slot)
-                    .exists(_.itemName == equippable.itemName)
+                    .exists(_.stats.itemName == equippable.itemName)
 
                   if (isEquipped) {
                     // Unequip the item before selling

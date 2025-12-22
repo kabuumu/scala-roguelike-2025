@@ -7,12 +7,20 @@ import generated.PixelFontSmall
 import _root_.ui.UIConfig.*
 
 object UIUtils {
-  def text(text: String, x: Int, y: Int): SceneNode = Text(
+  def text(text: String, x: Int, y: Int): Text[?] = Text(
     text,
     x,
     y,
     PixelFont.fontKey,
     Assets.assets.generated.PixelFontMaterial
+  )
+
+  def smallText(text: String, x: Int, y: Int): Text[?] = Text(
+    text,
+    x,
+    y,
+    PixelFontSmall.fontKey,
+    Assets.assets.generated.PixelFontSmallMaterial
   )
 
   def wrapText(text: String, maxLineLength: Int): Seq[String] = {

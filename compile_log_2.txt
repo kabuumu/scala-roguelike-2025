@@ -1,0 +1,63 @@
+[info] welcome to sbt 1.10.2 (Eclipse Adoptium Java 11.0.19)
+[info] loading global plugins from /Users/robhawkes/.sbt/1.0/plugins
+[info] loading settings for project scala-roguelike-2025-build-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project/project
+[info] loading settings for project scala-roguelike-2025-build-build from metals.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project
+[success] Generated .bloop/scala-roguelike-2025-build-build.json
+[success] Total time: 1 s, completed 22 Dec 2025, 11:34:26
+[info] loading settings for project scala-roguelike-2025-build from metals.sbt,plugins.sbt ...
+[info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project
+[success] Generated .bloop/scala-roguelike-2025-build.json
+[success] Total time: 0 s, completed 22 Dec 2025, 11:34:27
+[info] loading settings for project root from build.sbt ...
+[info] set current project to scala-roguelike (in build file:/Users/robhawkes/Documents/personal/scala-roguelike-2025/)
+[info] Executing in batch mode. For better performance use sbt's shell
+[info] compiling 28 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[warn] -- [E121] Pattern Match Warning: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/indigoengine/view/components/MenuComponent.scala:78:13 
+[warn] 78 |        case other => other
+[warn]    |             ^^^^^
+[warn]    |Unreachable case except for null (if this is intentional, consider writing case null => instead).
+[warn] one warning found
+[info] done compiling
+[info] compiling 59 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[error] -- [E007] Type Mismatch Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/game/system/DebugSystem.scala:60:44 
+[error] 60 |                  player.equipItemComponent(equippableComp)
+[error]    |                                            ^^^^^^^^^^^^^^
+[error]    |                     Found:    (equippableComp : game.entity.Equippable)
+[error]    |                     Required: String
+[error]    |
+[error]    | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/game/system/DebugSystem.scala:79:37 
+[error] 79 |                      s"unequipped-${oldEquippable.itemName.replace(" ", "-")}-${Random.nextString(6)}"
+[error]    |                                     ^^^^^^^^^^^^^
+[error]    |Not found: oldEquippable - did you mean Equippable? or perhaps isEquippable?
+[error]    |
+[error]    | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/game/system/DebugSystem.scala:97:22 
+[error] 97 |                      oldEquippable,
+[error]    |                      ^^^^^^^^^^^^^
+[error]    |Not found: oldEquippable - did you mean Equippable? or perhaps isEquippable?
+[error]    |
+[error]    | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/game/system/DebugSystem.scala:117:78 
+[error] 117 |                      s"Debug: Gave & Equipped ${itemRef.toString}. Swapped ${oldEquippable.itemName}."
+[error]     |                                                                              ^^^^^^^^^^^^^
+[error]     |Not found: oldEquippable - did you mean Equippable? or perhaps isEquippable?
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E007] Type Mismatch Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/game/system/TradeSystem.scala:72:64 
+[error] 72 |                      gameState.playerEntity.equipItemComponent(equippable)
+[error]    |                                                                ^^^^^^^^^^
+[error]    |                         Found:    (equippable : game.entity.Equippable)
+[error]    |                         Required: String
+[error]    |
+[error]    | longer explanation available when compiling with `-explain`
+[error] -- [E008] Not Found Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/game/system/TradeSystem.scala:181:30 
+[error] 181 |                    .exists(_.itemName == equippable.itemName)
+[error]     |                            ^^^^^^^^^^
+[error]     |            value itemName is not a member of game.entity.EquippedItem
+[warn] one warning found
+[error] 6 errors found
+[error] (Compile / compileIncremental) Compilation failed
+[error] Total time: 13 s, completed 22 Dec 2025, 11:34:41

@@ -59,6 +59,8 @@ object InputHandler {
           (UIState.WorldMap, None)
         case Input.Move(direction) =>
           (UIState.Move, Some(InputAction.Move(direction)))
+        case Input.Inventory =>
+          (UIState.Inventory(), None)
         case Input.UseItem =>
           val usableItems = gameState.playerEntity
             .usableItems(gameState)
@@ -175,9 +177,7 @@ object InputHandler {
                   target match {
                     case ActionTargets.AttackTarget(entity) =>
                       (UIState.Move, Some(InputAction.Attack(entity)))
-                    case ActionTargets.EquipTarget(entity) =>
-                      // Instead of InputAction.Equip, we need to target specific equipment
-                      (UIState.Move, Some(InputAction.EquipSpecific(entity)))
+
                     case ActionTargets.DescendStairsTarget(_) =>
                       (UIState.Move, Some(InputAction.DescendStairs))
                     case ActionTargets.TradeTarget(entity) =>
@@ -429,7 +429,8 @@ object InputHandler {
                 .get[Equipment]
                 .map(
                   _.getAllEquipped
-                    .map { equippable =>
+                    .map { equippedItem =>
+                      val equippable = equippedItem.stats
                       val itemRefOpt =
                         data.Items.ItemReference.values.find { ref =>
                           val tempEntity = ref.createEntity("temp")
@@ -438,9 +439,15 @@ object InputHandler {
                             .exists(_.itemName == equippable.itemName)
                         }
                       itemRefOpt.map { itemRef =>
-                        itemRef.createEntity(
-                          s"equipped-${equippable.itemName}-${Random.nextString(8)}"
-                        )
+                        // We can actually just look up the entity by ID now!
+                        gameState
+                          .getEntity(equippedItem.id)
+                          .getOrElse(
+                            // Fallback if not found (shouldn't happen)
+                            itemRef.createEntity(
+                              s"equipped-${equippable.itemName}-${scala.util.Random.nextString(8)}"
+                            )
+                          )
                       }
                     }
                     .flatten
@@ -508,6 +515,187 @@ object InputHandler {
           (UIState.MainMenu(), None)
         case _ => (uiState, None)
       }
+    case inventory: UIState.Inventory =>
+      input match {
+        case Input.Move(direction) =>
+          import game.Direction
+          (inventory.moveCursor(Direction.asPoint(direction)), None)
+        case Input.Confirm | Input.Action =>
+          val player = gameState.playerEntity
+          val inventoryItems = player.inventoryItems(gameState)
+          val equippedItemIds = player
+            .get[game.entity.Equipment]
+            .map(_.getAllEquipped.map(_.id).toSet)
+            .getOrElse(Set.empty)
+
+          // All items are in inventoryItems (since equipping adds them to inventory)
+          // We just need to display them.
+          // Note: Logic in EquipmentSystem adds to inventory.
+
+          val uniqueItems = inventoryItems.distinctBy { item =>
+            item.get[game.entity.NameComponent].map(_.name).getOrElse(item.id)
+          }
+
+          val columns = 5
+          val index = inventory.gridCursor.y * columns + inventory.gridCursor.x
+
+          if (index >= 0 && index < uniqueItems.length) {
+            val selectedItem = uniqueItems(index)
+
+            import game.entity.UsableItem
+            import game.entity.Equippable
+
+            val isEquipped = equippedItemIds.contains(selectedItem.id)
+
+            // Check component existence properly
+            val canUse = selectedItem.has[UsableItem]
+            val canEquip = selectedItem.has[Equippable] && !isEquipped
+            val canUnequip = isEquipped
+            val canDrop = true
+
+            var options = Seq.empty[String]
+
+            if (canUnequip) options = options :+ "Unequip"
+            if (canEquip) options = options :+ "Equip"
+            if (canUse) options = options :+ "Use"
+            if (canDrop) options = options :+ "Drop"
+            options = options :+ "Cancel"
+
+            (UIState.InventoryActionState(selectedItem, options), None)
+          } else {
+            (inventory, None)
+          }
+
+        case Input.Inventory | Input.Cancel =>
+          (UIState.Move, None) // Close inventory
+        case _ => (inventory, None)
+      }
+
+    case actionState: UIState.InventoryActionState =>
+      input match {
+        case Input.Move(Direction.Up)     => (actionState.selectPrevious, None)
+        case Input.Move(Direction.Down)   => (actionState.selectNext, None)
+        case Input.Confirm | Input.Action =>
+          actionState.getSelectedOption match {
+            case "Use" =>
+              // Reuse UseItem logic
+              val item = actionState.selectedItem
+              item.get[game.entity.UsableItem] match {
+                case Some(usable) =>
+                  // We need to replicate the targeting logic from UseItemSelect here
+                  // Ideally we refactor that into a helper function
+                  // For now, let's just handle Self and Simple target,
+                  // and if it needs complex targeting (Enemy/Tile), we could transition to those headers?
+                  // Or just trigger the action and let value resolution happen?
+
+                  usable.targeting match {
+                    case Targeting.Self =>
+                      (
+                        UIState.Move,
+                        Some(
+                          InputAction.UseItem(
+                            item.id,
+                            usable,
+                            UseContext(gameState.playerEntity.id, None)
+                          )
+                        )
+                      )
+                    case _ =>
+                      // For complex targeting, we might need to go to a targeting state
+                      // But we want to close inventory?
+                      // "Use - ... drops back into the main game screen using the current use item system"
+                      // So we should transition to the targeting states defined in Input.UseItem
+
+                      // We can trigger a fake Input.UseItem transition? No.
+                      // We can return the state corresponding to the start of targeting.
+
+                      // Let's copy the logic from Input.UseItem for now or call a shared helper
+                      // Since I cannot easily refactor in this tool call without viewing more, I will duplicate logic carefully
+                      // actually, we can return (UIState.Move, Some(InputAction.UseItem...)) if it fails?
+
+                      // Let's do the easy thing: Close inventory and return the Action that triggers the generic use system?
+                      // InputAction.UseItem(..., target=None) might fail for things needing targets.
+
+                      // Better: Transition to the specific TargetSelect state.
+                      usable.targeting match {
+                        case Targeting.TileInRange(_) =>
+                          (
+                            UIState.ScrollSelect(
+                              gameState.playerEntity.position,
+                              target =>
+                                (
+                                  UIState.Move,
+                                  Some(
+                                    InputAction.UseItem(
+                                      item.id,
+                                      usable,
+                                      UseContext(
+                                        gameState.playerEntity.id,
+                                        Some(target)
+                                      )
+                                    )
+                                  )
+                                )
+                            ),
+                            None
+                          )
+                        case Targeting.EnemyActor(range) =>
+                          val enemies =
+                            GameTargeting.enemiesWithinRange(gameState, range)
+                          if (enemies.nonEmpty) {
+                            (
+                              UIState.EnemyTargetSelect(
+                                enemies,
+                                effect = target =>
+                                  (
+                                    UIState.Move,
+                                    Some(
+                                      InputAction.UseItem(
+                                        item.id,
+                                        usable,
+                                        UseContext(
+                                          gameState.playerEntity.id,
+                                          Some(target)
+                                        )
+                                      )
+                                    )
+                                  )
+                              ),
+                              None
+                            )
+                          } else {
+                            (UIState.Move, None) // Failed to find targets
+                          }
+                        case _ => (UIState.Move, None)
+                      }
+                  }
+                case None => (UIState.Move, None)
+              }
+            case "Equip" =>
+              (
+                UIState.Move,
+                Some(InputAction.EquipSpecific(actionState.selectedItem))
+              )
+            case "Unequip" =>
+              val slot = actionState.selectedItem
+                .get[game.entity.Equippable]
+                .map(_.slot)
+                .getOrElse(game.entity.EquipmentSlot.Weapon)
+              (UIState.Move, Some(InputAction.UnequipItem(slot)))
+            case "Drop" =>
+              (
+                UIState.Move,
+                Some(InputAction.DropItem(actionState.selectedItem.id))
+              )
+            case "Cancel" =>
+              (UIState.Inventory(Point(0, 0)), None) // Go back to grid
+            case _ => (actionState, None)
+          }
+        case Input.Cancel =>
+          (UIState.Inventory(Point(0, 0)), None) // Back to grid
+        case _ => (actionState, None)
+      }
+
     case UIState.WorldMap =>
       // Any key press returns to normal game
       (UIState.Move, None)

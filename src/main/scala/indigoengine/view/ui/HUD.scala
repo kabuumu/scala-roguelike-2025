@@ -217,6 +217,10 @@ object HUD {
         "Select a perk to give to the player."
       case UIState.WorldMap =>
         "" // World map handles its own messaging
+      case _: UIState.Inventory =>
+        "Inventory Mode. WASD/Arrows to Navigate, E/Space/Enter to Select, I/Esc to Close."
+      case _: UIState.InventoryActionState =>
+        "Item Actions. WASD/Arrows to Navigate, E/Space/Enter to Select, Esc to Cancel."
     }
 
     // Position message window at the very bottom of the visible canvas area

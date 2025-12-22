@@ -223,7 +223,7 @@ object InventoryUI {
     )
 
     val helmetItem = equipment.helmet.map { helmet =>
-      val sprite = helmet.itemName match {
+      val sprite = helmet.stats.itemName match {
         case "Leather Helmet" => data.Sprites.leatherHelmetSprite
         case "Iron Helmet"    => data.Sprites.ironHelmetSprite
         case _                => data.Sprites.defaultItemSprite
@@ -240,7 +240,7 @@ object InventoryUI {
     )
 
     val weaponItem = equipment.weapon.map { weapon =>
-      val sprite = weapon.itemName match {
+      val sprite = weapon.stats.itemName match {
         case "Basic Sword" => data.Sprites.basicSwordSprite
         case "Iron Sword"  => data.Sprites.ironSwordSprite
         case _             => data.Sprites.defaultItemSprite
@@ -257,7 +257,7 @@ object InventoryUI {
     )
 
     val armorItem = equipment.armor.map { armor =>
-      val sprite = armor.itemName match {
+      val sprite = armor.stats.itemName match {
         case "Chainmail Armor" => data.Sprites.chainmailArmorSprite
         case "Plate Armor"     => data.Sprites.plateArmorSprite
         case _                 => data.Sprites.defaultItemSprite
@@ -274,7 +274,7 @@ object InventoryUI {
     )
 
     val glovesItem = equipment.gloves.map { gloves =>
-      val sprite = gloves.itemName match {
+      val sprite = gloves.stats.itemName match {
         case "Leather Gloves" => data.Sprites.leatherGlovesSprite
         case "Iron Gloves"    => data.Sprites.ironGlovesSprite
         case _                => data.Sprites.defaultItemSprite
@@ -291,7 +291,7 @@ object InventoryUI {
     )
 
     val bootsItem = equipment.boots.map { boots =>
-      val sprite = boots.itemName match {
+      val sprite = boots.stats.itemName match {
         case "Leather Boots" => data.Sprites.leatherBootsSprite
         case "Iron Boots"    => data.Sprites.ironBootsSprite
         case _               => data.Sprites.defaultItemSprite

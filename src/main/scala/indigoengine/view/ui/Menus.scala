@@ -158,7 +158,7 @@ object Menus {
     val equipmentElements = Seq(
       // Helmet
       equipment.helmet.map { helmet =>
-        val sprite = helmet.itemName match {
+        val sprite = helmet.stats.itemName match {
           case "Leather Helmet" => Sprites.leatherHelmetSprite
           case "Iron Helmet"    => Sprites.ironHelmetSprite
           case _                => Sprites.defaultItemSprite
@@ -169,7 +169,7 @@ object Menus {
       },
       // Armor
       equipment.armor.map { armor =>
-        val sprite = armor.itemName match {
+        val sprite = armor.stats.itemName match {
           case "Leather Armor" =>
             Sprites.defaultItemSprite // Use default since leatherArmorSprite doesn't exist
           case "Chainmail Armor" => Sprites.chainmailArmorSprite
@@ -182,7 +182,7 @@ object Menus {
       },
       // Weapon
       equipment.weapon.map { weapon =>
-        val sprite = weapon.itemName match {
+        val sprite = weapon.stats.itemName match {
           case "Basic Sword" => Sprites.basicSwordSprite
           case "Iron Sword"  => Sprites.ironSwordSprite
           case _             => Sprites.defaultItemSprite
@@ -193,7 +193,7 @@ object Menus {
       },
       // Gloves
       equipment.gloves.map { gloves =>
-        val sprite = gloves.itemName match {
+        val sprite = gloves.stats.itemName match {
           case "Leather Gloves" => Sprites.leatherGlovesSprite
           case "Iron Gloves"    => Sprites.ironGlovesSprite
           case _                => Sprites.defaultItemSprite
@@ -204,7 +204,7 @@ object Menus {
       },
       // Boots
       equipment.boots.map { boots =>
-        val sprite = boots.itemName match {
+        val sprite = boots.stats.itemName match {
           case "Leather Boots" => Sprites.leatherBootsSprite
           case "Iron Boots"    => Sprites.ironBootsSprite
           case _               => Sprites.defaultItemSprite

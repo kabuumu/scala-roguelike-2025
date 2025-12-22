@@ -18,137 +18,164 @@ import data.Sprites
 import game.entity.{Entity, EntityType, EntityTypeComponent, Hitbox, Drawable}
 
 object EquipmentSystem extends GameSystem {
-  
+
   // Get sprite for equippable item based on its properties
   private def getEquipmentSprite(equippable: Equippable): Sprite = {
     equippable.itemName match {
-      case "Leather Helmet" => Sprites.leatherHelmetSprite
-      case "Iron Helmet" => Sprites.ironHelmetSprite  
+      case "Leather Helmet"  => Sprites.leatherHelmetSprite
+      case "Iron Helmet"     => Sprites.ironHelmetSprite
       case "Chainmail Armor" => Sprites.chainmailArmorSprite
-      case "Plate Armor" => Sprites.plateArmorSprite
-      case "Leather Boots" => Sprites.leatherBootsSprite
-      case "Iron Boots" => Sprites.ironBootsSprite
-      case "Leather Gloves" => Sprites.leatherGlovesSprite
-      case "Iron Gloves" => Sprites.ironGlovesSprite
-      case "Basic Sword" => Sprites.basicSwordSprite
-      case "Iron Sword" => Sprites.ironSwordSprite
-      case _ => Sprites.defaultItemSprite
+      case "Plate Armor"     => Sprites.plateArmorSprite
+      case "Leather Boots"   => Sprites.leatherBootsSprite
+      case "Iron Boots"      => Sprites.ironBootsSprite
+      case "Leather Gloves"  => Sprites.leatherGlovesSprite
+      case "Iron Gloves"     => Sprites.ironGlovesSprite
+      case "Basic Sword"     => Sprites.basicSwordSprite
+      case "Iron Sword"      => Sprites.ironSwordSprite
+      case _                 => Sprites.defaultItemSprite
     }
   }
-  
-  override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+
+  override def update(
+      gameState: GameState,
+      events: Seq[GameSystemEvent]
+  ): (GameState, Seq[GameSystemEvent]) = {
     events.foldLeft((gameState, Seq.empty[GameSystemEvent])) {
       case ((currentState, newEvents), EquipEvent(entityId)) =>
+        handleEquipEvent(currentState, newEvents, entityId)
+
+      case (
+            (currentState, newEvents),
+            EquipSpecificEvent(entityId, targetEntity)
+          ) =>
+        handleEquipSpecificEvent(
+          currentState,
+          newEvents,
+          entityId,
+          targetEntity
+        )
+
+      case ((currentState, newEvents), UnequipEvent(entityId, slot)) =>
         currentState.getEntity(entityId) match {
           case Some(entity) =>
-            val playerPosition = entity.position
-            val adjacentPositions = Direction.values.map(dir => playerPosition + Direction.asPoint(dir)).toSet
-            
-            // Find equippable item entities in adjacent positions
-            val adjacentEquippableEntities = currentState.entities
-              .filter(e => adjacentPositions.contains(e.position))
-              .filter(_.isEquippable)
-            
-            adjacentEquippableEntities.headOption match {
-              case Some(equipmentEntity) =>
-                equipmentEntity.equippable match {
-                  case Some(equippableComponent) =>
-                    // Remove the item from the world and equip it
-                    val entityWithEquipment = if (!entity.has[Equipment]) {
-                      entity.addComponent(Equipment())
-                    } else entity
-                    
-                    val (entityWithNewEquipment, previouslyEquippedComponent) = entityWithEquipment.equipItemComponent(equippableComponent)
-                    
-                    // Add the equipment to inventory
-                    val updatedEntity = entityWithNewEquipment.addItemEntity(equipmentEntity.id)
-                    
-                    val updatedState = currentState
-                      .updateEntity(entityId, _ => updatedEntity)
-                      .updateEntity(equipmentEntity.id, _.removeComponent[Movement]) // Remove position instead of entity
-                      .copy(messages = s"Equipped ${equippableComponent.itemName}" +: currentState.messages)
-                    
-                    // If there was a previously equipped item, drop it at the position where the new equipment was found
-                    val finalState = previouslyEquippedComponent match {
-                      case Some(droppedEquippable) =>
-                        // Create a new entity for the dropped equipment
-                        val dropPosition = equipmentEntity.position
-                        val droppedEquipmentEntity = Entity(
-                          id = s"dropped-${droppedEquippable.itemName.replace(" ", "-")}-${System.nanoTime()}",
-                          Movement(position = dropPosition),
-                          CanPickUp(),
-                          droppedEquippable,
-                          Hitbox(),
-                          Drawable(getEquipmentSprite(droppedEquippable))
-                        )
-                        updatedState.add(droppedEquipmentEntity)
-                      case None =>
-                        updatedState
-                    }
-                    
-                    (finalState, newEvents)
-                  case _ =>
-                    (currentState, newEvents)
-                }
-              case None =>
-                val messageState = currentState.copy(
-                  messages = "No equippable items nearby" +: currentState.messages
-                )
-                (messageState, newEvents)
-            }
-          case None =>
-            (currentState, newEvents)
+            val updatedEntity = entity.unequipItem(slot)
+            val updatedState = currentState
+              .updateEntity(entityId, _ => updatedEntity)
+              .copy(messages =
+                s"Unequipped item from $slot" +: currentState.messages
+              )
+            (updatedState, newEvents)
+          case None => (currentState, newEvents)
         }
-      case ((currentState, newEvents), EquipSpecificEvent(entityId, targetEntity)) =>
-        currentState.getEntity(entityId) match {
-          case Some(entity) =>
-            targetEntity.equippable match {
-              case Some(equippableComponent) =>
-                // Remove the item from the world and equip it
-                val entityWithEquipment = if (!entity.has[Equipment]) {
-                  entity.addComponent(Equipment())
-                } else entity
-                
-                val (entityWithNewEquipment, previouslyEquippedComponent) = entityWithEquipment.equipItemComponent(equippableComponent)
-                
-                // Add the equipment to inventory
-                val updatedEntity = entityWithNewEquipment.addItemEntity(targetEntity.id)
-                
-                val updatedState = currentState
-                  .updateEntity(entityId, _ => updatedEntity)
-                  .updateEntity(targetEntity.id, _.removeComponent[Movement]) // Remove position instead of entity
-                  .copy(messages = s"Equipped ${equippableComponent.itemName}" +: currentState.messages)
-                
-                // If there was a previously equipped item, drop it at the position where the new equipment was found
-                val finalState = previouslyEquippedComponent match {
-                  case Some(droppedEquippable) =>
-                    // Create a new entity for the dropped equipment
-                    val dropPosition = targetEntity.position
-                    val droppedEquipmentEntity = Entity(
-                      id = s"dropped-${droppedEquippable.itemName.replace(" ", "-")}-${System.nanoTime()}",
-                      Movement(position = dropPosition),
-                      CanPickUp(),
-                      droppedEquippable,
-                      Hitbox(),
-                      Drawable(getEquipmentSprite(droppedEquippable))
-                    )
-                    updatedState.add(droppedEquipmentEntity)
-                  case None =>
-                    updatedState
-                }
-                
-                (finalState, newEvents)
-              case None =>
-                val messageState = currentState.copy(
-                  messages = s"${targetEntity.name.getOrElse("Item")} is not equippable" +: currentState.messages
-                )
-                (messageState, newEvents)
-            }
-          case None =>
-            (currentState, newEvents)
-        }
+
       case ((currentState, newEvents), _) =>
         (currentState, newEvents)
+    }
+  }
+
+  private def handleEquipEvent(
+      currentState: GameState,
+      newEvents: Seq[GameSystemEvent],
+      entityId: String
+  ): (GameState, Seq[GameSystemEvent]) = {
+    currentState.getEntity(entityId) match {
+      case Some(entity) =>
+        val playerPosition = entity.position
+        val adjacentPositions = Direction.values
+          .map(dir => playerPosition + Direction.asPoint(dir))
+          .toSet
+
+        val adjacentEquippableEntities = currentState.entities
+          .filter(e => adjacentPositions.contains(e.position))
+          .filter(_.isEquippable)
+
+        adjacentEquippableEntities.headOption match {
+          case Some(equipmentEntity) =>
+            performEquip(
+              currentState,
+              newEvents,
+              entity,
+              entityId,
+              equipmentEntity
+            )
+          case None =>
+            val messageState = currentState.copy(
+              messages = "No equippable items nearby" +: currentState.messages
+            )
+            (messageState, newEvents)
+        }
+      case None =>
+        (currentState, newEvents)
+    }
+  }
+
+  private def handleEquipSpecificEvent(
+      currentState: GameState,
+      newEvents: Seq[GameSystemEvent],
+      entityId: String,
+      targetEntity: Entity
+  ): (GameState, Seq[GameSystemEvent]) = {
+    currentState.getEntity(entityId) match {
+      case Some(entity) =>
+        performEquip(currentState, newEvents, entity, entityId, targetEntity)
+      case None =>
+        (currentState, newEvents)
+    }
+  }
+
+  private def performEquip(
+      currentState: GameState,
+      newEvents: Seq[GameSystemEvent],
+      entity: Entity,
+      entityId: String,
+      equipmentEntity: Entity
+  ): (GameState, Seq[GameSystemEvent]) = {
+    equipmentEntity.equippable match {
+      case Some(equippableComponent) =>
+        val entityWithEquipment = if (!entity.has[Equipment]) {
+          entity.addComponent(Equipment())
+        } else entity
+
+        val (entityWithNewEquipment, previouslyEquippedComponent) =
+          entityWithEquipment.equipItemComponent(
+            equipmentEntity.id,
+            equippableComponent
+          )
+
+        val updatedEntity =
+          entityWithNewEquipment.addItemEntity(equipmentEntity.id)
+
+        val updatedState = currentState
+          .updateEntity(entityId, _ => updatedEntity)
+          .updateEntity(
+            equipmentEntity.id,
+            _.removeComponent[Movement]
+          )
+          .copy(messages =
+            s"Equipped ${equippableComponent.itemName}" +: currentState.messages
+          )
+
+        val finalState = previouslyEquippedComponent match {
+          case Some(unequippedItem) =>
+            // Fix: Do NOT drop the item. It is already in the inventory (because we never removed it from Inventory component list, only from Equipment slot).
+            // We just need to ensure we don't add Movement/Drop it.
+            // Ideally we also verify it exists in the entity list as a fallback, but assuming consistency:
+
+            // Just notify user
+            updatedState.copy(messages =
+              s"Unequipped ${unequippedItem.stats.itemName} to inventory" +: updatedState.messages
+            )
+          case None =>
+            updatedState
+        }
+
+        (finalState, newEvents)
+      case None =>
+        val messageState = currentState.copy(
+          messages =
+            s"${equipmentEntity.name.getOrElse("Item")} is not equippable" +: currentState.messages
+        )
+        (messageState, newEvents)
     }
   }
 }

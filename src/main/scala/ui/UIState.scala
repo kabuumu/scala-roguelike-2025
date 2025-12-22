@@ -212,4 +212,25 @@ object UIState {
   }
 
   case object WorldMap extends UIState
+
+  case class Inventory(gridCursor: Point = Point(0, 0)) extends UIState {
+    def moveCursor(direction: Point): Inventory = {
+      // Grid is 5 wide (example), unbound height
+      // Will clamp in UI logic or here depending on item count
+      copy(gridCursor = gridCursor + direction)
+    }
+  }
+
+  case class InventoryActionState(
+      selectedItem: Entity,
+      options: Seq[String],
+      selectedOption: Int = 0
+  ) extends UIState {
+    def selectNext: InventoryActionState =
+      copy(selectedOption = (selectedOption + 1) % options.length)
+    def selectPrevious: InventoryActionState = copy(selectedOption =
+      (selectedOption - 1 + options.length) % options.length
+    )
+    def getSelectedOption: String = options(selectedOption)
+  }
 }

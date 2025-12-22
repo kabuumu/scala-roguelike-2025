@@ -43,12 +43,6 @@ object GameTargeting {
     // Get nearby enemies for attacking (range 1)
     val attackTargets = enemiesWithinRange(gameState, 1).map(AttackTarget.apply)
 
-    // Get nearby equippable items
-    val equipTargets = gameState.entities
-      .filter(e => adjacentPositions.contains(e.position))
-      .filter(_.isEquippable)
-      .map(EquipTarget.apply)
-
     // Get nearby stairs
     val stairsTargets = gameState.entities
       .filter(e => adjacentPositions.contains(e.position))
@@ -68,6 +62,6 @@ object GameTargeting {
       .filter(_.hasConversation)
       .map(ConversationTarget.apply)
 
-    attackTargets ++ equipTargets ++ stairsTargets ++ tradeTargets ++ conversationTargets
+    attackTargets ++ stairsTargets ++ tradeTargets ++ conversationTargets
   }
 }

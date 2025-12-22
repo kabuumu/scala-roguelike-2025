@@ -23,6 +23,7 @@ object InputMappings {
     KeyInputs(Key.ENTER) -> Action,
     KeyInputs(Key.KEY_L) -> LevelUp,
     KeyInputs(Key.KEY_M) -> OpenMap,
-    KeyInputs(Key.BACK_QUOTE) -> DebugMenu
+    KeyInputs(Key.BACK_QUOTE) -> DebugMenu,
+    KeyInputs(Key.KEY_I) -> Inventory
   )
 }

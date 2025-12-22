@@ -5,66 +5,43 @@
 [info] loading settings for project scala-roguelike-2025-build-build from metals.sbt ...
 [info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project/project
 [success] Generated .bloop/scala-roguelike-2025-build-build.json
-[success] Total time: 1 s, completed 18 Dec 2025, 15:31:45
+[success] Total time: 1 s, completed 22 Dec 2025, 11:33:44
 [info] loading settings for project scala-roguelike-2025-build from metals.sbt,plugins.sbt ...
 [info] loading project definition from /Users/robhawkes/Documents/personal/scala-roguelike-2025/project
 [success] Generated .bloop/scala-roguelike-2025-build.json
-[success] Total time: 0 s, completed 18 Dec 2025, 15:31:45
+[success] Total time: 0 s, completed 22 Dec 2025, 11:33:44
 [info] loading settings for project root from build.sbt ...
 [info] set current project to scala-roguelike (in build file:/Users/robhawkes/Documents/personal/scala-roguelike-2025/)
-[warn] sbt 0.13 shell syntax is deprecated; use slash syntax instead: Test / compile
-[info] compiling 1 Scala source to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
-[info] done compiling
-[info] compiling 24 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/test-classes ...
-[error] -- [E040] Syntax Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:108:4 
-[error] 108 |    villageNPCs.foreach { npc =>
-[error]     |    ^^^^^^^^^^^
-[error]     |    'case' expected, but identifier found
-[error] -- [E040] Syntax Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:165:0 
-[error] 165 |
-[error]     |^
-[error]     |'}' expected, but eof found
-[error] -- [E161] Naming Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:34:8 
-[error] 34 |    var buildingsWithNPCs = 0
-[error]    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
-[error]    |    buildingsWithNPCs is already defined as variable buildingsWithNPCs
-[error] -- [E161] Naming Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:48:12 
-[error] 48 |        val npcId = s"npc-village-$villageIdx-building-$buildingIdx"
-[error]    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[error]    |npcId is already defined as value npcId
+[info] Executing in batch mode. For better performance use sbt's shell
+[info] compiling 27 Scala sources to /Users/robhawkes/Documents/personal/scala-roguelike-2025/target/scala-3.6.4/classes ...
+[error] -- [E007] Type Mismatch Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/data/Enemies.scala:46:47 
+[error] 46 |      Equipment(weapon = Some(Equippable.weapon(8, "Rat Claws"))), // 1 base + 8 bonus = 9 total damage
+[error]    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[error]    |                              Found:    game.entity.Equippable
+[error]    |                              Required: game.entity.EquippedItem
 [error]    |
-[error]    |Note that overloaded methods must all be defined in the same group of toplevel definitions
-[error] -- [E161] Naming Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:49:12 
-[error] 49 |        val hasNPC = villageNPCs.exists(_.id == npcId)
-[error]    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[error]    |hasNPC is already defined as value hasNPC
+[error]    | longer explanation available when compiling with `-explain`
+[error] -- [E007] Type Mismatch Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/data/Enemies.scala:66:47 
+[error] 66 |      Equipment(weapon = Some(Equippable.weapon(6, "Snake Fangs"))), // 1 base + 6 bonus = 7 total damage
+[error]    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[error]    |                              Found:    game.entity.Equippable
+[error]    |                              Required: game.entity.EquippedItem
 [error]    |
-[error]    |Note that overloaded methods must all be defined in the same group of toplevel definitions
-[error] -- [E161] Naming Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:142:8 
-[error] 142 |    val traders = gameState.entities.filter(_.isTrader)
-[error]     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[error]     |traders is already defined as value traders
+[error]    | longer explanation available when compiling with `-explain`
+[error] -- [E007] Type Mismatch Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/data/Enemies.scala:86:47 
+[error] 86 |      Equipment(weapon = Some(Equippable.weapon(6, "Slime Acid"))), // 1 base + 6 bonus = 7 total damage
+[error]    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[error]    |                              Found:    game.entity.Equippable
+[error]    |                              Required: game.entity.EquippedItem
+[error]    |
+[error]    | longer explanation available when compiling with `-explain`
+[error] -- [E007] Type Mismatch Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/main/scala/data/Enemies.scala:127:47 
+[error] 127 |      Equipment(weapon = Some(Equippable.weapon(15, "Boss Claws"))), // High damage melee attack
+[error]     |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[error]     |                              Found:    game.entity.Equippable
+[error]     |                              Required: game.entity.EquippedItem
 [error]     |
-[error]     |Note that overloaded methods must all be defined in the same group of toplevel definitions
-[error] -- [E161] Naming Error: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:159:8 
-[error] 159 |    val villagers = gameState.entities.filter(e => e.id.startsWith("npc-village") && !e.isTrader)
-[error]     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[error]     |villagers is already defined as value villagers
-[error]     |
-[error]     |Note that overloaded methods must all be defined in the same group of toplevel definitions
-[warn] -- Warning: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:100:4 
-[warn] 100 |    val villageNPCs = gameState.entities.filter { entity =>
-[warn]     |    ^
-[warn]     |    Line is indented too far to the left, or a `}` is missing
-[warn] -- Warning: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:104:4 
-[warn] 104 |    villageNPCs.foreach { npc =>
-[warn]     |    ^
-[warn]     |    Line is indented too far to the left, or a `}` is missing
-[warn] -- Warning: /Users/robhawkes/Documents/personal/scala-roguelike-2025/src/test/scala/game/VillageTraderTest.scala:136:2 
-[warn] 136 |  test("NPCs have appropriate inventories") {
-[warn]     |  ^
-[warn]     |  Line is indented too far to the left, or a `}` is missing
-[warn] three warnings found
-[error] 7 errors found
-[error] (Test / compileIncremental) Compilation failed
-[error] Total time: 6 s, completed 18 Dec 2025, 15:31:51
+[error]     | longer explanation available when compiling with `-explain`
+[error] four errors found
+[error] (Compile / compileIncremental) Compilation failed
+[error] Total time: 6 s, completed 22 Dec 2025, 11:33:50

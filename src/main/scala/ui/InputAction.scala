@@ -35,4 +35,6 @@ enum InputAction {
   case DebugRestoreHealth
   case DebugGivePerk(perk: StatusEffect)
   case DebugRevealMap
+  case DropItem(itemEntityId: String)
+  case UnequipItem(slot: game.entity.EquipmentSlot)
 }

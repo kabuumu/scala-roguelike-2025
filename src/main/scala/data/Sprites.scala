@@ -59,7 +59,8 @@ object Sprites {
   // Equipment sprites
   val leatherHelmetSprite: Sprite = Sprite(33, 0, uiLayer)
   val ironHelmetSprite: Sprite = Sprite(36, 0, uiLayer)
-  val chainmailArmorSprite: Sprite = Sprite(32, 1, uiLayer)
+  val chainmailArmorSprite: Sprite =
+    Sprite(33, 1, uiLayer) // Temp: Use Plate sprite as (32,1) appears empty
   val plateArmorSprite: Sprite = Sprite(33, 1, uiLayer)
 
   // New equipment sprites - using default sprite for items without specific sprites

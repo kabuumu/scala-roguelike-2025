@@ -15,9 +15,12 @@ object StartingState {
     Items.bow("player-bow-1")
   ) ++ (1 to 6).map(i => Items.arrow(s"player-arrow-$i"))
 
+  val startingSword = Items.basicSword("player-starting-sword")
+  val startingArmor = Items.chainmailArmor("player-starting-armor")
+
   val playerStartingEquipment: Set[Entity] = Set(
-    Items.basicSword("player-starting-sword"),
-    Items.chainmailArmor("player-starting-armor")
+    startingSword,
+    startingArmor
   )
 
   /** Generates a fresh GameState for Adventure mode. Starts in the village
@@ -213,9 +216,12 @@ object StartingState {
           (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq
       ),
       Equipment(
-        armor =
-          Some(Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor")),
-        weapon = Some(Equippable.weapon(3, "Basic Sword"))
+        armor = Some(
+          EquippedItem(startingArmor.id, startingArmor.get[Equippable].get)
+        ),
+        weapon = Some(
+          EquippedItem(startingSword.id, startingSword.get[Equippable].get)
+        )
       ),
       SightMemory(seenPoints = initiallyVisibleTiles),
       EventMemory(),
