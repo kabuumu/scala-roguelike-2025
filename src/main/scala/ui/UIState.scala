@@ -40,17 +40,6 @@ object UIState {
   }
 
   // Concrete list select for usable items
-  case class UseItemSelect(
-      list: Seq[Entity],
-      index: Int = 0,
-      effect: Entity => (UIState, Option[InputAction])
-  ) extends ListSelectState {
-    def iterate: UseItemSelect = copy(index = nextIndex)
-    def iterateDown: UseItemSelect = copy(index = prevIndex)
-    def listLength: Int = list.length
-    def action: (UIState, Option[InputAction]) = effect(list(index))
-    def currentItem: Entity = list(index)
-  }
 
   // Concrete list select for buying items (ItemReference)
   case class BuyItemSelect(

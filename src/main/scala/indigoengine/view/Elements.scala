@@ -18,10 +18,6 @@ object Elements {
   def enemyHealthBar(enemyEntity: Entity): Batch[SceneNode] =
     StatusUI.enemyHealthBar(enemyEntity)
 
-  def usableItems(
-      model: GameController,
-      spriteSheet: Graphic[?]
-  ): Batch[SceneNode] = InventoryUI.usableItems(model, spriteSheet)
   def keys(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] =
     InventoryUI.keys(model, spriteSheet)
   def coins(model: GameController, spriteSheet: Graphic[?]): Batch[SceneNode] =

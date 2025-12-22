@@ -61,103 +61,7 @@ object InputHandler {
           (UIState.Move, Some(InputAction.Move(direction)))
         case Input.Inventory =>
           (UIState.Inventory(), None)
-        case Input.UseItem =>
-          val usableItems = gameState.playerEntity
-            .usableItems(gameState)
-            .distinctBy(_.get[NameComponent])
-          if (usableItems.nonEmpty) {
-            (
-              UIState.UseItemSelect(
-                list = usableItems,
-                effect = itemEntity => {
-                  // Handle different item types based on UsableItem component
-                  itemEntity.get[UsableItem] match {
-                    case Some(usableItem) =>
-                      usableItem.targeting match {
-                        case Targeting.Self =>
-                          // Self-targeted items (potions)
-                          (
-                            UIState.Move,
-                            Some(
-                              InputAction.UseItem(
-                                itemId = itemEntity.id,
-                                itemType = usableItem,
-                                useContext =
-                                  UseContext(gameState.playerEntity.id, None)
-                              )
-                            )
-                          )
-                        case Targeting.TileInRange(_) =>
-                          // Tile-targeted items (scrolls)
-                          (
-                            UIState.ScrollSelect(
-                              cursor = gameState.playerEntity.position,
-                              effect = targetPoint =>
-                                (
-                                  UIState.Move,
-                                  Some(
-                                    InputAction.UseItem(
-                                      itemEntity.id,
-                                      usableItem,
-                                      UseContext(
-                                        gameState.playerEntity.id,
-                                        Some(targetPoint)
-                                      )
-                                    )
-                                  )
-                                )
-                            ),
-                            None
-                          )
-                        case Targeting.EnemyActor(range) =>
-                          // Entity-targeted items (bows)
-                          val enemies =
-                            GameTargeting.enemiesWithinRange(gameState, range)
-                          val hasRequiredAmmo = usableItem.chargeType match {
-                            case ChargeType.Ammo(ammoType) =>
-                              gameState.playerEntity
-                                .inventoryItems(gameState)
-                                .exists(_.exists[Ammo](_.ammoType == ammoType))
-                            case _ => true
-                          }
-                          if (enemies.nonEmpty && hasRequiredAmmo) {
-                            (
-                              UIState.EnemyTargetSelect(
-                                list = enemies,
-                                effect = target =>
-                                  (
-                                    UIState.Move,
-                                    Some(
-                                      InputAction.UseItem(
-                                        itemId = itemEntity.id,
-                                        itemType = usableItem,
-                                        useContext = UseContext(
-                                          gameState.playerEntity.id,
-                                          Some(target)
-                                        )
-                                      )
-                                    )
-                                  )
-                              ),
-                              None
-                            )
-                          } else {
-                            (
-                              UIState.Move,
-                              None
-                            ) // No enemies in range or no required ammo
-                          }
-                      }
-                    case None =>
-                      (UIState.Move, None) // Item has no UsableItem component
-                  }
-                }
-              ),
-              None
-            )
-          } else {
-            (UIState.Move, None)
-          }
+
         case Input.LevelUp if gameState.playerEntity.canLevelUp =>
           val levelUpState = UIState.StatusEffectSelect(
             list = gameState.playerEntity.getPossiblePerks,
@@ -325,7 +229,6 @@ object InputHandler {
       input match {
         case Input.Move(Direction.Up | Direction.Left) =>
           listSelect match {
-            case s: UIState.UseItemSelect       => (s.iterateDown, None)
             case s: UIState.BuyItemSelect       => (s.iterateDown, None)
             case s: UIState.SellItemSelect      => (s.iterateDown, None)
             case s: UIState.StatusEffectSelect  => (s.iterateDown, None)
@@ -336,7 +239,6 @@ object InputHandler {
           }
         case Input.Move(Direction.Down | Direction.Right) =>
           listSelect match {
-            case s: UIState.UseItemSelect       => (s.iterate, None)
             case s: UIState.BuyItemSelect       => (s.iterate, None)
             case s: UIState.SellItemSelect      => (s.iterate, None)
             case s: UIState.StatusEffectSelect  => (s.iterate, None)

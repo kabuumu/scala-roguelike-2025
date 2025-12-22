@@ -66,41 +66,11 @@ object HUD {
         } else {
           // No actions available
           val moveKeys = "Arrow keys or WASD to move"
-          val useItems = "U to use items"
 
-          s"$moveKeys, $useItems"
+          s"$moveKeys"
         }
 
       // Handle specific list select types
-      case useItemSelect: UIState.UseItemSelect =>
-        if (useItemSelect.list.nonEmpty) {
-          val entity = useItemSelect.currentItem
-          val itemName = entity.name.getOrElse("Unknown Item")
-          entity.get[UsableItem] match {
-            case Some(usableItem) =>
-              val targetType = usableItem.targeting match {
-                case game.entity.Targeting.Self              => "Self-targeted"
-                case game.entity.Targeting.EnemyActor(range) =>
-                  s"Enemy-targeted (range: $range)"
-                case game.entity.Targeting.TileInRange(range) =>
-                  s"Tile-targeted (range: $range)"
-              }
-              val consumeText =
-                if (usableItem.chargeType == SingleUse) "consumed on use"
-                else "reusable"
-              val ammoText = usableItem.chargeType match {
-                case ChargeType.Ammo(ammo) => s", requires ${ammo.toString}"
-                case _                     => ""
-              }
-              val description = entity.description.getOrElse("")
-              val descriptionText =
-                if (description.nonEmpty) s" - $description" else ""
-              s"$itemName$descriptionText. $targetType item, $consumeText$ammoText. Press Space/E/Enter to use."
-            case None => s"$itemName. Press Space/E/Enter to use."
-          }
-        } else {
-          "No items available."
-        }
 
       case buyItemSelect: UIState.BuyItemSelect =>
         if (buyItemSelect.list.nonEmpty) {

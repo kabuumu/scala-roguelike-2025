@@ -209,7 +209,6 @@ object Game extends IndigoSandbox[Unit, GameController] {
         healthBar(model)
           ++ experienceBar(model)
           ++ coins(model, spriteSheet)
-          ++ usableItems(model, spriteSheet)
           ++ perkSelection(model)
           ++ keys(model, spriteSheet)
           ++ equipmentPaperdoll(model, spriteSheet)
@@ -236,10 +235,6 @@ object Game extends IndigoSandbox[Unit, GameController] {
       // Skip targeting for buying/selling - these are inventory/shop UIs
       case _: UIState.BuyItemSelect | _: UIState.SellItemSelect =>
         None
-
-      // Show cursor for using items (when they have entity targets)
-      case useItemSelect: UIState.UseItemSelect =>
-        None // Item use targeting is handled by ScrollSelect transition
 
       // Handle action target selection (for attacks, equipping, trading, etc.)
       case actionTargetSelect: UIState.ActionTargetSelect =>
