@@ -61,6 +61,8 @@ object InputHandler {
           (UIState.Move, Some(InputAction.Move(direction)))
         case Input.Inventory =>
           (UIState.Inventory(), None)
+        case Input.CharacterScreen =>
+          (UIState.Character, None)
 
         case Input.LevelUp if gameState.playerEntity.canLevelUp =>
           val levelUpState = UIState.StatusEffectSelect(
@@ -468,7 +470,7 @@ object InputHandler {
             (inventory, None)
           }
 
-        case Input.Inventory | Input.Cancel =>
+        case Input.Inventory | Input.Cancel | Input.CharacterScreen =>
           (UIState.Move, None) // Close inventory
         case _ => (inventory, None)
       }
@@ -601,5 +603,11 @@ object InputHandler {
     case UIState.WorldMap =>
       // Any key press returns to normal game
       (UIState.Move, None)
+
+    case UIState.Character =>
+      input match {
+        case Input.CharacterScreen | Input.Cancel => (UIState.Move, None)
+        case _                                    => (uiState, None)
+      }
   }
 }

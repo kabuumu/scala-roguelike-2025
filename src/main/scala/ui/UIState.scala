@@ -202,6 +202,8 @@ object UIState {
 
   case object WorldMap extends UIState
 
+  case object Character extends UIState
+
   case class Inventory(gridCursor: Point = Point(0, 0)) extends UIState {
     def moveCursor(direction: Point): Inventory = {
       // Grid is 5 wide (example), unbound height

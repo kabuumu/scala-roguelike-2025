@@ -191,6 +191,8 @@ object HUD {
         "Inventory Mode. WASD/Arrows to Navigate, E/Space/Enter to Select, I/Esc to Close."
       case _: UIState.InventoryActionState =>
         "Item Actions. WASD/Arrows to Navigate, E/Space/Enter to Select, Esc to Cancel."
+      case UIState.Character =>
+        "" // Character screen handles its own hints
     }
 
     // Position message window at the very bottom of the visible canvas area

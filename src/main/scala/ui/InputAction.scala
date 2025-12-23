@@ -37,4 +37,5 @@ enum InputAction {
   case DebugRevealMap
   case DropItem(itemEntityId: String)
   case UnequipItem(slot: game.entity.EquipmentSlot)
+  case ToggleCharacterScreen
 }

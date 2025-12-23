@@ -14,6 +14,7 @@ import ui.UIConfig.*
 import ui.{GameController, UIConfig, UIState}
 import util.LineOfSight
 import indigoengine.view.ui.InventoryMenu
+import indigoengine.view.ui.CharacterScreen
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
@@ -148,6 +149,17 @@ object Game extends IndigoSandbox[Unit, GameController] {
           presentGame(context, model) |+| SceneUpdateFragment(
             Layer.Content(
               InventoryMenu.render(
+                model,
+                Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
+              )
+            )
+          )
+        )
+      case UIState.Character =>
+        Outcome(
+          presentGame(context, model) |+| SceneUpdateFragment(
+            Layer.Content(
+              CharacterScreen.render(
                 model,
                 Graphic(0, 0, 784, 352, Material.Bitmap(AssetName("sprites")))
               )

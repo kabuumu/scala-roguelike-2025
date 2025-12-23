@@ -19,4 +19,5 @@ object Input {
   case object OpenMap extends Input
   case object DebugMenu extends Input
   case object Inventory extends Input
+  case object CharacterScreen extends Input
 }

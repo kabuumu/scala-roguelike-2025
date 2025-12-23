@@ -17,7 +17,7 @@ object InputMappings {
     KeyInputs(Key.ARROW_RIGHT) -> Move(Direction.Right),
     KeyInputs(Key.KEY_E) -> Action,
     KeyInputs(Key.KEY_U) -> UseItem,
-    KeyInputs(Key.KEY_C) -> Cancel,
+    KeyInputs(Key.KEY_C) -> CharacterScreen,
     KeyInputs(Key.ESCAPE) -> Cancel,
     KeyInputs(Key.SPACE) -> Action,
     KeyInputs(Key.ENTER) -> Action,
