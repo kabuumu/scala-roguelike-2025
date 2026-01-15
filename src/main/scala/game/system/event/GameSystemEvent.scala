@@ -92,6 +92,7 @@ object GameSystemEvent {
   case class SpawnProjectileEvent(
       projectile: ProjectileReference,
       creator: Entity,
-      targetPoint: game.Point
+      targetPoint: game.Point,
+      overrideStartPosition: Option[game.Point] = None
   ) extends GameSystemEvent
 }

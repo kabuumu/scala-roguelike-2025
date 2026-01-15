@@ -13,6 +13,7 @@ object Items {
   enum ItemReference:
     case HealingPotion
     case FireballScroll
+    case ChainLightningScroll
     case Arrow
     case Bow
     case YellowKey
@@ -33,25 +34,26 @@ object Items {
 
   extension (itemRef: ItemReference) {
     def createEntity(id: String): Entity = itemRef match {
-      case ItemReference.HealingPotion => healingPotion(id)
-      case ItemReference.FireballScroll => fireballScroll(id)
-      case ItemReference.Arrow => arrow(id)
-      case ItemReference.Bow => bow(id)
-      case ItemReference.YellowKey => key(id, KeyColour.Yellow)
-      case ItemReference.BlueKey => key(id, KeyColour.Blue)
-      case ItemReference.RedKey => key(id, KeyColour.Red)
-      case ItemReference.LeatherHelmet => leatherHelmet(id)
-      case ItemReference.ChainmailArmor => chainmailArmor(id)
-      case ItemReference.IronHelmet => ironHelmet(id)
-      case ItemReference.PlateArmor => plateArmor(id)
-      case ItemReference.LeatherBoots => leatherBoots(id)
-      case ItemReference.IronBoots => ironBoots(id)
-      case ItemReference.LeatherGloves => leatherGloves(id)
-      case ItemReference.IronGloves => ironGloves(id)
-      case ItemReference.BasicSword => basicSword(id)
-      case ItemReference.IronSword => ironSword(id)
-      case ItemReference.Coin => coin(id)
-      case ItemReference.HealingService => healingService(id)
+      case ItemReference.HealingPotion        => healingPotion(id)
+      case ItemReference.FireballScroll       => fireballScroll(id)
+      case ItemReference.ChainLightningScroll => chainLightningScroll(id)
+      case ItemReference.Arrow                => arrow(id)
+      case ItemReference.Bow                  => bow(id)
+      case ItemReference.YellowKey            => key(id, KeyColour.Yellow)
+      case ItemReference.BlueKey              => key(id, KeyColour.Blue)
+      case ItemReference.RedKey               => key(id, KeyColour.Red)
+      case ItemReference.LeatherHelmet        => leatherHelmet(id)
+      case ItemReference.ChainmailArmor       => chainmailArmor(id)
+      case ItemReference.IronHelmet           => ironHelmet(id)
+      case ItemReference.PlateArmor           => plateArmor(id)
+      case ItemReference.LeatherBoots         => leatherBoots(id)
+      case ItemReference.IronBoots            => ironBoots(id)
+      case ItemReference.LeatherGloves        => leatherGloves(id)
+      case ItemReference.IronGloves           => ironGloves(id)
+      case ItemReference.BasicSword           => basicSword(id)
+      case ItemReference.IronSword            => ironSword(id)
+      case ItemReference.Coin                 => coin(id)
+      case ItemReference.HealingService       => healingService(id)
     }
   }
 
@@ -69,18 +71,25 @@ object Items {
     UsableItem(Self, SingleUse, Heal(40)),
     CanPickUp(),
     Hitbox(),
-    Drawable(Sprites.potionSprite) 
+    Drawable(Sprites.potionSprite)
   )
-  
+
   def fireballScroll(id: String): Entity = Entity(
     id = id,
-    NameComponent("Fireball Scroll", "Unleashes a fireball at target location with radius 2 explosion"),
-    UsableItem(TileInRange(10), SingleUse, GameEffect.CreateProjectile(Fireball)), 
+    NameComponent(
+      "Fireball Scroll",
+      "Unleashes a fireball at target location with radius 2 explosion"
+    ),
+    UsableItem(
+      TileInRange(10),
+      SingleUse,
+      GameEffect.CreateProjectile(Fireball)
+    ),
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.scrollSprite)
   )
-  
+
   def arrow(id: String): Entity = Entity(
     id = id,
     NameComponent("Arrow", "Ammunition for bows and crossbows"),
@@ -89,32 +98,48 @@ object Items {
     Hitbox(),
     Drawable(Sprites.arrowSprite)
   )
-  
+
   def bow(id: String): Entity = Entity(
     id = id,
     NameComponent("Bow", "Ranged weapon that fires arrows at enemies"),
-    UsableItem(EnemyActor(10), ChargeType.Ammo(Arrow), GameEffect.CreateProjectile(ProjectileReference.Arrow)),
+    UsableItem(
+      EnemyActor(10),
+      ChargeType.Ammo(Arrow),
+      GameEffect.CreateProjectile(ProjectileReference.Arrow)
+    ),
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.bowSprite)
   )
-  
+
   def snakeSpit(id: String): Entity = Entity(
     id = id,
     NameComponent("Snake Spit", "Venomous ranged attack"),
-    UsableItem(EnemyActor(4), ChargeType.InfiniteUse, GameEffect.CreateProjectile(ProjectileReference.SnakeSpit)), // Range 4, infinite use
+    UsableItem(
+      EnemyActor(4),
+      ChargeType.InfiniteUse,
+      GameEffect.CreateProjectile(ProjectileReference.SnakeSpit)
+    ), // Range 4, infinite use
     Hitbox(),
-    Drawable(Sprites.projectileSprite) // Reuse projectile sprite since this is not a pickup item
+    Drawable(
+      Sprites.projectileSprite
+    ) // Reuse projectile sprite since this is not a pickup item
   )
 
   def bossBlast(id: String): Entity = Entity(
     id = id,
     NameComponent("Boss Blast", "Devastating ranged energy attack"),
-    UsableItem(EnemyActor(6), ChargeType.InfiniteUse, GameEffect.CreateProjectile(ProjectileReference.BossBlast)), // Range 6, infinite use
+    UsableItem(
+      EnemyActor(6),
+      ChargeType.InfiniteUse,
+      GameEffect.CreateProjectile(ProjectileReference.BossBlast)
+    ), // Range 6, infinite use
     Hitbox(),
-    Drawable(Sprites.projectileSprite) // Reuse projectile sprite since this is not a pickup item
+    Drawable(
+      Sprites.projectileSprite
+    ) // Reuse projectile sprite since this is not a pickup item
   )
-  
+
   def key(id: String, keyColour: KeyColour): Entity = Entity(
     id = id,
     KeyItem(keyColour),
@@ -122,11 +147,11 @@ object Items {
     Hitbox(),
     Drawable(keyColour match {
       case KeyColour.Yellow => Sprites.yellowKeySprite
-      case KeyColour.Blue => Sprites.blueKeySprite
-      case KeyColour.Red => Sprites.redKeySprite
+      case KeyColour.Blue   => Sprites.blueKeySprite
+      case KeyColour.Red    => Sprites.redKeySprite
     })
   )
-  
+
   // Equipment items
   def leatherHelmet(id: String): Entity = Entity(
     id = id,
@@ -136,7 +161,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.leatherHelmetSprite)
   )
-  
+
   def ironHelmet(id: String): Entity = Entity(
     id = id,
     NameComponent("Iron Helmet", "Provides +2 defense when equipped"),
@@ -145,7 +170,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.ironHelmetSprite)
   )
-  
+
   def chainmailArmor(id: String): Entity = Entity(
     id = id,
     NameComponent("Chainmail Armor", "Provides +1 defense when equipped"),
@@ -154,7 +179,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.chainmailArmorSprite)
   )
-  
+
   def plateArmor(id: String): Entity = Entity(
     id = id,
     NameComponent("Plate Armor", "Provides +2 defense when equipped"),
@@ -163,7 +188,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.plateArmorSprite)
   )
-  
+
   // New equipment items
   def leatherBoots(id: String): Entity = Entity(
     id = id,
@@ -173,7 +198,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.leatherBootsSprite)
   )
-  
+
   def ironBoots(id: String): Entity = Entity(
     id = id,
     NameComponent("Iron Boots", "Provides +2 defense when equipped"),
@@ -182,7 +207,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.ironBootsSprite)
   )
-  
+
   def leatherGloves(id: String): Entity = Entity(
     id = id,
     NameComponent("Leather Gloves", "Provides +1 defense when equipped"),
@@ -191,7 +216,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.leatherGlovesSprite)
   )
-  
+
   def ironGloves(id: String): Entity = Entity(
     id = id,
     NameComponent("Iron Gloves", "Provides +2 defense when equipped"),
@@ -200,7 +225,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.ironGlovesSprite)
   )
-  
+
   def basicSword(id: String): Entity = Entity(
     id = id,
     NameComponent("Basic Sword", "Provides +3 damage when equipped"),
@@ -209,7 +234,7 @@ object Items {
     Hitbox(),
     Drawable(Sprites.basicSwordSprite)
   )
-  
+
   def ironSword(id: String): Entity = Entity(
     id = id,
     NameComponent("Iron Sword", "Provides +5 damage when equipped"),
@@ -218,21 +243,41 @@ object Items {
     Hitbox(),
     Drawable(Sprites.ironSwordSprite)
   )
-  
+
   // Generic weapon function for testing
-  def weapon(id: String, damage: Int, damageType: game.system.event.GameSystemEvent.DamageSource): Entity = Entity(
+  def weapon(
+      id: String,
+      damage: Int,
+      damageType: game.system.event.GameSystemEvent.DamageSource
+  ): Entity = Entity(
     id = id,
     CanPickUp(),
     Equippable.weapon(damage, s"Weapon-$damage"),
     Hitbox(),
     Drawable(Sprites.basicSwordSprite)
   )
-  
+
   def coin(id: String): Entity = Entity(
     id = id,
     NameComponent("Coin", "A gold coin"),
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.coinSprite)
+  )
+
+  def chainLightningScroll(id: String): Entity = Entity(
+    id = id,
+    NameComponent(
+      "Chain Lightning Scroll",
+      "Releases a bolt of lightning that bounces to nearby enemies"
+    ),
+    UsableItem(
+      TileInRange(6),
+      SingleUse,
+      GameEffect.ChainLightning(damage = 10, bounces = 3, bounceRange = 5)
+    ),
+    CanPickUp(),
+    Hitbox(),
+    Drawable(Sprites.scrollSprite)
   )
 }
