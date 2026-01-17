@@ -16,6 +16,7 @@ object Enemies {
     case Snake
     case Slime
     case Slimelet
+    case Duck
     case Boss
 
   /** Enemy difficulty values for dungeon depth progression. Used to determine
@@ -27,6 +28,7 @@ object Enemies {
     val RAT = 3
     val SNAKE = 4
     val BOSS = 10
+    val DUCK = 1
 
     def difficultyFor(enemyRef: EnemyReference): Int = enemyRef match {
       case EnemyReference.Slimelet => SLIMELET
@@ -34,6 +36,7 @@ object Enemies {
       case EnemyReference.Rat      => RAT
       case EnemyReference.Snake    => SNAKE
       case EnemyReference.Boss     => BOSS
+      case EnemyReference.Duck     => DUCK
     }
   }
 
@@ -168,6 +171,27 @@ object Enemies {
           DropCoins(50)
         )
       ) // High experience and coin reward
+    )
+  }
+
+  def duck(id: String, position: game.Point): Entity = {
+    Entity(
+      id = id,
+      Movement(position = position),
+      EntityTypeComponent(EntityType.Animal),
+      EnemyTypeComponent(EnemyReference.Duck),
+      Health(5),
+      Initiative(15), // Moves reasonably fast, but slower than player (10)
+      Inventory(Nil),
+      EventMemory(),
+      Drawable(Sprites.duckSprite),
+      Hitbox(),
+      DeathEvents(
+        Seq(
+          SpawnEntity(Entities.EntityReference.Meat),
+          GiveExperience(experienceForLevel(1) / 4)
+        )
+      )
     )
   }
 }

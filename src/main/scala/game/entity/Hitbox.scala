@@ -7,7 +7,15 @@ case class Hitbox(points: Set[Point] = Set(Point(0, 0))) extends Component
 object Hitbox {
   extension (entity: Entity) {
     def collidesWith(points: Set[Point]): Boolean =
-      hitbox.nonEmpty && hitbox.intersect(points).nonEmpty
+      entity.get[Movement] match {
+        case Some(m) =>
+          entity.get[Hitbox] match {
+            case Some(h) =>
+              h.points.exists(p => points.contains(m.position + p))
+            case None => false
+          }
+        case None => false
+      }
 
     def collidesWith(other: Entity): Boolean =
       hitbox.nonEmpty && hitbox.intersect(other.hitbox).nonEmpty
@@ -22,7 +30,8 @@ object Hitbox {
     // Check if another entity is within range of this entity's hitbox
     def isWithinRangeOfHitbox(other: Entity, range: Int): Boolean = {
       other.get[Movement] match {
-        case Some(otherMovement) => otherMovement.position.isWithinRangeOfAny(entity.hitbox, range)
+        case Some(otherMovement) =>
+          otherMovement.position.isWithinRangeOfAny(entity.hitbox, range)
         case None => false
       }
     }

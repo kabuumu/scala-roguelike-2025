@@ -57,6 +57,7 @@ case class GameState(
       SpawnEntitySystem, // Enhanced to handle collision-checked spawning
       SpawnProjectileSystem,
       WorldGenerationSystem,
+      WildAnimalSpawnSystem, // Added dynamic animal spawning
       WaitSystem,
       OpenDoorSystem
     ),
@@ -208,6 +209,22 @@ case class GameState(
           }
         }
         .toSet
+
+  def isBlocked(points: Set[Point], ignoreEntityId: String = ""): Boolean = {
+    if (worldMap.staticMovementBlockingPoints.intersect(points).nonEmpty)
+      return true
+    entities.exists { entity =>
+      entity.id != ignoreEntityId &&
+      entity
+        .get[EntityTypeComponent]
+        .exists(c =>
+          c.entityType == EntityType.Enemy ||
+            c.entityType == EntityType.Player ||
+            c.entityType.isInstanceOf[LockedDoor]
+        ) &&
+      entity.collidesWith(points)
+    }
+  }
 
   lazy val drawableChanges: Seq[Set[(Point, Sprite)]] = {
     import game.entity.Drawable.*

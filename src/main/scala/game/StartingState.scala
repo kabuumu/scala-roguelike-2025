@@ -149,6 +149,9 @@ object StartingState {
   ): GameState = {
     // Generate enemies, items, etc. based on the world map
 
+    // Generate wild animals (Ducks)
+    val wildAnimals = generateWildAnimals(worldMap)
+
     // Generate enemies for ALL dungeon rooms
     val dungeonRoomsWithDepth: Seq[(Point, Int)] = worldMap.dungeons.flatMap {
       dung =>
@@ -229,7 +232,8 @@ object StartingState {
       Hitbox(),
       Experience(),
       Coins(),
-      DeathEvents()
+      DeathEvents(),
+      WildAnimalSpawnTracker()
     )
 
     // Generate items
@@ -326,7 +330,7 @@ object StartingState {
       playerEntityId = playerEntity.id,
       entities = Vector(
         playerEntity
-      ) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTraders ++ villageTraders,
+      ) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTraders ++ villageTraders ++ wildAnimals,
       worldMap = worldMap,
       dungeonFloor = dungeonFloor,
       gameMode = gameMode
@@ -465,6 +469,40 @@ object StartingState {
       }.toMap
 
       (enemies, spitAbilities)
+    }
+  }
+
+  private def generateWildAnimals(worldMap: WorldMap): Seq[Entity] = {
+    val random = new scala.util.Random(worldMap.seed)
+    val numAnimals = 60 // Target number of animals
+
+    val bounds = worldMap.bounds
+    val (minX, maxX, minY, maxY) = bounds.toTileBounds(Dungeon.roomSize)
+
+    // Attempt to place animals
+    (0 until numAnimals).flatMap { i =>
+      // Try multiple times to find a valid spot
+      val attempts = (0 to 10).view.map { _ =>
+        val x = minX + random.nextInt(maxX - minX)
+        val y = minY + random.nextInt(maxY - minY)
+        Point(x, y)
+      }
+
+      attempts
+        .find { p =>
+          worldMap.tiles.get(p) match {
+            case Some(TileType.Grass1) | Some(TileType.Grass2) |
+                Some(TileType.Grass3) | Some(TileType.Dirt) =>
+              // Valid terrain. Avoid obstacles.
+              !worldMap.rocks.contains(p) && !worldMap.water.contains(
+                p
+              ) && !worldMap.walls.contains(p)
+            case _ => false
+          }
+        }
+        .map { pos =>
+          data.Enemies.duck(s"wild-duck-$i", pos)
+        }
     }
   }
 }

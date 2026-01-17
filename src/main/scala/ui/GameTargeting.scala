@@ -18,7 +18,7 @@ object GameTargeting {
   def enemiesWithinRange(gameState: GameState, range: Int): Seq[Entity] = {
     gameState.entities
       .filter { enemyEntity =>
-        enemyEntity.entityType == EntityType.Enemy
+        (enemyEntity.entityType == EntityType.Enemy || enemyEntity.entityType == EntityType.Animal)
         &&
         // Use hitbox-aware range checking for multi-tile entities
         enemyEntity.isWithinRangeOfHitbox(gameState.playerEntity, range)

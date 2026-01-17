@@ -33,6 +33,7 @@ object Sprites {
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)
   val slimeSprite: Sprite = Sprite(29, 8, entityLayer)
   val slimeletSprite: Sprite = Sprite(30, 8, entityLayer)
+  val duckSprite: Sprite = Sprite(25, 7, entityLayer)
   val deadSprite: Sprite = Sprite(0, 15, backgroundLayer)
 
   val bossSpriteTL: Sprite = Sprite(25, 2, entityLayer)
@@ -78,6 +79,8 @@ object Sprites {
     Sprite(32, 7, uiLayer) // using defaultItemSprite
 
   val defaultItemSprite: Sprite = Sprite(37, 13, uiLayer)
+  val meatSprite: Sprite =
+    Sprite(37, 13, uiLayer) // Using default item sprite for now
   val coinSprite: Sprite = Sprite(22, 4, entityLayer)
 
   val stairsSprite: Sprite = Sprite(5, 17, entityLayer)

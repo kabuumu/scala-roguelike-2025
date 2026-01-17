@@ -13,128 +13,266 @@ import ui.InputAction
 import util.Pathfinder
 
 object EnemyAISystem extends GameSystem {
-  
+
   // Helper function to determine if an enemy is a boss (2x2 entity)
   private def isBoss(enemy: Entity): Boolean = {
     enemy.get[Hitbox] match {
-      case Some(hitbox) => hitbox.points.size > 1 // Boss has multiple hitbox points
+      case Some(hitbox) =>
+        hitbox.points.size > 1 // Boss has multiple hitbox points
       case None => false
     }
   }
-  
+
   // Helper function to get entity size for pathfinding
   private def getEntitySize(enemy: Entity): Point = {
     if (isBoss(enemy)) Point(2, 2) else Point(1, 1)
   }
-  
+
   // Boss AI: Switches between ranged and melee based on distance and strategy
-  private def getBossAction(enemy: Entity, target: Entity, gameState: GameState): InputEvent = {
+  private def getBossAction(
+      enemy: Entity,
+      target: Entity,
+      gameState: GameState
+  ): InputEvent = {
     val meleeRange = 1
-    
+
     // Check if boss can attack in melee range
     if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
       // In melee range - attack!
       InputEvent(enemy.id, InputAction.Attack(target))
     } else {
       // Not in melee range - move closer using boss-sized pathfinding
-      Pathfinder.getNextStepWithSize(enemy.position, target.position, gameState, Point(2, 2)) match {
+      Pathfinder.getNextStepWithSize(
+        enemy.position,
+        target.position,
+        gameState,
+        Point(2, 2)
+      ) match {
         case Some(nextStep) =>
           InputEvent(enemy.id, InputAction.Move(nextStep))
         case None =>
           // Pathfinding failed - try simple directional movement as fallback
           // Try all four directions to see which ones work
-          val possibleDirections = Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
+          val possibleDirections =
+            Seq(Direction.Up, Direction.Down, Direction.Left, Direction.Right)
           val targetPosition = target.position
           val bossPosition = enemy.position
-          
+
           // Choose direction that gets us closer to target
-          val bestDirection = if (Math.abs(targetPosition.x - bossPosition.x) > Math.abs(targetPosition.y - bossPosition.y)) {
-            // Move horizontally
-            if (targetPosition.x > bossPosition.x) Direction.Right else Direction.Left
-          } else {
-            // Move vertically
-            if (targetPosition.y > bossPosition.y) Direction.Down else Direction.Up
-          }
-          
+          val bestDirection =
+            if (
+              Math.abs(targetPosition.x - bossPosition.x) > Math.abs(
+                targetPosition.y - bossPosition.y
+              )
+            ) {
+              // Move horizontally
+              if (targetPosition.x > bossPosition.x) Direction.Right
+              else Direction.Left
+            } else {
+              // Move vertically
+              if (targetPosition.y > bossPosition.y) Direction.Down
+              else Direction.Up
+            }
+
           InputEvent(enemy.id, InputAction.Move(bestDirection))
       }
     }
   }
 
-  override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
-    val target = gameState.playerEntity
+  // Flee AI: Moves away from the nearest threat
+  private def getFleeAction(
+      entity: Entity,
+      threats: Seq[Entity],
+      gameState: GameState
+  ): InputEvent = {
+    // Find the nearest threat
+    val entityPos = entity.position
+    val nearestThreat =
+      threats.minByOption(t => t.position.getChebyshevDistance(entityPos))
 
-    // Optimization: Check if there are any ready enemies first
-    // If no enemies are ready to act, we can skip the expensive LOS calculation entirely
-    val anyEnemyReady = gameState.entities.exists(e => e.entityType == EntityType.Enemy && e.isReady)
+    nearestThreat match {
+      case Some(threat) =>
+        // Determine all possible moves (neighbors)
+        val neighbors = entityPos.neighbors
 
-    if (anyEnemyReady) {
-      // Pre-compute player's visible points once for all enemies
-      // This is much faster than computing LOS for each enemy individually
-      val playerVisiblePoints = gameState.getVisiblePointsFor(target)
+        // Filter out blocked moves
+        val validMoves =
+          neighbors.filterNot(gameState.movementBlockingPoints.contains)
 
-      val aiEvents = gameState.entities.collect {
-        case enemy if enemy.entityType == EntityType.Enemy && enemy.isReady =>
+        if (validMoves.nonEmpty) {
+          // Choose the move that maximizes distance to the threat
+          val bestMove =
+            validMoves.maxBy(pos => pos.getChebyshevDistance(threat.position))
 
-          // Optimization: Check if enemy is in player's line of sight instead of computing enemy's LOS
-          // This is equivalent since LOS is symmetric, and we only compute player's LOS once
-          val enemyPosition = enemy.position
-          val enemyIsVisibleToPlayer = playerVisiblePoints.contains(enemyPosition)
-
-          if (enemyIsVisibleToPlayer) {
-            if (isBoss(enemy)) {
-            // Use boss-specific AI
-            getBossAction(enemy, target, gameState)
-          } else {
-            // Use regular enemy AI
-            val rangedAbilities = enemy.usableItems(gameState).filter { item =>
-              item.get[UsableItem] match {
-                case Some(usableItem) => usableItem.targeting match {
-                  case EnemyActor(range) => range > 1 // Ranged abilities have range > 1
-                  case _ => false
-                }
-                case None => false
-              }
-            }
-            
-            // Try ranged attack first if available and target is in range
-            rangedAbilities.headOption match {
-              case Some(rangedAbility) =>
-                val usableItem = rangedAbility.get[UsableItem].get
-                val range = usableItem.targeting match {
-                  case EnemyActor(r) => r
-                  case _ => 1
-                }
-                if (enemy.isWithinRangeOfHitbox(target, range)) {
-                  // Use ranged ability
-                  InputEvent(enemy.id, InputAction.UseItem(rangedAbility.id, usableItem, UseContext(enemy.id, Some(target))))
-                } else {
-                  // Move closer to get in range
-                  Pathfinder.getNextStep(enemy.position, target.position, gameState) match {
-                    case Some(nextStep) =>
-                      InputEvent(enemy.id, InputAction.Move(nextStep))
-                    case None =>
-                      InputEvent(enemy.id, InputAction.Wait)
-                  }
-                }
-              case None =>
-                // No ranged abilities, use melee
-                val meleeRange = 1
-                if (enemy.isWithinRangeOfHitbox(target, meleeRange)) {
-                  InputEvent(enemy.id, InputAction.Attack(target))
-                } else {
-                  Pathfinder.getNextStep(enemy.position, target.position, gameState) match {
-                    case Some(nextStep) =>
-                      InputEvent(enemy.id, InputAction.Move(nextStep))
-                    case None =>
-                      InputEvent(enemy.id, InputAction.Wait)
-                  }
-                }
-            }
+          Direction.fromPoints(entityPos, bestMove) match {
+            case direction => InputEvent(entity.id, InputAction.Move(direction))
           }
         } else {
-          InputEvent(enemy.id, InputAction.Wait)
+          // Trapped! Wait.
+          InputEvent(entity.id, InputAction.Wait)
         }
+      case None =>
+        // No threats? Wander randomly.
+        val neighbors = entity.position.neighbors.filterNot(
+          gameState.movementBlockingPoints.contains
+        )
+        if (neighbors.nonEmpty) {
+          val randomMove = neighbors(scala.util.Random.nextInt(neighbors.size))
+          InputEvent(
+            entity.id,
+            InputAction.Move(Direction.fromPoints(entity.position, randomMove))
+          )
+        } else {
+          InputEvent(entity.id, InputAction.Wait)
+        }
+    }
+  }
+
+  override def update(
+      gameState: GameState,
+      events: Seq[GameSystemEvent]
+  ): (GameState, Seq[GameSystemEvent]) = {
+    val target = gameState.playerEntity
+
+    // Optimization: Check if there are any ready entities first (Enemies or Animals)
+    val anyActorReady = gameState.entities.exists(e =>
+      (e.entityType == EntityType.Enemy || e.entityType == EntityType.Animal) && e.isReady
+    )
+
+    if (anyActorReady) {
+      // Pre-compute player's visible points once for all entities
+      val playerVisiblePoints = gameState.getVisiblePointsFor(target)
+
+      // Optimization: Filter lists once
+      val allEnemies =
+        gameState.entities.filter(_.entityType == EntityType.Enemy)
+      // val allAnimals = gameState.entities.filter(_.entityType == EntityType.Animal) // Not used currently
+
+      val aiEvents = gameState.entities.collect {
+        case entity
+            if (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Animal) && entity.isReady =>
+          if (entity.entityType == EntityType.Animal) {
+            // Animal Behavior (Duck)
+            // Check for visible threats (Player or Enemies)
+            // Simple check: Is the player visible AND close enough?
+            val isPlayerVisible = playerVisiblePoints.contains(
+              entity.position
+            ) && entity.position.getChebyshevDistance(target.position) <= 5
+
+            // Check for nearby enemies (simulating vision range of 5)
+            // Use pre-filtered list
+            val visibleEnemies = allEnemies.filter(e =>
+              e.position.getChebyshevDistance(entity.position) <= 5
+            )
+
+            val threats =
+              if (isPlayerVisible) visibleEnemies :+ target else visibleEnemies
+
+            if (threats.nonEmpty) {
+              getFleeAction(entity, threats, gameState)
+            } else {
+              // Idle / Wander
+              // 20% chance to move randomly if no threat
+              if (scala.util.Random.nextDouble() < 0.2) {
+                val neighbors = entity.position.neighbors.filterNot(
+                  gameState.movementBlockingPoints.contains
+                )
+                if (neighbors.nonEmpty) {
+                  val randomMove =
+                    neighbors(scala.util.Random.nextInt(neighbors.size))
+                  InputEvent(
+                    entity.id,
+                    InputAction.Move(
+                      Direction.fromPoints(entity.position, randomMove)
+                    )
+                  )
+                } else {
+                  InputEvent(entity.id, InputAction.Wait)
+                }
+              } else {
+                InputEvent(entity.id, InputAction.Wait)
+              }
+            }
+          } else {
+            // Existing Enemy Logic
+            // Optimization: Check if enemy is in player's line of sight instead of computing enemy's LOS
+            val enemyPosition = entity.position
+            val enemyIsVisibleToPlayer =
+              playerVisiblePoints.contains(enemyPosition)
+
+            if (enemyIsVisibleToPlayer) {
+              if (isBoss(entity)) {
+                // Use boss-specific AI
+                getBossAction(entity, target, gameState)
+              } else {
+                // Use regular enemy AI
+                val rangedAbilities =
+                  entity.usableItems(gameState).filter { item =>
+                    item.get[UsableItem] match {
+                      case Some(usableItem) =>
+                        usableItem.targeting match {
+                          case EnemyActor(range) =>
+                            range > 1 // Ranged abilities have range > 1
+                          case _ => false
+                        }
+                      case None => false
+                    }
+                  }
+
+                // Try ranged attack first if available and target is in range
+                rangedAbilities.headOption match {
+                  case Some(rangedAbility) =>
+                    val usableItem = rangedAbility.get[UsableItem].get
+                    val range = usableItem.targeting match {
+                      case EnemyActor(r) => r
+                      case _             => 1
+                    }
+                    if (entity.isWithinRangeOfHitbox(target, range)) {
+                      // Use ranged ability
+                      InputEvent(
+                        entity.id,
+                        InputAction.UseItem(
+                          rangedAbility.id,
+                          usableItem,
+                          UseContext(entity.id, Some(target))
+                        )
+                      )
+                    } else {
+                      // Move closer to get in range
+                      Pathfinder.getNextStep(
+                        entity.position,
+                        target.position,
+                        gameState
+                      ) match {
+                        case Some(nextStep) =>
+                          InputEvent(entity.id, InputAction.Move(nextStep))
+                        case None =>
+                          InputEvent(entity.id, InputAction.Wait)
+                      }
+                    }
+                  case None =>
+                    // No ranged abilities, use melee
+                    val meleeRange = 1
+                    if (entity.isWithinRangeOfHitbox(target, meleeRange)) {
+                      InputEvent(entity.id, InputAction.Attack(target))
+                    } else {
+                      Pathfinder.getNextStep(
+                        entity.position,
+                        target.position,
+                        gameState
+                      ) match {
+                        case Some(nextStep) =>
+                          InputEvent(entity.id, InputAction.Move(nextStep))
+                        case None =>
+                          InputEvent(entity.id, InputAction.Wait)
+                      }
+                    }
+                }
+              }
+            } else {
+              InputEvent(entity.id, InputAction.Wait)
+            }
+          }
       }
 
       (gameState, aiEvents)

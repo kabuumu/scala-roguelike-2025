@@ -30,6 +30,7 @@ object Items {
     case BasicSword
     case IronSword
     case Coin
+    case Meat
     case HealingService
 
   extension (itemRef: ItemReference) {
@@ -53,6 +54,7 @@ object Items {
       case ItemReference.BasicSword           => basicSword(id)
       case ItemReference.IronSword            => ironSword(id)
       case ItemReference.Coin                 => coin(id)
+      case ItemReference.Meat                 => meat(id)
       case ItemReference.HealingService       => healingService(id)
     }
   }
@@ -263,6 +265,18 @@ object Items {
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.coinSprite)
+  )
+
+  def meat(id: String): Entity = Entity(
+    id = id,
+    NameComponent(
+      "Meat",
+      "Raw meat from a wild animal. Restores 10 health points when consumed"
+    ),
+    UsableItem(Self, SingleUse, Heal(10)),
+    CanPickUp(),
+    Hitbox(),
+    Drawable(Sprites.meatSprite)
   )
 
   def chainLightningScroll(id: String): Entity = Entity(

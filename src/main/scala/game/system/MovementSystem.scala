@@ -9,17 +9,28 @@ import game.system.event.GameSystemEvent.GameSystemEvent
 import ui.InputAction
 
 object MovementSystem extends GameSystem {
-  override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+  override def update(
+      gameState: GameState,
+      events: Seq[GameSystemEvent]
+  ): (GameState, Seq[GameSystemEvent]) = {
     val updatedGamestate = events.foldLeft(gameState) {
-      case (currentState, GameSystemEvent.InputEvent(entityId, InputAction.Move(direction))) =>
+      case (
+            currentState,
+            GameSystemEvent.InputEvent(entityId, InputAction.Move(direction))
+          ) =>
         currentState.getEntity(entityId) match {
-          case Some(entity) if entity.isReady && (currentState.movementBlockingPoints -- entity.hitbox).intersect(entity.update[Movement](_.move(direction)).hitbox).isEmpty =>
-            currentState
-              .updateEntity(
-                entityId,
-                _.update[Movement](_.move(direction))
-                  .resetInitiative()
-              )
+          case Some(entity) if entity.isReady =>
+            val targetHitbox = entity.update[Movement](_.move(direction)).hitbox
+            if (!currentState.isBlocked(targetHitbox, entityId)) {
+              currentState
+                .updateEntity(
+                  entityId,
+                  _.update[Movement](_.move(direction))
+                    .resetInitiative()
+                )
+            } else {
+              currentState
+            }
           case _ =>
             currentState
         }

@@ -15,6 +15,7 @@ object Entities {
     case Explosion(damage: Int, size: Int)
     case Slimelet
     case Coin
+    case Meat
     case Trader
 
   def explosionEffect(
