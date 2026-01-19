@@ -1,6 +1,12 @@
 package game.system
 
-import game.entity.{Collision, EntityTypeComponent, Health, MarkedForDeath}
+import game.entity.{
+  Collision,
+  EntityType,
+  EntityTypeComponent,
+  Health,
+  MarkedForDeath
+}
 import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget}
 import game.{DeathDetails, GameState}
@@ -40,11 +46,14 @@ object CollisionHandlerSystem extends GameSystem {
               currentGameState.getEntity(collidedEntityId)
             ) match {
               case (Some(collisionComponent), Some(collidingEntity))
-                  if collidingEntity
+                  if (collidingEntity
                     .get[EntityTypeComponent]
-                    .exists(
-                      _.entityType == collisionComponent.target
-                    ) && collidingEntity.isAlive && collidingEntity.id != collisionComponent.creatorId =>
+                    .exists(_.entityType == collisionComponent.target) ||
+                    (collisionComponent.target == EntityType.Enemy && collidingEntity
+                      .get[EntityTypeComponent]
+                      .exists(_.entityType == EntityType.Animal))) &&
+                    collidingEntity.isAlive &&
+                    collidingEntity.id != collisionComponent.creatorId =>
                 // if collision is hitting its target entity type, cause damage
                 // if colliding entity is not persistent, then mark it for death
                 var events = currentEvents :+ GameSystemEvent.DamageEvent(

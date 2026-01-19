@@ -126,7 +126,7 @@ object DeathHandlerSystem extends GameSystem {
                                   targets.filter(t =>
                                     t.position.getChebyshevDistance(
                                       victimPosition
-                                    ) <= range
+                                    ) <= range && t.entityType != EntityType.Player
                                   )
                                 case SpawnStrategy.TargetRandomEnemy(range) =>
                                   targets.filter(t =>
