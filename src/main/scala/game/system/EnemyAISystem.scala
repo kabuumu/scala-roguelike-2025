@@ -97,7 +97,11 @@ object EnemyAISystem extends GameSystem {
 
         // Filter out blocked moves
         val validMoves =
-          neighbors.filterNot(gameState.movementBlockingPoints.contains)
+          neighbors.filterNot(pos =>
+            gameState.worldMap.staticMovementBlockingPoints
+              .contains(pos) || gameState.dynamicMovementBlockingPoints
+              .contains(pos)
+          )
 
         if (validMoves.nonEmpty) {
           // Choose the move that maximizes distance to the threat
@@ -113,8 +117,10 @@ object EnemyAISystem extends GameSystem {
         }
       case None =>
         // No threats? Wander randomly.
-        val neighbors = entity.position.neighbors.filterNot(
-          gameState.movementBlockingPoints.contains
+        val neighbors = entity.position.neighbors.filterNot(pos =>
+          gameState.worldMap.staticMovementBlockingPoints
+            .contains(pos) || gameState.dynamicMovementBlockingPoints
+            .contains(pos)
         )
         if (neighbors.nonEmpty) {
           val randomMove = neighbors(scala.util.Random.nextInt(neighbors.size))
@@ -135,8 +141,10 @@ object EnemyAISystem extends GameSystem {
     val target = gameState.playerEntity
 
     // Optimization: Check if there are any ready entities first (Enemies or Animals)
+    // AND they must be Active
     val anyActorReady = gameState.entities.exists(e =>
-      (e.entityType == EntityType.Enemy || e.entityType == EntityType.Animal) && e.isReady
+      (e.entityType == EntityType.Enemy || e.entityType == EntityType.Animal) && e.isReady && e
+        .has[game.entity.Active]
     )
 
     if (anyActorReady) {
@@ -150,7 +158,8 @@ object EnemyAISystem extends GameSystem {
 
       val aiEvents = gameState.entities.collect {
         case entity
-            if (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Animal) && entity.isReady =>
+            if (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Animal) && entity.isReady && entity
+              .has[game.entity.Active] =>
           if (entity.entityType == EntityType.Animal) {
             // Animal Behavior (Duck)
             // Check for visible threats (Player or Enemies)
@@ -174,8 +183,10 @@ object EnemyAISystem extends GameSystem {
               // Idle / Wander
               // 20% chance to move randomly if no threat
               if (scala.util.Random.nextDouble() < 0.2) {
-                val neighbors = entity.position.neighbors.filterNot(
-                  gameState.movementBlockingPoints.contains
+                val neighbors = entity.position.neighbors.filterNot(pos =>
+                  gameState.worldMap.staticMovementBlockingPoints
+                    .contains(pos) || gameState.dynamicMovementBlockingPoints
+                    .contains(pos)
                 )
                 if (neighbors.nonEmpty) {
                   val randomMove =

@@ -456,6 +456,8 @@ object StartingState {
             case EnemyReference.Boss     =>
               val bossBlastId = s"$enemyId-blast"
               Enemies.boss(enemyId, position, bossBlastId)
+            case _ => // Fallback for any unhandled enemy types (e.g. Duck) that shouldn't appear in dungeon
+              Enemies.slimelet(enemyId, position)
           }
       }
 

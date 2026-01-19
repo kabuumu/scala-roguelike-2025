@@ -42,7 +42,8 @@ object WorldMapGenerator {
       bounds = config.worldConfig.bounds,
       chunks = Map.empty,
       seed = config.worldConfig.seed,
-      processedRegions = Set.empty
+      processedRegions = Set.empty,
+      lastCenterChunk = None
     )
 
     // Apply each mutator in sequence
@@ -132,7 +133,8 @@ case class WorldMap(
     bounds: MapBounds,
     chunks: Map[(Int, Int), Chunk] = Map.empty,
     seed: Long = 0L,
-    processedRegions: Set[(Int, Int)] = Set.empty
+    processedRegions: Set[(Int, Int)] = Set.empty,
+    lastCenterChunk: Option[(Int, Int)] = None
 ) {
   def getTile(point: Point): Option[TileType] = tiles.get(point)
 

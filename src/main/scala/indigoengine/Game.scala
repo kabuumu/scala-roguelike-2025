@@ -185,20 +185,40 @@ object Game extends IndigoSandbox[Unit, GameController] {
     val sightMemory = player.get[SightMemory].toSet.flatMap(_.seenPoints)
 
     // Combine filtering and mapping for tileSprites
-    // Use worldMap.tiles which contains all combined tiles (terrain, dungeons, rivers, paths, etc.)
-    val tilesToRender = model.gameState.worldMap.tiles
-    val tileSprites = tilesToRender.iterator.collect {
-      case (tilePosition, tileType)
-          if sightMemory.contains(
+    // Optimize: Only iterate over visible viewport instead of entire world map
+    val rangeX =
+      (UIConfig.xTiles / 2) + 2 // +2 buffer to ensure no edges visible
+    val rangeY = (UIConfig.yTiles / 2) + 2
+
+    val minX = playerX - rangeX
+    val maxX = playerX + rangeX
+    val minY = playerY - rangeY
+    val maxY = playerY + rangeY
+
+    val tileSprites = (for {
+      x <- minX to maxX
+      y <- minY to maxY
+    } yield {
+      val tilePosition = game.Point(x, y)
+      model.gameState.worldMap.getTile(tilePosition).map { tileType =>
+        if (
+          sightMemory.contains(
             tilePosition
-          ) || UIConfig.ignoreLineOfSight =>
-        val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
-        if (visiblePoints.contains(tilePosition)) tileSprite
-        else
-          tileSprite
-            .asInstanceOf[Graphic[Material.Bitmap]]
-            .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
-    }.toSeq
+          ) || UIConfig.ignoreLineOfSight
+        ) {
+          val tileSprite = spriteSheet.fromTile(tilePosition, tileType)
+          if (visiblePoints.contains(tilePosition)) Some(tileSprite)
+          else
+            Some(
+              tileSprite
+                .asInstanceOf[Graphic[Material.Bitmap]]
+                .modifyMaterial(_.toImageEffects.withTint(RGBA.SlateGray))
+            )
+        } else {
+          None
+        }
+      }
+    }).flatten.flatten.toSeq
 
     // Filter and map entities in one pass
     val entitySprites: Batch[SceneNode] = model.gameState.entities

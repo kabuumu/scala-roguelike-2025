@@ -5,15 +5,26 @@ import game.entity.Hitbox.*
 import game.entity.*
 import game.entity.EntityType.entityType
 import game.entity.Movement.position
-import game.system.event.GameSystemEvent.{CollisionEvent, CollisionTarget, GameSystemEvent}
+import game.system.event.GameSystemEvent.{
+  CollisionEvent,
+  CollisionTarget,
+  GameSystemEvent
+}
 
 object CollisionCheckSystem extends GameSystem {
-  override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+  override def update(
+      gameState: GameState,
+      events: Seq[GameSystemEvent]
+  ): (GameState, Seq[GameSystemEvent]) = {
     // Only check collisions for entities that are not marked for death
-    val collidableEntities = gameState.entities.filter(_.has[Hitbox]).filter(!_.has[MarkedForDeath])
-    
+    // Only check collisions for entities that are not marked for death AND are active (near player)
+    val collidableEntities = gameState.entities
+      .filter(_.has[Hitbox])
+      .filter(!_.has[MarkedForDeath])
+      .filter(_.has[Active])
+
     val collisionEvents = for {
-      //TODO - consolidate collision systems in the future
+      // TODO - consolidate collision systems in the future
       entity <- collidableEntities
       otherEntity <- collidableEntities
       if entity.id != otherEntity.id && entity.collidesWith(otherEntity)
@@ -21,7 +32,7 @@ object CollisionCheckSystem extends GameSystem {
       entityId = entity.id,
       collidedWith = CollisionTarget.Entity(otherEntity.id)
     )
-    
+
     val wallCollisionEvents = for {
       entity <- collidableEntities
       if entity.collidesWith(gameState.worldMap.walls)

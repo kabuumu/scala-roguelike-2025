@@ -9,6 +9,10 @@ object ChunkManager {
   /** Updates the world map to ensure chunks around the player are loaded. Also
     * triggers structure generation for visited regions.
     */
+  /** Updates the world map to ensure chunks around the player are loaded. Also
+    * unloads chunks that are too far away. Triggers structure generation for
+    * visited regions.
+    */
   def updateChunks(
       playerPosition: Point,
       worldMap: WorldMap,
@@ -18,13 +22,30 @@ object ChunkManager {
     // Determine which chunks need to be loaded
     val centerChunkCoords = Chunk.toChunkCoords(playerPosition)
 
+    // Optimization: If we are still in the same chunk as last update, DO NOTHING.
+    // This avoids all set allocations and map filtering 99% of frames.
+    if (worldMap.lastCenterChunk.contains(centerChunkCoords)) {
+      return worldMap
+    }
+
     val requiredChunks = (for {
       dx <- -ChunkLoadingRadius to ChunkLoadingRadius
       dy <- -ChunkLoadingRadius to ChunkLoadingRadius
     } yield (centerChunkCoords._1 + dx, centerChunkCoords._2 + dy)).toSet
 
-    // Determine relevant regions for these chunks
-    // Use a Set to avoid duplicate processing
+    // 1. Identify chunks to UNLOAD (active chunks that are not effectively required)
+    // We add a small buffer preventing rapid load/unload at boundary
+    val unloadRadius = ChunkLoadingRadius + 2
+    val chunksToKeep = worldMap.chunks.filter { case (coords, _) =>
+      val dx = Math.abs(coords._1 - centerChunkCoords._1)
+      val dy = Math.abs(coords._2 - centerChunkCoords._2)
+      dx <= unloadRadius && dy <= unloadRadius
+    }
+
+    // 2. Identify NEW chunks
+    val missingChunks = requiredChunks.filterNot(worldMap.chunks.contains)
+
+    // 3. Identify NEW REGIONS
     val relevantRegions = requiredChunks.map { case (cx, cy) =>
       val worldX = cx * Chunk.size
       val worldY = cy * Chunk.size
@@ -34,16 +55,23 @@ object ChunkManager {
         Math.floor(worldY.toDouble / GlobalFeaturePlanner.RegionSizeTiles).toInt
       (rX, rY)
     }
-
-    // Generate structures for NEW relevant regions
-    var worldMapWithStructures = worldMap
-
-    // Filter out regions we've already processed
     val newRegions =
       relevantRegions.filterNot(worldMap.processedRegions.contains)
 
-    if (newRegions.nonEmpty) {
+    // Optimization: If no changes needed, return map but UPDATE lastCenterChunk
+    if (
+      chunksToKeep.size == worldMap.chunks.size && missingChunks.isEmpty && newRegions.isEmpty
+    ) {
+      return worldMap.copy(lastCenterChunk = Some(centerChunkCoords))
+    }
 
+    // Calculate new active chunks by removing unloaded ones
+    val activeChunksMap = chunksToKeep
+
+    // 4. Generate structures for NEW relevant regions
+    var worldMapWithStructures = worldMap.copy(chunks = activeChunksMap)
+
+    if (newRegions.nonEmpty) {
       newRegions.foreach { case (rX, rY) =>
         worldMapWithStructures = generateStructuresForRegion(
           rX,
@@ -60,31 +88,89 @@ object ChunkManager {
       )
     }
 
-    val missingChunks =
-      requiredChunks.filterNot(worldMapWithStructures.chunks.contains)
-
-    if (missingChunks.isEmpty) {
-      worldMapWithStructures
+    val newChunksMap: Map[(Int, Int), Chunk] = if (missingChunks.isEmpty) {
+      Map.empty
     } else {
-      // Generate new chunks
-      val newChunksData = missingChunks.map { chunkCoords =>
+      missingChunks.map { chunkCoords =>
         val chunk = generateChunk(chunkCoords, config, seed)
-        (chunkCoords, chunk)
+        chunkCoords -> chunk
+      }.toMap
+    }
+
+    // 5. Re-assemble final map
+
+    // Refined Flow:
+    // 1. `activeChunks` (Kept chunks).
+    // 2. `freshChunks` (New generated chunks).
+    // 3. `freshChunks` -> merge ALL existing global structure tiles (to restore structure parts in reloaded chunks).
+    // 4. `activeChunks` -> merge NEW structure tiles (if a new dungeon spawned nearby).
+
+    // Helper to merge tiles into chunks
+    def mergeTilesIntoChunks(
+        tiles: Map[Point, TileType],
+        chunks: Map[(Int, Int), Chunk]
+    ): Map[(Int, Int), Chunk] = {
+      tiles.foldLeft(chunks) { case (acc, (point, tile)) =>
+        val chunkCoords = Chunk.toChunkCoords(point)
+        if (acc.contains(chunkCoords)) {
+          val chunk = acc(chunkCoords)
+          acc.updated(chunkCoords, chunk.mergeTiles(Map(point -> tile)))
+        } else {
+          acc // Ignore tiles for chunks not currently managed (shouldn't happen for local structures)
+        }
       }
+    }
 
-      val newChunks = newChunksData.map(d => d._1 -> d._2).toMap
-      val newTiles = newChunksData.flatMap(_._2.tiles).toMap
+    val freshChunksWithOverlay =
+      freshChunksOverlay(newChunksMap, worldMapWithStructures)
 
-      val existingTiles = worldMapWithStructures.tiles
+    var finalChunksMap = activeChunksMap ++ freshChunksWithOverlay
 
-      // Don't overwrite existing tiles (structures)
-      val filteredNewTiles =
-        newTiles.filterNot(p => existingTiles.contains(p._1))
+    // Now apply NEW structures to ALL (overlap check included)
+    // Actually `worldMapWithStructures` has the updated lists.
+    // If we just apply `newDungeons` and `newVillages` to `finalChunksMap`, we catch everything.
+    // New chunks already possess "Old" structures from `freshChunksOverlay`.
+    // Active chunks might need "New" structures.
 
-      worldMapWithStructures.copy(
-        chunks = worldMapWithStructures.chunks ++ newChunks,
-        tiles = existingTiles ++ filteredNewTiles
-      )
+    // Let's identify the NEW structures added since `worldMap`.
+    val newDungeons = worldMapWithStructures.dungeons.diff(worldMap.dungeons)
+    val newVillages = worldMapWithStructures.villages.diff(worldMap.villages)
+
+    val newStructureTiles =
+      newDungeons.flatMap(_.tiles).toMap ++ newVillages.flatMap(_.tiles).toMap
+
+    if (newStructureTiles.nonEmpty) {
+      finalChunksMap = mergeTilesIntoChunks(newStructureTiles, finalChunksMap)
+    }
+
+    // Final Tile Map assembly
+    val allTiles = finalChunksMap.values.flatMap(_.tiles).toMap
+
+    worldMapWithStructures.copy(
+      chunks = finalChunksMap,
+      tiles = allTiles,
+      lastCenterChunk = Some(centerChunkCoords)
+    )
+  }
+
+  private def freshChunksOverlay(
+      newChunks: Map[(Int, Int), Chunk],
+      worldMap: WorldMap
+  ): Map[(Int, Int), Chunk] = {
+    if (newChunks.isEmpty) {
+      return Map.empty
+    }
+
+    val structureTiles = worldMap.dungeons
+      .flatMap(_.tiles)
+      .toMap ++ worldMap.villages.flatMap(_.tiles).toMap
+
+    newChunks.map { case (coords, chunk) =>
+      val changes = structureTiles.filter { case (p, _) =>
+        Chunk.toChunkCoords(p) == coords
+      }
+      if (changes.nonEmpty) coords -> chunk.mergeTiles(changes)
+      else coords -> chunk
     }
   }
 

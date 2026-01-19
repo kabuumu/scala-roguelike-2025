@@ -7,6 +7,10 @@ case class Chunk(
     tiles: Map[Point, TileType]
 ) {
   def getTile(point: Point): Option[TileType] = tiles.get(point)
+
+  def mergeTiles(newTiles: Map[Point, TileType]): Chunk = {
+    copy(tiles = tiles ++ newTiles)
+  }
 }
 
 object Chunk {

@@ -59,8 +59,15 @@ class ChunkManagerTests extends AnyFunSuite {
       ChunkManager.updateChunks(playerPos, worldMap, config, seed)
 
     assert(
-      updatedMap.tiles.size > initialTileCount,
-      "Tiles should be added to WorldMap"
+      updatedMap.tiles.nonEmpty,
+      "Tiles should be present in WorldMap"
+    )
+
+    // With culling, we expect the tile count to reflect the loaded chunks (radius 5 -> ~121 chunks * 256 tiles = ~30k tiles)
+    // The initial map was huge (1M tiles), so we expect size to DECREASE
+    assert(
+      updatedMap.tiles.size < initialTileCount,
+      "Tiles should be culled to only loaded chunks"
     )
 
     // Check if new tiles are in the chunks
