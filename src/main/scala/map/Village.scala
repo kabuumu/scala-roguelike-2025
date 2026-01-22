@@ -73,8 +73,8 @@ object Village {
   def generateVillage(centerLocation: Point, seed: Long): Village = {
     val random = new Random(seed)
 
-    // Determine number of buildings (3-5)
-    val numBuildings = 3 + random.nextInt(3) // 3, 4, or 5
+    // Determine number of buildings (4-5) - Increased to ensure at least 1 Generic building (Elder's house)
+    val numBuildings = 4 + random.nextInt(2) // 4 or 5
 
     // Generate buildings in a cluster pattern
     val buildingTypes = random.shuffle(

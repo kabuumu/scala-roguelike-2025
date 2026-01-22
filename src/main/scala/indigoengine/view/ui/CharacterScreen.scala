@@ -16,6 +16,7 @@ import game.entity.Health.currentHealth
 import game.entity.Health.maxHealth
 import game.status.StatusEffect
 import game.status.StatusEffect.statusEffects
+import game.quest.*
 
 object CharacterScreen {
 
@@ -102,6 +103,50 @@ object CharacterScreen {
       }
     }
 
+    // Quests List
+    val questsTitleY =
+      perksListY + (if (perks.isEmpty) spriteScale
+                    else
+                      Math
+                        .max(1, perks.length) * (spriteScale * 2)) + spriteScale
+    val questsTitle = UIUtils.text("Quests:", leftColX, questsTitleY)
+
+    val questsListY = questsTitleY + spriteScale
+    val activeQuests = model.gameState.quests.flatMap { case (id, status) =>
+      if (status == QuestStatus.Active || status == QuestStatus.Completed) {
+        QuestRepository.get(id).map(q => (q, status))
+      } else {
+        None
+      }
+    }
+
+    val questNodes = if (activeQuests.isEmpty) {
+      Seq(
+        UIUtils
+          .text("None", leftColX, questsListY)
+          .asInstanceOf[Text[Material.Bitmap]]
+          .modifyMaterial(_.toImageEffects.withAlpha(0.5))
+      )
+    } else {
+      activeQuests.toSeq.zipWithIndex.flatMap { case ((quest, status), index) =>
+        val y = questsListY + (index * (spriteScale * 2))
+        val statusText =
+          if (status == QuestStatus.Completed) " (Completed)" else ""
+        val color =
+          if (status == QuestStatus.Completed) RGBA.Green else RGBA.White
+        Seq(
+          UIUtils
+            .text(s"- ${quest.title}$statusText", leftColX, y)
+            .asInstanceOf[Text[Material.Bitmap]]
+            .modifyMaterial(_.toImageEffects.withTint(color)),
+          UIUtils
+            .text(quest.description, leftColX + spriteScale, y + spriteScale)
+            .asInstanceOf[Text[Material.Bitmap]]
+            .modifyMaterial(_.toImageEffects.withAlpha(0.7))
+        )
+      }
+    }
+
     val hintText = UIUtils.text(
       "C/Esc: Close",
       uiXOffset,
@@ -115,7 +160,9 @@ object CharacterScreen {
       levelText,
       xpText,
       perksTitle,
+      questsTitle,
       hintText
-    ) ++ perkNodes.toBatch
+    ) ++ perkNodes.toBatch ++ questNodes.toBatch
+
   }
 }

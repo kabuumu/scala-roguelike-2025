@@ -32,8 +32,36 @@ object Items {
     case Coin
     case Meat
     case HealingService
+    case GoldenStatue
 
   extension (itemRef: ItemReference) {
+
+    def name: String = itemRef match {
+      case ItemReference.HealingPotion        => "Healing Potion"
+      case ItemReference.FireballScroll       => "Fireball Scroll"
+      case ItemReference.ChainLightningScroll => "Chain Lightning Scroll"
+      case ItemReference.Arrow                => "Arrow"
+      case ItemReference.Bow                  => "Bow"
+      case ItemReference.YellowKey            =>
+        "Yellow Key" // Assuming standard key naming or just "Key" handled in entity creator? Checking createEntity... key creator uses KeyColour.
+      case ItemReference.BlueKey        => "Blue Key"
+      case ItemReference.RedKey         => "Red Key"
+      case ItemReference.LeatherHelmet  => "Leather Helmet"
+      case ItemReference.ChainmailArmor => "Chainmail Armor"
+      case ItemReference.IronHelmet     => "Iron Helmet"
+      case ItemReference.PlateArmor     => "Plate Armor"
+      case ItemReference.LeatherBoots   => "Leather Boots"
+      case ItemReference.IronBoots      => "Iron Boots"
+      case ItemReference.LeatherGloves  => "Leather Gloves"
+      case ItemReference.IronGloves     => "Iron Gloves"
+      case ItemReference.BasicSword     => "Basic Sword"
+      case ItemReference.IronSword      => "Iron Sword"
+      case ItemReference.Coin           => "Coin"
+      case ItemReference.Meat           => "Meat"
+      case ItemReference.HealingService => "Healing Service"
+      case ItemReference.GoldenStatue   => "Golden Statue"
+    }
+
     def createEntity(id: String): Entity = itemRef match {
       case ItemReference.HealingPotion        => healingPotion(id)
       case ItemReference.FireballScroll       => fireballScroll(id)
@@ -56,12 +84,17 @@ object Items {
       case ItemReference.Coin                 => coin(id)
       case ItemReference.Meat                 => meat(id)
       case ItemReference.HealingService       => healingService(id)
+      case ItemReference.GoldenStatue         => goldenStatue(id)
     }
+
   }
 
   def healingService(id: String): Entity = Entity(
     id = id,
-    NameComponent("Healing Service", "Fully restores your health immediately"),
+    NameComponent(
+      ItemReference.HealingService.name,
+      "Fully restores your health immediately"
+    ),
     UsableItem(Self, SingleUse, Heal(100)),
     Hitbox(),
     Drawable(Sprites.potionSprite) // Reuse potion sprite
@@ -69,7 +102,10 @@ object Items {
 
   def healingPotion(id: String): Entity = Entity(
     id = id,
-    NameComponent("Healing Potion", "Restores 40 health points when consumed"),
+    NameComponent(
+      ItemReference.HealingPotion.name,
+      "Restores 40 health points when consumed"
+    ),
     UsableItem(Self, SingleUse, Heal(40)),
     CanPickUp(),
     Hitbox(),
@@ -79,7 +115,7 @@ object Items {
   def fireballScroll(id: String): Entity = Entity(
     id = id,
     NameComponent(
-      "Fireball Scroll",
+      ItemReference.FireballScroll.name,
       "Unleashes a fireball at target location with radius 2 explosion"
     ),
     UsableItem(
@@ -94,7 +130,10 @@ object Items {
 
   def arrow(id: String): Entity = Entity(
     id = id,
-    NameComponent("Arrow", "Ammunition for bows and crossbows"),
+    NameComponent(
+      ItemReference.Arrow.name,
+      "Ammunition for bows and crossbows"
+    ),
     Ammo(AmmoType.Arrow),
     CanPickUp(),
     Hitbox(),
@@ -103,7 +142,10 @@ object Items {
 
   def bow(id: String): Entity = Entity(
     id = id,
-    NameComponent("Bow", "Ranged weapon that fires arrows at enemies"),
+    NameComponent(
+      ItemReference.Bow.name,
+      "Ranged weapon that fires arrows at enemies"
+    ),
     UsableItem(
       EnemyActor(10),
       ChargeType.Ammo(Arrow),
@@ -157,7 +199,10 @@ object Items {
   // Equipment items
   def leatherHelmet(id: String): Entity = Entity(
     id = id,
-    NameComponent("Leather Helmet", "Provides +1 defense when equipped"),
+    NameComponent(
+      ItemReference.LeatherHelmet.name,
+      "Provides +1 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Helmet, 1, "Leather Helmet"),
     Hitbox(),
@@ -166,7 +211,10 @@ object Items {
 
   def ironHelmet(id: String): Entity = Entity(
     id = id,
-    NameComponent("Iron Helmet", "Provides +2 defense when equipped"),
+    NameComponent(
+      ItemReference.IronHelmet.name,
+      "Provides +2 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Helmet, 2, "Iron Helmet"),
     Hitbox(),
@@ -175,7 +223,10 @@ object Items {
 
   def chainmailArmor(id: String): Entity = Entity(
     id = id,
-    NameComponent("Chainmail Armor", "Provides +1 defense when equipped"),
+    NameComponent(
+      ItemReference.ChainmailArmor.name,
+      "Provides +1 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Armor, 1, "Chainmail Armor"),
     Hitbox(),
@@ -184,7 +235,10 @@ object Items {
 
   def plateArmor(id: String): Entity = Entity(
     id = id,
-    NameComponent("Plate Armor", "Provides +2 defense when equipped"),
+    NameComponent(
+      ItemReference.PlateArmor.name,
+      "Provides +2 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Armor, 2, "Plate Armor"),
     Hitbox(),
@@ -194,7 +248,10 @@ object Items {
   // New equipment items
   def leatherBoots(id: String): Entity = Entity(
     id = id,
-    NameComponent("Leather Boots", "Provides +1 defense when equipped"),
+    NameComponent(
+      ItemReference.LeatherBoots.name,
+      "Provides +1 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Boots, 1, "Leather Boots"),
     Hitbox(),
@@ -203,7 +260,10 @@ object Items {
 
   def ironBoots(id: String): Entity = Entity(
     id = id,
-    NameComponent("Iron Boots", "Provides +2 defense when equipped"),
+    NameComponent(
+      ItemReference.IronBoots.name,
+      "Provides +2 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Boots, 2, "Iron Boots"),
     Hitbox(),
@@ -212,7 +272,10 @@ object Items {
 
   def leatherGloves(id: String): Entity = Entity(
     id = id,
-    NameComponent("Leather Gloves", "Provides +1 defense when equipped"),
+    NameComponent(
+      ItemReference.LeatherGloves.name,
+      "Provides +1 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Gloves, 1, "Leather Gloves"),
     Hitbox(),
@@ -221,7 +284,10 @@ object Items {
 
   def ironGloves(id: String): Entity = Entity(
     id = id,
-    NameComponent("Iron Gloves", "Provides +2 defense when equipped"),
+    NameComponent(
+      ItemReference.IronGloves.name,
+      "Provides +2 defense when equipped"
+    ),
     CanPickUp(),
     Equippable.armor(EquipmentSlot.Gloves, 2, "Iron Gloves"),
     Hitbox(),
@@ -230,7 +296,10 @@ object Items {
 
   def basicSword(id: String): Entity = Entity(
     id = id,
-    NameComponent("Basic Sword", "Provides +3 damage when equipped"),
+    NameComponent(
+      ItemReference.BasicSword.name,
+      "Provides +3 damage when equipped"
+    ),
     CanPickUp(),
     Equippable.weapon(3, "Basic Sword"),
     Hitbox(),
@@ -239,7 +308,10 @@ object Items {
 
   def ironSword(id: String): Entity = Entity(
     id = id,
-    NameComponent("Iron Sword", "Provides +5 damage when equipped"),
+    NameComponent(
+      ItemReference.IronSword.name,
+      "Provides +5 damage when equipped"
+    ),
     CanPickUp(),
     Equippable.weapon(5, "Iron Sword"),
     Hitbox(),
@@ -261,7 +333,7 @@ object Items {
 
   def coin(id: String): Entity = Entity(
     id = id,
-    NameComponent("Coin", "A gold coin"),
+    NameComponent(ItemReference.Coin.name, "A gold coin"),
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.coinSprite)
@@ -270,7 +342,7 @@ object Items {
   def meat(id: String): Entity = Entity(
     id = id,
     NameComponent(
-      "Meat",
+      ItemReference.Meat.name,
       "Raw meat from a wild animal. Restores 10 health points when consumed"
     ),
     UsableItem(Self, SingleUse, Heal(10)),
@@ -282,7 +354,7 @@ object Items {
   def chainLightningScroll(id: String): Entity = Entity(
     id = id,
     NameComponent(
-      "Chain Lightning Scroll",
+      ItemReference.ChainLightningScroll.name,
       "Releases a bolt of lightning that bounces to nearby enemies"
     ),
     UsableItem(
@@ -293,5 +365,16 @@ object Items {
     CanPickUp(),
     Hitbox(),
     Drawable(Sprites.scrollSprite)
+  )
+
+  def goldenStatue(id: String): Entity = Entity(
+    id = id,
+    NameComponent(
+      ItemReference.GoldenStatue.name,
+      "A heavy golden statue. It looks valuable."
+    ),
+    CanPickUp(),
+    Hitbox(),
+    Drawable(Sprites.coinSprite) // Placeholder sprite
   )
 }

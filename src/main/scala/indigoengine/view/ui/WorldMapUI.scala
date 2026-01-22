@@ -6,6 +6,7 @@ import indigoengine.view.UIUtils
 import _root_.ui.UIConfig.*
 import _root_.ui.GameController
 import map.TileType
+import game.entity.Inventory.inventoryItems
 
 object WorldMapUI {
 
@@ -135,6 +136,92 @@ object WorldMapUI {
       seenPoints
     )
 
+    // Render Quest Markers
+    // We want to show markers for active quests that involve retrieving an item
+    val questMarkers = model.gameState.quests.collect {
+      case (questId, game.quest.QuestStatus.Active) =>
+        game.quest.QuestRepository
+          .get(questId)
+          .flatMap { quest =>
+            quest.goal match {
+              case game.quest.RetrieveItemGoal(itemRef, amount) =>
+                val hasItem = game.system.QuestSystem.hasQuestItem(
+                  model.gameState,
+                  itemRef,
+                  amount
+                )
+
+                if (hasItem) {
+                  // Player has item, point to Elder
+                  model.gameState.entities
+                    .find(e =>
+                      e.get[game.entity.NameComponent].exists(_.name == "Elder")
+                    )
+                    .flatMap(_.get[game.entity.Movement])
+                    .map(_.position)
+                    .map(npcPos =>
+                      (npcPos, RGBA.Green)
+                    ) // Green marker for return
+                } else {
+                  // Player needs item, point to item
+                  model.gameState.worldMap.allItems
+                    .collectFirst {
+                      case (pos, ref) if ref == itemRef => pos
+                    }
+                    .map { roomPos =>
+                      // Convert Room Coordinates to Tile Coordinates (Center of the room)
+                      val tileX =
+                        roomPos.x * map.Dungeon.roomSize + map.Dungeon.roomSize / 2
+                      val tileY =
+                        roomPos.y * map.Dungeon.roomSize + map.Dungeon.roomSize / 2
+                      game.Point(tileX, tileY)
+                    }
+                    .map(itemPos =>
+                      (itemPos, RGBA.Cyan)
+                    ) // Cyan marker for target
+                }
+
+              case _ => None
+            }
+          }
+          .map { case (targetPos, color) =>
+            // Calculate screen position
+            val pixelSize = 2
+            val centerX = canvasWidth / 2
+            val centerY = canvasHeight / 2
+            val offsetX = centerX - (playerPos.x * pixelSize)
+            val offsetY = centerY - (playerPos.y * pixelSize)
+
+            val targetScreenX = offsetX + (targetPos.x * pixelSize)
+            val targetScreenY = offsetY + (targetPos.y * pixelSize)
+
+            // Clamp to screen edges (with margin) to ensure it acts as a pointer if off-screen
+            val margin = 10
+            val clampedX = Math.max(
+              margin,
+              Math.min(canvasWidth - margin, targetScreenX)
+            )
+            val clampedY = Math.max(
+              margin,
+              Math.min(canvasHeight - margin, targetScreenY)
+            )
+
+            // Render a flashy marker
+            val markerSize = 8
+
+            Shape.Box(
+              Rectangle(
+                Point(
+                  clampedX - markerSize / 2,
+                  clampedY - markerSize / 2
+                ),
+                Size(markerSize, markerSize)
+              ),
+              Fill.Color(color)
+            )
+          }
+    }.flatten
+
     // Add "Press any key to exit" message
     val exitMessage = UIUtils.text(
       "Press any key to exit",
@@ -142,6 +229,8 @@ object WorldMapUI {
       canvasHeight - spriteScale * 2
     )
 
-    mapView |+| SceneUpdateFragment(Layer.Content(exitMessage))
+    mapView |+| SceneUpdateFragment(
+      Layer.Content(Batch.fromSeq(questMarkers.toSeq) ++ Batch(exitMessage))
+    )
   }
 }

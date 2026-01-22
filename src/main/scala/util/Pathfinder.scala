@@ -7,19 +7,27 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Pathfinder {
-  /**
-   * A* pathfinding algorithm for entities of arbitrary size.
-   * Note: Uses mutable collections for performance. Not thread-safe.
-   * This is acceptable as the game runs in a single-threaded environment.
-   */
-  def findPathWithSize(start: Point, end: Point, blockers: Set[Point], entitySize: Point): Seq[Point] = {
-    def heuristic(a: Point, b: Point): Int = Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+
+  /** A* pathfinding algorithm for entities of arbitrary size. Note: Uses
+    * mutable collections for performance. Not thread-safe. This is acceptable
+    * as the game runs in a single-threaded environment.
+    */
+  def findPathWithSize(
+      start: Point,
+      end: Point,
+      blockers: Set[Point],
+      entitySize: Point,
+      ignoredPoints: Set[Point] = Set.empty
+  ): Seq[Point] = {
+    def heuristic(a: Point, b: Point): Int =
+      Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
     case class Node(point: Point, g: Int, f: Int, parent: Option[Node])
 
     implicit val nodeOrdering: Ordering[Node] = Ordering.by(-_.f)
 
-    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, end), None))
+    val openSet =
+      mutable.PriorityQueue(Node(start, 0, heuristic(start, end), None))
     val closedSet = mutable.HashSet.empty[Point]
 
     // Check if all tiles for an entity of given size at position are clear
@@ -30,11 +38,11 @@ object Pathfinder {
         dx <- 0 until entitySize.x
         dy <- 0 until entitySize.y
       } yield Point(position.x + dx, position.y + dy)
-      
-      // All tiles must be clear (not in blockers set) for position to be valid
+
+      // All tiles must be clear (not in blockers set OR in ignored set) for position to be valid
       // Using Set for O(1) lookup instead of Seq with O(n) lookup
       entityTiles.forall { tile =>
-        !blockers.contains(tile)
+        !blockers.contains(tile) || ignoredPoints.contains(tile)
       }
     }
 
@@ -42,13 +50,16 @@ object Pathfinder {
       @tailrec
       def loop(n: Node, acc: Seq[Point]): Seq[Point] = n.parent match {
         case Some(parent) => loop(parent, n.point +: acc)
-        case None => n.point +: acc
+        case None         => n.point +: acc
       }
       loop(node, Seq.empty)
     }
 
     @tailrec
-    def search(openSet: mutable.PriorityQueue[Node], closedSet: mutable.HashSet[Point]): Seq[Point] = {
+    def search(
+        openSet: mutable.PriorityQueue[Node],
+        closedSet: mutable.HashSet[Point]
+    ): Seq[Point] = {
       if (openSet.isEmpty) {
         Seq.empty
       } else {
@@ -58,14 +69,23 @@ object Pathfinder {
         } else {
           closedSet += current.point
           val neighbors = current.point.neighbors
-            .filter(isPositionValid) // Use the new validation that checks entity size
+            .filter(
+              isPositionValid
+            ) // Use the new validation that checks entity size
             .filterNot(closedSet.contains)
 
           neighbors.foreach { neighbor =>
             val tentativeG = current.g + 1
             val existingNode = openSet.find(_.point == neighbor)
             if (existingNode.isEmpty || tentativeG < existingNode.get.g) {
-              openSet.enqueue(Node(neighbor, tentativeG, tentativeG + heuristic(neighbor, end), Some(current)))
+              openSet.enqueue(
+                Node(
+                  neighbor,
+                  tentativeG,
+                  tentativeG + heuristic(neighbor, end),
+                  Some(current)
+                )
+              )
             }
           }
 
@@ -77,40 +97,56 @@ object Pathfinder {
     search(openSet, closedSet)
   }
 
-  def getNextStep(startPosition: Point, targetPosition: Point, gameState: GameState): Option[Direction] = {
-    getNextStepWithSize(startPosition, targetPosition, gameState, entitySize = Point(1, 1))
+  def getNextStep(
+      startPosition: Point,
+      targetPosition: Point,
+      gameState: GameState
+  ): Option[Direction] = {
+    getNextStepWithSize(
+      startPosition,
+      targetPosition,
+      gameState,
+      entitySize = Point(1, 1)
+    )
   }
 
-  def getNextStepWithSize(startPosition: Point, targetPosition: Point, gameState: GameState, entitySize: Point): Option[Direction] = {
+  def getNextStepWithSize(
+      startPosition: Point,
+      targetPosition: Point,
+      gameState: GameState,
+      entitySize: Point
+  ): Option[Direction] = {
     import game.entity.Hitbox.*
-    
+
     // Find the moving entity (the one at startPosition) to exclude its tiles from blockers
     val movingEntity = gameState.entities.find(_.position == startPosition)
-    
+
     // Find the target entity to get its hitbox
     val targetEntity = gameState.entities.find(_.position == targetPosition)
-    
+
     // Calculate all tiles that would be occupied by the moving entity at the start position
     val movingEntityTiles = movingEntity match {
       case Some(entity) => entity.hitbox
-      case None => Set(startPosition)
+      case None         => Set(startPosition)
     }
-    
+
     // Calculate all tiles occupied by the target entity
     val targetTiles = targetEntity match {
       case Some(entity) => entity.hitbox
-      case None => Set(targetPosition)
+      case None         => Set(targetPosition)
     }
-    
-    // Remove both moving entity tiles and target entity tiles from blocking points
+
+    // We do NOT modify originalBlockers anymore.
+    // Instead we pass the points to ignore to findPathWithSize
     val originalBlockers = gameState.movementBlockingPoints
-    val adjustedBlockers = originalBlockers -- movingEntityTiles -- targetTiles
-    
+    val ignoredPoints = movingEntityTiles ++ targetTiles
+
     val path = Pathfinder.findPathWithSize(
       startPosition,
       targetPosition,
-      adjustedBlockers,
-      entitySize
+      originalBlockers,
+      entitySize,
+      ignoredPoints
     )
 
     path.drop(1).headOption match {
@@ -123,4 +159,5 @@ object Pathfinder {
       case None =>
         None
     }
-  }}
+  }
+}

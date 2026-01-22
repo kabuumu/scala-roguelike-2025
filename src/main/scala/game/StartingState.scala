@@ -45,16 +45,45 @@ object StartingState {
       )
     )
 
+    // Guaranteed Quest Item Placement:
+    // We must ensure the 'GoldenStatue' exists in the first dungeon for the quest to be completable.
+    // The random treasure generator might not pick it.
     // Player starts at (0,0) in Adventure mode (Village)
-    // We want to spawn in the first village we find
-    val playerSpawnPoint = worldMap.villages.headOption match {
+    // We want to spawn in the central village (closest to 0,0)
+    val spawnOrigin = Point(0, 0)
+    val playerSpawnPoint = worldMap.villages.sortBy { v =>
+      val dx = v.centerLocation.x - spawnOrigin.x
+      val dy = v.centerLocation.y - spawnOrigin.y
+      dx * dx + dy * dy
+    }.headOption match {
       case Some(village) => village.centerLocation
-      case None          => Point(0, 0)
+      case None          => spawnOrigin
+    }
+
+    // Guaranteed Quest Item Placement:
+    // We must ensure the 'GoldenStatue' exists in the NEAREST dungeon to the PLAYER.
+    // The random treasure generator might not pick it.
+    val closestDungeonWithIndex = worldMap.dungeons.zipWithIndex.minByOption {
+      case (d, _) =>
+        // Distance to actual spawn point, not (0,0)
+        val dx = d.startPoint.x - playerSpawnPoint.x
+        val dy = d.startPoint.y - playerSpawnPoint.y
+        dx * dx + dy * dy
+    }
+
+    val worldMapWithQuestItem = closestDungeonWithIndex match {
+      case Some((dungeon, idx)) =>
+        val questItemRoom =
+          dungeon.endpoint.getOrElse(dungeon.startPoint) // Place in Boss Room
+        val updatedDungeon =
+          dungeon.addItem(questItemRoom, data.Items.ItemReference.GoldenStatue)
+        worldMap.copy(dungeons = worldMap.dungeons.updated(idx, updatedDungeon))
+      case None => worldMap
     }
 
     createGameState(
-      worldMap,
-      findSafeSpawn(playerSpawnPoint, worldMap),
+      worldMapWithQuestItem,
+      findSafeSpawn(playerSpawnPoint, worldMapWithQuestItem),
       GameMode.Adventure,
       dungeonFloor = 0
     )
@@ -298,9 +327,37 @@ object StartingState {
         }
     }
 
-    // Village Traders (Only if not spawning in a building that contains spawn point - simplified here)
+    // Village Traders and NPCs
     val villageTraders: Seq[Entity] = worldMap.villages.zipWithIndex.flatMap {
       case (village, villageIdx) =>
+        // Check if this is the village where the player spawned
+        // We use a simple distance check or bounds check
+        val isSpawnVillage = {
+          // Approximate bounds check for village area
+          val dx = Math.abs(village.centerLocation.x - playerSpawnPoint.x)
+          val dy = Math.abs(village.centerLocation.y - playerSpawnPoint.y)
+          dx < 30 && dy < 30 // Village radius is roughly 30-40 tiles
+        }
+
+        // Identify a suitable building for the Quest Giver data
+        // Must be Generic AND not containing the player spawn
+        val questGiverBuildingIdx = if (isSpawnVillage) {
+          village.buildings.zipWithIndex
+            .collectFirst {
+              case (b, idx) if b.buildingType == map.BuildingType.Generic =>
+                val (minBounds, maxBounds) = b.bounds
+                val containsPlayerSpawn =
+                  playerSpawnPoint.x >= minBounds.x && playerSpawnPoint.x <= maxBounds.x &&
+                    playerSpawnPoint.y >= minBounds.y && playerSpawnPoint.y <= maxBounds.y
+
+                if (!containsPlayerSpawn) Some(idx) else None
+            }
+            .flatten
+            .getOrElse(-1)
+        } else {
+          -1
+        }
+
         village.buildings.zipWithIndex.flatMap { case (building, buildingIdx) =>
           val (minBounds, maxBounds) = building.bounds
           val containsPlayerSpawn =
@@ -317,7 +374,11 @@ object StartingState {
               case map.BuildingType.EquipmentShop =>
                 data.Entities.equipmentMerchant(id, position)
               case map.BuildingType.Generic =>
-                data.Entities.villager(id, position)
+                // Place Quest Giver if this is the identified building
+                if (buildingIdx == questGiverBuildingIdx)
+                  data.Entities.questGiver(id, position)
+                else
+                  data.Entities.villager(id, position)
             }
             Some(entity)
           } else {

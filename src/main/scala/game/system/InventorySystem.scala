@@ -14,6 +14,10 @@ import game.system.event.GameSystemEvent.{CollisionTarget, GameSystemEvent}
 import game.{GameState}
 
 object InventorySystem extends GameSystem {
+
+  import game.quest.{QuestRepository, QuestStatus, RetrieveItemGoal}
+  import game.entity.{Conversation, ConversationChoice, ConversationAction}
+
   override def update(
       gameState: GameState,
       events: Seq[GameSystemEvent]
@@ -34,7 +38,8 @@ object InventorySystem extends GameSystem {
               if itemEntity.canPickUp =>
             // Check if item is a coin
             val isCoin = itemEntity.get[NameComponent].exists(_.name == "Coin")
-            if (isCoin) {
+
+            val stateAfterPickup = if (isCoin) {
               // Coins are added to the Coins component and removed from the world
               currentState
                 .updateEntity(entityId, entity.addCoins(1))
@@ -48,6 +53,10 @@ object InventorySystem extends GameSystem {
                   _.removeComponent[Movement]
                 ) // Remove position so it's not rendered
             }
+
+            // Note: Quest updates are now handled by QuestSystem
+            stateAfterPickup
+
           case (
                 Some(entity @ EntityType(Player)),
                 Some(EntityType(Key(keyColour)))

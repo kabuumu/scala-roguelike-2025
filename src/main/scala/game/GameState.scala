@@ -7,6 +7,7 @@ import game.system.event.GameSystemEvent.GameSystemEvent
 import map.Dungeon
 import util.LineOfSight
 import game.entity.Hitbox.*
+import game.quest.*
 
 import scala.annotation.tailrec
 
@@ -16,7 +17,8 @@ case class GameState(
     messages: Seq[String] = Nil,
     worldMap: map.WorldMap,
     dungeonFloor: Int = 1,
-    gameMode: GameMode = GameMode.Adventure
+    gameMode: GameMode = GameMode.Adventure,
+    quests: Map[String, QuestStatus] = Map.empty
 ) {
 
   // Index for O(1) entity lookup by ID
@@ -77,6 +79,7 @@ case class GameState(
     Seq(
       EquipmentSystem,
       InitiativeSystem,
+      QuestSystem,
       LevelUpSystem,
       SightMemorySystem,
       EventMemorySystem
@@ -174,6 +177,28 @@ case class GameState(
   def addMessage(message: String): GameState = {
     copy(messages = message +: messages)
   }
+
+  def acceptQuest(questId: String): GameState = {
+    if (!quests.contains(questId)) {
+      copy(quests = quests + (questId -> QuestStatus.Active))
+    } else {
+      this
+    }
+  }
+
+  def completeQuest(questId: String): GameState = {
+    if (quests.get(questId).contains(QuestStatus.Active)) {
+      copy(quests = quests + (questId -> QuestStatus.Completed))
+    } else {
+      this
+    }
+  }
+
+  def isQuestActive(questId: String): Boolean =
+    quests.get(questId).contains(QuestStatus.Active)
+
+  def isQuestCompleted(questId: String): Boolean =
+    quests.get(questId).contains(QuestStatus.Completed)
 
   lazy val lineOfSightBlockingPoints: Set[Point] =
     worldMap.staticLineOfSightBlockingPoints ++

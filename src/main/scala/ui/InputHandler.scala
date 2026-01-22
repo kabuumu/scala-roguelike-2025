@@ -139,9 +139,13 @@ object InputHandler {
                           }
                         } else {
                           // Generic NPC or Fallback
-                          // Currently ignoring Conversation component choices to enforce standard "Leave" only
-                          // But we could pull them if we wanted custom menus for specific NPCs
-                          Seq(("Leave", CloseAction))
+                          // Use Conversation component choices if available
+                          entity
+                            .get[Conversation]
+                            .map { conversation =>
+                              conversation.choices.map(c => (c.text, c.action))
+                            }
+                            .getOrElse(Seq(("Leave", CloseAction)))
                         }
 
                       // Determine message
@@ -407,6 +411,18 @@ object InputHandler {
             case TradeAction =>
               // Legacy support or fallback
               (interactionState, None)
+
+            // Pass through quest actions to ConversationSystem
+            case q: AcceptQuest =>
+              (
+                UIState.Move,
+                Some(InputAction.ConversationAction(interactionState.entity, q))
+              )
+            case q: CompleteQuest =>
+              (
+                UIState.Move,
+                Some(InputAction.ConversationAction(interactionState.entity, q))
+              )
           }
         case Input.Cancel => (UIState.Move, None)
         case _            => (uiState, None)

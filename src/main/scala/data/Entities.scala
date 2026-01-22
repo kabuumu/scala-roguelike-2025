@@ -173,4 +173,21 @@ object Entities {
       Portrait(Sprite(1, 0, 0))
     )
   }
+  def questGiver(id: String, position: game.Point): Entity = {
+    Entity(
+      id = id,
+      Movement(position = position),
+      NameComponent("Elder", "The village elder, looks worried."),
+      Conversation(
+        "Help! Thieves have stolen our sacred Golden Statue. Can you retrieve it from the cave to the east?",
+        Seq(
+          ConversationChoice("I will find it.", AcceptQuest("retrieve_statue")),
+          ConversationChoice("Maybe later.", CloseAction)
+        )
+      ),
+      Hitbox(),
+      Drawable(Sprites.playerSprite),
+      Portrait(Sprite(1, 0, 0))
+    )
+  }
 }
