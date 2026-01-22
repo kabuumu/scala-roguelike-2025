@@ -62,29 +62,32 @@ object Items {
       case ItemReference.GoldenStatue   => "Golden Statue"
     }
 
-    def createEntity(id: String): Entity = itemRef match {
-      case ItemReference.HealingPotion        => healingPotion(id)
-      case ItemReference.FireballScroll       => fireballScroll(id)
-      case ItemReference.ChainLightningScroll => chainLightningScroll(id)
-      case ItemReference.Arrow                => arrow(id)
-      case ItemReference.Bow                  => bow(id)
-      case ItemReference.YellowKey            => key(id, KeyColour.Yellow)
-      case ItemReference.BlueKey              => key(id, KeyColour.Blue)
-      case ItemReference.RedKey               => key(id, KeyColour.Red)
-      case ItemReference.LeatherHelmet        => leatherHelmet(id)
-      case ItemReference.ChainmailArmor       => chainmailArmor(id)
-      case ItemReference.IronHelmet           => ironHelmet(id)
-      case ItemReference.PlateArmor           => plateArmor(id)
-      case ItemReference.LeatherBoots         => leatherBoots(id)
-      case ItemReference.IronBoots            => ironBoots(id)
-      case ItemReference.LeatherGloves        => leatherGloves(id)
-      case ItemReference.IronGloves           => ironGloves(id)
-      case ItemReference.BasicSword           => basicSword(id)
-      case ItemReference.IronSword            => ironSword(id)
-      case ItemReference.Coin                 => coin(id)
-      case ItemReference.Meat                 => meat(id)
-      case ItemReference.HealingService       => healingService(id)
-      case ItemReference.GoldenStatue         => goldenStatue(id)
+    def createEntity(id: String): Entity = {
+      val entity = itemRef match {
+        case ItemReference.HealingPotion        => healingPotion(id)
+        case ItemReference.FireballScroll       => fireballScroll(id)
+        case ItemReference.ChainLightningScroll => chainLightningScroll(id)
+        case ItemReference.Arrow                => arrow(id)
+        case ItemReference.Bow                  => bow(id)
+        case ItemReference.YellowKey            => key(id, KeyColour.Yellow)
+        case ItemReference.BlueKey              => key(id, KeyColour.Blue)
+        case ItemReference.RedKey               => key(id, KeyColour.Red)
+        case ItemReference.LeatherHelmet        => leatherHelmet(id)
+        case ItemReference.ChainmailArmor       => chainmailArmor(id)
+        case ItemReference.IronHelmet           => ironHelmet(id)
+        case ItemReference.PlateArmor           => plateArmor(id)
+        case ItemReference.LeatherBoots         => leatherBoots(id)
+        case ItemReference.IronBoots            => ironBoots(id)
+        case ItemReference.LeatherGloves        => leatherGloves(id)
+        case ItemReference.IronGloves           => ironGloves(id)
+        case ItemReference.BasicSword           => basicSword(id)
+        case ItemReference.IronSword            => ironSword(id)
+        case ItemReference.Coin                 => coin(id)
+        case ItemReference.Meat                 => meat(id)
+        case ItemReference.HealingService       => healingService(id)
+        case ItemReference.GoldenStatue         => goldenStatue(id)
+      }
+      entity.addComponent(ItemComponent(itemRef))
     }
 
   }

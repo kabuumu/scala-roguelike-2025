@@ -76,13 +76,16 @@ object ConversationSystem extends GameSystem {
                 case RetrieveItemGoal(itemRef, amount) =>
                   if (QuestSystem.hasQuestItem(gameState, itemRef, amount)) {
                     // Update entity dialogue immediately
+                    val readyText = quest.readyToCompleteText.getOrElse(
+                      "You found it! Please, give it to me."
+                    )
                     val updatedNpc = entity.update[game.entity.Conversation] {
                       _ =>
                         game.entity.Conversation(
-                          "You found it! Please, give it to me.",
+                          readyText,
                           Seq(
                             game.entity.ConversationChoice(
-                              "Give Statue",
+                              "Give Item",
                               CompleteQuest(questId)
                             ),
                             game.entity.ConversationChoice(
@@ -140,10 +143,13 @@ object ConversationSystem extends GameSystem {
                     }
 
                     // 3. Update NPC Dialogue (Post-Quest)
+                    val completionText = quest.completionText.getOrElse(
+                      "Thank you so much! Our village is safe."
+                    )
                     val updatedNpc = entity.update[game.entity.Conversation] {
                       _ =>
                         game.entity.Conversation(
-                          "Thank you so much! Our village is safe.",
+                          completionText,
                           Seq(
                             game.entity
                               .ConversationChoice("Goodbye", CloseAction)

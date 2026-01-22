@@ -17,7 +17,10 @@ case class Quest(
     description: String,
     goal: QuestGoal,
     status: QuestStatus = QuestStatus.Active,
-    rewards: QuestRewards
+    rewards: QuestRewards,
+    giverName: Option[String] = None,
+    readyToCompleteText: Option[String] = None,
+    completionText: Option[String] = None
 )
 
 object QuestRepository {
@@ -27,7 +30,10 @@ object QuestRepository {
       title = "The Missing Statue",
       description = "Retrieve the Golden Statue from the nearby cave.",
       goal = RetrieveItemGoal(ItemReference.GoldenStatue, 1),
-      rewards = QuestRewards(experience = 500, coins = 100)
+      rewards = QuestRewards(experience = 500, coins = 100),
+      giverName = Some("Elder"),
+      readyToCompleteText = Some("You found it! Please, give it to me."),
+      completionText = Some("Thank you so much! Our village is safe.")
     )
   )
 

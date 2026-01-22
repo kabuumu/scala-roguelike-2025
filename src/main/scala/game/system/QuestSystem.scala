@@ -42,54 +42,56 @@ object QuestSystem extends GameSystem {
                 case RetrieveItemGoal(itemRef, amount) =>
                   if (hasQuestItem(currentState, itemRef, amount)) {
                     // Goal Satisfied: Check if NPC needs updating
-                    // Hardcoded for "retrieve_statue" -> "Elder" for now, as per previous logic
-                    if (quest.id == "retrieve_statue") {
-                      currentState.entities.find(e =>
-                        e.get[NameComponent].exists(_.name == "Elder")
-                      ) match {
-                        case Some(elder) =>
-                          // Check if dialogue is ALREADY updated to avoid spamming messages
-                          val currentDialogue = elder.get[Conversation]
-                          val needsUpdate = currentDialogue.exists(
-                            _.text != "You found it! Please, give it to me."
-                          )
+                    quest.giverName match {
+                      case Some(giverName) =>
+                        currentState.entities.find(e =>
+                          e.get[NameComponent].exists(_.name == giverName)
+                        ) match {
+                          case Some(npc) =>
+                            val readyText = quest.readyToCompleteText.getOrElse(
+                              "You found it! Please, give it to me."
+                            )
 
-                          if (needsUpdate) {
-                            val updatedElder = elder.update[Conversation] { _ =>
-                              Conversation(
-                                "You found it! Please, give it to me.",
-                                Seq(
-                                  ConversationChoice(
-                                    "Give Statue",
-                                    ConversationAction.CompleteQuest(quest.id)
-                                  ),
-                                  ConversationChoice(
-                                    "Not yet",
-                                    ConversationAction.CloseAction
+                            // Check if dialogue is ALREADY updated to avoid spamming messages
+                            val currentDialogue = npc.get[Conversation]
+                            val needsUpdate = currentDialogue.exists(
+                              _.text != readyText
+                            )
+
+                            if (needsUpdate) {
+                              val updatedNpc = npc.update[Conversation] { _ =>
+                                Conversation(
+                                  readyText,
+                                  Seq(
+                                    ConversationChoice(
+                                      "Give Item", // Generic text, could also be in Quest if needed
+                                      ConversationAction.CompleteQuest(quest.id)
+                                    ),
+                                    ConversationChoice(
+                                      "Not yet",
+                                      ConversationAction.CloseAction
+                                    )
                                   )
                                 )
-                              )
-                            }
+                              }
 
-                            (
-                              currentState
-                                .updateEntity(elder.id, updatedElder)
-                                .addMessage(
-                                  "Quest Updated: Return to the Elder!"
-                                ),
-                              currentEvents
-                            )
-                          } else {
-                            (currentState, currentEvents)
-                          }
-                        case None => (currentState, currentEvents)
-                      }
-                    } else {
-                      (currentState, currentEvents)
+                              (
+                                currentState
+                                  .updateEntity(npc.id, updatedNpc)
+                                  .addMessage(
+                                    "Quest Updated: Return to the quest giver!"
+                                  ),
+                                currentEvents
+                              )
+                            } else {
+                              (currentState, currentEvents)
+                            }
+                          case None => (currentState, currentEvents)
+                        }
+                      case None => (currentState, currentEvents)
                     }
                   } else {
                     // Goal NOT Satisfied (maybe dropped item?):
-                    // Ideally revert dialogue? Leaving as-is for now to match scope.
                     (currentState, currentEvents)
                   }
 

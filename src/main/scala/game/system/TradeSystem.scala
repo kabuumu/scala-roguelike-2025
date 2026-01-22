@@ -165,9 +165,10 @@ object TradeSystem extends GameSystem {
       itemEntity: Entity
   ): (GameState, Seq[GameSystemEvent]) = {
     import game.entity.Equipment.{equipment, unequipItem}
+    import game.entity.ItemComponent
 
-    // Find the corresponding ItemReference for this item
-    val itemRefOpt = findItemReference(itemEntity)
+    // Find the corresponding ItemReference using the ItemComponent
+    val itemRefOpt = itemEntity.get[ItemComponent].map(_.ref)
 
     (trader.get[Trader], itemRefOpt) match {
       case (Some(traderComponent), Some(itemRef)) =>
@@ -222,15 +223,6 @@ object TradeSystem extends GameSystem {
           case None => (gameState, Seq.empty) // Trader doesn't buy this item
         }
       case _ => (gameState, Seq.empty)
-    }
-  }
-
-  private def findItemReference(itemEntity: Entity): Option[ItemReference] = {
-    itemEntity.get[NameComponent].flatMap { nameComp =>
-      ItemReference.values.find { ref =>
-        val refEntity = ref.createEntity("temp")
-        refEntity.get[NameComponent].map(_.name) == Some(nameComp.name)
-      }
     }
   }
 }
