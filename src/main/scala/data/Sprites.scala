@@ -28,6 +28,7 @@ object Sprites {
   val grass2Sprite: Sprite = Sprite(6, 0, floorLayer)
   val grass3Sprite: Sprite = Sprite(7, 0, floorLayer)
   val dirtSprite: Sprite = Sprite(3, 0, floorLayer)
+  val farmlandSprite: Sprite = Sprite(12, 6, floorLayer)
 
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)

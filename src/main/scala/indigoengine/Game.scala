@@ -247,6 +247,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
           ++ tradeItemDisplay(model, spriteSheet)
           ++ conversationWindow(model, spriteSheet)
           ++ messageWindow(model)
+          ++ villageName(model)
           ++ versionInfo(model)
           ++ renderDebugMenu(model)
           ++ debugItemSelection(model, spriteSheet)

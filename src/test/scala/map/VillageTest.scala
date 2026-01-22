@@ -9,8 +9,8 @@ class VillageTest extends AnyFunSuite {
     val village = Village.generateVillage(Point(0, 0), seed = 12345)
 
     assert(
-      village.buildings.length >= 3 && village.buildings.length <= 5,
-      s"Village should have 3-5 buildings, but has ${village.buildings.length}"
+      village.buildings.length >= 2 && village.buildings.length <= 5,
+      s"Village should have 2-5 buildings, but has ${village.buildings.length}"
     )
   }
 
@@ -24,14 +24,33 @@ class VillageTest extends AnyFunSuite {
     )
   }
 
+  test("Village has at least one farmland") {
+    val village = Village.generateVillage(Point(0, 0), seed = 67890)
+
+    val farmCount =
+      village.buildings.count(_.buildingType == BuildingType.Farmland)
+    assert(
+      farmCount >= 1,
+      s"Village should have at least 1 farm, but has $farmCount"
+    )
+  }
+
   test("Village has varied building types") {
     val village = Village.generateVillage(Point(0, 0), seed = 12345)
 
     val types = village.buildings.map(_.buildingType).toSet
     // Should have at least Generic and one other type in a typical village of 3-5 buildings
     assert(
-      types.size >= 2,
-      s"Village should have variety in building types, but found only $types"
+      types.contains(BuildingType.Farmland),
+      "Village should contain Farmland"
+    )
+    assert(
+      types.contains(BuildingType.Generic),
+      "Village should contain Generic building (Quest Giver)"
+    )
+    assert(
+      village.buildings.length >= 2 && village.buildings.length <= 5,
+      s"Village should have 2-5 buildings, but has ${village.buildings.length}"
     )
   }
 
@@ -202,8 +221,44 @@ class VillageTest extends AnyFunSuite {
       )
       val tile = village.tiles(pathPoint)
       assert(
-        tile == TileType.Dirt || tile == TileType.Floor,
-        s"Path point $pathPoint should be Dirt or Floor, but was $tile"
+        tile == TileType.Dirt || tile == TileType.Floor || tile == TileType.Farmland,
+        s"Path point $pathPoint should be Dirt, Floor or Farmland, but was $tile"
+      )
+    }
+  }
+
+  test("Village has a valid name") {
+    val village = Village.generateVillage(Point(0, 0), seed = 12345)
+
+    assert(village.name.nonEmpty, "Village name should not be empty")
+    // Name should be PrefixSuffix
+    // We can't easily check internal lists, but we can check it's a string
+    println(s"Generated Village Name: ${village.name}")
+  }
+
+  test("Village bounds encompass all buildings") {
+    val village = Village.generateVillage(Point(0, 0), seed = 67890)
+
+    val bounds = village.bounds
+    val margin = 5
+
+    // Check that all building tiles are within bounds
+    village.buildings.foreach { b =>
+      assert(
+        b.location.x >= bounds.minRoomX,
+        s"Building at ${b.location} should be within minX ${bounds.minRoomX}"
+      )
+      assert(
+        b.location.x + b.width <= bounds.maxRoomX,
+        s"Building at ${b.location} width ${b.width} should be within maxX ${bounds.maxRoomX}"
+      )
+      assert(
+        b.location.y >= bounds.minRoomY,
+        s"Building at ${b.location} should be within minY ${bounds.minRoomY}"
+      )
+      assert(
+        b.location.y + b.height <= bounds.maxRoomY,
+        s"Building at ${b.location} height ${b.height} should be within maxY ${bounds.maxRoomY}"
       )
     }
   }

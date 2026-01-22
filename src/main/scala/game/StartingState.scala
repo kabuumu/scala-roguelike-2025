@@ -379,6 +379,9 @@ object StartingState {
                   data.Entities.questGiver(id, position)
                 else
                   data.Entities.villager(id, position)
+              case map.BuildingType.Farmland =>
+                // No specific NPC for farmland yet, maybe a generic villager or just empty
+                data.Entities.villager(id, position)
             }
             Some(entity)
           } else {

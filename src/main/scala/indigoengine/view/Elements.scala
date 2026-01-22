@@ -31,6 +31,8 @@ object Elements {
     HUD.versionInfo(model)
   def messageWindow(model: GameController): Batch[SceneNode] =
     HUD.messageWindow(model)
+  def villageName(model: GameController): Batch[SceneNode] =
+    HUD.villageName(model)
 
   def mainMenu(model: GameController): Batch[SceneNode] = Menus.mainMenu(model)
   def renderDebugMenu(model: GameController): Batch[SceneNode] =

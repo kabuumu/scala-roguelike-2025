@@ -70,6 +70,8 @@ object WorldMapUI {
         RGBA.fromHexString("#399a4d") // Lighter green for grass
       case TileType.Dirt =>
         RGBA.fromHexString("#b28b78") // Brown for dirt/paths
+      case TileType.Farmland =>
+        RGBA.fromHexString("#5d4037") // Darker brown for farmland
     }
 
     // Group tiles by color to create batches
@@ -229,8 +231,50 @@ object WorldMapUI {
       canvasHeight - spriteScale * 2
     )
 
+    // Render Village Names
+    val villageNames = model.gameState.worldMap.villages.map { village =>
+      // Center the text on the village center
+      // Calculate screen position
+      val pixelSize = 2
+      val centerX = canvasWidth / 2
+      val centerY = canvasHeight / 2
+      val offsetX = centerX - (playerPos.x * pixelSize)
+      val offsetY = centerY - (playerPos.y * pixelSize)
+
+      val villageScreenX = offsetX + (village.centerLocation.x * pixelSize)
+      val villageScreenY = offsetY + (village.centerLocation.y * pixelSize)
+
+      // Only show if on screen (with some margin)
+      val margin = 50
+      val isVisible =
+        villageScreenX >= -margin &&
+          villageScreenX <= canvasWidth + margin &&
+          villageScreenY >= -margin &&
+          villageScreenY <= canvasHeight + margin
+
+      // Check if village has been discovered (center is seen)
+      val isDiscovered = seenPoints.contains(village.centerLocation)
+
+      if (isVisible && isDiscovered) {
+        // Use a simple text node, centered above the village
+        UIUtils
+          .text(
+            village.name,
+            villageScreenX - (village.name.length * 4), // Approximate centering
+            villageScreenY - 14
+          )
+        // Removed validation scale to make it readable (default 1.0)
+      } else {
+        Group.empty
+      }
+    }
+
     mapView |+| SceneUpdateFragment(
-      Layer.Content(Batch.fromSeq(questMarkers.toSeq) ++ Batch(exitMessage))
+      Layer.Content(
+        Batch.fromSeq(questMarkers.toSeq) ++
+          Batch.fromSeq(villageNames) ++
+          Batch(exitMessage)
+      )
     )
   }
 }

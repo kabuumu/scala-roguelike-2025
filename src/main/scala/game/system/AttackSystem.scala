@@ -11,9 +11,18 @@ import game.system.event.GameSystemEvent.{GameSystemEvent}
 import ui.InputAction
 
 object AttackSystem extends GameSystem {
-  override def update(gameState: GameState, events: Seq[GameSystemEvent]): (GameState, Seq[GameSystemEvent]) = {
+  override def update(
+      gameState: GameState,
+      events: Seq[GameSystemEvent]
+  ): (GameState, Seq[GameSystemEvent]) = {
     events.foldLeft((gameState, Nil)) {
-      case ((currentState, currentEvents), GameSystemEvent.InputEvent(attackingEntityId, InputAction.Attack(target))) =>
+      case (
+            (currentState, currentEvents),
+            GameSystemEvent.InputEvent(
+              attackingEntityId,
+              InputAction.Attack(target)
+            )
+          ) =>
         val optAttackingEntity = currentState.getEntity(attackingEntityId)
         optAttackingEntity match {
           case Some(attackingEntity) =>
@@ -21,14 +30,23 @@ object AttackSystem extends GameSystem {
             val baseDamage = 1
             val weaponDamageBonus = attackingEntity.getTotalDamageBonus
             val totalDamage = baseDamage + weaponDamageBonus
-            
-            val newGameState = currentState.updateEntity(attackingEntityId, _.resetInitiative())
-            (newGameState, currentEvents :+ GameSystemEvent.DamageEvent(target.id, attackingEntityId, totalDamage, GameSystemEvent.DamageSource.Melee))
+
+            val newGameState =
+              currentState.updateEntity(attackingEntityId, _.resetInitiative())
+            (
+              newGameState,
+              currentEvents :+ GameSystemEvent.DamageEvent(
+                target.id,
+                attackingEntityId,
+                totalDamage,
+                GameSystemEvent.DamageSource.Melee
+              )
+            )
           case None =>
             // Attacking entity doesn't exist - shouldn't happen, but handle gracefully
             (currentState, currentEvents)
         }
-        
+
       case (currentState, _) =>
         currentState
     }

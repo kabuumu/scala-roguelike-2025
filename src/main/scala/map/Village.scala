@@ -13,11 +13,13 @@ import scala.util.Random
 case class Village(
     buildings: Seq[Building],
     centerLocation: Point,
-    paths: Set[Point]
+    paths: Set[Point],
+    name: String,
+    bounds: MapBounds
 ) {
   require(
-    buildings.length >= 3 && buildings.length <= 5,
-    "Village must have 3-5 buildings"
+    buildings.length >= 2 && buildings.length <= 5,
+    "Village must have 2-5 buildings"
   )
 
   /** All tiles from all buildings in the village. When buildings overlap, walls
@@ -73,17 +75,35 @@ object Village {
   def generateVillage(centerLocation: Point, seed: Long): Village = {
     val random = new Random(seed)
 
-    // Determine number of buildings (4-5) - Increased to ensure at least 1 Generic building (Elder's house)
-    val numBuildings = 4 + random.nextInt(2) // 4 or 5
+    // Determine number of buildings (2-5)
+    val numBuildings = 2 + random.nextInt(4)
 
-    // Generate buildings in a cluster pattern
-    val buildingTypes = random.shuffle(
-      Seq(
-        BuildingType.Healer,
-        BuildingType.PotionShop,
-        BuildingType.EquipmentShop
-      ) ++ Seq.fill(numBuildings - 3)(BuildingType.Generic)
+    // Mandatory building types that MUST be present in every village
+    val mandatoryTypes = Seq(
+      BuildingType.Farmland,
+      BuildingType.Generic // Quest Giver
     )
+
+    // Optional types to fill remaining slots
+    val optionalTypes = Seq(
+      BuildingType.Healer,
+      BuildingType.PotionShop,
+      BuildingType.EquipmentShop
+    )
+
+    // Fill the list with mandatory types first, then random optional ones
+    val selectedTypes = if (numBuildings == 2) {
+      mandatoryTypes
+    } else {
+      val remainingCount = numBuildings - mandatoryTypes.length
+      val randomOptionals = Seq.fill(remainingCount)(
+        optionalTypes(random.nextInt(optionalTypes.length))
+      )
+      mandatoryTypes ++ randomOptionals
+    }
+
+    // Shuffle the final list to randomize positions
+    val buildingTypes = random.shuffle(selectedTypes)
 
     val buildings = (0 until numBuildings).map { i =>
       // Create varied building sizes (5-10 internal space)
@@ -119,7 +139,85 @@ object Village {
     // Generate paths connecting buildings to a central point
     val paths = generateVillagePaths(buildings, centerLocation)
 
-    Village(buildings, centerLocation, paths)
+    // Generate a name
+    val name = NameGenerator.generateName(random)
+
+    // Calculate bounds (min/max of buildings + margin)
+    val margin = 5
+    val minX = buildings.map(_.location.x).min - margin
+    val maxX = buildings.map(b => b.location.x + b.width).max + margin
+    val minY = buildings.map(_.location.y).min - margin
+    val maxY = buildings.map(b => b.location.y + b.height).max + margin
+
+    // Convert to Room coordinates for MapBounds (approximate since MapBounds is usually rooms)
+    // Actually MapBounds is just x/y/w/h concept, but often used for chunks/rooms.
+    // Here we can use it for tile bounds if that's what's expected, strictly speaking MapBounds usually implies rooms?
+    // Let's check usages. MapBounds in findVillageLocation converts toTileBounds.
+    // So MapBounds stores "Units". If we want tile bounds, we should probably check if MapBounds can store raw tile coords.
+    // Looking at finding code: bounds.toTileBounds(10) implies bounds are in Rooms.
+    // If we want precise tile bounds, maybe we shouldn't use MapBounds or we should define it in "Tile" space if usage supports it.
+    // However, for "is player within bounds", precise tile bounds are better.
+    // Let's assume MapBounds can be used for generic bounds, but if it expects rooms (integers), we might lose precision if we convert tiles -> rooms.
+    // Actually, let's look at MapBounds definition if possible. Assuming it's just min/max ints.
+    // For now, I will store TILE coordinates in MapBounds and handle it carefully,
+    // OR I will stick to the requested "location and size" which might just be center + radius or rect.
+    // "bounds: MapBounds" was proposed. Let's use it as Tile Coordinates for the Village.
+    val bounds = MapBounds(minX, maxX, minY, maxY)
+
+    Village(buildings, centerLocation, paths, name, bounds)
+  }
+
+  object NameGenerator {
+    val prefixes = Seq(
+      "Oak",
+      "Elm",
+      "Ash",
+      "Willow",
+      "Stone",
+      "Rock",
+      "Deep",
+      "High",
+      "Low",
+      "Green",
+      "Whit",
+      "Black",
+      "Grim",
+      "Raven",
+      "Crow",
+      "Eagle",
+      "Wolf",
+      "Bear",
+      "Fox",
+      "Deer"
+    )
+    val suffixes = Seq(
+      "worth",
+      "wood",
+      "field",
+      "haven",
+      "wick",
+      "by",
+      "thorpe",
+      "bridge",
+      "ford",
+      "ham",
+      "ley",
+      "ton",
+      "bury",
+      "stead",
+      "hall",
+      "well",
+      "mere",
+      "pool",
+      "cliff",
+      "hill"
+    )
+
+    def generateName(random: Random): String = {
+      val prefix = prefixes(random.nextInt(prefixes.length))
+      val suffix = suffixes(random.nextInt(suffixes.length))
+      prefix + suffix
+    }
   }
 
   /** Generates paths from all building entrances to a central hub in the

@@ -47,6 +47,7 @@ object HUD {
     import game.entity.NameComponent.*
     import game.Direction
     import game.entity.Movement.*
+    import game.entity.Movement.position
     import game.entity.ChargeType
     import game.entity.ChargeType.SingleUse
 
@@ -225,5 +226,31 @@ object HUD {
     }
 
     Batch(background) ++ textElements.toBatch
+  }
+
+  def villageName(model: GameController): Batch[SceneNode] = {
+    import game.entity.Movement.position
+    val playerPos = model.gameState.playerEntity.position
+
+    // Find if player is in any village
+    val currentVillage = model.gameState.worldMap.villages.find { village =>
+      val bounds = village.bounds
+      // Using bounds directly (assuming Tile Coordinates as verified in tests)
+      playerPos.x >= bounds.minRoomX && playerPos.x <= bounds.maxRoomX &&
+      playerPos.y >= bounds.minRoomY && playerPos.y <= bounds.maxRoomY
+    }
+
+    currentVillage match {
+      case Some(village) =>
+        Batch(
+          UIUtils
+            .text(
+              village.name,
+              (canvasWidth - (village.name.length * 4)) / 2, // Center text (approx char width 4)
+              5 // Top margin (close to edge)
+            )
+        )
+      case None => Batch.empty
+    }
   }
 }
