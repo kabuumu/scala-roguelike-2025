@@ -4,10 +4,14 @@ import game.entity.*
 import game.entity.EntityType.*
 import game.system.*
 import game.system.event.GameSystemEvent.GameSystemEvent
+
+import game.system.event.GameSystemEvent.GameSystemEvent
 import map.Dungeon
 import util.LineOfSight
 import game.entity.Hitbox.*
 import game.quest.*
+import game.entity.Growth
+import game.system.FarmerAISystem
 
 import scala.annotation.tailrec
 
@@ -42,8 +46,11 @@ case class GameState(
       DebugSystem,
       StairsSpawnSystem,
       ExperienceSystem,
+      GrowthSystem,
       EnemyAISystem,
+      FarmerAISystem,
       MovementSystem,
+      VelocitySystem,
       VelocitySystem,
       WaveSystem,
       ItemUseSystem, // New unified item system
@@ -61,8 +68,12 @@ case class GameState(
       SpawnProjectileSystem,
       WorldGenerationSystem,
       WildAnimalSpawnSystem, // Added dynamic animal spawning
+      VillageSystem,
+      CaravanSystem, // Added caravan logic
       WaitSystem,
-      OpenDoorSystem
+      OpenDoorSystem,
+      GrowthSystem // Handles crop growth
+
     ),
     // Phase 3: Combat and collision processing
     // InventorySystem moved here to handle CollisionEvent before it's dropped

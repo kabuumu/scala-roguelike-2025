@@ -15,8 +15,14 @@ case class Village(
     centerLocation: Point,
     paths: Set[Point],
     name: String,
-    bounds: MapBounds
+    bounds: MapBounds,
+    population: Int = 0,
+    stockpile: Int = 0,
+    cropsHarvested: Int = 0,
+    cropsConsumed: Int = 0,
+    wealth: Int = 0
 ) {
+
   require(
     buildings.length >= 2 && buildings.length <= 5,
     "Village must have 2-5 buildings"
@@ -164,7 +170,17 @@ object Village {
     // "bounds: MapBounds" was proposed. Let's use it as Tile Coordinates for the Village.
     val bounds = MapBounds(minX, maxX, minY, maxY)
 
-    Village(buildings, centerLocation, paths, name, bounds)
+    // Initial population estimate (2 per building)
+    val population = buildings.length * 2
+
+    Village(
+      buildings,
+      centerLocation,
+      paths,
+      name,
+      bounds,
+      population = population
+    )
   }
 
   object NameGenerator {

@@ -28,21 +28,33 @@ object Pathfinder {
 
     val openSet =
       mutable.PriorityQueue(Node(start, 0, heuristic(start, end), None))
+
+    // Track best g-score for each point to avoid expensive linear scans in openSet
+    val gScore = mutable.HashMap[Point, Int](start -> 0)
+
     val closedSet = mutable.HashSet.empty[Point]
+
+    // Safety limit to prevent infinite loops in unreachable scenarios
+    var iterations = 0
+    val MaxIterations = 6000
 
     // Check if all tiles for an entity of given size at position are clear
     def isPositionValid(position: Point): Boolean = {
-      // For a large entity, we need to check all tiles it would occupy
-      // The position represents the top-left anchor point of the entity
-      val entityTiles = for {
-        dx <- 0 until entitySize.x
-        dy <- 0 until entitySize.y
-      } yield Point(position.x + dx, position.y + dy)
+      // Fast path for 1x1 entities
+      if (entitySize.x == 1 && entitySize.y == 1) {
+        !blockers.contains(position) || ignoredPoints.contains(position)
+      } else {
+        // For a large entity, we need to check all tiles it would occupy
+        // The position represents the top-left anchor point of the entity
+        val entityTiles = for {
+          dx <- 0 until entitySize.x
+          dy <- 0 until entitySize.y
+        } yield Point(position.x + dx, position.y + dy)
 
-      // All tiles must be clear (not in blockers set OR in ignored set) for position to be valid
-      // Using Set for O(1) lookup instead of Seq with O(n) lookup
-      entityTiles.forall { tile =>
-        !blockers.contains(tile) || ignoredPoints.contains(tile)
+        // All tiles must be clear
+        entityTiles.forall { tile =>
+          !blockers.contains(tile) || ignoredPoints.contains(tile)
+        }
       }
     }
 
@@ -55,46 +67,37 @@ object Pathfinder {
       loop(node, Seq.empty)
     }
 
-    @tailrec
-    def search(
-        openSet: mutable.PriorityQueue[Node],
-        closedSet: mutable.HashSet[Point]
-    ): Seq[Point] = {
-      if (openSet.isEmpty) {
-        Seq.empty
-      } else {
-        val current = openSet.dequeue()
+    while (openSet.nonEmpty) {
+      iterations += 1
+      if (iterations > MaxIterations) return Seq.empty // Abort if too expensive
+
+      val current = openSet.dequeue()
+
+      // If we found a shorter path to this node already, skip it (lazy deletion)
+      if (!gScore.get(current.point).exists(_ < current.g)) {
         if (current.point == end) {
-          reconstructPath(current)
-        } else {
-          closedSet += current.point
-          val neighbors = current.point.neighbors
-            .filter(
-              isPositionValid
-            ) // Use the new validation that checks entity size
-            .filterNot(closedSet.contains)
+          return reconstructPath(current)
+        }
 
-          neighbors.foreach { neighbor =>
-            val tentativeG = current.g + 1
-            val existingNode = openSet.find(_.point == neighbor)
-            if (existingNode.isEmpty || tentativeG < existingNode.get.g) {
-              openSet.enqueue(
-                Node(
-                  neighbor,
-                  tentativeG,
-                  tentativeG + heuristic(neighbor, end),
-                  Some(current)
-                )
-              )
-            }
+        closedSet += current.point
+
+        val neighbors = current.point.neighbors
+          .filter(p => !closedSet.contains(p) && isPositionValid(p))
+
+        neighbors.foreach { neighbor =>
+          val tentativeG = current.g + 1
+
+          // If this path is better than any previous path to neighbor
+          if (tentativeG < gScore.getOrElse(neighbor, Int.MaxValue)) {
+            gScore(neighbor) = tentativeG
+            val f = tentativeG + heuristic(neighbor, end)
+            openSet.enqueue(Node(neighbor, tentativeG, f, Some(current)))
           }
-
-          search(openSet, closedSet)
         }
       }
     }
 
-    search(openSet, closedSet)
+    Seq.empty
   }
 
   def getNextStep(

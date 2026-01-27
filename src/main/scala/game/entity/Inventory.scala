@@ -4,11 +4,14 @@ import game.entity
 import game.entity.KeyItem.{isKey, keyItem}
 
 case class Inventory(
-    itemEntityIds: Seq[String] = Nil
+    itemEntityIds: Seq[String] = Nil,
+    capacity: Int = 20
 ) extends Component {
 
+  def isFull: Boolean = itemEntityIds.size >= capacity
+
   def addItemEntityId(entityId: String): Inventory = {
-    if (itemEntityIds.contains(entityId)) this
+    if (itemEntityIds.contains(entityId) || isFull) this
     else copy(itemEntityIds = itemEntityIds :+ entityId)
   }
 

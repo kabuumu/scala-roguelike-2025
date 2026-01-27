@@ -80,6 +80,11 @@ object GameSystemEvent {
       message: String
   ) extends GameSystemEvent
 
+  case class HarvestEvent(
+      harvesterId: String,
+      cropId: String
+  ) extends GameSystemEvent
+
   case class RemoveItemEntityEvent(
       playerId: String,
       itemEntityId: String
@@ -94,5 +99,9 @@ object GameSystemEvent {
       creator: Entity,
       targetPoint: game.Point,
       overrideStartPosition: Option[game.Point] = None
+  ) extends GameSystemEvent
+
+  case class DropOffEvent(
+      entityId: String
   ) extends GameSystemEvent
 }

@@ -24,6 +24,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
   override def config: GameConfig = GameConfig.default
     .withViewport(xPixels, yPixels)
     .withMagnification(uiScale)
+    .withFrameRateLimit(30)
     .noResize
 
   override def assets: Set[AssetType] = Set(
@@ -82,7 +83,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
       game.entity.Movement(position = game.Point(0, 0)),
       game.entity.EntityTypeComponent(game.entity.EntityType.Player),
       game.entity.Health(100),
-      game.entity.Initiative(10),
+      game.entity.Initiative(5),
       game.entity.Inventory(Nil),
       game.entity.Drawable(data.Sprites.playerSprite),
       game.entity.Hitbox(),

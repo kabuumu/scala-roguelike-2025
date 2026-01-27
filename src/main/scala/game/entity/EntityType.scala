@@ -27,3 +27,6 @@ enum EntityType(val isStatic: Boolean, val blocksMovement: Boolean):
   case Key(keyColour: KeyColour) extends EntityType(true, false)
   case Projectile extends EntityType(false, false)
   case Stairs extends EntityType(true, false)
+  case Plant extends EntityType(true, false)
+  case Villager extends EntityType(false, true)
+  case PackAnimal extends EntityType(false, true)

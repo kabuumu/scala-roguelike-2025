@@ -242,7 +242,7 @@ object StartingState {
       Movement(position = playerSpawnPoint),
       EntityTypeComponent(EntityType.Player),
       Health(70),
-      Initiative(10),
+      Initiative(5),
       Inventory(
         itemEntityIds =
           (playerStartingItems ++ playerStartingEquipment).map(_.id).toSeq
@@ -390,11 +390,81 @@ object StartingState {
         }
     }
 
+    // Generate Crops for all Farmland in villages
+    val crops: Seq[Entity] = worldMap.villages.flatMap { village =>
+      village.buildings
+        .filter(_.buildingType == map.BuildingType.Farmland)
+        .flatMap { farm =>
+          farm.tiles.collect { case (point, TileType.Farmland) =>
+            val crop = data.Crops.wheat(
+              s"wheat-${worldMap.seed}-${point.x}-${point.y}",
+              point
+            )
+
+            // Randomize initial growth stage
+            val randomStage = scala.util.Random.nextInt(4) // 0 to 3 inclusive
+
+            crop
+              .get[game.entity.Growth]
+              .map { g =>
+                if (randomStage > 0) {
+                  val stageSprite =
+                    g.stageSprites.getOrElse(randomStage, g.stageSprites(0))
+                  crop
+                    .update[game.entity.Growth](_ =>
+                      g.copy(currentStage = randomStage)
+                    )
+                    .update[game.entity.Drawable](_ =>
+                      game.entity.Drawable(stageSprite)
+                    )
+                    // Randomize initiative for visual variety
+                    .update[game.entity.Initiative](i =>
+                      i.copy(currentInitiative =
+                        scala.util.Random.nextInt(i.maxInitiative) + 1
+                      )
+                    )
+                } else {
+                  // Randomize initiative for stage 0
+                  crop.update[game.entity.Initiative](i =>
+                    i.copy(currentInitiative =
+                      scala.util.Random.nextInt(i.maxInitiative) + 1
+                    )
+                  )
+                }
+              }
+              .getOrElse(crop)
+          }
+        }
+    }
+
+    // Generate Farmers for villages
+    val farmers: Seq[Entity] = worldMap.villages.map { village =>
+      val spawnPos = village.paths.headOption
+        .orElse(village.entrances.headOption)
+        .getOrElse(village.centerLocation)
+
+      data.Farmer.create(
+        s"farmer-${worldMap.seed}-${spawnPos.x}-${spawnPos.y}",
+        spawnPos
+      )
+    }
+
+    // Generate one Caravan if there are villages
+    val caravans: Seq[Entity] = if (worldMap.villages.nonEmpty) {
+      val village = worldMap.villages.head
+      data.TraderData.createCaravan(
+        s"caravan-${worldMap.seed}",
+        village.centerLocation
+      )
+    } else {
+      Seq.empty
+    }
+
     GameState(
       playerEntityId = playerEntity.id,
       entities = Vector(
         playerEntity
-      ) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTraders ++ villageTraders ++ wildAnimals,
+      ) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTraders ++ villageTraders ++ wildAnimals ++ crops ++ farmers ++ caravans,
       worldMap = worldMap,
       dungeonFloor = dungeonFloor,
       gameMode = gameMode

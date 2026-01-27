@@ -12,6 +12,7 @@ object Sprites {
   val uiLayer = 3
 
   val traderSprite: Sprite = Sprite(24, 0, entityLayer)
+  val farmerSprite: Sprite = Sprite(31, 2, entityLayer)
   val playerSprite: Sprite = Sprite(25, 0, entityLayer)
   val enemySprite: Sprite = Sprite(26, 0, entityLayer)
 
@@ -29,6 +30,9 @@ object Sprites {
   val grass3Sprite: Sprite = Sprite(7, 0, floorLayer)
   val dirtSprite: Sprite = Sprite(3, 0, floorLayer)
   val farmlandSprite: Sprite = Sprite(12, 6, floorLayer)
+  val cropStage1Sprite: Sprite = Sprite(13, 6, entityLayer)
+  val cropStage2Sprite: Sprite = Sprite(14, 6, entityLayer)
+  val cropStage3Sprite: Sprite = Sprite(15, 6, entityLayer)
 
   val ratSprite: Sprite = Sprite(31, 8, entityLayer)
   val snakeSprite: Sprite = Sprite(28, 8, entityLayer)
