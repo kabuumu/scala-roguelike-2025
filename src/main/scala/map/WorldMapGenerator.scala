@@ -148,8 +148,8 @@ case class WorldMap(
 
     tiles.foreach { case (point, tileType) =>
       tileType match {
-        case TileType.Wall | TileType.Tree => wallsBuilder += point
-        case TileType.Rock                 => rocksBuilder += point
+        case TileType.Wall                 => wallsBuilder += point
+        case TileType.Rock | TileType.Tree => rocksBuilder += point
         case TileType.Water                => waterBuilder += point
         case _                             => // ignore other tile types
       }
@@ -158,12 +158,11 @@ case class WorldMap(
     (wallsBuilder.result(), rocksBuilder.result(), waterBuilder.result())
   }
 
-  /** Points that block line of sight (walls and trees). Trees block sight in
-    * open world areas.
+  /** Points that block line of sight (walls).
     */
   lazy val walls: Set[Point] = tileSets._1
 
-  /** Points that are rocks (impassable terrain features).
+  /** Points that are rocks or trees (impassable terrain features).
     */
   lazy val rocks: Set[Point] = tileSets._2
 
@@ -172,10 +171,10 @@ case class WorldMap(
     */
   lazy val water: Set[Point] = tileSets._3 -- bridges
 
-  /** Pre-calculated set of points that block line of sight (walls + rocks).
-    * Used by GameState to avoid re-calculating this set every frame.
+  /** Pre-calculated set of points that block line of sight (walls only). Used
+    * by GameState to avoid re-calculating this set every frame.
     */
-  lazy val staticLineOfSightBlockingPoints: Set[Point] = walls ++ rocks
+  lazy val staticLineOfSightBlockingPoints: Set[Point] = walls
 
   /** Pre-calculated set of points that block movement (walls + water + rocks).
     * Used by GameState to avoid re-calculating this set every frame.

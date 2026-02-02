@@ -2,7 +2,7 @@ package ui
 
 object UIConfig {
   val spriteScale = 16
-  val uiScale = 3
+  val uiScale = 2
 
   // Viewport dimensions in tiles (at uiScale=1)
   private val baseViewportWidthTiles = 96

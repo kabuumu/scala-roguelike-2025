@@ -176,14 +176,26 @@ case class GameState(
   }
 
   // TODO - remove magic number
-  def getVisiblePointsFor(entity: Entity): Set[Point] = for {
-    entityPosition <- entity.hitbox
-    lineOfSight <- LineOfSight.getVisiblePoints(
-      entityPosition,
-      lineOfSightBlockingPoints,
-      10
-    )
-  } yield lineOfSight
+  def getVisiblePointsFor(entity: Entity): Set[Point] = {
+    val dynamicBlockers = entities
+      .filter(_.entityType.isInstanceOf[LockedDoor])
+      .flatMap(_.get[Movement].map(_.position))
+      .toSet
+
+    val isBlocked = (p: Point) =>
+      worldMap.staticLineOfSightBlockingPoints.contains(
+        p
+      ) || dynamicBlockers.contains(p)
+
+    for {
+      entityPosition <- entity.hitbox
+      lineOfSight <- LineOfSight.getVisiblePoints(
+        entityPosition,
+        isBlocked,
+        10
+      )
+    } yield lineOfSight
+  }
 
   def addMessage(message: String): GameState = {
     copy(messages = message +: messages)
