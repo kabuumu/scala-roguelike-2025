@@ -166,6 +166,11 @@ object Game extends IndigoSandbox[Unit, GameController] {
         Outcome(
           worldMapView(model)
         )
+      case preview: UIState.WorldMapPreview =>
+        Outcome(
+          indigoengine.view.ui.OverworldMapUI
+            .render(preview.overworldMap, preview.seed)
+        )
       case _: UIState.Inventory | _: UIState.InventoryActionState =>
         Outcome(
           presentGame(context, model) |+| SceneUpdateFragment(

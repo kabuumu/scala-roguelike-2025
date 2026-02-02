@@ -225,6 +225,15 @@ object InputHandler {
                 uiState,
                 Some(InputAction.DebugRevealMap)
               )
+            case "Generate World Preview" =>
+              // Generate a new overworld map with random seed
+              val seed = System.currentTimeMillis()
+              val config = map.OverworldMapConfig(seed = seed)
+              val overworldMap = map.OverworldMapGenerator.generate(config)
+              (
+                UIState.WorldMapPreview(overworldMap, seed),
+                None
+              )
             case _ => (uiState, None)
           }
         case Input.Cancel | Input.DebugMenu =>
@@ -619,6 +628,10 @@ object InputHandler {
     case UIState.WorldMap =>
       // Any key press returns to normal game
       (UIState.Move, None)
+
+    case _: UIState.WorldMapPreview =>
+      // Any key press returns to debug menu (to regenerate easily)
+      (UIState.DebugMenu(), None)
 
     case UIState.Character =>
       input match {

@@ -164,7 +164,8 @@ object UIState {
       "Give Experience",
       "Restore Health",
       "Give Perk",
-      "Reveal Map"
+      "Reveal Map",
+      "Generate World Preview"
     )
 
     def selectNext: DebugMenu =
@@ -199,6 +200,12 @@ object UIState {
     def action: (UIState, Option[InputAction]) = effect(list(index))
     def currentItem: game.status.StatusEffect = list(index)
   }
+
+  /** UI state for viewing the zoomed-out overworld map preview. */
+  case class WorldMapPreview(
+      overworldMap: map.OverworldMap,
+      seed: Long
+  ) extends UIState
 
   case object WorldMap extends UIState
 

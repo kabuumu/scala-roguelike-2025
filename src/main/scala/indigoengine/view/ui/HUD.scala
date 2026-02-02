@@ -188,6 +188,8 @@ object HUD {
         "Select a perk to give to the player."
       case UIState.WorldMap =>
         "" // World map handles its own messaging
+      case _: UIState.WorldMapPreview =>
+        "" // World map preview handles its own messaging
       case _: UIState.Inventory =>
         "Inventory Mode. WASD/Arrows to Navigate, E/Space/Enter to Select, I/Esc to Close."
       case _: UIState.InventoryActionState =>
