@@ -48,5 +48,8 @@ jobs:
       with:
         branch: gh-pages
         folder: target/indigoBuild
-        clean: false
+        clean: true
+        clean-exclude: |
+          pr-*/
+          pr-index.html
         commit-message: "Deploy main site"
