@@ -7,7 +7,7 @@ import game.entity.Movement._
 class VillageTraderTest extends AnyFunSuite {
 
   test("Village buildings have NPCs except player's starting building") {
-    val gameState = StartingState.startingGameState
+    val gameState = StartingState.startAdventure(seed = 12345L)
 
     val villageNPCs = gameState.entities.filter { entity =>
       (entity.isTrader || entity.has[game.entity.NameComponent]) && entity.id
@@ -72,7 +72,7 @@ class VillageTraderTest extends AnyFunSuite {
   }
 
   test("NPCs are positioned at building centers") {
-    val gameState = StartingState.startingGameState
+    val gameState = StartingState.startAdventure(seed = 12345L)
 
     val villageNPCs = gameState.entities.filter { entity =>
       (entity.isTrader || entity.has[game.entity.NameComponent]) && entity.id
@@ -106,7 +106,7 @@ class VillageTraderTest extends AnyFunSuite {
   }
 
   test("NPCs have appropriate inventories") {
-    val gameState = StartingState.startingGameState
+    val gameState = StartingState.startAdventure(seed = 12345L)
 
     val traders = gameState.entities.filter(_.isTrader)
 

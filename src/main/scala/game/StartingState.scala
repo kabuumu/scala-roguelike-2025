@@ -26,9 +26,8 @@ object StartingState {
   /** Generates a fresh GameState for Adventure mode. Starts in the village
     * (0,0).
     */
-  def startAdventure(): GameState = {
+  def startAdventure(seed: Long = System.currentTimeMillis()): GameState = {
     // 1. Generate Overworld Map
-    val seed = System.currentTimeMillis()
     val overworldConfig = OverworldMapConfig(seed = seed)
     val overworldMap = OverworldMapGenerator.generate(overworldConfig)
 
