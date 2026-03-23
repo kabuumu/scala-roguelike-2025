@@ -1,55 +1,61 @@
-name: Deploy main to GitHub Pages (gh-pages)
+name: Deploy main to GitHub Pages
 
 on:
   push:
     branches: [ main ]
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install sbt
+        uses: coursier/setup-action@v1
+        with:
+          apps: sbt
+      - name: Cache SBT
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.sbt
+            ~/.coursier/cache
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt', 'project/**') }}
+          restore-keys: |
+            ${{ runner.os }}-sbt-
+      - name: Run tests
+        run: sbt test
+      - name: Build game
+        run: sbt build
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/indigoBuild
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: '17'
-
-    - name: Install sbt
-      uses: coursier/setup-action@v1
-      with:
-        apps: sbt
-
-    - name: Cache SBT
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.ivy2/cache
-          ~/.sbt
-          ~/.coursier/cache
-        key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt', 'project/**') }}
-        restore-keys: |
-          ${{ runner.os }}-sbt-
-
-    - name: Run tests
-      run: sbt test
-
-    - name: Build game
-      run: sbt build
-
-    - name: Deploy to gh-pages root (preserve pr-* previews)
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        branch: gh-pages
-        folder: target/indigoBuild
-        clean: true
-        clean-exclude: |
-          pr-*/
-          pr-index.html
-        commit-message: "Deploy main site"
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
