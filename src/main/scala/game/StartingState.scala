@@ -27,63 +27,84 @@ object StartingState {
     * (0,0).
     */
   def startAdventure(): GameState = {
-    // Generate standard open world
-    val worldSize = 15
-    val worldBounds = MapBounds(-worldSize, worldSize, -worldSize, worldSize)
+    // 1. Generate Overworld Map
+    val seed = System.currentTimeMillis()
+    val overworldConfig = OverworldMapConfig(seed = seed)
+    val overworldMap = OverworldMapGenerator.generate(overworldConfig)
 
-    val worldMap = WorldMapGenerator.generateWorldMap(
-      WorldMapConfig(
-        worldConfig = WorldConfig(
-          bounds = worldBounds,
-          grassDensity = 0.65,
-          treeDensity = 0.20,
-          dirtDensity = 0.10,
-          ensureWalkablePaths = true,
-          perimeterTrees = false,
-          seed = System.currentTimeMillis()
-        )
-      )
+    // 2. Select a Village
+    // Find village closest to center
+    // WE STRICTLY PRIORITIZE SETTLEMENTS.
+    val settlementTypes = Set(
+      OverworldTileType.Village
     )
 
-    // Guaranteed Quest Item Placement:
-    // We must ensure the 'GoldenStatue' exists in the first dungeon for the quest to be completable.
-    // The random treasure generator might not pick it.
-    // Player starts at (0,0) in Adventure mode (Village)
-    // We want to spawn in the central village (closest to 0,0)
-    val spawnOrigin = Point(0, 0)
-    val playerSpawnPoint = worldMap.villages.sortBy { v =>
-      val dx = v.centerLocation.x - spawnOrigin.x
-      val dy = v.centerLocation.y - spawnOrigin.y
-      dx * dx + dy * dy
-    }.headOption match {
-      case Some(village) => village.centerLocation
-      case None          => spawnOrigin
+    val allSettlements = overworldMap.tiles
+      .filter(t => settlementTypes.contains(t._2))
+      .keys
+      .toSeq
+
+    val spawnCandidates = if (allSettlements.nonEmpty) {
+      allSettlements
+    } else {
+      // Fallback to Plains if no settlements exist (unlikely)
+      overworldMap.tiles
+        .filter(t => t._2 == OverworldTileType.Plains)
+        .keys
+        .toSeq
     }
 
-    // Guaranteed Quest Item Placement:
-    // We must ensure the 'GoldenStatue' exists in the NEAREST dungeon to the PLAYER.
-    // The random treasure generator might not pick it.
-    val closestDungeonWithIndex = worldMap.dungeons.zipWithIndex.minByOption {
-      case (d, _) =>
-        // Distance to actual spawn point, not (0,0)
-        val dx = d.startPoint.x - playerSpawnPoint.x
-        val dy = d.startPoint.y - playerSpawnPoint.y
-        dx * dx + dy * dy
-    }
+    // Sort by distance to center
+    val centerX = overworldConfig.width / 2
+    val centerY = overworldConfig.height / 2
 
-    val worldMapWithQuestItem = closestDungeonWithIndex match {
-      case Some((dungeon, idx)) =>
-        val questItemRoom =
-          dungeon.endpoint.getOrElse(dungeon.startPoint) // Place in Boss Room
-        val updatedDungeon =
-          dungeon.addItem(questItemRoom, data.Items.ItemReference.GoldenStatue)
-        worldMap.copy(dungeons = worldMap.dungeons.updated(idx, updatedDungeon))
-      case None => worldMap
-    }
+    val startVillage = spawnCandidates
+      .sortBy(p => (p.x - centerX).abs + (p.y - centerY).abs)
+      .headOption
+      .getOrElse(Point(centerX, centerY))
+
+    // 3. Set Player Spawn (Scaled 10x)
+    // Detailed coordinate = Overworld coordinate * 10
+    // +5 to center in the 10x10 chunk
+    val scale = OverworldMapGenerator.ScaleFactor
+    val playerSpawnPoint = Point(
+      startVillage.x * scale + scale / 2,
+      startVillage.y * scale + scale / 2
+    )
+
+    // 4. Initialize WorldMap
+    // Start with minimal world map, let ChunkManager handle the rest
+    val worldBounds = MapBounds(
+      0,
+      overworldConfig.width * scale,
+      0,
+      overworldConfig.height * scale
+    )
+
+    val worldMap = WorldMap(
+      tiles = Map.empty,
+      dungeons = Seq.empty,
+      villages = Seq.empty,
+      paths = Set.empty,
+      bridges = Set.empty,
+      bounds = worldBounds,
+      seed = seed,
+      overworldMap = Some(overworldMap)
+    )
+
+    // 5. Initial Chunk Generation
+    // Manually trigger first update to populate initial area for safe spawn check
+    val initialWorldConfig = WorldConfig(bounds = worldBounds, seed = seed)
+    val worldMapWithChunks = ChunkManager.updateChunks(
+      playerSpawnPoint,
+      worldMap,
+      initialWorldConfig,
+      seed
+    )
 
     createGameState(
-      worldMapWithQuestItem,
-      findSafeSpawn(playerSpawnPoint, worldMapWithQuestItem),
+      worldMapWithChunks,
+      findSafeSpawn(playerSpawnPoint, worldMapWithChunks),
       GameMode.Adventure,
       dungeonFloor = 0
     )

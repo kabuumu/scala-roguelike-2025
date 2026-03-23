@@ -24,8 +24,8 @@ case class Village(
 ) {
 
   require(
-    buildings.length >= 2 && buildings.length <= 5,
-    "Village must have 2-5 buildings"
+    buildings.length >= 2 && buildings.length <= 12,
+    "Settlement must have 2-12 buildings"
   )
 
   /** All tiles from all buildings in the village. When buildings overlap, walls
@@ -142,35 +142,141 @@ object Village {
       )
     }
 
-    // Generate paths connecting buildings to a central point
-    val paths = generateVillagePaths(buildings, centerLocation)
+    createVillage(buildings, centerLocation, seed)
+  }
 
-    // Generate a name
+  /** Generate a town at a specific location. Creates 4-7 buildings in a wider
+    * layout suitable for a 3x3 overworld tile cluster (60x60 detail tiles).
+    */
+  def generateTown(centerLocation: Point, seed: Long): Village = {
+    val random = new Random(seed)
+    val numBuildings = 4 + random.nextInt(4) // 4-7
+
+    val mandatoryTypes = Seq(
+      BuildingType.Farmland,
+      BuildingType.Generic,
+      BuildingType.EquipmentShop
+    )
+
+    val optionalTypes = Seq(
+      BuildingType.Healer,
+      BuildingType.PotionShop,
+      BuildingType.EquipmentShop,
+      BuildingType.Generic
+    )
+
+    val selectedTypes = if (numBuildings <= mandatoryTypes.length) {
+      mandatoryTypes.take(numBuildings)
+    } else {
+      val remainingCount = numBuildings - mandatoryTypes.length
+      val randomOptionals = Seq.fill(remainingCount)(
+        optionalTypes(random.nextInt(optionalTypes.length))
+      )
+      mandatoryTypes ++ randomOptionals
+    }
+
+    val buildingTypes = random.shuffle(selectedTypes)
+
+    // Town layout offsets: wider grid for 3x3 overworld cluster
+    val townOffsets = Seq(
+      Point(-25, -25), Point(5, -25),
+      Point(-25, 5),   Point(5, 5),
+      Point(-10, -10), Point(15, -10),
+      Point(-10, 15)
+    )
+
+    val buildings = (0 until numBuildings).map { i =>
+      val width = 5 + random.nextInt(6)
+      val height = 5 + random.nextInt(6)
+      val offset = townOffsets(i % townOffsets.length)
+
+      Building(
+        location = Point(centerLocation.x + offset.x, centerLocation.y + offset.y),
+        width = width,
+        height = height,
+        buildingType = buildingTypes(i)
+      )
+    }
+
+    createVillage(buildings, centerLocation, seed)
+  }
+
+  /** Generate a city at a specific location. Creates 7-12 buildings in a large
+    * layout suitable for a 5x5 overworld tile cluster (100x100 detail tiles).
+    */
+  def generateCity(centerLocation: Point, seed: Long): Village = {
+    val random = new Random(seed)
+    val numBuildings = 7 + random.nextInt(6) // 7-12
+
+    val mandatoryTypes = Seq(
+      BuildingType.Farmland,
+      BuildingType.Generic,
+      BuildingType.EquipmentShop,
+      BuildingType.Healer,
+      BuildingType.PotionShop
+    )
+
+    val optionalTypes = Seq(
+      BuildingType.Healer,
+      BuildingType.PotionShop,
+      BuildingType.EquipmentShop,
+      BuildingType.Generic,
+      BuildingType.Farmland
+    )
+
+    val selectedTypes = if (numBuildings <= mandatoryTypes.length) {
+      mandatoryTypes.take(numBuildings)
+    } else {
+      val remainingCount = numBuildings - mandatoryTypes.length
+      val randomOptionals = Seq.fill(remainingCount)(
+        optionalTypes(random.nextInt(optionalTypes.length))
+      )
+      mandatoryTypes ++ randomOptionals
+    }
+
+    val buildingTypes = random.shuffle(selectedTypes)
+
+    // City layout offsets: large grid for 5x5 overworld cluster
+    val cityOffsets = Seq(
+      Point(-40, -40), Point(-10, -40), Point(20, -40),
+      Point(-40, -10), Point(-10, -10), Point(20, -10),
+      Point(-40, 20),  Point(-10, 20),  Point(20, 20),
+      Point(-25, -25), Point(5, -25),   Point(-25, 5)
+    )
+
+    val buildings = (0 until numBuildings).map { i =>
+      val width = 6 + random.nextInt(6) // Slightly larger buildings for cities
+      val height = 6 + random.nextInt(6)
+      val offset = cityOffsets(i % cityOffsets.length)
+
+      Building(
+        location = Point(centerLocation.x + offset.x, centerLocation.y + offset.y),
+        width = width,
+        height = height,
+        buildingType = buildingTypes(i)
+      )
+    }
+
+    createVillage(buildings, centerLocation, seed)
+  }
+
+  /** Shared helper to construct a Village from a list of buildings. */
+  private def createVillage(
+      buildings: Seq[Building],
+      centerLocation: Point,
+      seed: Long
+  ): Village = {
+    val random = new Random(seed ^ 0xDEADBEEFL) // Different seed for name
+
+    val paths = generateVillagePaths(buildings, centerLocation)
     val name = NameGenerator.generateName(random)
 
-    // Calculate bounds (min/max of buildings + margin)
     val margin = 5
     val minX = buildings.map(_.location.x).min - margin
     val maxX = buildings.map(b => b.location.x + b.width).max + margin
     val minY = buildings.map(_.location.y).min - margin
     val maxY = buildings.map(b => b.location.y + b.height).max + margin
-
-    // Convert to Room coordinates for MapBounds (approximate since MapBounds is usually rooms)
-    // Actually MapBounds is just x/y/w/h concept, but often used for chunks/rooms.
-    // Here we can use it for tile bounds if that's what's expected, strictly speaking MapBounds usually implies rooms?
-    // Let's check usages. MapBounds in findVillageLocation converts toTileBounds.
-    // So MapBounds stores "Units". If we want tile bounds, we should probably check if MapBounds can store raw tile coords.
-    // Looking at finding code: bounds.toTileBounds(10) implies bounds are in Rooms.
-    // If we want precise tile bounds, maybe we shouldn't use MapBounds or we should define it in "Tile" space if usage supports it.
-    // However, for "is player within bounds", precise tile bounds are better.
-    // Let's assume MapBounds can be used for generic bounds, but if it expects rooms (integers), we might lose precision if we convert tiles -> rooms.
-    // Actually, let's look at MapBounds definition if possible. Assuming it's just min/max ints.
-    // For now, I will store TILE coordinates in MapBounds and handle it carefully,
-    // OR I will stick to the requested "location and size" which might just be center + radius or rect.
-    // "bounds: MapBounds" was proposed. Let's use it as Tile Coordinates for the Village.
     val bounds = MapBounds(minX, maxX, minY, maxY)
-
-    // Initial population estimate (2 per building)
     val population = buildings.length * 2
 
     Village(
@@ -182,6 +288,7 @@ object Village {
       population = population
     )
   }
+
 
   object NameGenerator {
     val prefixes = Seq(

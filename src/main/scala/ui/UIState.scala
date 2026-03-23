@@ -207,7 +207,7 @@ object UIState {
       seed: Long
   ) extends UIState
 
-  case object WorldMap extends UIState
+  case class WorldMap(showOverworld: Boolean = false) extends UIState
 
   case object Character extends UIState
 

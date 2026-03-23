@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class VerifyDungeonExistsTest extends AnyFunSuite {
   test("Verify dungeon exists in StartingState") {
-    val state = StartingState.startingGameState
+    val state = StartingState.startGauntlet()
     val worldMap = state.worldMap
     
     println(s"\n=== WorldMap Structure ===")

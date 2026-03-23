@@ -10,7 +10,7 @@ class WorldMapDeterminismTest extends AnyFunSuite {
       val seed = 12345L + i
       // Use reasonable bounds (8x8) to ensure quick execution
       val bounds = MapBounds(0, 8, 0, 8)
-      val config = DungeonConfig(bounds, seed)
+      val config = DungeonConfig(bounds, seed, explicitSize = Some(15))
 
       val run1 = DungeonGenerator.generateDungeon(config)
       val run2 = DungeonGenerator.generateDungeon(config)

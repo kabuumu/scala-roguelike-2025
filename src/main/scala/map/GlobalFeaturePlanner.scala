@@ -15,7 +15,8 @@ case class RegionPlan(
 
 object GlobalFeaturePlanner {
   val RegionSizeChunks = 5
-  val RegionSizeTiles = RegionSizeChunks * 16 // 80 tiles
+  val RegionSizeTiles =
+    RegionSizeChunks * Chunk.size // 50 tiles (if Chunk.size=10)
   // 80 is divisible by 16 (Chunk) and 10 (Dungeon Room). Perfect alignment.
 
   // Cache to store calculated region plans
@@ -100,8 +101,9 @@ object GlobalFeaturePlanner {
             else random.nextBoolean()
 
           // Strict bounds for feature placement
-          // Reduced padding to allow larger dungeons (and more variability)
-          val padding = 15
+          // Padding must be at least roomSize (10) to ensure features don't touch
+          // region edges. Region is 100x100 tiles (5 chunks × 20 tiles).
+          val padding = 10
           val validMinX = regionMinX + padding
           val validMaxX = regionMinX + RegionSizeTiles - padding
           val validMinY = regionMinY + padding

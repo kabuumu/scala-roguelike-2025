@@ -53,7 +53,7 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
     lastCenterChunk = None
   )
 
-  "FarmerAISystem" should "generate HarvestEvent for adjacent mature crop" in {
+  "FarmerAISystem" should "harvest adjacent mature crop directly (state change)" in {
     // 1. Setup Crop (Mature)
     val cropGrowth = Growth(
       currentStage = 3,
@@ -81,7 +81,66 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
       Harvester(),
       Active(),
       Inventory(Nil, capacity = 5),
-      NameComponent("Farmer")
+      NameComponent("Farmer"),
+      Initiative(10, 0) // Ready to act
+    )
+
+    // 3. Setup GameState
+    val player = Entity(EntityTypeComponent(EntityType.Player))
+    val gameState = GameState(
+      playerEntityId = player.id,
+      entities = Seq(
+        player,
+        crop,
+        farmer
+      ),
+      worldMap = dummyWorldMap
+    )
+
+    // 4. Run System
+    val (newState, _) = FarmerAISystem.update(gameState, Seq.empty)
+
+    // 5. Verify crop was reset (system handles harvest directly now)
+    val updatedCrop = newState.getEntity("crop").get
+    val updatedGrowth = updatedCrop.get[Growth].get
+    updatedGrowth.currentStage should be(0)
+
+    // 6. Verify farmer inventory has 1 item
+    val updatedFarmer = newState.getEntity("farmer").get
+    val inv = updatedFarmer.get[Inventory].get
+    inv.itemEntityIds.size should be(1)
+  }
+
+  it should "move towards nearest mature crop when not adjacent" in {
+    // 1. Setup Crop (Mature) far from farmer
+    val cropGrowth = Growth(
+      currentStage = 3,
+      maxStage = 3,
+      growthTimer = 0,
+      timePerStage = 10,
+      stageSprites = Map(3 -> Sprites.cropStage3Sprite, 0 -> Sprites.dirtSprite)
+    )
+    val cropPos = Point(15, 10)
+    val crop = Entity(
+      "crop",
+      Movement(cropPos),
+      cropGrowth,
+      EntityTypeComponent(Plant),
+      Drawable(Sprites.cropStage3Sprite),
+      NameComponent("Crop")
+    )
+
+    // 2. Setup Farmer (Far from crop)
+    val farmerPos = Point(10, 10) // 5 tiles away
+    val farmer = Entity(
+      "farmer",
+      Movement(farmerPos),
+      EntityTypeComponent(Villager),
+      Harvester(),
+      Active(),
+      Inventory(Nil, capacity = 5),
+      NameComponent("Farmer"),
+      Initiative(10, 0)
     )
 
     // 3. Setup GameState
@@ -99,71 +158,17 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
     // 4. Run System
     val (_, events) = FarmerAISystem.update(gameState, Seq.empty)
 
-    // 5. Verify Event
-    events should contain(HarvestEvent("farmer", "crop"))
-  }
-
-  it should "handle HarvestEvent by resetting crop and adding item to inventory" in {
-    // 1. Setup Crop (Mature)
-    val cropGrowth = Growth(
-      currentStage = 3,
-      maxStage = 3,
-      growthTimer = 0,
-      timePerStage = 10,
-      stageSprites = Map(3 -> Sprites.cropStage3Sprite, 0 -> Sprites.dirtSprite)
-    )
-    val cropPos = Point(10, 10)
-    val crop = Entity(
-      "crop",
-      Movement(cropPos),
-      cropGrowth,
-      EntityTypeComponent(Plant),
-      Drawable(Sprites.cropStage3Sprite),
-      NameComponent("Crop")
-    )
-
-    // 2. Setup Farmer
-    val farmerPos = Point(11, 10)
-    val farmer = Entity(
-      "farmer",
-      Movement(farmerPos),
-      EntityTypeComponent(Villager),
-      Harvester(),
-      Active(),
-      Inventory(Nil, capacity = 5),
-      NameComponent("Farmer")
-    )
-
-    // 3. Setup GameState
-    val player = Entity(EntityTypeComponent(EntityType.Player))
-    val gameState = GameState(
-      playerEntityId = player.id,
-      entities = Seq(
-        player,
-        crop,
-        farmer
-      ),
-      worldMap = dummyWorldMap
-    )
-
-    // 4. Run System with HarvestEvent
-    val (newState, _) =
-      FarmerAISystem.update(gameState, Seq(HarvestEvent("farmer", "crop")))
-
-    // 5. Verify Crop Reset
-    val updatedCrop = newState.getEntity("crop").get
-    val updatedGrowth = updatedCrop.get[Growth].get
-    updatedGrowth.currentStage should be(0)
-
-    // 6. Verify Inventory Increased
-    val updatedFarmer = newState.getEntity("farmer").get
-    val inv = updatedFarmer.get[Inventory].get
-    inv.itemEntityIds.size should be(1)
+    // 5. Verify movement event emitted
+    events should have size 1
+    events.head match {
+      case InputEvent("farmer", ui.InputAction.Move(_)) =>
+        succeed
+      case _ => fail("Expected InputEvent(Move)")
+    }
   }
 
   it should "move towards village center when inventory is full" in {
     // 1. Setup Farmer with FULL Inventory
-    // We mock a full inventory by adding 5 dummy item IDs
     val fullInventory = Inventory(Seq("1", "2", "3", "4", "5"), capacity = 5)
     val farmerPos = Point(10, 10) // Far from village center (50, 50)
     val farmer = Entity(
@@ -173,10 +178,11 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
       Harvester(),
       Active(),
       fullInventory,
-      NameComponent("Farmer")
+      NameComponent("Farmer"),
+      Initiative(10, 0)
     )
 
-    // 3. Setup GameState
+    // 2. Setup GameState
     val player = Entity(EntityTypeComponent(EntityType.Player))
     val gameState = GameState(
       playerEntityId = player.id,
@@ -191,17 +197,15 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
     val (_, events) = FarmerAISystem.update(gameState, Seq.empty)
 
     // 4. Verify Movement Event
-    // Should produce an input event to move
     events should have size 1
     events.head match {
       case InputEvent("farmer", ui.InputAction.Move(direction)) =>
-        // Ideally should check direction, but checking type is good enough for now
         succeed
       case _ => fail("Expected InputEvent(Move)")
     }
   }
 
-  it should "generate DropOffEvent when full and at village center" in {
+  it should "drop off items directly when full and at village center" in {
     // 1. Setup Farmer with FULL Inventory AT village center
     val fullInventory = Inventory(Seq("1", "2", "3", "4", "5"), capacity = 5)
     val farmerPos = Point(50, 50) // On top of village center
@@ -212,7 +216,8 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
       Harvester(),
       Active(),
       fullInventory,
-      NameComponent("Farmer")
+      NameComponent("Farmer"),
+      Initiative(10, 0)
     )
 
     val player = Entity(EntityTypeComponent(EntityType.Player))
@@ -222,12 +227,18 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
       worldMap = dummyWorldMap
     )
 
-    // 2. Run System
-    val (_, events) = FarmerAISystem.update(gameState, Seq.empty)
+    // 2. Run System — system handles drop-off directly via state change
+    val (newState, _) = FarmerAISystem.update(gameState, Seq.empty)
 
-    // 3. Verify DropOffEvent
-    import game.system.event.GameSystemEvent.DropOffEvent
-    events should contain(DropOffEvent("farmer"))
+    // 3. Verify Inventory Cleared
+    val updatedFarmer = newState.getEntity("farmer").get
+    val inv = updatedFarmer.get[Inventory].get
+    inv.itemEntityIds should be(empty)
+
+    // 4. Verify Village Stats Updated
+    val updatedVillage = newState.worldMap.villages.head
+    updatedVillage.stockpile should be(5)
+    updatedVillage.cropsHarvested should be(5)
   }
 
   it should "handle DropOffEvent by clearing inventory and updating village stats" in {
@@ -241,7 +252,8 @@ class FarmerAISystemTest extends AnyFlatSpec with Matchers {
       Harvester(),
       Active(),
       fullInventory,
-      NameComponent("Farmer")
+      NameComponent("Farmer"),
+      Initiative(10, 0)
     )
 
     val player = Entity(EntityTypeComponent(EntityType.Player))

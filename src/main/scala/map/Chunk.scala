@@ -14,7 +14,7 @@ case class Chunk(
 }
 
 object Chunk {
-  val size: Int = 16 // 16x16 tiles per chunk
+  val size: Int = 20 // 20x20 tiles per chunk (2x2 chunks = 40x40 village)
 
   def toChunkCoords(point: Point): (Int, Int) = {
     // Handling negative coordinates correctly for floor division

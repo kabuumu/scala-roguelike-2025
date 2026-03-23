@@ -62,13 +62,16 @@ class CaravanSystemTest extends AnyFlatSpec with Matchers {
     val caravanEntities = TraderData.createCaravan("trader", Point(0, 0))
     val leader = caravanEntities.head
 
-    // Force state to Moving to V2
-    val leaderWithComponent = leader.update[CaravanComponent](c =>
-      c.copy(
-        state = CaravanState.Moving,
-        targetVillageCenter = Some(v2.centerLocation)
+    // Force state to Moving to V2, add Active and Initiative to make it ready
+    val leaderWithComponent = leader
+      .update[CaravanComponent](c =>
+        c.copy(
+          state = CaravanState.Moving,
+          targetVillageCenter = Some(v2.centerLocation)
+        )
       )
-    )
+      .addComponent(Active())
+      .addComponent(Initiative(10, 0)) // Ready to act
 
     val gameState = GameState(
       "player",

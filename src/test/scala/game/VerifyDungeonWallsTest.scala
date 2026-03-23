@@ -7,7 +7,7 @@ class VerifyDungeonWallsTest extends AnyFunSuite {
   test("Verify dungeon has wall tiles in worldMap") {
     println(s"\n=== Dungeon Wall Verification ===")
     
-    val state = StartingState.startingGameState
+    val state = StartingState.startGauntlet()
     val worldMap = state.worldMap
     
     println(s"Total tiles in worldMap: ${worldMap.tiles.size}")

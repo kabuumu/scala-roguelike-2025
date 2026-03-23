@@ -56,7 +56,7 @@ object InputHandler {
     case UIState.Move =>
       input match {
         case Input.OpenMap =>
-          (UIState.WorldMap, None)
+          (UIState.WorldMap(showOverworld = false), None)
         case Input.Move(direction) =>
           (UIState.Move, Some(InputAction.Move(direction)))
         case Input.Inventory =>
@@ -625,9 +625,18 @@ object InputHandler {
         case _ => (actionState, None)
       }
 
-    case UIState.WorldMap =>
-      // Any key press returns to normal game
-      (UIState.Move, None)
+    case UIState.WorldMap(showOverworld) =>
+      input match {
+        case Input.Tab =>
+          // Toggle between local map and overworld map
+          (UIState.WorldMap(!showOverworld), None)
+
+        case Input.OpenMap | Input.Cancel | Input.CharacterScreen =>
+          // Close map and return to game
+          (UIState.Move, None)
+
+        case _ => (uiState, None)
+      }
 
     case _: UIState.WorldMapPreview =>
       // Any key press returns to debug menu (to regenerate easily)

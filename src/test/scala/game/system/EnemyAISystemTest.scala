@@ -37,8 +37,9 @@ class EnemyAISystemTest extends AnyFunSpec with Matchers {
         id = "duck",
         Movement(position = Point(10, 10)),
         EntityTypeComponent(EntityType.Animal),
-        Initiative(10, 0), // Explicitly set current initiative to 0
-        Hitbox()
+        Initiative(10, 0), // Ready to act
+        Hitbox(),
+        Active()
       )
 
       val player = Entity(
@@ -46,7 +47,8 @@ class EnemyAISystemTest extends AnyFunSpec with Matchers {
         Movement(position = Point(100, 100)), // Far away
         EntityTypeComponent(EntityType.Player),
         SightMemory(Set.empty), // Player sees nothing
-        Hitbox()
+        Hitbox(),
+        Active()
       )
 
       val gameState = createGameState(Seq(animal, player))
@@ -69,20 +71,18 @@ class EnemyAISystemTest extends AnyFunSpec with Matchers {
         id = "duck",
         Movement(position = Point(10, 10)),
         EntityTypeComponent(EntityType.Animal),
-        Initiative(10, 0), // Explicitly set current initiative to 0
-        Hitbox()
+        Initiative(10, 0), // Ready to act
+        Hitbox(),
+        Active()
       )
-
-      // Player needs to see the duck for logic to possibly trigger (though Animal logic checks player visibility)
-      // Actually, my implementation checks: playerVisiblePoints.contains(entity.position)
-      // So player MUST see the duck.
 
       val player = Entity(
         id = "player",
         Movement(position = playerPos),
         EntityTypeComponent(EntityType.Player),
         SightMemory(Set(animalPos)), // Player sees animal
-        Hitbox()
+        Hitbox(),
+        Active()
       )
 
       val gameState = createGameState(Seq(animal, player))
@@ -105,8 +105,9 @@ class EnemyAISystemTest extends AnyFunSpec with Matchers {
         id = "duck",
         Movement(position = Point(10, 10)),
         EntityTypeComponent(EntityType.Animal),
-        Initiative(10, 0), // Explicitly set current initiative to 0
-        Hitbox()
+        Initiative(10, 0), // Ready to act
+        Hitbox(),
+        Active()
       )
 
       val player = Entity(
@@ -115,26 +116,17 @@ class EnemyAISystemTest extends AnyFunSpec with Matchers {
         EntityTypeComponent(EntityType.Player),
         SightMemory(
           Set(animalPos)
-        ), // Assume visible for simplicity of setup/optimization, or use dummy
-        Hitbox()
+        ),
+        Hitbox(),
+        Active()
       )
-      // Note: My code checks `playerVisiblePoints` FIRST.
-      // If duck is NOT in `playerVisiblePoints`, Duck AI *might* skip if I didn't opt-out of that optimization check.
-      // Let's check my code:
-      // `val anyActorReady = ...`
-      // `val aiEvents = gameState.entities.collect { case entity ...`
-      //    `if (entity.entityType == EntityType.Animal) { ... }`
-
-      // The optimization `val enemyIsVisibleToPlayer = playerVisiblePoints.contains(enemyPosition)` is inside `else` usage for Enemies.
-      // But for Animals, I added logic: `val isPlayerVisible = playerVisiblePoints.contains(entity.position)`.
-      // The optimization check `if (anyActorReady)` wraps everything.
-      // So Duck logic RUNS regardless of player visibility, BUT inside it branches.
 
       val enemy = Entity(
         id = "wolf",
         Movement(position = enemyPos),
         EntityTypeComponent(EntityType.Enemy),
-        Hitbox()
+        Hitbox(),
+        Active()
       )
 
       val gameState = createGameState(Seq(animal, player, enemy))

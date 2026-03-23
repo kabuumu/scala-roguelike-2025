@@ -134,7 +134,8 @@ case class WorldMap(
     chunks: Map[(Int, Int), Chunk] = Map.empty,
     seed: Long = 0L,
     processedRegions: Set[(Int, Int)] = Set.empty,
-    lastCenterChunk: Option[(Int, Int)] = None
+    lastCenterChunk: Option[(Int, Int)] = None,
+    overworldMap: Option[OverworldMap] = None
 ) {
   def getTile(point: Point): Option[TileType] = tiles.get(point)
 

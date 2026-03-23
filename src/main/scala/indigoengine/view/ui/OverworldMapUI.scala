@@ -24,7 +24,12 @@ object OverworldMapUI {
     * @return
     *   SceneUpdateFragment for the overworld preview
     */
-  def render(overworldMap: OverworldMap, seed: Long): SceneUpdateFragment = {
+  def render(
+      overworldMap: OverworldMap,
+      seed: Long,
+      playerPosition: Option[game.Point] = None,
+      isPreview: Boolean = true
+  ): SceneUpdateFragment = {
     // Center the map on screen
     val mapPixelWidth = overworldMap.width * pixelSize
     val mapPixelHeight = overworldMap.height * pixelSize
@@ -67,22 +72,60 @@ object OverworldMapUI {
       .toSeq
       .toBatch
 
-    // Add title and instructions
+    // Render Player Marker if position is provided
+    val playerMarker = playerPosition match {
+      case Some(pos) =>
+        // Convert detailed coords to Overworld coords
+        // Overworld is 1/10th scale of detailed map
+        val ovX = pos.x / map.Chunk.size
+        val ovY = pos.y / map.Chunk.size
+
+        val markerX = offsetX + ovX * pixelSize
+        val markerY = offsetY + ovY * pixelSize
+
+        // Flashy Magenta Marker
+        val markerSize = 4
+        Batch(
+          Shape.Box(
+            Rectangle(
+              indigo.Point(
+                markerX - markerSize / 2,
+                markerY - markerSize / 2
+              ),
+              Size(markerSize, markerSize)
+            ),
+            Fill.Color(RGBA.Magenta)
+          )
+        )
+      case None => Batch.empty
+    }
+
+    // Add title and instructions — context-dependent text
+    val (titleText, instructionsText) = if (isPreview) {
+      ("WORLD MAP PREVIEW", "Press any key to return")
+    } else {
+      ("WORLD MAP", "TAB: Local Map | M/ESC: Close")
+    }
+
     val title = UIUtils.text(
-      "WORLD MAP PREVIEW",
-      (canvasWidth - 140) / 2,
+      titleText,
+      (canvasWidth - titleText.length * 8) / 2,
       10
     )
 
-    val seedText = UIUtils.text(
-      s"Seed: $seed",
-      (canvasWidth - 120) / 2,
-      canvasHeight - 40
-    )
+    val seedText = if (isPreview) {
+      UIUtils.text(
+        s"Seed: $seed",
+        (canvasWidth - 120) / 2,
+        canvasHeight - 40
+      )
+    } else {
+      Group.empty
+    }
 
     val instructions = UIUtils.text(
-      "Press any key to return",
-      (canvasWidth - 180) / 2,
+      instructionsText,
+      (canvasWidth - instructionsText.length * 8) / 2,
       canvasHeight - 20
     )
 
@@ -105,7 +148,8 @@ object OverworldMapUI {
       ("Path", RGBA.fromHexString("#b8a07a")),
       ("PathBridge", RGBA.fromHexString("#c9955c")),
       ("Trail", RGBA.fromHexString("#CCCCCC")),
-      ("TrailBridge", RGBA.fromHexString("#888888"))
+      ("TrailBridge", RGBA.fromHexString("#888888")),
+      ("You", RGBA.Magenta)
     )
 
     val legendElements = legendItems.zipWithIndex.flatMap {
@@ -124,7 +168,7 @@ object OverworldMapUI {
       Layer.Content(
         batches ++
           Batch(title, seedText, instructions) ++
-          legendElements.toBatch
+          legendElements.toBatch ++ playerMarker
       )
     ).addCloneBlanks(cloneBlanks.toBatch)
   }

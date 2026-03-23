@@ -24,6 +24,7 @@ object InputMappings {
     KeyInputs(Key.KEY_L) -> LevelUp,
     KeyInputs(Key.KEY_M) -> OpenMap,
     KeyInputs(Key.BACK_QUOTE) -> DebugMenu,
-    KeyInputs(Key.KEY_I) -> Inventory
+    KeyInputs(Key.KEY_I) -> Inventory,
+    KeyInputs(Key.TAB) -> Tab
   )
 }

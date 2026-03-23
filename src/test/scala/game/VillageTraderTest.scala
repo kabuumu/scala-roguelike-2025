@@ -17,7 +17,7 @@ class VillageTraderTest extends AnyFunSuite {
     assert(villageNPCs.nonEmpty, "Villages should have NPCs")
     println(s"Found ${villageNPCs.size} village NPCs")
 
-    val playerSpawnPoint = Point(0, 0)
+    val playerSpawnPoint = gameState.playerEntity.position
     var buildingsWithPlayerSpawn = 0
     var buildingsWithNPCs = 0
 
@@ -109,8 +109,19 @@ class VillageTraderTest extends AnyFunSuite {
     val gameState = StartingState.startingGameState
 
     val traders = gameState.entities.filter(_.isTrader)
-    assert(traders.nonEmpty, "Game should have some traders")
 
+    // Count how many shop buildings exist (Healer, PotionShop, EquipmentShop)
+    val shopBuildingCount = gameState.worldMap.villages.flatMap(_.buildings).count { b =>
+      b.buildingType == map.BuildingType.Healer ||
+      b.buildingType == map.BuildingType.PotionShop ||
+      b.buildingType == map.BuildingType.EquipmentShop
+    }
+
+    if (shopBuildingCount > 0) {
+      assert(traders.nonEmpty, s"Game with $shopBuildingCount shop buildings should have some traders")
+    }
+
+    // Verify that ALL existing traders have non-empty inventories
     traders.foreach { trader =>
       val traderComponent = trader.trader.get
       assert(

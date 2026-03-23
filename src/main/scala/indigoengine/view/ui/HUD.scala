@@ -173,9 +173,11 @@ object HUD {
         val x = scrollSelect.cursor.x
         val y = scrollSelect.cursor.y
         s"Target: [$x,$y]. Press Enter to confirm action at this location."
-      case interactionState: UIState.InteractionState =>
-        val (optionText, _) = interactionState.getSelectedOption
+      case UIState.InteractionState(entity, message, options, selectedOption) =>
+        val (optionText, _) = options(selectedOption)
         s"Interaction - Selected: $optionText. Use arrows to navigate, Space/E/Enter to select."
+      case UIState.WorldMap(_) =>
+        "World Map. Press Tab to Toggle View, M/Esc to Close."
       case _: UIState.MainMenu =>
         "" // No message window content for main menu
       case _: UIState.GameOver =>
@@ -186,8 +188,6 @@ object HUD {
         "Select an item to give to the player."
       case _: UIState.DebugGivePerkSelect =>
         "Select a perk to give to the player."
-      case UIState.WorldMap =>
-        "" // World map handles its own messaging
       case _: UIState.WorldMapPreview =>
         "" // World map preview handles its own messaging
       case _: UIState.Inventory =>

@@ -20,4 +20,5 @@ object Input {
   case object DebugMenu extends Input
   case object Inventory extends Input
   case object CharacterScreen extends Input
+  case object Tab extends Input
 }

@@ -113,17 +113,13 @@ class OverworldMapGeneratorTest extends AnyFunSuite {
     )
     val map = OverworldMapGenerator.generate(config)
 
-    val settlements = map.tiles
-      .filter { case (_, tileType) =>
-        tileType == OverworldTileType.Village ||
-        tileType == OverworldTileType.Town ||
-        tileType == OverworldTileType.City
-      }
-      .keys
-      .toSeq
+    // Use settlement CENTER points (not individual tiles from clusters)
+    // Settlements are multi-tile clusters, so tile-level distance can be 1 within
+    // the same settlement
+    val settlements = map.cities ++ map.towns ++ map.villages
 
-    // Check that all settlements have at least some spacing
-    // (minimum village spacing is 15)
+    // Check that all settlement centers have at least some spacing
+    // (minimum village spacing is 18)
     val minSpacing =
       10 // Using slightly less than min village spacing for leniency
 

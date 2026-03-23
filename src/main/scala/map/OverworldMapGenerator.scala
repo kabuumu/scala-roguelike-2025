@@ -45,7 +45,10 @@ case class OverworldMap(
     tiles: Map[Point, OverworldTileType],
     seed: Long,
     width: Int,
-    height: Int
+    height: Int,
+    cities: Seq[Point] = Seq.empty,
+    towns: Seq[Point] = Seq.empty,
+    villages: Seq[Point] = Seq.empty
 ) {
   def getTile(point: Point): Option[OverworldTileType] = tiles.get(point)
 }
@@ -56,7 +59,7 @@ case class OverworldMap(
 object OverworldMapGenerator {
 
   /** Scale factor compared to the regular WorldMap (10x zoomed out) */
-  val ScaleFactor: Int = 10
+  val ScaleFactor: Int = 20
 
   /** Generates a complete overworld map.
     *
@@ -91,7 +94,10 @@ object OverworldMapGenerator {
       tiles = withTrails,
       seed = config.seed,
       width = config.width,
-      height = config.height
+      height = config.height,
+      cities = cityLocations,
+      towns = townLocations,
+      villages = villageLocations
     )
   }
 

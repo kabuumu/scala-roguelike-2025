@@ -162,14 +162,30 @@ object Game extends IndigoSandbox[Unit, GameController] {
             Layer.Content(gameOverScreen(model, gameOver.player))
           )
         )
-      case UIState.WorldMap =>
-        Outcome(
-          worldMapView(model)
-        )
+      case UIState.WorldMap(showOverworld) =>
+        if (showOverworld) {
+          model.gameState.worldMap.overworldMap match {
+            case Some(om) =>
+              Outcome(
+                indigoengine.view.ui.OverworldMapUI
+                  .render(
+                    om,
+                    model.gameState.worldMap.seed,
+                    Some(model.gameState.playerEntity.position),
+                    isPreview = false
+                  )
+              )
+            case None =>
+              // Fallback if no overworld map exists (e.g. classic mode)
+              Outcome(worldMapView(model))
+          }
+        } else {
+          Outcome(worldMapView(model))
+        }
       case preview: UIState.WorldMapPreview =>
         Outcome(
           indigoengine.view.ui.OverworldMapUI
-            .render(preview.overworldMap, preview.seed)
+            .render(preview.overworldMap, preview.seed, None)
         )
       case _: UIState.Inventory | _: UIState.InventoryActionState =>
         Outcome(
@@ -390,39 +406,9 @@ object Game extends IndigoSandbox[Unit, GameController] {
         )
       }
 
-      // Pre-calculate occlusion from the row above (y-1)
-      val prevY = y - 1
-      val coveredIndices = scala.collection.mutable.HashSet.empty[Int]
-      val renderMinX = minX - 3
-
-      // Broad phase: Check if there are ANY trees in the scan range on prevY before doing the expensive scan
-      // This is a micro-optimization but useful if the map is sparse
-      var prevScanX = renderMinX
-      while (isTree(game.Point(prevScanX - 1, prevY))) {
-        prevScanX -= 1
-      }
-
-      // Forward scan on prevY to populate coveredIndices
-      var simX = prevScanX
-      while (simX <= maxX) {
-        val p = game.Point(simX, prevY)
-        if (isTree(p)) {
-          val (width, isVertical, _) = identifyTreeGroup(simX, prevY)
-          if (isVertical) {
-            var k = 0
-            while (k < width) {
-              coveredIndices.add(simX + k)
-              k += 1
-            }
-          }
-          simX += (if (width > 0) width else 1)
-        } else {
-          simX += 1
-        }
-      }
-
       // Backscan local row to find start of streak
       // This ensures that the greedy grouping relies on the absolute start of a tree row
+      val renderMinX = minX - 3
       var scanX = minX - 1
       while (isTree(game.Point(scanX, y))) {
         scanX -= 1
@@ -446,68 +432,63 @@ object Game extends IndigoSandbox[Unit, GameController] {
           skipNext -= 1
           None
         } else {
-          // Check if covered by a vertical group from above
-          if (coveredIndices.contains(x)) {
-            None
-          } else {
-            val tilePosition = game.Point(x, y)
-            val isMem =
-              sightMemory.contains(tilePosition) || UIConfig.ignoreLineOfSight
-            val isTreeTile = isTree(tilePosition)
+          val tilePosition = game.Point(x, y)
+          val isMem =
+            sightMemory.contains(tilePosition) || UIConfig.ignoreLineOfSight
+          val isTreeTile = isTree(tilePosition)
 
-            // We process if it's in memory OR if it's a tree (Hidden Anchor Logic)
-            if (isMem || isTreeTile) {
+          // We process if it's in memory OR if it's a tree (Hidden Anchor Logic)
+          if (isMem || isTreeTile) {
 
-              model.gameState.worldMap.getTile(tilePosition).flatMap {
-                tileType =>
-                  val isGrassOrDirt = tileType match {
-                    case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 |
-                        TileType.Dirt =>
-                      true
-                    case _ => false
+            model.gameState.worldMap.getTile(tilePosition).flatMap {
+              tileType =>
+                val isGrassOrDirt = tileType match {
+                  case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 |
+                      TileType.Dirt =>
+                    true
+                  case _ => false
+                }
+
+                if (!isGrassOrDirt) {
+                  val isVisible = visiblePoints.contains(tilePosition)
+
+                  // Special handling for Tree
+                  val maybeSprite = if (tileType == TileType.Tree) {
+                    val (width, _, sprite) = identifyTreeGroup(x, y)
+                    skipNext = if (width > 0) width - 1 else 0
+
+                    // If this is a Hidden Anchor (not in memory), we only render if the group extends into memory
+                    if (!isMem) {
+                      // Check if any tile in this group is in memory
+                      val groupVisible = (0 until width).exists(offset =>
+                        sightMemory.contains(game.Point(x + offset, y))
+                      )
+                      if (groupVisible) sprite else None
+                    } else {
+                      sprite
+                    }
+                  } else if (isMem) { // Non-tree tiles must be in memory
+                    Some(spriteSheet.fromTile(tilePosition, tileType))
+                  } else {
+                    None
                   }
 
-                  if (!isGrassOrDirt) {
-                    val isVisible = visiblePoints.contains(tilePosition)
-
-                    // Special handling for Tree
-                    val maybeSprite = if (tileType == TileType.Tree) {
-                      val (width, _, sprite) = identifyTreeGroup(x, y)
-                      skipNext = if (width > 0) width - 1 else 0
-
-                      // If this is a Hidden Anchor (not in memory), we only render if the group extends into memory
-                      if (!isMem) {
-                        // Check if any tile in this group is in memory
-                        val groupVisible = (0 until width).exists(offset =>
-                          sightMemory.contains(game.Point(x + offset, y))
-                        )
-                        if (groupVisible) sprite else None
-                      } else {
+                  maybeSprite.map { sprite =>
+                    val finalSprite =
+                      if (isVisible) sprite // Anchor itself is visible
+                      else
                         sprite
-                      }
-                    } else if (isMem) { // Non-tree tiles must be in memory
-                      Some(spriteSheet.fromTile(tilePosition, tileType))
-                    } else {
-                      None
-                    }
+                          .asInstanceOf[Graphic[Material.Bitmap]]
+                          .modifyMaterial(
+                            _.toImageEffects.withTint(sepiaTint)
+                          )
 
-                    maybeSprite.map { sprite =>
-                      val finalSprite =
-                        if (isVisible) sprite // Anchor itself is visible
-                        else
-                          sprite
-                            .asInstanceOf[Graphic[Material.Bitmap]]
-                            .modifyMaterial(
-                              _.toImageEffects.withTint(sepiaTint)
-                            )
-
-                      (y, finalSprite)
-                    }
-                  } else None
-              }
-            } else {
-              None
+                    (y, finalSprite)
+                  }
+                } else None
             }
+          } else {
+            None
           }
         }
       }

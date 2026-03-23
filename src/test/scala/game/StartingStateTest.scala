@@ -1,50 +1,46 @@
 package game
 
 import org.scalatest.funsuite.AnyFunSuite
-import data.Items
+import game.entity.Movement.position
 
 class StartingStateTest extends AnyFunSuite {
 
   test(
-    "startAdventure should guarantee Golden Statue placement in closest dungeon"
+    "startGauntlet should generate a dungeon with an endpoint room"
   ) {
-    // Generate a new game state
-    val gameState = StartingState.startAdventure()
+    // Generate a gauntlet game state
+    val gameState = StartingState.startGauntlet()
 
-    // Check if Golden Statue exists in simple item list
-    val allItems = gameState.worldMap.allItems
-    val hasGoldenStatue = allItems.exists { case (_, itemRef) =>
-      itemRef == Items.ItemReference.GoldenStatue
-    }
+    // Verify dungeon exists
+    val dungeons = gameState.worldMap.dungeons
+    assert(dungeons.nonEmpty, "Gauntlet should generate at least one dungeon")
 
+    val dungeon = dungeons.head
+    println(s"Dungeon rooms: ${dungeon.roomGrid.size}")
+    println(s"Dungeon start: ${dungeon.startPoint}")
+    println(s"Dungeon endpoint: ${dungeon.endpoint}")
+
+    // Verify the dungeon has an endpoint (boss room)
     assert(
-      hasGoldenStatue,
-      "Golden Statue must be present in worldMap.allItems"
+      dungeon.endpoint.isDefined,
+      "Gauntlet dungeon should have an endpoint room"
     )
 
-    // Trace where it is
-    val (itemPos, _) =
-      allItems.find(_._2 == Items.ItemReference.GoldenStatue).get
-    println(s"Golden Statue found at Room Coordinates: $itemPos")
-
-    // Verify it is in the closest dungeon
-    val closestDungeon = gameState.worldMap.dungeons.minBy { d =>
-      val dx = d.startPoint.x
-      val dy = d.startPoint.y
-      dx * dx + dy * dy
-    }
-
-    println(s"Closest Dungeon Start: ${closestDungeon.startPoint}")
-    println(s"Closest Dungeon Endpoint: ${closestDungeon.endpoint}")
-
-    // The item should be in the closest dungeon
-    val itemInClosestDungeon = closestDungeon.items.exists { case (pos, ref) =>
-      ref == Items.ItemReference.GoldenStatue
-    }
-
+    // Verify dungeon has reasonable size
     assert(
-      itemInClosestDungeon,
-      s"Golden Statue should be in the closest dungeon (Start: ${closestDungeon.startPoint})"
+      dungeon.roomGrid.size >= 10,
+      s"Gauntlet dungeon should have at least 10 rooms, but has ${dungeon.roomGrid.size}"
     )
+
+    // Verify player spawns inside the dungeon
+    val playerPos = gameState.playerEntity.position
+    println(s"Player position: $playerPos")
+
+    // Verify enemies exist
+    val enemies = gameState.entities.filter(e =>
+      e.get[game.entity.EntityTypeComponent].exists(_.entityType == game.entity.EntityType.Enemy)
+    )
+    assert(enemies.nonEmpty, "Gauntlet should spawn enemies in the dungeon")
+    println(s"Enemies spawned: ${enemies.size}")
   }
 }

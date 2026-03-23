@@ -183,7 +183,6 @@ object WorldMapUI {
                     ) // Cyan marker for target
                 }
 
-              case _ => None
             }
           }
           .map { case (targetPos, color) =>
@@ -269,10 +268,25 @@ object WorldMapUI {
       }
     }
 
+    // Render Player Marker (Center Screen)
+    val playerMarker = Batch(
+      Shape.Box(
+        Rectangle(
+          Point(
+            canvasWidth / 2 - 4, // 8x8 marker centered
+            canvasHeight / 2 - 4
+          ),
+          Size(8, 8)
+        ),
+        Fill.Color(RGBA.Magenta)
+      )
+    )
+
     mapView |+| SceneUpdateFragment(
       Layer.Content(
         Batch.fromSeq(questMarkers.toSeq) ++
           Batch.fromSeq(villageNames) ++
+          playerMarker ++
           Batch(exitMessage)
       )
     )
