@@ -112,9 +112,13 @@ object CharacterScreen {
     val questsTitle = UIUtils.text("Quests:", leftColX, questsTitleY)
 
     val questsListY = questsTitleY + spriteScale
-    val activeQuests = model.gameState.quests.flatMap { case (id, status) =>
-      if (status == QuestStatus.Active || status == QuestStatus.Completed) {
-        QuestRepository.get(id).map(q => (q, status))
+    val activeQuests = model.gameState.quests.flatMap {
+      case (id, questState) =>
+      if (
+        questState.status == QuestStatus.Active ||
+        questState.status == QuestStatus.Completed
+      ) {
+        QuestRepository.get(id).map(q => (q, questState.status))
       } else {
         None
       }

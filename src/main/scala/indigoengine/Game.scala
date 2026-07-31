@@ -220,7 +220,10 @@ object Game extends IndigoSandbox[Unit, GameController] {
 
   def getQuestMarkers(model: GameController): Seq[(game.Point, RGBA)] = {
     model.gameState.quests.collect {
-      case (questId, game.quest.QuestStatus.Active) =>
+      case (
+            questId,
+            game.quest.QuestState(game.quest.QuestStatus.Active, _)
+          ) =>
         data.Quests.quests.get(questId).flatMap { quest =>
           quest.goal match {
             case game.quest.RetrieveItemGoal(itemRef, amount) =>

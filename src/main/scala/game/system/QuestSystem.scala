@@ -38,7 +38,10 @@ object QuestSystem extends GameSystem {
     // Process Active Quests
     val (finalState, finalEvents) =
       gameState.quests.foldLeft((gameState, Seq.empty[GameSystemEvent])) {
-        case ((currentState, currentEvents), (questId, QuestStatus.Active)) =>
+        case (
+              (currentState, currentEvents),
+              (questId, game.quest.QuestState(QuestStatus.Active, _))
+            ) =>
           QuestRepository.get(questId) match {
             case Some(quest) =>
               quest.goal match {

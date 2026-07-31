@@ -21,7 +21,7 @@ import game.entity.{
   ConversationAction
 }
 import game.entity.EventMemory.*
-import game.quest.{QuestStatus, QuestRepository, Quest, KillEnemyGoal, QuestRewards}
+import game.quest.{QuestState, QuestStatus, QuestRepository, Quest, KillEnemyGoal, QuestRewards}
 import game.Point
 import map.{WorldMap, MapBounds}
 import game.GameMode
@@ -73,11 +73,11 @@ class QuestSystemRatQuestTest extends AnyFunSuite with Matchers {
       worldMap = worldMap,
       dungeonFloor = 0,
       gameMode = GameMode.Adventure,
-      quests = Map("kill_rats" -> QuestStatus.Active)
+      quests = Map("kill_rats" -> QuestState(QuestStatus.Active))
     )
 
     // Retrieve active quest from state
-    assert(gameState.quests("kill_rats") == QuestStatus.Active)
+    assert(gameState.quests("kill_rats").status == QuestStatus.Active)
 
     // 4. Update QuestSystem without rat kills (Should not complete)
     val (state1, events1) = QuestSystem.update(gameState, Seq.empty)

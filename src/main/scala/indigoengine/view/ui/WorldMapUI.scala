@@ -142,7 +142,10 @@ object WorldMapUI {
     // Render Quest Markers
     // We want to show markers for active quests that involve retrieving an item
     val questMarkers = model.gameState.quests.collect {
-      case (questId, game.quest.QuestStatus.Active) =>
+      case (
+            questId,
+            game.quest.QuestState(game.quest.QuestStatus.Active, _)
+          ) =>
         game.quest.QuestRepository
           .get(questId)
           .flatMap { quest =>

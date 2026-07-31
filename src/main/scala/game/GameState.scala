@@ -22,7 +22,7 @@ case class GameState(
     worldMap: map.WorldMap,
     dungeonFloor: Int = 1,
     gameMode: GameMode = GameMode.Adventure,
-    quests: Map[String, QuestStatus] = Map.empty
+    quests: Map[String, QuestState] = Map.empty
 ) {
 
   // Index for O(1) entity lookup by ID
@@ -201,27 +201,38 @@ case class GameState(
     copy(messages = message +: messages)
   }
 
-  def acceptQuest(questId: String): GameState = {
+  def acceptQuest(
+      questId: String,
+      progressBaseline: Int = 0
+  ): GameState = {
     if (!quests.contains(questId)) {
-      copy(quests = quests + (questId -> QuestStatus.Active))
+      copy(
+        quests = quests + (
+          questId -> QuestState(QuestStatus.Active, progressBaseline)
+        )
+      )
     } else {
       this
     }
   }
 
   def completeQuest(questId: String): GameState = {
-    if (quests.get(questId).contains(QuestStatus.Active)) {
-      copy(quests = quests + (questId -> QuestStatus.Completed))
+    if (quests.get(questId).exists(_.status == QuestStatus.Active)) {
+      copy(
+        quests = quests.updatedWith(questId)(
+          _.map(_.copy(status = QuestStatus.Completed))
+        )
+      )
     } else {
       this
     }
   }
 
   def isQuestActive(questId: String): Boolean =
-    quests.get(questId).contains(QuestStatus.Active)
+    quests.get(questId).exists(_.status == QuestStatus.Active)
 
   def isQuestCompleted(questId: String): Boolean =
-    quests.get(questId).contains(QuestStatus.Completed)
+    quests.get(questId).exists(_.status == QuestStatus.Completed)
 
   lazy val lineOfSightBlockingPoints: Set[Point] =
     worldMap.staticLineOfSightBlockingPoints ++
