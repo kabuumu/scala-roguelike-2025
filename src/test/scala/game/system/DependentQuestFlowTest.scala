@@ -3,7 +3,7 @@ package game.system
 import game.{GameState, Point}
 import game.entity.*
 import game.entity.EventMemory.*
-import game.quest.{QuestState, QuestStatus}
+import game.quest.{QuestRepository, QuestState, QuestStatus}
 import game.system.event.GameSystemEvent.AddExperienceEvent
 import map.{MapBounds, WorldMap}
 import org.scalatest.funsuite.AnyFunSuite
@@ -120,5 +120,44 @@ class DependentQuestFlowTest extends AnyFunSuite {
 
     assert(repeated == completed)
     assert(repeatedEvents.isEmpty)
+  }
+
+  test("quest repository defines a consistent four-quest chain") {
+    val retrieve = QuestRepository.get("retrieve_statue").get
+    val rats = QuestRepository.get("kill_rats").get
+    val slimes = QuestRepository.get("slime_cleanup").get
+    val snakes = QuestRepository.get("snake_hunt").get
+
+    assert(retrieve.followUpQuestId.contains("kill_rats"))
+    assert(rats.prerequisiteQuestIds == Set("retrieve_statue"))
+    assert(rats.followUpQuestId.contains("slime_cleanup"))
+    assert(slimes.prerequisiteQuestIds == Set("kill_rats"))
+    assert(slimes.followUpQuestId.contains("snake_hunt"))
+    assert(snakes.prerequisiteQuestIds == Set("slime_cleanup"))
+    assert(snakes.followUpQuestId.isEmpty)
+  }
+
+  test("completing a quest offers its same-giver follow-up") {
+    val (initialState, giver) = state(
+      player,
+      Map("retrieve_statue" -> QuestState(QuestStatus.Completed))
+    )
+    val (accepted, _) =
+      QuestSystem.acceptQuest(initialState, giver, "kill_rats")
+    val ready = accepted.updateEntity(
+      player.id,
+      addRatKills(accepted.playerEntity, 3)
+    )
+
+    val (completed, _) =
+      QuestSystem.completeQuest(ready, giver, "kill_rats")
+    val conversation =
+      completed.getEntity(giver.id).flatMap(_.get[Conversation]).get
+
+    assert(
+      conversation.choices.exists(
+        _.action == ConversationAction.AcceptQuest("slime_cleanup")
+      )
+    )
   }
 }
