@@ -7,6 +7,7 @@ import _root_.ui.UIConfig.*
 import _root_.ui.GameController
 import map.TileType
 import game.entity.Inventory.inventoryItems
+import game.entity.EventMemory.*
 
 object WorldMapUI {
 
@@ -183,6 +184,26 @@ object WorldMapUI {
                     ) // Cyan marker for target
                 }
 
+              case game.quest.KillEnemyGoal(enemyType, amount) =>
+                val killCount = model.gameState.playerEntity
+                  .getMemoryEventsByType[game.entity.MemoryEvent.EnemyDefeated]
+                  .count(_.enemyType == enemyType)
+
+                if (killCount >= amount) {
+                  // Goal met, point to the quest giver to turn it in
+                  quest.giverName.flatMap { giverName =>
+                    model.gameState.entities
+                      .find(e =>
+                        e.get[game.entity.NameComponent].exists(_.name == giverName)
+                      )
+                      .flatMap(_.get[game.entity.Movement])
+                      .map(_.position)
+                      .map(npcPos => (npcPos, RGBA.Green))
+                  }
+                } else {
+                  // Enemies don't have a fixed location, so no marker until the goal is met
+                  None
+                }
             }
           }
           .map { case (targetPos, color) =>
