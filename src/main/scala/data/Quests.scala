@@ -13,7 +13,8 @@ object Quests {
       rewards = QuestRewards(experience = 500, coins = 100),
       giverName = Some("Elder"),
       readyToCompleteText = Some("You found it! Please, give it to me."),
-      completionText = Some("Thank you so much! Our village is safe.")
+      completionText = Some("Thank you so much! Our village is safe."),
+      followUpQuestId = Some("kill_rats")
     ),
     "kill_rats" -> Quest(
       id = "kill_rats",
@@ -23,7 +24,8 @@ object Quests {
       rewards = QuestRewards(experience = 300, coins = 50),
       giverName = Some("Quest Giver"),
       readyToCompleteText = Some("You killed them? Thank you!"),
-      completionText = Some("The village is safe from rats now.")
+      completionText = Some("The village is safe from rats now."),
+      prerequisiteQuestIds = Set("retrieve_statue")
     )
   )
 }
