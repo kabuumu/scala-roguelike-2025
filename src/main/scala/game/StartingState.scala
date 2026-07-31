@@ -359,20 +359,26 @@ object StartingState {
           dx < 30 && dy < 30 // Village radius is roughly 30-40 tiles
         }
 
-        // Identify a suitable building for the Quest Giver data
-        // Must be Generic AND not containing the player spawn
-        val questGiverBuildingIdx = if (isSpawnVillage) {
-          village.buildings.zipWithIndex
-            .collectFirst {
-              case (b, idx) if b.buildingType == map.BuildingType.Generic &&
-                  !(playerSpawnPoint.x >= b.bounds._1.x && playerSpawnPoint.x <= b.bounds._2.x &&
-                    playerSpawnPoint.y >= b.bounds._1.y && playerSpawnPoint.y <= b.bounds._2.y) =>
-                idx
-            }
-            .getOrElse(-1)
+        // Identify suitable buildings for Quest Giver NPCs
+        // Must be Generic AND not containing the player spawn.
+        // Village.generateVillage guarantees at least two Generic buildings,
+        // so the Elder (retrieve_statue) and the rat quest giver (kill_rats)
+        // each get their own building where possible.
+        val eligibleGenericBuildingIndices = if (isSpawnVillage) {
+          village.buildings.zipWithIndex.collect {
+            case (b, idx) if b.buildingType == map.BuildingType.Generic &&
+                !(playerSpawnPoint.x >= b.bounds._1.x && playerSpawnPoint.x <= b.bounds._2.x &&
+                  playerSpawnPoint.y >= b.bounds._1.y && playerSpawnPoint.y <= b.bounds._2.y) =>
+              idx
+          }
         } else {
-          -1
+          Seq.empty
         }
+
+        val questGiverBuildingIdx =
+          eligibleGenericBuildingIndices.headOption.getOrElse(-1)
+        val ratQuestGiverBuildingIdx =
+          eligibleGenericBuildingIndices.drop(1).headOption.getOrElse(-1)
 
         village.buildings.zipWithIndex.flatMap { case (building, buildingIdx) =>
           val (minBounds, maxBounds) = building.bounds
@@ -390,9 +396,11 @@ object StartingState {
               case map.BuildingType.EquipmentShop =>
                 data.Entities.equipmentMerchant(id, position)
               case map.BuildingType.Generic =>
-                // Place Quest Giver if this is the identified building
+                // Place Quest Givers in their identified buildings
                 if (buildingIdx == questGiverBuildingIdx)
                   data.Entities.questGiver(id, position)
+                else if (buildingIdx == ratQuestGiverBuildingIdx)
+                  data.Entities.ratQuestGiver(id, position)
                 else
                   data.Entities.villager(id, position)
               case map.BuildingType.Farmland =>

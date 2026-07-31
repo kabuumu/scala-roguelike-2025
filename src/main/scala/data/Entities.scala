@@ -242,4 +242,28 @@ object Entities {
       )
     )
   }
+
+  def ratQuestGiver(id: String, position: game.Point): Entity = {
+    CharacterFactory.create(
+      id,
+      position,
+      Sprites.playerSprite,
+      EntityType.Villager,
+      name =
+        Some(NameComponent("Quest Giver", "A villager pestered by vermin.")),
+      extraComponents = Seq(
+        Conversation(
+          "Rats have infested our storerooms! Could you kill a few for us?",
+          Seq(
+            ConversationChoice(
+              "I will take care of them.",
+              AcceptQuest("kill_rats")
+            ),
+            ConversationChoice("Maybe later.", CloseAction)
+          )
+        ),
+        Portrait(Sprite(1, 0, 0))
+      )
+    )
+  }
 }
