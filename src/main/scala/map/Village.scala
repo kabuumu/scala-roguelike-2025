@@ -68,7 +68,7 @@ case class Village(
 
 object Village {
 
-  /** Generate a village at a specific location. Creates 3-5 buildings clustered
+  /** Generate a village at a specific location. Creates 4-6 buildings clustered
     * around a center point.
     *
     * @param centerLocation
@@ -81,14 +81,16 @@ object Village {
   def generateVillage(centerLocation: Point, seed: Long): Village = {
     val random = new Random(seed)
 
-    // Determine number of buildings (3-5)
-    val numBuildings = 3 + random.nextInt(3)
+    // Four mandatory buildings guarantee two quest-giver buildings remain
+    // available even when the player spawns inside one Generic building.
+    val numBuildings = 4 + random.nextInt(3)
 
     // Mandatory building types that MUST be present in every village
     val mandatoryTypes = Seq(
       BuildingType.Farmland,
-      BuildingType.Generic, // Player spawn maybe?
-      BuildingType.Generic  // Quest Giver
+      BuildingType.Generic,
+      BuildingType.Generic,
+      BuildingType.Generic
     )
 
     // Optional types to fill remaining slots
@@ -128,6 +130,7 @@ object Village {
         case 2 => Point(-15, 5) // Bottom-left
         case 3 => Point(5, 5) // Bottom-right (if 4+ buildings)
         case 4 => Point(-5, -5) // Center (if 5 buildings)
+        case 5 => Point(15, -5) // Center-right (if 6 buildings)
       }
 
       val buildingLocation = Point(

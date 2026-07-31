@@ -80,9 +80,9 @@ object StartingState {
       overworldConfig.height * scale
     )
 
-    val worldMap = WorldMap(
+    val baseWorldMap = WorldMap(
       tiles = Map.empty,
-      dungeons = Seq.empty,
+      dungeons = Seq(createAdventureQuestDungeon(playerSpawnPoint, seed)),
       villages = Seq.empty,
       paths = Set.empty,
       bridges = Set.empty,
@@ -96,7 +96,7 @@ object StartingState {
     val initialWorldConfig = WorldConfig(bounds = worldBounds, seed = seed)
     val worldMapWithChunks = ChunkManager.updateChunks(
       playerSpawnPoint,
-      worldMap,
+      baseWorldMap,
       initialWorldConfig,
       seed
     )
@@ -106,6 +106,33 @@ object StartingState {
       findSafeSpawn(playerSpawnPoint, worldMapWithChunks),
       GameMode.Adventure,
       dungeonFloor = 0
+    )
+  }
+
+  private def createAdventureQuestDungeon(
+      playerSpawnPoint: Point,
+      seed: Long
+  ): Dungeon = {
+    val direction = if (playerSpawnPoint.x >= 100) -1 else 1
+    val minRoomX = (playerSpawnPoint.x + direction * 55) / Dungeon.roomSize
+    val minRoomY = (playerSpawnPoint.y - 20) / Dungeon.roomSize
+    val bounds =
+      if (direction > 0)
+        MapBounds(minRoomX, minRoomX + 4, minRoomY, minRoomY + 4)
+      else
+        MapBounds(minRoomX - 4, minRoomX, minRoomY, minRoomY + 4)
+
+    DungeonGenerator.generateDungeon(
+      DungeonConfig(
+        bounds = bounds,
+        seed = seed ^ 0x51554553544cL,
+        explicitSize = Some(14),
+        explicitLockedDoorCount = Some(0),
+        explicitItemCount = Some(3),
+        entranceSide =
+          if (direction > 0) Direction.Left else Direction.Right,
+        requiredItems = Set(Items.ItemReference.GoldenStatue)
+      )
     )
   }
 
@@ -240,8 +267,16 @@ object StartingState {
           }
       }.unzip
 
-    val enemies: Set[Entity] = enemiesList.flatten.toSet
-    val allSpitAbilities: Map[String, Entity] = spitAbilitiesMap.flatten.toMap
+    val generatedEnemies: Set[Entity] = enemiesList.flatten.toSet
+    val generatedSpitAbilities: Map[String, Entity] =
+      spitAbilitiesMap.flatten.toMap
+    val (requiredQuestEnemies, requiredQuestAbilities) =
+      if (gameMode == GameMode.Adventure)
+        ensureQuestEnemies(worldMap, generatedEnemies)
+      else (Set.empty[Entity], Map.empty[String, Entity])
+    val enemies = generatedEnemies ++ requiredQuestEnemies
+    val allSpitAbilities =
+      generatedSpitAbilities ++ requiredQuestAbilities
 
     // Create Player Entity
     val initialVisibleRange = 5
@@ -630,6 +665,66 @@ object StartingState {
 
       (enemies, spitAbilities)
     }
+  }
+
+  private def ensureQuestEnemies(
+      worldMap: WorldMap,
+      existingEnemies: Set[Entity]
+  ): (Set[Entity], Map[String, Entity]) = {
+    import data.Enemies.EnemyReference
+
+    val requirements = Seq(
+      EnemyReference.Rat -> 3,
+      EnemyReference.Slimelet -> 3,
+      EnemyReference.Snake -> 2
+    )
+    val existingPositions =
+      existingEnemies.flatMap(_.get[Movement].map(_.position))
+    val candidatePositions = worldMap.dungeons.headOption.toSeq.flatMap {
+      dungeon =>
+        dungeon.roomGrid.toSeq
+          .sortBy(point => (point.x, point.y))
+          .flatMap(EnemyGeneration.findWalkableTilesInRoom(_, worldMap))
+          .distinct
+          .filterNot(existingPositions.contains)
+    }
+
+    var positionIndex = 0
+    var addedEnemies = Set.empty[Entity]
+    var addedAbilities = Map.empty[String, Entity]
+
+    requirements.foreach { case (enemyReference, requiredCount) =>
+      val existingCount = existingEnemies.count(
+        _.get[EnemyTypeComponent].exists(_.enemyType == enemyReference)
+      )
+      val missingCount = math.max(0, requiredCount - existingCount)
+
+      (0 until missingCount).foreach { index =>
+        if (positionIndex < candidatePositions.size) {
+          val position = candidatePositions(positionIndex)
+          positionIndex += 1
+          val enemyId =
+            s"quest-${enemyReference.toString.toLowerCase}-$index-${worldMap.seed}"
+          val enemy = enemyReference match {
+            case EnemyReference.Rat =>
+              Enemies.rat(enemyId, position)
+            case EnemyReference.Slimelet =>
+              Enemies.slimelet(enemyId, position)
+            case EnemyReference.Snake =>
+              val spitId = s"$enemyId-spit"
+              addedAbilities += spitId -> Items.snakeSpit(spitId)
+              Enemies.snake(enemyId, position, spitId)
+            case _ =>
+              throw new IllegalArgumentException(
+                s"Unsupported required quest enemy: $enemyReference"
+              )
+          }
+          addedEnemies += enemy
+        }
+      }
+    }
+
+    (addedEnemies, addedAbilities)
   }
 
   private def generateWildAnimals(worldMap: WorldMap): Seq[Entity] = {

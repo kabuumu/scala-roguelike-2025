@@ -9,8 +9,8 @@ class VillageTest extends AnyFunSuite {
     val village = Village.generateVillage(Point(0, 0), seed = 12345)
 
     assert(
-      village.buildings.length >= 3 && village.buildings.length <= 5,
-      s"Village should have 3-5 buildings, but has ${village.buildings.length}"
+      village.buildings.length >= 4 && village.buildings.length <= 6,
+      s"Village should have 4-6 buildings, but has ${village.buildings.length}"
     )
   }
 
@@ -39,7 +39,7 @@ class VillageTest extends AnyFunSuite {
     val village = Village.generateVillage(Point(0, 0), seed = 12345)
 
     val types = village.buildings.map(_.buildingType).toSet
-    // Should have at least Generic and one other type in a typical village of 3-5 buildings
+    // Mandatory types include farmland and three Generic buildings.
     assert(
       types.contains(BuildingType.Farmland),
       "Village should contain Farmland"
@@ -49,8 +49,8 @@ class VillageTest extends AnyFunSuite {
       "Village should contain Generic building (Quest Giver)"
     )
     assert(
-      village.buildings.length >= 3 && village.buildings.length <= 5,
-      s"Village should have 3-5 buildings, but has ${village.buildings.length}"
+      village.buildings.length >= 4 && village.buildings.length <= 6,
+      s"Village should have 4-6 buildings, but has ${village.buildings.length}"
     )
   }
 
