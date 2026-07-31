@@ -9,8 +9,8 @@ class VillageTest extends AnyFunSuite {
     val village = Village.generateVillage(Point(0, 0), seed = 12345)
 
     assert(
-      village.buildings.length >= 2 && village.buildings.length <= 5,
-      s"Village should have 2-5 buildings, but has ${village.buildings.length}"
+      village.buildings.length >= 3 && village.buildings.length <= 5,
+      s"Village should have 3-5 buildings, but has ${village.buildings.length}"
     )
   }
 
@@ -49,8 +49,8 @@ class VillageTest extends AnyFunSuite {
       "Village should contain Generic building (Quest Giver)"
     )
     assert(
-      village.buildings.length >= 2 && village.buildings.length <= 5,
-      s"Village should have 2-5 buildings, but has ${village.buildings.length}"
+      village.buildings.length >= 3 && village.buildings.length <= 5,
+      s"Village should have 3-5 buildings, but has ${village.buildings.length}"
     )
   }
 

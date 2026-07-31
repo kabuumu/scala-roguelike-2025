@@ -7,9 +7,12 @@ import game.entity.{
   Conversation,
   ConversationAction,
   ConversationChoice,
-  NameComponent
+  NameComponent,
+  EventMemory,
+  MemoryEvent
 }
 import game.entity.Inventory.inventoryItems
+import game.entity.EventMemory.*
 
 object QuestSystem extends GameSystem {
 
@@ -92,6 +95,62 @@ object QuestSystem extends GameSystem {
                     }
                   } else {
                     // Goal NOT Satisfied (maybe dropped item?):
+                    (currentState, currentEvents)
+                  }
+
+                case game.quest.KillEnemyGoal(enemyType, amount) =>
+                  val killCount = currentState.playerEntity.getMemoryEventsByType[MemoryEvent.EnemyDefeated]
+                    .count(_.enemyType == enemyType)
+                  
+                  if (killCount >= amount) {
+                    quest.giverName match {
+                      case Some(giverName) =>
+                        currentState.entities.find(e =>
+                          e.get[NameComponent].exists(_.name == giverName)
+                        ) match {
+                          case Some(npc) =>
+                            val readyText = quest.readyToCompleteText.getOrElse(
+                              "You killed them? Thank you!"
+                            )
+
+                            val currentDialogue = npc.get[Conversation]
+                            val needsUpdate = currentDialogue.exists(
+                              _.text != readyText
+                            )
+
+                            if (needsUpdate) {
+                              val updatedNpc = npc.update[Conversation] { _ =>
+                                Conversation(
+                                  readyText,
+                                  Seq(
+                                    ConversationChoice(
+                                      "Complete Quest",
+                                      ConversationAction.CompleteQuest(quest.id)
+                                    ),
+                                    ConversationChoice(
+                                      "Not yet",
+                                      ConversationAction.CloseAction
+                                    )
+                                  )
+                                )
+                              }
+
+                              (
+                                currentState
+                                  .updateEntity(npc.id, updatedNpc)
+                                  .addMessage(
+                                    "Quest Updated: Return to the quest giver!"
+                                  ),
+                                currentEvents
+                              )
+                            } else {
+                              (currentState, currentEvents)
+                            }
+                          case None => (currentState, currentEvents)
+                        }
+                      case None => (currentState, currentEvents)
+                    }
+                  } else {
                     (currentState, currentEvents)
                   }
 

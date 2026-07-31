@@ -364,15 +364,11 @@ object StartingState {
         val questGiverBuildingIdx = if (isSpawnVillage) {
           village.buildings.zipWithIndex
             .collectFirst {
-              case (b, idx) if b.buildingType == map.BuildingType.Generic =>
-                val (minBounds, maxBounds) = b.bounds
-                val containsPlayerSpawn =
-                  playerSpawnPoint.x >= minBounds.x && playerSpawnPoint.x <= maxBounds.x &&
-                    playerSpawnPoint.y >= minBounds.y && playerSpawnPoint.y <= maxBounds.y
-
-                if (!containsPlayerSpawn) Some(idx) else None
+              case (b, idx) if b.buildingType == map.BuildingType.Generic &&
+                  !(playerSpawnPoint.x >= b.bounds._1.x && playerSpawnPoint.x <= b.bounds._2.x &&
+                    playerSpawnPoint.y >= b.bounds._1.y && playerSpawnPoint.y <= b.bounds._2.y) =>
+                idx
             }
-            .flatten
             .getOrElse(-1)
         } else {
           -1

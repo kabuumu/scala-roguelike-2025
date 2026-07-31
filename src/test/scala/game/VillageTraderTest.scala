@@ -110,11 +110,14 @@ class VillageTraderTest extends AnyFunSuite {
 
     val traders = gameState.entities.filter(_.isTrader)
 
-    // Count how many shop buildings exist (Healer, PotionShop, EquipmentShop)
+    // Count how many shop buildings exist (PotionShop, EquipmentShop) that do not contain the player spawn
+    val playerSpawnPoint = gameState.playerEntity.position
     val shopBuildingCount = gameState.worldMap.villages.flatMap(_.buildings).count { b =>
-      b.buildingType == map.BuildingType.Healer ||
-      b.buildingType == map.BuildingType.PotionShop ||
-      b.buildingType == map.BuildingType.EquipmentShop
+      val isShop = b.buildingType == map.BuildingType.PotionShop || b.buildingType == map.BuildingType.EquipmentShop
+      val (minBounds, maxBounds) = b.bounds
+      val containsPlayerSpawn = playerSpawnPoint.x >= minBounds.x && playerSpawnPoint.x <= maxBounds.x &&
+                                playerSpawnPoint.y >= minBounds.y && playerSpawnPoint.y <= maxBounds.y
+      isShop && !containsPlayerSpawn
     }
 
     if (shopBuildingCount > 0) {

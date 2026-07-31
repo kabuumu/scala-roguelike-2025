@@ -59,7 +59,7 @@ class KeyLockMutator(lockedDoorCount: Int, targetRoomCount: Int) extends Dungeon
   }
 }
 
-class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) extends DungeonMutator {
+class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int, requiredItems: Set[ItemReference] = Set.empty) extends DungeonMutator {
   val possibleItems: Set[ItemReference] = ItemReference.values.toSet - ItemReference.RedKey - ItemReference.YellowKey - ItemReference.BlueKey - Coin
 
   override def getPossibleMutations(currentDungeon: Dungeon): Set[Dungeon] = {
@@ -68,7 +68,8 @@ class TreasureRoomMutator(targetTreasureRoomCount: Int, targetRoomCount: Int) ex
     } else {
       // Get items already placed in the dungeon to avoid duplicates
       val placedItems = currentDungeon.nonKeyItems.map(_._2).toSet
-      val availableItems = possibleItems -- placedItems
+      val unplacedRequired = requiredItems -- placedItems
+      val availableItems = if (unplacedRequired.nonEmpty) unplacedRequired else possibleItems -- placedItems
       
       for {
         (originRoom, direction) <- currentDungeon.availableRooms

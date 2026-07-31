@@ -182,12 +182,17 @@ object GlobalFeaturePlanner {
               else if (hubY < dMinY) Direction.Up
               else Direction.Down
 
+            val requiredItems = if (regionX == 1 && regionY == 0) {
+              Set(data.Items.ItemReference.GoldenStatue)
+            } else Set.empty[data.Items.ItemReference]
+
             dungeonConfig = Some(
               DungeonConfig(
                 bounds = bounds,
                 seed = regionSeed,
                 explicitSize = Some(targetSize),
-                entranceSide = entranceSide
+                entranceSide = entranceSide,
+                requiredItems = requiredItems
               )
             )
 

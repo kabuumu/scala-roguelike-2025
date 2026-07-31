@@ -147,6 +147,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
       context: Context[Unit],
       model: GameController
   ): Outcome[SceneUpdateFragment] = {
+    val currentQuestMarkers = getQuestMarkers(model)
+
     model.uiState match {
       case _: UIState.MainMenu =>
         // Render main menu screen
@@ -172,7 +174,8 @@ object Game extends IndigoSandbox[Unit, GameController] {
                     om,
                     model.gameState.worldMap.seed,
                     Some(model.gameState.playerEntity.position),
-                    isPreview = false
+                    isPreview = false,
+                    questMarkers = currentQuestMarkers
                   )
               )
             case None =>
@@ -213,6 +216,34 @@ object Game extends IndigoSandbox[Unit, GameController] {
       case _ =>
         Outcome(presentGame(context, model))
     }
+  }
+
+  def getQuestMarkers(model: GameController): Seq[(game.Point, RGBA)] = {
+    model.gameState.quests.collect {
+      case (questId, game.quest.QuestStatus.Active) =>
+        data.Quests.quests.get(questId).flatMap { quest =>
+          quest.goal match {
+            case game.quest.RetrieveItemGoal(itemRef, amount) =>
+              val hasItem = game.system.QuestSystem.hasQuestItem(model.gameState, itemRef, amount)
+              if (hasItem) {
+                model.gameState.entities
+                  .find(e => e.get[game.entity.NameComponent].exists(_.name == "Elder"))
+                  .flatMap(_.get[game.entity.Movement])
+                  .map(_.position)
+                  .map(npcPos => (npcPos, RGBA.Green))
+              } else {
+                model.gameState.worldMap.allItems.collectFirst {
+                  case (pos, ref) if ref == itemRef => pos
+                }.map { roomPos =>
+                  val tileX = roomPos.x * map.Dungeon.roomSize + map.Dungeon.roomSize / 2
+                  val tileY = roomPos.y * map.Dungeon.roomSize + map.Dungeon.roomSize / 2
+                  game.Point(tileX, tileY)
+                }.map(itemPos => (itemPos, RGBA.Cyan))
+              }
+            case _ => None
+          }
+        }
+    }.flatten.toSeq
   }
 
   def presentGame(
@@ -513,9 +544,21 @@ object Game extends IndigoSandbox[Unit, GameController] {
     val tileSprites = Batch.fromSeq(dirtSprites ++ terrainSprites)
     val cursorBatch = Batch.fromSeq(drawUIElements(spriteSheet, model))
 
+    val questMarkerSprites = getQuestMarkers(model).filter { case (pos, _) =>
+      math.abs(pos.x - playerX) <= rangeX + 1 && math.abs(pos.y - playerY) <= rangeY + 1
+    }.map { case (pos, color) =>
+      Shape.Box(
+        Rectangle(
+          Point(pos.x * spriteScale, pos.y * spriteScale),
+          Size(spriteScale, spriteScale)
+        ),
+        Fill.Color(color.withAlpha(0.6f))
+      )
+    }
+
     SceneUpdateFragment(
       Layer
-        .Content(tileSprites ++ sortedForeground ++ cursorBatch)
+        .Content(tileSprites ++ sortedForeground ++ cursorBatch ++ Batch.fromSeq(questMarkerSprites))
         .withCamera(
           Camera
             .LookAt(Point(playerX * spriteScale, playerY * spriteScale))

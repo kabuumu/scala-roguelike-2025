@@ -28,7 +28,8 @@ object OverworldMapUI {
       overworldMap: OverworldMap,
       seed: Long,
       playerPosition: Option[game.Point] = None,
-      isPreview: Boolean = true
+      isPreview: Boolean = true,
+      questMarkers: Seq[(game.Point, RGBA)] = Seq.empty
   ): SceneUpdateFragment = {
     // Center the map on screen
     val mapPixelWidth = overworldMap.width * pixelSize
@@ -100,6 +101,22 @@ object OverworldMapUI {
       case None => Batch.empty
     }
 
+    // Render Quest Markers
+    val questMarkerBatch = questMarkers.map { case (pos, color) =>
+      val ovX = pos.x / map.Chunk.size
+      val ovY = pos.y / map.Chunk.size
+      val markerX = offsetX + ovX * pixelSize
+      val markerY = offsetY + ovY * pixelSize
+
+      Shape.Box(
+        Rectangle(
+          indigo.Point(markerX - 2, markerY - 2),
+          Size(4, 4)
+        ),
+        Fill.Color(color)
+      )
+    }
+
     // Add title and instructions — context-dependent text
     val (titleText, instructionsText) = if (isPreview) {
       ("WORLD MAP PREVIEW", "Press any key to return")
@@ -168,7 +185,7 @@ object OverworldMapUI {
       Layer.Content(
         batches ++
           Batch(title, seedText, instructions) ++
-          legendElements.toBatch ++ playerMarker
+          legendElements.toBatch ++ playerMarker ++ questMarkerBatch.toBatch
       )
     ).addCloneBlanks(cloneBlanks.toBatch)
   }

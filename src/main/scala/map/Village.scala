@@ -81,13 +81,14 @@ object Village {
   def generateVillage(centerLocation: Point, seed: Long): Village = {
     val random = new Random(seed)
 
-    // Determine number of buildings (2-5)
-    val numBuildings = 2 + random.nextInt(4)
+    // Determine number of buildings (3-5)
+    val numBuildings = 3 + random.nextInt(3)
 
     // Mandatory building types that MUST be present in every village
     val mandatoryTypes = Seq(
       BuildingType.Farmland,
-      BuildingType.Generic // Quest Giver
+      BuildingType.Generic, // Player spawn maybe?
+      BuildingType.Generic  // Quest Giver
     )
 
     // Optional types to fill remaining slots
@@ -98,8 +99,8 @@ object Village {
     )
 
     // Fill the list with mandatory types first, then random optional ones
-    val selectedTypes = if (numBuildings == 2) {
-      mandatoryTypes
+    val selectedTypes = if (numBuildings <= mandatoryTypes.length) {
+      mandatoryTypes.take(numBuildings)
     } else {
       val remainingCount = numBuildings - mandatoryTypes.length
       val randomOptionals = Seq.fill(remainingCount)(

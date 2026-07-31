@@ -23,7 +23,8 @@ case class DungeonConfig(
     explicitSize: Option[Int] = None,
     explicitLockedDoorCount: Option[Int] = None,
     explicitItemCount: Option[Int] = None,
-    entranceSide: Direction = Direction.Left
+    entranceSide: Direction = Direction.Left,
+    requiredItems: Set[data.Items.ItemReference] = Set.empty
 ) {
 
   /** Automatically calculate dungeon size based on available space. Uses very

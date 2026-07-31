@@ -42,7 +42,7 @@ object DungeonGenerator {
       new EndPointMutator(config.size),
       new TraderRoomMutator(config.size),
       new KeyLockMutator(config.lockedDoorCount, config.size),
-      new TreasureRoomMutator(config.itemCount, config.size),
+      new TreasureRoomMutator(config.itemCount, config.size, config.requiredItems),
       new BossRoomMutator(config.size)
     )
 
