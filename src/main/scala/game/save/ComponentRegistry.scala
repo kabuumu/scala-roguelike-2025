@@ -124,6 +124,64 @@ object ComponentRegistry {
   implicit val equippableRW: ReadWriter[Equippable] = macroRW
   implicit val equippedItemRW: ReadWriter[EquippedItem] = macroRW
   implicit val equipmentRW: ReadWriter[Equipment] = macroRW
+  implicit val conversationActionRW: ReadWriter[ConversationAction] =
+    readwriter[Value].bimap[ConversationAction](
+      {
+        case ConversationAction.HealAction(amount, cost) =>
+          ujson.Obj(
+            "type" -> "HealAction",
+            "amount" -> amount,
+            "cost" -> cost
+          )
+        case ConversationAction.AcceptQuest(questId) =>
+          ujson.Obj("type" -> "AcceptQuest", "questId" -> questId)
+        case ConversationAction.CompleteQuest(questId) =>
+          ujson.Obj("type" -> "CompleteQuest", "questId" -> questId)
+        case ConversationAction.TradeAction =>
+          ujson.Obj("type" -> "TradeAction")
+        case ConversationAction.BuyAction =>
+          ujson.Obj("type" -> "BuyAction")
+        case ConversationAction.SellAction =>
+          ujson.Obj("type" -> "SellAction")
+        case ConversationAction.CloseAction =>
+          ujson.Obj("type" -> "CloseAction")
+      },
+      json =>
+        json.obj("type").str match {
+          case "HealAction" =>
+            ConversationAction.HealAction(
+              json.obj("amount").num.toInt,
+              json.obj("cost").num.toInt
+            )
+          case "AcceptQuest" =>
+            ConversationAction.AcceptQuest(json.obj("questId").str)
+          case "CompleteQuest" =>
+            ConversationAction.CompleteQuest(json.obj("questId").str)
+          case "TradeAction" => ConversationAction.TradeAction
+          case "BuyAction"   => ConversationAction.BuyAction
+          case "SellAction"  => ConversationAction.SellAction
+          case "CloseAction" => ConversationAction.CloseAction
+          case other         =>
+            throw new IllegalArgumentException(
+              s"Unknown conversation action: $other"
+            )
+        }
+    )
+  implicit val conversationChoiceRW: ReadWriter[ConversationChoice] = macroRW
+  implicit val conversationRW: ReadWriter[Conversation] = macroRW
+  implicit val itemUsedRW: ReadWriter[MemoryEvent.ItemUsed] = macroRW
+  implicit val damageTakenRW: ReadWriter[MemoryEvent.DamageTaken] = macroRW
+  implicit val damageDealtRW: ReadWriter[MemoryEvent.DamageDealt] = macroRW
+  implicit val enemyDefeatedRW: ReadWriter[MemoryEvent.EnemyDefeated] = macroRW
+  implicit val movementStepRW: ReadWriter[MemoryEvent.MovementStep] = macroRW
+  implicit val memoryEventRW: ReadWriter[MemoryEvent] = ReadWriter.merge(
+    itemUsedRW,
+    damageTakenRW,
+    damageDealtRW,
+    enemyDefeatedRW,
+    movementStepRW
+  )
+  implicit val eventMemoryRW: ReadWriter[EventMemory] = macroRW
 
   // Registry of all component codecs using automatic derivation
   private val codecs: Map[Class[?], CodecEntry[? <: Component]] = Map(
@@ -159,6 +217,12 @@ object ComponentRegistry {
     ),
     classOf[Equippable] -> simpleCodec[Equippable]("Equippable")(using
       equippableRW
+    ),
+    classOf[Conversation] -> simpleCodec[Conversation]("Conversation")(using
+      conversationRW
+    ),
+    classOf[EventMemory] -> simpleCodec[EventMemory]("EventMemory")(using
+      eventMemoryRW
     )
 
     // Adding new components is now even simpler:

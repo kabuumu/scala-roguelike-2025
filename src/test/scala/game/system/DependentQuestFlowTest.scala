@@ -3,8 +3,8 @@ package game.system
 import game.{GameState, Point}
 import game.entity.*
 import game.entity.EventMemory.*
+import game.entity.Experience.experience
 import game.quest.{QuestRepository, QuestState, QuestStatus}
-import game.system.event.GameSystemEvent.AddExperienceEvent
 import map.{MapBounds, WorldMap}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -45,7 +45,10 @@ class DependentQuestFlowTest extends AnyFunSuite {
       playerEntityId = player.id,
       entities = Vector(player, giver),
       worldMap = WorldMap(
-        tiles = Map.empty,
+        tiles = (for {
+          x <- 0 to 9
+          y <- 0 to 9
+        } yield Point(x, y) -> map.TileType.Floor).toMap,
         dungeons = Seq.empty,
         paths = Set.empty,
         bridges = Set.empty,
@@ -108,18 +111,32 @@ class DependentQuestFlowTest extends AnyFunSuite {
 
     assert(completed.isQuestCompleted("kill_rats"))
     assert(completed.playerEntity.get[Coins].exists(_.current == 50))
-    assert(
-      events.count {
-        case AddExperienceEvent("player", 300) => true
-        case _                                 => false
-      } == 1
-    )
+    assert(completed.playerEntity.experience == 300)
+    assert(events.isEmpty)
 
     val (repeated, repeatedEvents) =
       QuestSystem.completeQuest(completed, giver, "kill_rats")
 
     assert(repeated == completed)
     assert(repeatedEvents.isEmpty)
+  }
+
+  test("accepting a kill quest replenishes exhausted objective enemies") {
+    val playerWithOldKills = addRatKills(player, 3)
+    val (initialState, giver) = state(
+      playerWithOldKills,
+      Map("retrieve_statue" -> QuestState(QuestStatus.Completed))
+    )
+
+    val (accepted, _) =
+      QuestSystem.acceptQuest(initialState, giver, "kill_rats")
+
+    val livingRats = accepted.entities.count(
+      _.get[EnemyTypeComponent].exists(
+        _.enemyType == data.Enemies.EnemyReference.Rat
+      )
+    )
+    assert(livingRats >= 3)
   }
 
   test("quest repository defines a consistent four-quest chain") {

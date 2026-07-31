@@ -4,6 +4,7 @@ import game.GameState
 import game.entity.*
 import game.entity.Coins.addCoins
 import game.entity.EventMemory.*
+import game.entity.Experience.addExperience
 import game.entity.Inventory.{inventoryItems, removeItemEntity}
 import game.quest.*
 import game.system.event.GameSystemEvent
@@ -81,9 +82,13 @@ object QuestSystem extends GameSystem {
                 matchingKillCount(gameState, enemyType)
               case RetrieveItemGoal(_, _) => 0
             }
-            val accepted = gameState
+            val accepted = ensureObjectiveEnemies(
+              gameState
               .acceptQuest(questId, baseline)
-              .addMessage(s"Accepted quest: ${quest.title}")
+              .addMessage(s"Accepted quest: ${quest.title}"),
+              giver,
+              quest
+            )
             val updated =
               if (isGoalSatisfied(accepted, questId))
                 updateReadyDialogue(accepted, giver, quest)
@@ -131,8 +136,9 @@ object QuestSystem extends GameSystem {
         case Some(quest) =>
           val (entitiesAfterConsumption, playerAfterConsumption) =
             consumeGoalItems(gameState, quest)
-          val rewardedPlayer =
-            playerAfterConsumption.addCoins(quest.rewards.coins)
+          val rewardedPlayer = playerAfterConsumption
+            .addCoins(quest.rewards.coins)
+            .addExperience(quest.rewards.experience)
           val completionText = quest.completionText.getOrElse(
             "Thank you for your help."
           )
@@ -150,15 +156,7 @@ object QuestSystem extends GameSystem {
               s"Received ${quest.rewards.coins} coins and ${quest.rewards.experience} XP!"
             )
 
-          (
-            completed,
-            Seq(
-              GameSystemEvent.AddExperienceEvent(
-                rewardedPlayer.id,
-                quest.rewards.experience
-              )
-            )
-          )
+          (completed, Seq.empty)
       }
     }
 
@@ -274,4 +272,68 @@ object QuestSystem extends GameSystem {
     followUpChoice :+
       ConversationChoice("Goodbye", ConversationAction.CloseAction)
   }
+
+  private def ensureObjectiveEnemies(
+      gameState: GameState,
+      giver: Entity,
+      quest: Quest
+  ): GameState =
+    quest.goal match {
+      case KillEnemyGoal(enemyType, amount) =>
+        val existingCount = gameState.entities.count(
+          _.get[EnemyTypeComponent].exists(
+            _.enemyType.toString == enemyType
+          )
+        )
+        val missingCount = math.max(0, amount - existingCount)
+        val occupied =
+          gameState.entities.flatMap(_.get[Movement].map(_.position)).toSet
+        val origin = giver.get[Movement].map(_.position).getOrElse(
+          gameState.playerEntity.get[Movement].map(_.position).get
+        )
+        val positions = gameState.worldMap.tiles.iterator
+          .collect {
+            case (point, tileType)
+                if isSpawnable(tileType) && !occupied.contains(point) =>
+              point
+          }
+          .toSeq
+          .sortBy(point =>
+            (
+              point.getChebyshevDistance(origin),
+              point.x,
+              point.y
+            )
+          )
+          .take(missingCount)
+
+        positions.zipWithIndex.foldLeft(gameState) {
+          case (state, (position, index)) =>
+            val id =
+              s"quest-${quest.id}-${enemyType.toLowerCase}-$index-${gameState.worldMap.seed}"
+            enemyType match {
+              case "Rat" =>
+                state.add(data.Enemies.rat(id, position))
+              case "Slimelet" =>
+                state.add(data.Enemies.slimelet(id, position))
+              case "Snake" =>
+                val spitId = s"$id-spit"
+                state
+                  .add(data.Items.snakeSpit(spitId))
+                  .add(data.Enemies.snake(id, position, spitId))
+              case _ => state
+            }
+        }
+      case RetrieveItemGoal(_, _) => gameState
+    }
+
+  private def isSpawnable(tileType: map.TileType): Boolean =
+    tileType match {
+      case map.TileType.Floor | map.TileType.MaybeFloor |
+          map.TileType.Dirt | map.TileType.Grass1 |
+          map.TileType.Grass2 | map.TileType.Grass3 |
+          map.TileType.Bridge =>
+        true
+      case _ => false
+    }
 }

@@ -15,7 +15,6 @@ import game.system.event.GameSystemEvent
 import game.system.event.GameSystemEvent.{
   CollisionEvent,
   CollisionTarget,
-  AddExperienceEvent
 }
 import data.Items
 import game.Point
@@ -112,11 +111,10 @@ class QuestFlowTest extends AnyFunSuite {
       playerAfterCompletion.get[Coins].get.current == 100
     ) // 100 coins reward
 
-    // Check Events (XP)
-    assert(eventsAfterCompletion.exists {
-      case AddExperienceEvent(pid, amount) => pid == player.id && amount == 500
-      case _                               => false
-    })
+    assert(playerAfterCompletion.get[Experience].exists(
+      _.currentExperience == 500
+    ))
+    assert(eventsAfterCompletion.isEmpty)
 
     // Check Item Removed
     assert(

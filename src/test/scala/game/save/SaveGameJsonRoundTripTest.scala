@@ -3,7 +3,8 @@ package game.save
 import org.scalatest.funsuite.AnyFunSuite
 import game.{GameState, StartingState}
 import game.entity.Health._
-import game.entity.{Inventory, Movement}
+import game.entity.*
+import game.entity.EventMemory.*
 import game.quest.{QuestState, QuestStatus}
 import game.Point
 import scala.util.{Success, Failure}
@@ -39,6 +40,44 @@ class SaveGameJsonRoundTripTest extends AnyFunSuite {
     val restoredState = SaveGameJson.deserialize(legacyJson.render())
 
     assert(restoredState.quests.isEmpty)
+  }
+
+  test("SaveGameJson preserves enemy-defeat memory used by kill quests") {
+    val originalState = StartingState.startAdventure(123L)
+    val defeatedRat = MemoryEvent.EnemyDefeated(
+      timestamp = 42L,
+      enemyType = "Rat",
+      method = "combat"
+    )
+    val stateWithMemory = originalState.updateEntity(
+      originalState.playerEntity.id,
+      originalState.playerEntity.addMemoryEvent(defeatedRat)
+    )
+
+    val restored =
+      SaveGameJson.deserialize(SaveGameJson.serialize(stateWithMemory))
+
+    assert(
+      restored.playerEntity
+        .getMemoryEventsByType[MemoryEvent.EnemyDefeated]
+        .contains(defeatedRat)
+    )
+  }
+
+  test("SaveGameJson preserves quest-giver conversations") {
+    val originalState = StartingState.startAdventure(123L)
+    val questGiver = originalState.entities.find(
+      _.get[NameComponent].exists(_.name == "Quest Giver")
+    ).get
+    val originalConversation = questGiver.get[Conversation].get
+
+    val restored =
+      SaveGameJson.deserialize(SaveGameJson.serialize(originalState))
+    val restoredConversation = restored
+      .getEntity(questGiver.id)
+      .flatMap(_.get[Conversation])
+
+    assert(restoredConversation.contains(originalConversation))
   }
 
   test("SaveGameJson round-trip preserves basic game state") {
