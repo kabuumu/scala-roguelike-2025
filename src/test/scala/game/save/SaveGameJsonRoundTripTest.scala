@@ -4,10 +4,42 @@ import org.scalatest.funsuite.AnyFunSuite
 import game.{GameState, StartingState}
 import game.entity.Health._
 import game.entity.{Inventory, Movement}
+import game.quest.{QuestState, QuestStatus}
 import game.Point
 import scala.util.{Success, Failure}
 
 class SaveGameJsonRoundTripTest extends AnyFunSuite {
+
+  test("SaveGameJson preserves quest status and progress baselines") {
+    val originalState = StartingState.startAdventure(123L).copy(
+      quests = Map(
+        "retrieve_statue" -> QuestState(QuestStatus.Completed),
+        "kill_rats" -> QuestState(
+          QuestStatus.Active,
+          progressBaseline = 2
+        )
+      )
+    )
+
+    val restoredState =
+      SaveGameJson.deserialize(SaveGameJson.serialize(originalState))
+
+    assert(restoredState.quests == originalState.quests)
+  }
+
+  test("SaveGameJson loads legacy saves without quest state") {
+    val originalState = StartingState.startAdventure(123L).copy(
+      quests = Map(
+        "retrieve_statue" -> QuestState(QuestStatus.Completed)
+      )
+    )
+    val legacyJson = ujson.read(SaveGameJson.serialize(originalState))
+    legacyJson.obj.remove("quests")
+
+    val restoredState = SaveGameJson.deserialize(legacyJson.render())
+
+    assert(restoredState.quests.isEmpty)
+  }
 
   test("SaveGameJson round-trip preserves basic game state") {
     val originalState = StartingState.startingGameState

@@ -16,7 +16,13 @@ final case class PersistedGameState(
     dungeon: PersistedDungeon,
     dungeonFloor: Int = 1,
     gameMode: String = "Adventure",
-    worldSeed: Long = 0L
+    worldSeed: Long = 0L,
+    quests: Map[String, PersistedQuestState] = Map.empty
+)
+
+final case class PersistedQuestState(
+    status: String,
+    progressBaseline: Int = 0
 )
 
 final case class PersistedEntity(
@@ -61,6 +67,7 @@ object SavePickle {
   implicit val persistedRoomConnectionRW: ReadWriter[PersistedRoomConnection] =
     macroRW
   implicit val persistedDungeonRW: ReadWriter[PersistedDungeon] = macroRW
+  implicit val persistedQuestStateRW: ReadWriter[PersistedQuestState] = macroRW
   implicit val persistedGameStateRW: ReadWriter[PersistedGameState] = macroRW
 }
 
@@ -124,7 +131,13 @@ object SaveConversions {
       dungeon = simpleDungeon,
       dungeonFloor = gs.dungeonFloor,
       gameMode = gs.gameMode.toString,
-      worldSeed = gs.worldMap.seed
+      worldSeed = gs.worldMap.seed,
+      quests = gs.quests.map { case (id, state) =>
+        id -> PersistedQuestState(
+          status = state.status.toString,
+          progressBaseline = state.progressBaseline
+        )
+      }
     )
   }
 
@@ -153,6 +166,32 @@ object SaveConversions {
           )
           (errsAcc ++ errs) -> (entsAcc :+ entity)
       }
+
+    val restoredQuests = pgs.quests.foldLeft[
+      Either[List[String], Map[String, game.quest.QuestState]]
+    ](Right(Map.empty)) { case (result, (id, persistedState)) =>
+      result.flatMap { quests =>
+        scala.util.Try(
+          game.quest.QuestStatus.valueOf(persistedState.status)
+        ).toEither.left.map(_ =>
+          List(
+            s"Unknown quest status '${persistedState.status}' for quest '$id'"
+          )
+        ).map { status =>
+          quests.updated(
+            id,
+            game.quest.QuestState(
+              status,
+              persistedState.progressBaseline
+            )
+          )
+        }
+      }
+    }
+
+    if (restoredQuests.isLeft) {
+      return Left(restoredQuests.left.getOrElse(Nil))
+    }
 
     // Reconstruct basic Dungeon from PersistedDungeon and wrap in WorldMap
     val roomGrid = pgs.dungeon.roomGrid.map { case (x, y) => Point(x, y) }.toSet
@@ -264,7 +303,8 @@ object SaveConversions {
         dungeonFloor = pgs.dungeonFloor,
         gameMode =
           if (pgs.gameMode == "Gauntlet") GameMode.Gauntlet
-          else GameMode.Adventure
+          else GameMode.Adventure,
+        quests = restoredQuests.getOrElse(Map.empty)
       )
     )
   }
