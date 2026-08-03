@@ -26,6 +26,9 @@ lazy val root = (project in file("."))
       "io.indigoengine" %%% "indigo" % "0.22.0",
       "com.lihaoyi" %%% "upickle" % "3.3.0"
     ),
+    Test / jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv(
+      org.scalajs.jsenv.nodejs.NodeJSEnv.Config().withArgs(List("--max-old-space-size=8192"))
+    ),
     // Basic coverage settings (limited support with ScalaJS)
     coverageMinimumStmtTotal := 49, // Set based on current measured coverage
     coverageFailOnMinimum := false, // Don't fail builds due to ScalaJS limitation
