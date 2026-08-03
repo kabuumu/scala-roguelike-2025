@@ -93,13 +93,13 @@ case class Dungeon(
         case Direction.Down =>
           Point(
             originRoomX + Dungeon.roomSize / 2,
-            originRoomY + Dungeon.roomSize - 1
+            originRoomY + Dungeon.roomSize
           )
         case Direction.Left =>
           Point(originRoomX, originRoomY + Dungeon.roomSize / 2)
         case Direction.Right =>
           Point(
-            originRoomX + Dungeon.roomSize - 1,
+            originRoomX + Dungeon.roomSize,
             originRoomY + Dungeon.roomSize / 2
           )
       }
@@ -280,7 +280,18 @@ case class Dungeon(
       roomTiles.toMap
     }.toMap
 
-    regularTiles + (entranceDoorPoint -> TileType.Bridge)
+    val approachTile = Dungeon.getApproachTile(startPoint, entranceSide)
+    val clearanceArea = (for {
+      dx <- -1 to 1
+      dy <- -1 to 1
+    } yield Point(approachTile.x + dx, approachTile.y + dy)).toSet + entranceDoorPoint
+
+    val clearanceTiles = clearanceArea.map { pt =>
+      val tile = if (pt == entranceDoorPoint) TileType.Floor else TileType.Dirt
+      pt -> tile
+    }.toMap
+
+    regularTiles ++ clearanceTiles
   }
 
   /** Computed tile sets for efficient lookups. Single pass through tiles map to
@@ -459,9 +470,9 @@ object Dungeon {
 
     entranceSide match {
       case Direction.Up    => Point(roomX + roomSize / 2, roomY)
-      case Direction.Down  => Point(roomX + roomSize / 2, roomY + roomSize - 1)
+      case Direction.Down  => Point(roomX + roomSize / 2, roomY + roomSize)
       case Direction.Left  => Point(roomX, roomY + roomSize / 2)
-      case Direction.Right => Point(roomX + roomSize - 1, roomY + roomSize / 2)
+      case Direction.Right => Point(roomX + roomSize, roomY + roomSize / 2)
     }
   }
 

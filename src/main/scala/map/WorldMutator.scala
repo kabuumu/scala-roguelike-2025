@@ -494,27 +494,26 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
       dy <- -2 to 2
     } yield Point(startPoint.x + dx, startPoint.y + dy)).toSet
 
-    // Generate main paths to approach tiles/entrances using pathfinding
+    // Generate main paths to approach tiles/entrances using pathfinding with path merging
+    var accumulatedPaths = Set.empty[Point]
     val mainPathTiles = destinations.flatMap { destination =>
-      // Create an entrance area around the destination (5x5 area)
-      // This allows the path to connect to the entrance without being blocked
       val destinationArea = (for {
         dx <- -2 to 2
         dy <- -2 to 2
       } yield Point(destination.x + dx, destination.y + dy)).toSet
 
-      // Remove both spawn and destination areas from obstacles to allow path to connect
       val obstaclesForThisPath = baseObstacles -- spawnArea -- destinationArea
 
-      // Use pathfinding to generate path around obstacles
-      // Use width = 0 for single-tile wide paths to avoid diagonal spreading
-      PathGenerator.generatePathAroundObstacles(
+      val path = PathGenerator.generatePathAroundObstacles(
         startPoint,
         destination,
         obstaclesForThisPath,
         width = 0,
-        worldMap.bounds
+        worldMap.bounds,
+        existingPaths = worldMap.paths ++ accumulatedPaths
       )
+      accumulatedPaths = accumulatedPaths ++ path
+      path
     }.toSet
 
     // Generate short connecting paths from approach tiles to actual dungeon entrance doors

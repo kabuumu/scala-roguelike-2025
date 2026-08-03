@@ -58,59 +58,49 @@ object PathGenerator {
     targetPoint: Point,
     obstacles: Set[Point],
     width: Int,
-    bounds: MapBounds
+    bounds: MapBounds,
+    existingPaths: Set[Point] = Set.empty
   ): Set[Point] = {
-    // Use A* pathfinding to find route around obstacles
-    val mainPath = findPathAroundObstacles(startPoint, targetPoint, obstacles, bounds)
+    // Dynamically remove start and target from obstacles to ensure pathfinder endpoints are accessible
+    val safeObstacles = obstacles - startPoint - targetPoint
+    val mainPath = findPathAroundObstacles(startPoint, targetPoint, safeObstacles, bounds, existingPaths)
     
     // If pathfinding failed, fall back to direct line
     val finalPath = if (mainPath.isEmpty) {
-      println(s"Falling back to direct line from $startPoint to $targetPoint")
       findPathLine(startPoint, targetPoint)
     } else {
       mainPath
     }
     
     // Add all points along the path with width, excluding obstacles
-    widenPathAvoidingObstacles(finalPath, width, bounds, obstacles)
+    widenPathAvoidingObstacles(finalPath, width, bounds, safeObstacles)
   }
   
   /**
    * Finds a path avoiding obstacles using A* pathfinding.
    * Returns empty sequence if no path can be found.
-   * Prefers straight paths and minimizes corners.
+   * Prefers straight paths and reuses existing path tiles when available.
    */
   private def findPathAroundObstacles(
     start: Point, 
     target: Point, 
     obstacles: Set[Point],
-    bounds: MapBounds
+    bounds: MapBounds,
+    existingPaths: Set[Point] = Set.empty
   ): Seq[Point] = {
     import scala.collection.mutable
     
-    // Check if start or target is an obstacle or out of bounds
-    if (obstacles.contains(start)) {
-      println(s"A* pathfinding failed: Start point $start is an obstacle")
-      return Seq.empty
-    }
-    if (obstacles.contains(target)) {
-      println(s"A* pathfinding failed: Target point $target is an obstacle")
-      return Seq.empty
-    }
-    if (!isWithinBounds(start, bounds)) {
-      println(s"A* pathfinding failed: Start point $start is outside bounds")
-      return Seq.empty
-    }
-    if (!isWithinBounds(target, bounds)) {
-      println(s"A* pathfinding failed: Target point $target is outside bounds")
+    val safeObstacles = obstacles - start - target
+
+    if (!isWithinBounds(start, bounds) || !isWithinBounds(target, bounds)) {
       return Seq.empty
     }
     
-    case class Node(point: Point, g: Int, h: Int, parent: Option[Node], direction: Option[(Int, Int)]) {
-      val f: Int = g + h
+    case class Node(point: Point, g: Double, h: Double, parent: Option[Node], direction: Option[(Int, Int)]) {
+      val f: Double = g + h
     }
     
-    def heuristic(a: Point, b: Point): Int = 
+    def heuristic(a: Point, b: Point): Double = 
       math.abs(a.x - b.x) + math.abs(a.y - b.y)
     
     def getDirection(from: Point, to: Point): (Int, Int) = {
@@ -128,10 +118,10 @@ object PathGenerator {
       loop(node, Nil)
     }
     
-    implicit val nodeOrdering: Ordering[Node] = Ordering.by[Node, Int](-_.f)
-    val openSet = mutable.PriorityQueue(Node(start, 0, heuristic(start, target), None, None))
+    implicit val nodeOrdering: Ordering[Node] = Ordering.by[Node, Double](-_.f)
+    val openSet = mutable.PriorityQueue(Node(start, 0.0, heuristic(start, target), None, None))
     val closedSet = mutable.HashSet[Point]()
-    val gScores = mutable.HashMap[Point, Int](start -> 0)
+    val gScores = mutable.HashMap[Point, Double](start -> 0.0)
     
     while (openSet.nonEmpty) {
       val current = openSet.dequeue()
@@ -150,28 +140,25 @@ object PathGenerator {
           Point(current.point.x, current.point.y + 1),
           Point(current.point.x, current.point.y - 1)
         ).filter { neighbor =>
-          isWithinBounds(neighbor, bounds) && !obstacles.contains(neighbor)
+          isWithinBounds(neighbor, bounds) && !safeObstacles.contains(neighbor)
         }
         
         neighbors.foreach { neighbor =>
           val neighborDirection = getDirection(current.point, neighbor)
           
-          // Base cost is 1 for movement
-          var movementCost = 1
+          // Cost discount for existing path tiles (0.15 vs 1.0) to encourage merging
+          var stepCost = if (existingPaths.contains(neighbor)) 0.15 else 1.0
           
-          // Add a small penalty for changing direction (prefer straight lines)
-          // This helps minimize corners in the path
+          // Add small penalty for changing direction (prefer straight lines)
           current.direction match {
             case Some(prevDir) if prevDir != neighborDirection =>
-              // Direction change: add small penalty (0.1 * 10 = 1 as integer)
-              movementCost += 1
+              stepCost += 0.1
             case _ =>
-              // Same direction or first move: no penalty
           }
           
-          val tentativeG = current.g + movementCost
+          val tentativeG = current.g + stepCost
           
-          if (tentativeG < gScores.getOrElse(neighbor, Int.MaxValue)) {
+          if (tentativeG < gScores.getOrElse(neighbor, Double.MaxValue)) {
             gScores(neighbor) = tentativeG
             val h = heuristic(neighbor, target)
             openSet.enqueue(Node(neighbor, tentativeG, h, Some(current), Some(neighborDirection)))
@@ -180,8 +167,6 @@ object PathGenerator {
       }
     }
     
-    // No path found - all options exhausted
-    println(s"A* pathfinding failed: No path found from $start to $target (checked ${closedSet.size} tiles)")
     Seq.empty
   }
   

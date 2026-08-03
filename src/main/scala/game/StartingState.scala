@@ -101,9 +101,12 @@ object StartingState {
       seed
     )
 
+    // 6. Path Generation: Ensure all dungeons and settlements are connected via clear, merged paths
+    val finalWorldMap = new PathGenerationMutator(playerSpawnPoint).mutateWorld(worldMapWithChunks)
+
     createGameState(
-      worldMapWithChunks,
-      findSafeSpawn(playerSpawnPoint, worldMapWithChunks),
+      finalWorldMap,
+      findSafeSpawn(playerSpawnPoint, finalWorldMap),
       GameMode.Adventure,
       dungeonFloor = 0
     )

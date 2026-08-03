@@ -1,61 +1,55 @@
 package map
 
-import game.Point
-import game.Direction
 import org.scalatest.funsuite.AnyFunSuite
+import game.{Direction, Point}
 
 class DungeonEntranceTest extends AnyFunSuite {
 
-  test("Dungeon Entrance Logic - Approach Tile should be outside bounds") {
-    // Define a 3x3 dungeon at (10, 10) rooms -> (100, 100) tiles
-    // RoomSize = 10
-    val startRoom = Point(10, 10)
+  test("getEntranceDoor places door on wall perimeter for all 4 directions") {
+    val startRoom = Point(0, 0)
 
-    // Bounds: 100 to 129 (3 rooms * 10 - 1? No, 3 rooms: 10, 11, 12.)
-    // Min X: 100, Max X: 129 (inclusive)
-    val minTileX = 100
-    val maxTileX = 129
-    val minTileY = 100
-    val maxTileY = 129
+    val upDoor = Dungeon.getEntranceDoor(startRoom, Direction.Up)
+    val downDoor = Dungeon.getEntranceDoor(startRoom, Direction.Down)
+    val leftDoor = Dungeon.getEntranceDoor(startRoom, Direction.Left)
+    val rightDoor = Dungeon.getEntranceDoor(startRoom, Direction.Right)
 
-    // Test Left Entrance
-    val entranceLeft = Direction.Left
-    val doorLeft = Dungeon.getEntranceDoor(startRoom, entranceLeft)
-    val approachLeft = Dungeon.getApproachTile(startRoom, entranceLeft)
+    assert(upDoor == Point(5, 0), s"Up door should be at (5,0), got $upDoor")
+    assert(downDoor == Point(5, 10), s"Down door should be at (5,10), got $downDoor")
+    assert(leftDoor == Point(0, 5), s"Left door should be at (0,5), got $leftDoor")
+    assert(rightDoor == Point(10, 5), s"Right door should be at (10,5), got $rightDoor")
+  }
 
-    println(s"Left - Door: $doorLeft, Approach: $approachLeft")
-
-    // Expected: Door on wall (100?), Approach outside (99?)
-    // Door logic usually centers on the wall.
-    // Room 10's left wall is at x=100.
-
-    assert(
-      doorLeft.x >= minTileX,
-      s"Door Left $doorLeft should be inside/on boundary $minTileX"
+  test("dungeon tiles mark entrance door as walkable non-wall tile for Right/Down entrances") {
+    val configRight = DungeonConfig(
+      bounds = MapBounds(0, 3, 0, 3),
+      seed = 12345L,
+      entranceSide = Direction.Right
     )
+    val dungeonRight = DungeonGenerator.generateDungeon(configRight)
+    val rightDoor = Dungeon.getEntranceDoor(dungeonRight.startPoint, Direction.Right)
+
+    assert(!dungeonRight.walls.contains(rightDoor), "Right entrance door must NOT be a wall")
     assert(
-      approachLeft.x < minTileX,
-      s"Approach Left $approachLeft should be strictly outside boundary $minTileX"
+      dungeonRight.tiles.get(rightDoor).contains(TileType.Floor) ||
+      dungeonRight.tiles.get(rightDoor).contains(TileType.Dirt) ||
+      dungeonRight.tiles.get(rightDoor).contains(TileType.Bridge),
+      "Entrance door tile must be walkable floor/dirt/bridge"
     )
 
-    // Test Right Entrance
-    // If dungeon is 1x1 only for start room?
-    // Let's assume startRoom IS the edge room.
-    val entranceRight = Direction.Right
-    val doorRight = Dungeon.getEntranceDoor(startRoom, entranceRight)
-    val approachRight = Dungeon.getApproachTile(startRoom, entranceRight)
+    val configDown = DungeonConfig(
+      bounds = MapBounds(0, 3, 0, 3),
+      seed = 12345L,
+      entranceSide = Direction.Down
+    )
+    val dungeonDown = DungeonGenerator.generateDungeon(configDown)
+    val downDoor = Dungeon.getEntranceDoor(dungeonDown.startPoint, Direction.Down)
 
-    println(s"Right - Door: $doorRight, Approach: $approachRight")
-
-    // Right wall of room 10 is at x=109.
-    // Door should be 109. Approach 110.
+    assert(!dungeonDown.walls.contains(downDoor), "Down entrance door must NOT be a wall")
     assert(
-      doorRight.x <= minTileX + 9,
-      "Door Right should be within room"
-    ) // Actually door is usually ON the wall
-    assert(
-      approachRight.x > minTileX + 9,
-      "Approach Right should be outside room"
+      dungeonDown.tiles.get(downDoor).contains(TileType.Floor) ||
+      dungeonDown.tiles.get(downDoor).contains(TileType.Dirt) ||
+      dungeonDown.tiles.get(downDoor).contains(TileType.Bridge),
+      "Entrance door tile must be walkable floor/dirt/bridge"
     )
   }
 }
