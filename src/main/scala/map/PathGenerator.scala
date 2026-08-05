@@ -95,6 +95,13 @@ object PathGenerator {
     if (!isWithinBounds(start, bounds) || !isWithinBounds(target, bounds)) {
       return Seq.empty
     }
+
+    val (tileMinX, tileMaxX, tileMinY, tileMaxY) = bounds.toTileBounds()
+    val margin = 150
+    val searchMinX = math.max(tileMinX, math.min(start.x, target.x) - margin)
+    val searchMaxX = math.min(tileMaxX, math.max(start.x, target.x) + margin)
+    val searchMinY = math.max(tileMinY, math.min(start.y, target.y) - margin)
+    val searchMaxY = math.min(tileMaxY, math.max(start.y, target.y) + margin)
     
     case class Node(point: Point, g: Double, h: Double, parent: Option[Node], direction: Option[(Int, Int)]) {
       val f: Double = g + h
@@ -123,7 +130,9 @@ object PathGenerator {
     val closedSet = mutable.HashSet[Point]()
     val gScores = mutable.HashMap[Point, Double](start -> 0.0)
     
-    while (openSet.nonEmpty) {
+    val maxVisitedNodes = 10000
+
+    while (openSet.nonEmpty && closedSet.size < maxVisitedNodes) {
       val current = openSet.dequeue()
       
       if (current.point == target) {
@@ -133,14 +142,16 @@ object PathGenerator {
       if (!closedSet.contains(current.point)) {
         closedSet += current.point
         
-        // Get neighbors (4-directional movement)
+        // Get neighbors (4-directional movement) constrained to search bounds
         val neighbors = Seq(
           Point(current.point.x + 1, current.point.y),
           Point(current.point.x - 1, current.point.y),
           Point(current.point.x, current.point.y + 1),
           Point(current.point.x, current.point.y - 1)
         ).filter { neighbor =>
-          isWithinBounds(neighbor, bounds) && !safeObstacles.contains(neighbor)
+          neighbor.x >= searchMinX && neighbor.x <= searchMaxX &&
+          neighbor.y >= searchMinY && neighbor.y <= searchMaxY &&
+          !safeObstacles.contains(neighbor)
         }
         
         neighbors.foreach { neighbor =>

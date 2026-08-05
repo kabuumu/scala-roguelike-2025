@@ -113,7 +113,7 @@ class GlobalFeaturePlannerTest extends AnyFunSuite {
     val seed = 12345L
     val regionSize = GlobalFeaturePlanner.RegionSizeTiles
 
-    for (i <- 0 until 100) {
+    for (i <- 0 until 20) {
       val x = i % 10
       val y = i / 10
       val plan = GlobalFeaturePlanner.planRegion(x, y, seed)

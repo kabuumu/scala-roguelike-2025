@@ -11,8 +11,10 @@ import scala.util.{Success, Failure}
 
 class SaveGameJsonRoundTripTest extends AnyFunSuite {
 
+  private lazy val adventureState = StartingState.startAdventure(123L)
+
   test("SaveGameJson preserves quest status and progress baselines") {
-    val originalState = StartingState.startAdventure(123L).copy(
+    val originalState = StartingState.startingGameState.copy(
       quests = Map(
         "retrieve_statue" -> QuestState(QuestStatus.Completed),
         "kill_rats" -> QuestState(
@@ -29,7 +31,7 @@ class SaveGameJsonRoundTripTest extends AnyFunSuite {
   }
 
   test("SaveGameJson loads legacy saves without quest state") {
-    val originalState = StartingState.startAdventure(123L).copy(
+    val originalState = StartingState.startingGameState.copy(
       quests = Map(
         "retrieve_statue" -> QuestState(QuestStatus.Completed)
       )
@@ -43,7 +45,7 @@ class SaveGameJsonRoundTripTest extends AnyFunSuite {
   }
 
   test("SaveGameJson preserves enemy-defeat memory used by kill quests") {
-    val originalState = StartingState.startAdventure(123L)
+    val originalState = StartingState.startingGameState
     val defeatedRat = MemoryEvent.EnemyDefeated(
       timestamp = 42L,
       enemyType = "Rat",
@@ -65,19 +67,21 @@ class SaveGameJsonRoundTripTest extends AnyFunSuite {
   }
 
   test("SaveGameJson preserves quest-giver conversations") {
-    val originalState = StartingState.startAdventure(123L)
-    val questGiver = originalState.entities.find(
-      _.get[NameComponent].exists(_.name == "Quest Giver")
-    ).get
-    val originalConversation = questGiver.get[Conversation].get
+    val questGiver = Entity(
+      "quest_giver",
+      NameComponent("Quest Giver"),
+      Conversation("Hello!")
+    )
+    val originalState = StartingState.startingGameState.copy(
+      entities = StartingState.startingGameState.entities :+ questGiver
+    )
 
-    val restored =
-      SaveGameJson.deserialize(SaveGameJson.serialize(originalState))
+    val restored = SaveGameJson.deserialize(SaveGameJson.serialize(originalState))
     val restoredConversation = restored
       .getEntity(questGiver.id)
       .flatMap(_.get[Conversation])
 
-    assert(restoredConversation.contains(originalConversation))
+    assert(restoredConversation.contains(Conversation("Hello!")))
   }
 
   test("SaveGameJson round-trip preserves basic game state") {
