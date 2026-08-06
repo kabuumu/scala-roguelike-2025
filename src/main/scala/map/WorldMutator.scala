@@ -496,7 +496,9 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
 
     // Generate main paths to approach tiles/entrances using pathfinding with path merging
     var accumulatedPaths = Set.empty[Point]
-    val mainPathTiles = destinations.flatMap { destination =>
+
+    // 1. Primary hub paths: spawnPoint -> each destination
+    val spawnPathTiles = destinations.flatMap { destination =>
       val destinationArea = (for {
         dx <- -2 to 2
         dy <- -2 to 2
@@ -515,6 +517,30 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
       accumulatedPaths = accumulatedPaths ++ path
       path
     }.toSet
+
+    // 2. Direct town-to-dungeon and inter-settlement road links
+    val townToDungeonPathTiles = villageEntrances.flatMap { vEntrance =>
+      val nearestDungeonApproach = dungeonApproachTiles.sortBy(dApp => Math.hypot(dApp.x - vEntrance.x, dApp.y - vEntrance.y)).headOption
+      nearestDungeonApproach.map { dApp =>
+        val vArea = (for { dx <- -2 to 2; dy <- -2 to 2 } yield Point(vEntrance.x + dx, vEntrance.y + dy)).toSet
+        val dArea = (for { dx <- -2 to 2; dy <- -2 to 2 } yield Point(dApp.x + dx, dApp.y + dy)).toSet
+
+        val obstaclesForThisPath = baseObstacles -- vArea -- dArea
+
+        val path = PathGenerator.generatePathAroundObstacles(
+          vEntrance,
+          dApp,
+          obstaclesForThisPath,
+          width = 0,
+          worldMap.bounds,
+          existingPaths = worldMap.paths ++ accumulatedPaths
+        )
+        accumulatedPaths = accumulatedPaths ++ path
+        path
+      }.getOrElse(Set.empty)
+    }.toSet
+
+    val mainPathTiles = spawnPathTiles ++ townToDungeonPathTiles
 
     // Generate short connecting paths from approach tiles to actual dungeon entrance doors
     val dungeonConnectingPaths = worldMap.dungeons.flatMap { dungeon =>
