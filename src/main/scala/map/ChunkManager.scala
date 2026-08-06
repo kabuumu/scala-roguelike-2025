@@ -134,8 +134,12 @@ object ChunkManager {
       return Map.empty
     }
 
+    val pathTiles = worldMap.paths.map(_ -> TileType.Dirt).toMap ++
+      worldMap.bridges.map(_ -> TileType.Bridge).toMap
+
     val structureTiles = worldMap.dungeons.flatMap(_.tiles).toMap ++
-      worldMap.villages.flatMap(_.tiles).toMap
+      worldMap.villages.flatMap(_.tiles).toMap ++
+      pathTiles
 
     newChunks.map { case (coords, chunk) =>
       val changes = structureTiles.filter { case (p, _) =>
@@ -441,7 +445,7 @@ object ChunkManager {
             case TileType.Grass1 | TileType.Grass2 | TileType.Grass3 =>
               if (rnd.nextDouble() < 0.5) TileType.Tree else baseTile
             case TileType.Dirt =>
-              if (rnd.nextDouble() < 0.5) TileType.Tree else TileType.Grass1
+              TileType.Dirt
             case _ =>
               TileType.Tree
           }
