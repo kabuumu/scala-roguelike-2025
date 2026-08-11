@@ -121,11 +121,11 @@ object Pathfinder {
   ): Option[Direction] = {
     import game.entity.Hitbox.*
 
-    // Find the moving entity (the one at startPosition) to exclude its tiles from blockers
-    val movingEntity = gameState.entities.find(_.position == startPosition)
+    // Find the moving entity (the one at startPosition) using O(1) spatial lookup
+    val movingEntity = gameState.getActor(startPosition)
 
-    // Find the target entity to get its hitbox
-    val targetEntity = gameState.entities.find(_.position == targetPosition)
+    // Find the target entity using O(1) spatial lookup
+    val targetEntity = gameState.getActor(targetPosition)
 
     // Calculate all tiles that would be occupied by the moving entity at the start position
     val movingEntityTiles = movingEntity match {
