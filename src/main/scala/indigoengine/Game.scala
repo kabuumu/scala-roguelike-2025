@@ -309,16 +309,13 @@ object Game extends IndigoSandbox[Unit, GameController] {
       y <- minY to (maxY + 1)
     } yield {
       // Visibility check for vertex:
-      // Check the 4 surrounding tiles.
-      val neighbors = List(
-        game.Point(x - 1, y - 1),
-        game.Point(x, y - 1),
-        game.Point(x - 1, y),
-        game.Point(x, y)
-      )
+      val p1 = game.Point(x - 1, y - 1)
+      val p2 = game.Point(x, y - 1)
+      val p3 = game.Point(x - 1, y)
+      val p4 = game.Point(x, y)
 
-      val anyVisible = neighbors.exists(visiblePoints.contains)
-      val anySeen = neighbors.exists(sightMemory.contains)
+      val anyVisible = visiblePoints.contains(p1) || visiblePoints.contains(p2) || visiblePoints.contains(p3) || visiblePoints.contains(p4)
+      val anySeen = sightMemory.contains(p1) || sightMemory.contains(p2) || sightMemory.contains(p3) || sightMemory.contains(p4)
 
       if ((anySeen || UIConfig.ignoreLineOfSight)) {
         map.AutoTiler
