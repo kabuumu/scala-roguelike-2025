@@ -41,22 +41,19 @@ case class GameState(
   private val phases: Seq[Seq[GameSystem]] = Seq(
     // Phase 1: Input processing and early systems
     Seq(
-      CullingSystem, // NEW: Marks entities active/inactive
+      CullingSystem, // Marks entities active/inactive
       DeathHandlerSystem,
       DebugSystem,
       StairsSpawnSystem,
       ExperienceSystem,
-      GrowthSystem,
       EnemyAISystem,
       FarmerAISystem,
       MovementSystem,
-      VelocitySystem,
       VelocitySystem,
       WaveSystem,
       ItemUseSystem, // New unified item system
       HealingSystem, // Handles healing events
       EquipInputSystem,
-      DescendStairsSystem,
       DescendStairsSystem,
       TradeSystem, // Handles buy/sell transactions
       ConversationSystem // Handles conversation actions
@@ -73,7 +70,6 @@ case class GameState(
       WaitSystem,
       OpenDoorSystem,
       GrowthSystem // Handles crop growth
-
     ),
     // Phase 3: Combat and collision processing
     // InventorySystem moved here to handle CollisionEvent before it's dropped
