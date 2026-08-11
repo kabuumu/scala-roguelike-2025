@@ -26,8 +26,19 @@ case class GameState(
 ) {
 
   // Index for O(1) entity lookup by ID
+  private lazy val entityIndexMap: Map[String, Int] = {
+    val m = Map.newBuilder[String, Int]
+    var i = 0
+    val len = entities.length
+    while (i < len) {
+      m += (entities(i).id -> i)
+      i += 1
+    }
+    m.result()
+  }
+
   private lazy val entityIndex: Map[String, Entity] =
-    entities.map(e => e.id -> e).toMap
+    entityIndexMap.map { case (id, idx) => id -> entities(idx) }
 
   val playerEntity: Entity = entityIndex(playerEntityId)
 
@@ -136,32 +147,35 @@ case class GameState(
     finalState
   }
 
-  def updateEntity(entityId: String, newEntity: Entity): GameState =
-    copy(entities =
-      entities.updated(entities.indexWhere(_.id == entityId), newEntity)
-    )
+  def updateEntity(entityId: String, newEntity: Entity): GameState = {
+    entityIndexMap.get(entityId) match {
+      case Some(index) => copy(entities = entities.updated(index, newEntity))
+      case None        => this
+    }
+  }
 
   /** Update an entity by ID. Returns unchanged GameState if entity not found.
     * Note: Silent failure is intentional to avoid crashes. Callers should
     * ensure entity exists before calling if failure needs to be detected.
     */
   def updateEntity(entityId: String, update: Entity => Entity): GameState = {
-    val index = entities.indexWhere(_.id == entityId)
-    if (index >= 0) {
-      copy(entities = entities.updated(index, update(entities(index))))
-    } else {
-      this
+    entityIndexMap.get(entityId) match {
+      case Some(index) => copy(entities = entities.updated(index, update(entities(index))))
+      case None        => this
     }
   }
 
-  def getActor(point: Point): Option[Entity] = {
-    entities.find(entity =>
-      entity.exists[Movement](_.position == point) && (entity
-        .exists[EntityTypeComponent](entityType =>
-          entityType.entityType == EntityType.Enemy || entityType.entityType == EntityType.Player
-        ))
-    )
+  lazy val actorSpatialIndex: Map[Point, Entity] = {
+    val builder = Map.newBuilder[Point, Entity]
+    entities.foreach { entity =>
+      if (entity.has[Movement] && (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player)) {
+        entity.get[Movement].foreach(m => builder += (m.position -> entity))
+      }
+    }
+    builder.result()
   }
+
+  def getActor(point: Point): Option[Entity] = actorSpatialIndex.get(point)
 
   def add(entity: Entity): GameState = {
     copy(entities = entities :+ entity)
@@ -171,26 +185,30 @@ case class GameState(
     copy(entities = entities.filterNot(_.id == entityId))
   }
 
-  // TODO - remove magic number
-  def getVisiblePointsFor(entity: Entity): Set[Point] = {
-    val dynamicBlockers = entities
-      .filter(_.entityType.isInstanceOf[LockedDoor])
-      .flatMap(_.get[Movement].map(_.position))
-      .toSet
+  lazy val lockedDoorPositions: Set[Point] = {
+    entities.collect {
+      case e if e.entityType.isInstanceOf[LockedDoor] =>
+        e.get[Movement].map(_.position)
+    }.flatten.toSet
+  }
 
+  def getVisiblePointsFor(entity: Entity): Set[Point] = {
     val isBlocked = (p: Point) =>
       worldMap.staticLineOfSightBlockingPoints.contains(
         p
-      ) || dynamicBlockers.contains(p)
+      ) || lockedDoorPositions.contains(p)
 
+    val builder = Set.newBuilder[Point]
     for {
       entityPosition <- entity.hitbox
-      lineOfSight <- LineOfSight.getVisiblePoints(
+      lineOfSight = LineOfSight.getVisiblePoints(
         entityPosition,
         isBlocked,
         10
       )
-    } yield lineOfSight
+    } builder ++= lineOfSight
+
+    builder.result()
   }
 
   def addMessage(message: String): GameState = {
@@ -231,11 +249,7 @@ case class GameState(
     quests.get(questId).exists(_.status == QuestStatus.Completed)
 
   lazy val lineOfSightBlockingPoints: Set[Point] =
-    worldMap.staticLineOfSightBlockingPoints ++
-      entities
-        .filter(_.entityType.isInstanceOf[LockedDoor])
-        .flatMap(_.get[Movement].map(_.position))
-        .toSet
+    worldMap.staticLineOfSightBlockingPoints ++ lockedDoorPositions
 
   lazy val dynamicMovementBlockingPoints: Set[Point] =
     entities
