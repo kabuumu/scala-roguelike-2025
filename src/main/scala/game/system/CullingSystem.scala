@@ -28,7 +28,7 @@ object CullingSystem extends GameSystem {
         } else entity
       } else {
         if (entity.has[Movement]) {
-          val dist = entity.get[Movement].map(_.position.getChebyshevDistance(playerPos)).getOrElse(0)
+          val dist = entity.get[Movement].map(_.position.getChebyshevDistance(playerPos)).getOrElse(0.0)
           if (dist <= ActivationRadius) {
             if (!entity.has[Active]) {
               modified = true
