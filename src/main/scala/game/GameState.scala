@@ -193,22 +193,30 @@ case class GameState(
   }
 
   def getVisiblePointsFor(entity: Entity): Set[Point] = {
-    val isBlocked = (p: Point) =>
-      worldMap.staticLineOfSightBlockingPoints.contains(
-        p
-      ) || lockedDoorPositions.contains(p)
+    val hitboxPoints = entity.hitbox
+    val cacheKey = (entity.id, hitboxPoints, lockedDoorPositions)
+    GameState.getCachedFov(cacheKey) match {
+      case Some(cached) => cached
+      case None =>
+        val isBlocked = (p: Point) =>
+          worldMap.staticLineOfSightBlockingPoints.contains(
+            p
+          ) || lockedDoorPositions.contains(p)
 
-    val builder = Set.newBuilder[Point]
-    for {
-      entityPosition <- entity.hitbox
-      lineOfSight = LineOfSight.getVisiblePoints(
-        entityPosition,
-        isBlocked,
-        10
-      )
-    } builder ++= lineOfSight
+        val builder = Set.newBuilder[Point]
+        for {
+          entityPosition <- hitboxPoints
+          lineOfSight = LineOfSight.getVisiblePoints(
+            entityPosition,
+            isBlocked,
+            10
+          )
+        } builder ++= lineOfSight
 
-    builder.result()
+        val res = builder.result()
+        GameState.putCachedFov(cacheKey, res)
+        res
+    }
   }
 
   def addMessage(message: String): GameState = {
@@ -303,5 +311,17 @@ case class GameState(
   lazy val drawableChanges: Seq[Set[(Point, Sprite)]] = {
     import game.entity.Drawable.*
     entities.map(_.sprites)
+  }
+}
+
+object GameState {
+  private val fovCache = new java.util.concurrent.ConcurrentHashMap[(String, Set[Point], Set[Point]), Set[Point]]()
+
+  private[game] def getCachedFov(key: (String, Set[Point], Set[Point])): Option[Set[Point]] =
+    Option(fovCache.get(key))
+
+  private[game] def putCachedFov(key: (String, Set[Point], Set[Point]), value: Set[Point]): Unit = {
+    if (fovCache.size() > 1000) fovCache.clear()
+    fovCache.put(key, value)
   }
 }

@@ -11,19 +11,18 @@ object LineOfSight {
       sightRange: Int
   ): Set[Point] = {
     val result = Set.newBuilder[Point]
+    val minX = start.x - sightRange
+    val maxX = start.x + sightRange
+    val minY = start.y - sightRange
+    val maxY = start.y + sightRange
 
-    // Iterate over the sight range square
-    var x = start.x - sightRange
-    while (x <= start.x + sightRange) {
-      var y = start.y - sightRange
-      while (y <= start.y + sightRange) {
+    var x = minX
+    while (x <= maxX) {
+      var y = minY
+      while (y <= maxY) {
         val end = Point(x, y)
-        // Check range BEFORE computing expensive Bresenham line
-        if (start.isWithinRangeOf(end, sightRange)) {
-          // Use early-termination line check instead of computing full line
-          if (isVisible(start, end, isBlocked)) {
-            result += end
-          }
+        if (isVisible(start, end, isBlocked)) {
+          result += end
         }
         y += 1
       }
