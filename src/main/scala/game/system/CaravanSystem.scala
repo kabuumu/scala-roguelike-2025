@@ -26,9 +26,8 @@ object CaravanSystem extends GameSystem {
       events: Seq[GameSystemEvent]
   ): (GameState, Seq[GameSystemEvent]) = {
 
-    // Process Caravans - only those that are Active and Ready (initiative == 0)
-    val caravans = gameState.entities.collect {
-      case e if e.has[CaravanComponent] && e.has[Active] && e.isReady => e
+    val caravans = gameState.activeEntities.collect {
+      case e if e.has[CaravanComponent] && e.isReady => e
     }
 
     if (caravans.isEmpty) return (gameState, Seq.empty)

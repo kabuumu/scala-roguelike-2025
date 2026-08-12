@@ -17,11 +17,9 @@ object CollisionCheckSystem extends GameSystem {
       events: Seq[GameSystemEvent]
   ): (GameState, Seq[GameSystemEvent]) = {
     // Only check collisions for entities that are not marked for death
-    // Only check collisions for entities that are not marked for death AND are active (near player)
-    val collidableEntities = gameState.entities
+    val collidableEntities = gameState.activeEntities
       .filter(_.has[Hitbox])
       .filter(!_.has[MarkedForDeath])
-      .filter(_.has[Active])
 
     val collisionEvents = for {
       // TODO - consolidate collision systems in the future

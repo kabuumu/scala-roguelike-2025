@@ -42,6 +42,20 @@ case class GameState(
 
   val playerEntity: Entity = entityIndex(playerEntityId)
 
+  lazy val activeEntities: Vector[Entity] = {
+    val b = Vector.newBuilder[Entity]
+    var i = 0
+    val len = entities.length
+    while (i < len) {
+      val e = entities(i)
+      if (e.id == playerEntityId || e.has[Active]) {
+        b += e
+      }
+      i += 1
+    }
+    b.result()
+  }
+
   def getEntity(entityId: String): Option[Entity] = {
     entityIndex.get(entityId)
   }
@@ -193,8 +207,8 @@ case class GameState(
   }
 
   def getVisiblePointsFor(entity: Entity): Set[Point] = {
-    val hitboxPoints = entity.hitbox
-    val cacheKey = (entity.id, hitboxPoints, lockedDoorPositions)
+    val pos = entity.get[Movement].map(_.position).getOrElse(Point(0, 0))
+    val cacheKey = (entity.id, pos, lockedDoorPositions.size)
     GameState.getCachedFov(cacheKey) match {
       case Some(cached) => cached
       case None =>
@@ -204,6 +218,7 @@ case class GameState(
           ) || lockedDoorPositions.contains(p)
 
         val builder = Set.newBuilder[Point]
+        val hitboxPoints = entity.hitbox
         for {
           entityPosition <- hitboxPoints
           lineOfSight = LineOfSight.getVisiblePoints(
@@ -261,32 +276,13 @@ case class GameState(
 
   lazy val dynamicMovementBlockingPoints: Set[Point] =
     entities
-      .filter(entity =>
-        entity
-          .get[EntityTypeComponent]
-          .exists(c =>
-            c.entityType == EntityType.Enemy || c.entityType == EntityType.Player || c.entityType
-              .isInstanceOf[LockedDoor]
-          )
-      )
-      .flatMap { entity =>
-        // Get all points occupied by multi-tile entities (like the boss)
-        val basePosition =
-          entity.get[Movement].map(_.position).getOrElse(Point(0, 0))
-        entity.get[game.entity.Hitbox] match {
-          case Some(hitbox) =>
-            // Multi-tile entity: include all hitbox points
-            hitbox.points.map(hitboxPoint =>
-              Point(
-                basePosition.x + hitboxPoint.x,
-                basePosition.y + hitboxPoint.y
-              )
-            )
-          case None =>
-            // Single-tile entity: just the base position
-            Set(basePosition)
-        }
+      .collect {
+        case entity
+            if entity.has[EntityTypeComponent] &&
+              (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Player || entity.entityType.isInstanceOf[LockedDoor]) =>
+          entity.hitbox
       }
+      .flatten
       .toSet
 
   lazy val movementBlockingPoints: Set[Point] =
@@ -315,12 +311,12 @@ case class GameState(
 }
 
 object GameState {
-  private val fovCache = new java.util.concurrent.ConcurrentHashMap[(String, Set[Point], Set[Point]), Set[Point]]()
+  private val fovCache = new java.util.concurrent.ConcurrentHashMap[(String, Point, Int), Set[Point]]()
 
-  private[game] def getCachedFov(key: (String, Set[Point], Set[Point])): Option[Set[Point]] =
+  private[game] def getCachedFov(key: (String, Point, Int)): Option[Set[Point]] =
     Option(fovCache.get(key))
 
-  private[game] def putCachedFov(key: (String, Set[Point], Set[Point]), value: Set[Point]): Unit = {
+  private[game] def putCachedFov(key: (String, Point, Int), value: Set[Point]): Unit = {
     if (fovCache.size() > 1000) fovCache.clear()
     fovCache.put(key, value)
   }

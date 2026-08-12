@@ -25,33 +25,44 @@ object InitiativeSystem extends GameSystem {
     val updatedGamestate = if (stateAfterResets.playerEntity.isReady) {
       stateAfterResets
     } else {
-      // Check if any entity is ready
-      val anyReady = stateAfterResets.entities.exists(_.isReady)
+      // Check if any active entity is ready
+      val anyReady = stateAfterResets.activeEntities.exists(_.isReady)
 
       if (anyReady) {
         // Someone is ready (likely acted this frame and is waiting for next frame, or multiple entities acting)
-        // Standard progression by 1
-        stateAfterResets.copy(entities = stateAfterResets.entities.map(_.decreaseInitiative()))
+        val activeInitIds = stateAfterResets.activeEntities.collect {
+          case e if e.has[Initiative] => e.id
+        }.toSet
+
+        val updatedEntities = stateAfterResets.entities.map { e =>
+          if (activeInitIds.contains(e.id)) e.decreaseInitiative(1)
+          else e
+        }
+        stateAfterResets.copy(entities = updatedEntities)
       } else {
         // No one is ready. We can potentially fast-forward.
-
-        // Check for real-time entities (like projectiles) that need smooth updates
-        val hasRealTimeEntities = stateAfterResets.entities.exists(_.has[game.entity.Projectile])
+        val hasRealTimeEntities = stateAfterResets.activeEntities.exists(_.has[game.entity.Projectile])
 
         val decrementAmount = if (hasRealTimeEntities) {
           1
         } else {
-          // Find minimum initiative to make someone ready
-          // Filter entities that have Initiative component
-          val minInit = stateAfterResets.entities
+          val minInit = stateAfterResets.activeEntities
             .flatMap(_.get[Initiative].map(_.currentInitiative))
             .minOption
-            .getOrElse(1) // Default to 1 if no entities with initiative (shouldn't happen)
+            .getOrElse(1)
 
           if (minInit > 0) minInit else 1
         }
 
-        stateAfterResets.copy(entities = stateAfterResets.entities.map(_.decreaseInitiative(decrementAmount)))
+        val activeInitIds = stateAfterResets.activeEntities.collect {
+          case e if e.has[Initiative] => e.id
+        }.toSet
+
+        val updatedEntities = stateAfterResets.entities.map { e =>
+          if (activeInitIds.contains(e.id)) e.decreaseInitiative(decrementAmount)
+          else e
+        }
+        stateAfterResets.copy(entities = updatedEntities)
       }
     }
     

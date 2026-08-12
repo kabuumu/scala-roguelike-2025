@@ -4,8 +4,12 @@ import game.{GameState, Point}
 
 case class SightMemory(seenPoints: Set[Point] = Set.empty) extends Component {
   def update(gameState: GameState, entity: Entity): SightMemory = {
-    val updatedSeenPoints = seenPoints ++ gameState.getVisiblePointsFor(entity)
-    copy(updatedSeenPoints)
+    val visible = gameState.getVisiblePointsFor(entity)
+    if (visible.forall(seenPoints.contains)) {
+      this
+    } else {
+      copy(seenPoints ++ visible)
+    }
   }
 }
 

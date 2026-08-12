@@ -140,26 +140,21 @@ object EnemyAISystem extends GameSystem {
   ): (GameState, Seq[GameSystemEvent]) = {
     val target = gameState.playerEntity
 
-    // Optimization: Check if there are any ready entities first (Enemies or Animals)
-    // AND they must be Active
-    val anyActorReady = gameState.entities.exists(e =>
-      (e.entityType == EntityType.Enemy || e.entityType == EntityType.Animal) && e.isReady && e
-        .has[game.entity.Active]
+    val anyActorReady = gameState.activeEntities.exists(e =>
+      (e.entityType == EntityType.Enemy || e.entityType == EntityType.Animal) && e.isReady
     )
 
     if (anyActorReady) {
       // Pre-compute player's visible points once for all entities
       val playerVisiblePoints = gameState.getVisiblePointsFor(target)
 
-      // Optimization: Filter lists once
+      // Optimization: Filter active lists once
       val allEnemies =
-        gameState.entities.filter(_.entityType == EntityType.Enemy)
-      // val allAnimals = gameState.entities.filter(_.entityType == EntityType.Animal) // Not used currently
+        gameState.activeEntities.filter(_.entityType == EntityType.Enemy)
 
-      val aiEvents = gameState.entities.collect {
+      val aiEvents = gameState.activeEntities.collect {
         case entity
-            if (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Animal) && entity.isReady && entity
-              .has[game.entity.Active] =>
+            if (entity.entityType == EntityType.Enemy || entity.entityType == EntityType.Animal) && entity.isReady =>
           if (entity.entityType == EntityType.Animal) {
             // Animal Behavior (Duck)
             // Check for visible threats (Player or Enemies)

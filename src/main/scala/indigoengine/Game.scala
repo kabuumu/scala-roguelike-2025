@@ -22,6 +22,25 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 @JSExportTopLevel("IndigoGame")
 object Game extends IndigoSandbox[Unit, GameController] {
 
+  private val sepiaMaterialCache = new java.util.concurrent.ConcurrentHashMap[Material.Bitmap, Material.ImageEffects]()
+
+  private def getSepiaMaterial(mat: Material.Bitmap, tint: RGBA): Material.ImageEffects = {
+    var cached = sepiaMaterialCache.get(mat)
+    if (cached == null) {
+      cached = mat.toImageEffects.withTint(tint)
+      sepiaMaterialCache.put(mat, cached)
+    }
+    cached
+  }
+
+  private def applySepiaTint[M <: Material](graphic: Graphic[M], tint: RGBA): Graphic[?] = {
+    graphic.material match {
+      case bmp: Material.Bitmap =>
+        graphic.asInstanceOf[Graphic[Material.Bitmap]].modifyMaterial(_ => getSepiaMaterial(bmp, tint))
+      case _ => graphic
+    }
+  }
+
   override def config: GameConfig = GameConfig.default
     .withViewport(xPixels, yPixels)
     .withMagnification(uiScale)
@@ -290,12 +309,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
         val sprite = map.AutoTiler.getDirtSprite().moveTo(pixelX, pixelY)
 
         if (visiblePoints.contains(tilePosition)) Some(sprite)
-        else
-          Some(
-            sprite
-              .asInstanceOf[Graphic[Material.Bitmap]]
-              .modifyMaterial(_.toImageEffects.withTint(sepiaTint))
-          )
+        else Some(applySepiaTint(sprite, sepiaTint))
       } else {
         None
       }
@@ -326,10 +340,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
             val sprite = graphic.moveTo(pixelX, pixelY)
 
             if (anyVisible || UIConfig.ignoreLineOfSight) sprite
-            else
-              sprite
-                .asInstanceOf[Graphic[Material.Bitmap]]
-                .modifyMaterial(_.toImageEffects.withTint(sepiaTint))
+            else applySepiaTint(sprite, sepiaTint)
           }
       } else {
         None
@@ -507,12 +518,7 @@ object Game extends IndigoSandbox[Unit, GameController] {
                   maybeSprite.map { sprite =>
                     val finalSprite =
                       if (isVisible) sprite // Anchor itself is visible
-                      else
-                        sprite
-                          .asInstanceOf[Graphic[Material.Bitmap]]
-                          .modifyMaterial(
-                            _.toImageEffects.withTint(sepiaTint)
-                          )
+                      else applySepiaTint(sprite, sepiaTint)
 
                     (y, finalSprite)
                   }

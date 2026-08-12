@@ -50,11 +50,11 @@ object FarmerAISystem extends GameSystem {
 
     // 2. Process AI (Decision Making) - only for farmers who are ready (initiative == 0)
     // We now directly modify state for harvests instead of emitting events
-    val (finalState, aiEvents) = stateAfterEvents.entities.foldLeft(
+    val (finalState, aiEvents) = stateAfterEvents.activeEntities.foldLeft(
       (stateAfterEvents, Seq.empty[GameSystemEvent])
     ) {
       case ((currentState, accEvents), farmer)
-          if farmer.has[Harvester] && farmer.has[Active] && farmer.isReady =>
+          if farmer.has[Harvester] && farmer.isReady =>
         val (newState, newEvents) = processFarmer(farmer, currentState)
         (newState, accEvents ++ newEvents)
       case ((currentState, accEvents), _) =>
