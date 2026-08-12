@@ -494,7 +494,7 @@ object ChunkManager {
             (dx < downW && belowCenter && downW > 0)
           }
 
-          if (onRoadConnection) TileType.Dirt else TileType.Grass1
+          if (onRoadConnection) TileType.Dirt else standardTile
 
         case OverworldTileType.Road | OverworldTileType.Bridge |
             OverworldTileType.Path | OverworldTileType.PathBridge |

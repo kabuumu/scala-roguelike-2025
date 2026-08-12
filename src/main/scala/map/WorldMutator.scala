@@ -554,8 +554,8 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
       Set(approachTile, entranceDoor)
     }.toSet
 
-    // Combine main paths and dungeon connecting paths
-    val allPathTiles = mainPathTiles ++ dungeonConnectingPaths
+    // Combine main paths, village internal paths, and dungeon connecting paths
+    val allPathTiles = mainPathTiles ++ dungeonConnectingPaths ++ worldMap.villages.flatMap(_.paths)
 
     // Separate path tiles into those on water (need bridges) and those on land (need dirt)
     val pathsOnWater =
