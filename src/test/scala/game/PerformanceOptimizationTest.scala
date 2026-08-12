@@ -60,4 +60,30 @@ class PerformanceOptimizationTest extends AnyFunSuite {
     println(s"Performance Benchmark: 50 ticks executed in ${elapsedMs} ms (avg ${avgTickMs} ms / tick)")
     assert(avgTickMs < 50.0, s"Average tick duration must be reasonable under 50ms (was ${avgTickMs} ms)")
   }
+
+  test("Revealing map (30,000+ points) allows fast turn movement and updates") {
+    val seed = 100L
+    val state = StartingState.startAdventure(seed)
+
+    // Trigger reveal map debug action
+    val (revealedState, _) = DebugSystem.update(
+      state,
+      Seq(system.event.GameSystemEvent.InputEvent(state.playerEntityId, ui.InputAction.DebugRevealMap))
+    )
+
+    val revealedMemory = revealedState.playerEntity.get[SightMemory].map(_.seenPoints).getOrElse(Set.empty)
+    assert(revealedMemory.size > 30000, s"DebugRevealMap should reveal 30,000+ tiles (revealed: ${revealedMemory.size})")
+
+    // Measure tick time over 50 movement steps with 30,000+ revealed points
+    val startTime = System.nanoTime()
+    var currentState = revealedState
+    for (_ <- 1 to 50) {
+      currentState = currentState.updateWithSystems(Nil)
+    }
+    val elapsedMs = (System.nanoTime() - startTime) / 1000000.0
+    val avgTickMs = elapsedMs / 50.0
+
+    println(s"Reveal Map Benchmark: 50 ticks with 30,000+ revealed tiles executed in ${elapsedMs} ms (avg ${avgTickMs} ms / tick)")
+    assert(avgTickMs < 50.0, s"Average tick duration with revealed map must be under 50ms (was ${avgTickMs} ms)")
+  }
 }

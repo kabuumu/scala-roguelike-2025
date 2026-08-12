@@ -52,7 +52,7 @@ object WorldGenerationSystem extends GameSystem {
     )
 
     // If map changed, return new state
-    if (newWorldMap != worldMap) {
+    if (newWorldMap ne worldMap) {
       // Check for new villages and spawn crops
       val oldVillages = worldMap.villages.toSet
       val newVillages = newWorldMap.villages.toSet

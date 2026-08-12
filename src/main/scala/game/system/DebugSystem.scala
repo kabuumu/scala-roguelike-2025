@@ -194,7 +194,7 @@ object DebugSystem extends GameSystem {
               }
 
               val finalState =
-                currentState.updateEntity(entityId, updatedPlayer)
+                currentState.updateEntity(player.id, updatedPlayer)
               val msg =
                 GameSystemEvent.MessageEvent("Debug: Revealed Map (100 tiles)")
               (finalState, currentEvents :+ msg)

@@ -31,3 +31,32 @@ case class Point(x: Int, y: Int) {
   
   override def toString: String = s"$x:$y"
 }
+
+object Point {
+  private val CacheMin = -256
+  private val CacheMax = 256
+  private val CacheSize = CacheMax - CacheMin + 1
+  private val cache: Array[Point] = {
+    val arr = new Array[Point](CacheSize * CacheSize)
+    var x = CacheMin
+    while (x <= CacheMax) {
+      var y = CacheMin
+      while (y <= CacheMax) {
+        val idx = (x - CacheMin) * CacheSize + (y - CacheMin)
+        arr(idx) = new Point(x, y)
+        y += 1
+      }
+      x += 1
+    }
+    arr
+  }
+
+  def apply(x: Int, y: Int): Point = {
+    if (x >= CacheMin && x <= CacheMax && y >= CacheMin && y <= CacheMax) {
+      val idx = (x - CacheMin) * CacheSize + (y - CacheMin)
+      cache(idx)
+    } else {
+      new Point(x, y)
+    }
+  }
+}

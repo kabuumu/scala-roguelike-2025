@@ -92,22 +92,34 @@ object AutoTiler {
 
     if (spriteIndex == 0) return None
 
-    Some(
-      Graphic(0, 0, TileSize, TileSize, Material.Bitmap(AssetName("tileset")))
+    terrainGraphicCache.get((spriteIndex, rotation))
+  }
+
+  private val terrainGraphicCache: Map[(Int, Radians), Graphic[?]] = {
+    val angles = Seq(
+      Radians.zero,
+      Radians.fromDegrees(90),
+      Radians.fromDegrees(180),
+      Radians.fromDegrees(-90)
+    )
+    (for {
+      idx <- 1 to 5
+      rot <- angles
+    } yield {
+      val g = Graphic(0, 0, TileSize, TileSize, Material.Bitmap(AssetName("tileset")))
         .withCrop(
-          (AutoTileBaseX + spriteIndex) * TileSize,
+          (AutoTileBaseX + idx) * TileSize,
           AutoTileBaseY * TileSize,
           TileSize,
           TileSize
         )
-        .withRef(TileSize / 2, TileSize / 2) // Rotate around center
-        .withRotation(rotation)
-    )
+        .withRef(TileSize / 2, TileSize / 2)
+        .withRotation(rot)
+      (idx, rot) -> g
+    }).toMap
   }
 
-  def getDirtSprite(): Graphic[?] = {
-    // Return the Dirt tile (Index 0)
-    // No rotation needed, standard top-left anchor is fine for standard grid rendering.
+  lazy val dirtSprite: Graphic[?] = {
     Graphic(0, 0, TileSize, TileSize, Material.Bitmap(AssetName("tileset")))
       .withCrop(
         AutoTileBaseX * TileSize,
@@ -116,4 +128,6 @@ object AutoTiler {
         TileSize
       )
   }
+
+  def getDirtSprite(): Graphic[?] = dirtSprite
 }

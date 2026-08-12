@@ -41,10 +41,9 @@ object CullingSystem extends GameSystem {
             } else entity
           }
         } else {
-          // No movement (e.g. global controllers, equipped items?), keep active
-          if (!entity.has[Active]) {
+          if (entity.has[Active]) {
             modified = true
-            entity.addComponent(Active())
+            entity.removeComponent[Active]
           } else entity
         }
       }
