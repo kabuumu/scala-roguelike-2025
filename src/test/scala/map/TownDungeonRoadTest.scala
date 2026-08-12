@@ -21,6 +21,20 @@ class TownDungeonRoadTest extends AnyFunSuite {
     assert(pathExists, s"Walkable road path must exist between player spawn $playerPos and dungeon approach $dungeonApproach")
   }
 
+  test("Player spawn, Village Elder, and opening dungeon are connected by walkable paths across seeds") {
+    Seq(42L, 100L, 2026L).foreach { seed =>
+      val state = StartingState.startAdventure(seed)
+      val worldMap = state.worldMap
+
+      val elder = state.entities.find(_.get[game.entity.NameComponent].exists(_.name == "Elder")).flatMap(_.get[game.entity.Movement]).map(_.position).get
+      val dungeonApproach = Dungeon.getApproachTile(worldMap.dungeons.head.startPoint, worldMap.dungeons.head.entranceSide)
+      val playerPos = state.playerEntity.position
+
+      assert(isWalkablePath(playerPos, elder, worldMap), s"Seed $seed: Walkable path must exist between player spawn $playerPos and Elder $elder")
+      assert(isWalkablePath(elder, dungeonApproach, worldMap), s"Seed $seed: Walkable path must exist between Elder $elder and dungeon approach $dungeonApproach")
+    }
+  }
+
   private def isWalkablePath(start: Point, target: Point, worldMap: WorldMap): Boolean = {
     import scala.collection.mutable
 

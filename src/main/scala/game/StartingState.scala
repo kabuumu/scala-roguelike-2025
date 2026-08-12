@@ -407,8 +407,8 @@ object StartingState {
             case (b, idx) if b.buildingType == map.BuildingType.Generic &&
                 !(playerSpawnPoint.x >= b.bounds._1.x && playerSpawnPoint.x <= b.bounds._2.x &&
                   playerSpawnPoint.y >= b.bounds._1.y && playerSpawnPoint.y <= b.bounds._2.y) =>
-              idx
-          }
+              (idx, b.centerTile.getChebyshevDistance(playerSpawnPoint))
+          }.sortBy(_._2).map(_._1)
         } else {
           Seq.empty
         }
