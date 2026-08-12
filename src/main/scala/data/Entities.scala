@@ -229,7 +229,7 @@ object Entities {
       name = Some(NameComponent("Elder", "The village elder, looks worried.")),
       extraComponents = Seq(
         Conversation(
-          "Help! Thieves have stolen our sacred Golden Statue. Can you retrieve it from the cave to the east?",
+          "Help! Thieves have stolen our sacred Golden Statue and fled into the cave dungeon to the east. Can you travel along the road, defeat them, and retrieve our statue?",
           Seq(
             ConversationChoice(
               "I will find it.",

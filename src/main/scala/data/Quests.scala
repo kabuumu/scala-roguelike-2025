@@ -8,12 +8,12 @@ object Quests {
     "retrieve_statue" -> Quest(
       id = "retrieve_statue",
       title = "The Missing Statue",
-      description = "Retrieve the Golden Statue from the nearby cave.",
+      description = "Follow the road to the cave dungeon to the east, defeat the enemies within, and retrieve the Golden Statue for the Village Elder.",
       goal = RetrieveItemGoal(ItemReference.GoldenStatue, 1),
       rewards = QuestRewards(experience = 500, coins = 100),
       giverName = Some("Elder"),
-      readyToCompleteText = Some("You found it! Please, give it to me."),
-      completionText = Some("Thank you so much! Our village is safe."),
+      readyToCompleteText = Some("You found it! You returned with the Golden Statue. Please give it to me."),
+      completionText = Some("Thank you so much! You have saved our village."),
       followUpQuestId = Some("kill_rats")
     ),
     "kill_rats" -> Quest(

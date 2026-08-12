@@ -527,6 +527,7 @@ object StartingState {
       entities = Vector(
         playerEntity
       ) ++ playerStartingItems ++ playerStartingEquipment ++ enemies ++ items ++ lockedDoors ++ allSpitAbilities.values ++ dungeonTraders ++ villageTraders ++ wildAnimals ++ crops ++ farmers ++ caravans,
+      messages = if (gameMode == GameMode.Adventure) Seq("Welcome to the village! Speak with the Village Elder nearby to begin your quest.") else Seq("Welcome to the dungeon! Survive and reach the stairs."),
       worldMap = worldMap,
       dungeonFloor = dungeonFloor,
       gameMode = gameMode
