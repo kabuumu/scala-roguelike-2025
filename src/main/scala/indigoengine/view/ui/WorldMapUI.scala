@@ -141,7 +141,7 @@ object WorldMapUI {
 
     // Render Quest Markers
     // We want to show markers for active quests that involve retrieving an item
-    val questMarkers = model.gameState.quests.collect {
+    val activeQuestMarkers = model.gameState.quests.collect {
       case (
             questId,
             game.quest.QuestState(game.quest.QuestStatus.Active, _)
@@ -209,43 +209,54 @@ object WorldMapUI {
                 }
             }
           }
-          .map { case (targetPos, color) =>
-            // Calculate screen position
-            val pixelSize = 2
-            val centerX = canvasWidth / 2
-            val centerY = canvasHeight / 2
-            val offsetX = centerX - (playerPos.x * pixelSize)
-            val offsetY = centerY - (playerPos.y * pixelSize)
+    }
 
-            val targetScreenX = offsetX + (targetPos.x * pixelSize)
-            val targetScreenY = offsetY + (targetPos.y * pixelSize)
+    val unacceptedElderMarker = if (!model.gameState.isQuestActive("retrieve_statue") && !model.gameState.isQuestCompleted("retrieve_statue")) {
+      model.gameState.entities
+        .find(e => e.get[game.entity.NameComponent].exists(_.name == "Elder"))
+        .flatMap(_.get[game.entity.Movement])
+        .map(_.position)
+        .map(elderPos => (elderPos, RGBA.Yellow))
+    } else None
 
-            // Clamp to screen edges (with margin) to ensure it acts as a pointer if off-screen
-            val margin = 10
-            val clampedX = Math.max(
-              margin,
-              Math.min(canvasWidth - margin, targetScreenX)
-            )
-            val clampedY = Math.max(
-              margin,
-              Math.min(canvasHeight - margin, targetScreenY)
-            )
+    val allMarkers = activeQuestMarkers.flatten ++ unacceptedElderMarker.toSeq
 
-            // Render a flashy marker
-            val markerSize = 8
+    val markerShapes = allMarkers.map { case (targetPos, color) =>
+      // Calculate screen position
+      val pixelSize = 2
+      val centerX = canvasWidth / 2
+      val centerY = canvasHeight / 2
+      val offsetX = centerX - (playerPos.x * pixelSize)
+      val offsetY = centerY - (playerPos.y * pixelSize)
 
-            Shape.Box(
-              Rectangle(
-                Point(
-                  clampedX - markerSize / 2,
-                  clampedY - markerSize / 2
-                ),
-                Size(markerSize, markerSize)
-              ),
-              Fill.Color(color)
-            )
-          }
-    }.flatten
+      val targetScreenX = offsetX + (targetPos.x * pixelSize)
+      val targetScreenY = offsetY + (targetPos.y * pixelSize)
+
+      // Clamp to screen edges (with margin) to ensure it acts as a pointer if off-screen
+      val margin = 10
+      val clampedX = Math.max(
+        margin,
+        Math.min(canvasWidth - margin, targetScreenX)
+      )
+      val clampedY = Math.max(
+        margin,
+        Math.min(canvasHeight - margin, targetScreenY)
+      )
+
+      // Render a flashy marker
+      val markerSize = 8
+
+      Shape.Box(
+        Rectangle(
+          Point(
+            clampedX - markerSize / 2,
+            clampedY - markerSize / 2
+          ),
+          Size(markerSize, markerSize)
+        ),
+        Fill.Color(color)
+      )
+    }
 
     // Add "Press any key to exit" message
     val exitMessage = UIUtils.text(
@@ -308,7 +319,7 @@ object WorldMapUI {
 
     mapView |+| SceneUpdateFragment(
       Layer.Content(
-        Batch.fromSeq(questMarkers.toSeq) ++
+        Batch.fromSeq(markerShapes.toSeq) ++
           Batch.fromSeq(villageNames) ++
           playerMarker ++
           Batch(exitMessage)
