@@ -543,12 +543,11 @@ object StartingState {
     def enemiesForDepth(depth: Int): EnemyGroup = depth match {
       case d if d == Int.MaxValue => EnemyGroup(Seq(EnemyReference.Boss))
       case 1                      => EnemyGroup(Seq(EnemyReference.Slimelet))
-      case 2                      =>
-        EnemyGroup(Seq(EnemyReference.Slimelet, EnemyReference.Slimelet))
-      case 3 => EnemyGroup(Seq(EnemyReference.Slime))
-      case 4 => EnemyGroup(Seq(EnemyReference.Slime, EnemyReference.Slimelet))
-      case 5 => EnemyGroup(Seq(EnemyReference.Rat))
-      case 6 => EnemyGroup(Seq(EnemyReference.Snake))
+      case 2                      => EnemyGroup(Seq(EnemyReference.Slimelet, EnemyReference.Rat))
+      case 3                      => EnemyGroup(Seq(EnemyReference.Slime))
+      case 4                      => EnemyGroup(Seq(EnemyReference.Slime, EnemyReference.Snake))
+      case 5                      => EnemyGroup(Seq(EnemyReference.Rat, EnemyReference.Rat))
+      case 6                      => EnemyGroup(Seq(EnemyReference.Snake, EnemyReference.Snake))
       case d if d >= 7 && d % 2 == 1 =>
         EnemyGroup(Seq(EnemyReference.Rat, EnemyReference.Rat))
       case d if d >= 8 && d % 2 == 0 =>
