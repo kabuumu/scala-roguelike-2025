@@ -385,6 +385,13 @@ object StartingState {
         }
     }
 
+    val openingDungeonApproach = worldMap.dungeons.headOption.map { dungeon =>
+      Dungeon.getApproachTile(dungeon.startPoint, dungeon.entranceSide)
+    }
+    val dungeonDirectionText = openingDungeonApproach
+      .map(app => getRelativeDirection(playerSpawnPoint, app))
+      .getOrElse("to the east")
+
     // Village Traders and NPCs
     val villageTraders: Seq[Entity] = worldMap.villages.zipWithIndex.flatMap {
       case (village, villageIdx) =>
@@ -436,7 +443,7 @@ object StartingState {
               case map.BuildingType.Generic =>
                 // Place Quest Givers in their identified buildings
                 if (buildingIdx == questGiverBuildingIdx)
-                  data.Entities.questGiver(id, position)
+                  data.Entities.questGiver(id, position, dungeonDirectionText)
                 else if (buildingIdx == ratQuestGiverBuildingIdx)
                   data.Entities.ratQuestGiver(id, position)
                 else
@@ -532,6 +539,20 @@ object StartingState {
       dungeonFloor = dungeonFloor,
       gameMode = gameMode
     )
+  }
+
+  def getRelativeDirection(from: Point, to: Point): String = {
+    val dx = to.x - from.x
+    val dy = to.y - from.y
+    val angle = Math.atan2(dy.toDouble, dx.toDouble) * (180.0 / Math.PI)
+    if (angle >= -22.5 && angle < 22.5) "to the east"
+    else if (angle >= 22.5 && angle < 67.5) "to the southeast"
+    else if (angle >= 67.5 && angle < 112.5) "to the south"
+    else if (angle >= 112.5 && angle < 157.5) "to the southwest"
+    else if (angle >= 157.5 || angle < -157.5) "to the west"
+    else if (angle >= -157.5 && angle < -112.5) "to the northwest"
+    else if (angle >= -112.5 && angle < -67.5) "to the north"
+    else "to the northeast"
   }
 
   object EnemyGeneration {

@@ -111,7 +111,7 @@ object ChunkManager {
     )
   }
 
-  private def mergeTilesIntoChunks(
+  def mergeTilesIntoChunks(
       tiles: Map[Point, TileType],
       chunks: Map[(Int, Int), Chunk]
   ): Map[(Int, Int), Chunk] = {

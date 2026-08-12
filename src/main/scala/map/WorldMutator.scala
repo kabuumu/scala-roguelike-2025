@@ -566,8 +566,10 @@ class PathGenerationMutator(startPoint: Point) extends WorldMutator {
     val bridgeTiles = pathsOnWater.map(_ -> TileType.Bridge).toMap
     val dirtTiles = pathsOnLand.map(_ -> TileType.Dirt).toMap
     val pathTileMap = bridgeTiles ++ dirtTiles
+    val updatedChunks = ChunkManager.mergeTilesIntoChunks(pathTileMap, worldMap.chunks)
 
     worldMap.copy(
+      chunks = updatedChunks,
       tiles = worldMap.tiles ++ pathTileMap,
       paths = worldMap.paths ++ allPathTiles,
       bridges = worldMap.bridges ++ pathsOnWater

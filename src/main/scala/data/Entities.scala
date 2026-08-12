@@ -220,7 +220,7 @@ object Entities {
       )
     )
   }
-  def questGiver(id: String, position: game.Point): Entity = {
+  def questGiver(id: String, position: game.Point, directionText: String = "to the east"): Entity = {
     CharacterFactory.create(
       id,
       position,
@@ -229,7 +229,7 @@ object Entities {
       name = Some(NameComponent("Elder", "The village elder, looks worried.")),
       extraComponents = Seq(
         Conversation(
-          "Help! Thieves have stolen our sacred Golden Statue and fled into the cave dungeon to the east. Can you travel along the road, defeat them, and retrieve our statue?",
+          s"Help! Thieves have stolen our sacred Golden Statue and fled into the cave dungeon $directionText. Can you travel along the road, defeat them, and retrieve our statue?",
           Seq(
             ConversationChoice(
               "I will find it.",

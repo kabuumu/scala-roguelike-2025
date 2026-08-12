@@ -8,7 +8,7 @@ object Quests {
     "retrieve_statue" -> Quest(
       id = "retrieve_statue",
       title = "The Missing Statue",
-      description = "Follow the road to the cave dungeon to the east, defeat the enemies within, and retrieve the Golden Statue for the Village Elder.",
+      description = "Follow the road to the cave dungeon, defeat the enemies within, and retrieve the Golden Statue for the Village Elder.",
       goal = RetrieveItemGoal(ItemReference.GoldenStatue, 1),
       rewards = QuestRewards(experience = 500, coins = 100),
       giverName = Some("Elder"),

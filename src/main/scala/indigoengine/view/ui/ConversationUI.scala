@@ -29,9 +29,31 @@ object ConversationUI {
           .map(_.description)
           .getOrElse("")
 
-        // Window dimensions - centered on screen
-        val windowWidth = spriteScale * 12
-        val windowHeight = spriteScale * 8
+        val iconSize = spriteScale * 3 // 96px
+        val padding = defaultBorderSize * 2 // 20px
+        val windowWidth = spriteScale * 15 // 480px width for clean text wrapping
+
+        // Calculate text height & wrapping first to determine required window height
+        val textWidthAvailable = windowWidth - iconSize - (padding * 2)
+        val maxLineChars = math.max(20, textWidthAvailable / 9) // ~9px font width
+
+        val wrappedText = UIUtils.wrapText(interactionState.message, maxLineChars)
+        val textLineHeight = 18
+        val textTotalHeight = wrappedText.length * textLineHeight
+
+        // Vertical spacing calculations relative to windowY offset
+        val nameToTextOffset = 24
+        val iconHeight = iconSize
+        val headerAreaHeight = math.max(iconHeight, nameToTextOffset + textTotalHeight)
+
+        val optionsGap = 16
+        val optionHeight = 26
+        val totalOptionsHeight = interactionState.options.length * optionHeight
+
+        val contentHeight = padding + headerAreaHeight + optionsGap + totalOptionsHeight + padding
+        val windowHeight = math.max(spriteScale * 8, contentHeight)
+
+        // Center window on canvas
         val windowX = (canvasWidth - windowWidth) / 2
         val windowY = (canvasHeight - windowHeight) / 2
 
@@ -47,17 +69,15 @@ object ConversationUI {
           RGBA.Black.withAlpha(0.9)
         )
 
-        // Icon on left side (large)
-        val iconSize = spriteScale * 3
-        val iconX = windowX + defaultBorderSize
-        val iconY = windowY + defaultBorderSize
+        // Portrait Icon on left side
+        val iconX = windowX + padding
+        val iconY = windowY + padding
 
         val icon = entity.get[Portrait] match {
           case Some(portrait) =>
             val portraitSheet =
               Graphic(0, 0, 192, 192, Material.Bitmap(AssetName("portraits")))
 
-            // Image is 192x192, grid is 2x2, so each cell is 96x96
             val cellSize = 96
             val pX = portrait.sprite.x * cellSize
             val pY = portrait.sprite.y * cellSize
@@ -74,7 +94,7 @@ object ConversationUI {
             val entitySprite = entity
               .get[Drawable]
               .flatMap(_.sprites.headOption.map(_._2))
-              .getOrElse(data.Sprites.playerSprite) // Fallback
+              .getOrElse(data.Sprites.playerSprite)
 
             spriteSheet
               .fromSprite(entitySprite)
@@ -82,52 +102,43 @@ object ConversationUI {
               .scaleBy(3.0, 3.0)
         }
 
-        // Name at top (right of icon)
+        // Speaker Name & Wrapped NPC Text (right of icon)
         val messageX = iconX + iconSize + defaultBorderSize
-        val messageY = windowY + defaultBorderSize
-        val nameText = UIUtils.text(entityName, messageX, messageY)
+        val nameY = windowY + padding
+        val nameText = UIUtils.text(entityName, messageX, nameY)
 
-        // Message Text (below name, wrapped)
-        val textY = messageY + spriteScale
-        val maxLineChars =
-          (windowWidth - iconSize - (defaultBorderSize * 3)) / (spriteScale / 3)
-        // Use the message from state
-        val wrappedText =
-          UIUtils.wrapText(interactionState.message, maxLineChars)
+        val textY = nameY + nameToTextOffset
         val textLines = wrappedText.zipWithIndex.map { case (line, idx) =>
-          UIUtils.text(line, messageX, textY + (idx * (spriteScale / 2)))
+          UIUtils.text(line, messageX, textY + (idx * textLineHeight))
         }
 
-        // Options menu - centered below icon and message area
-        // Determine start Y based on icon size to ensure no overlap
-        val optionsStartY =
-          windowY + iconSize + (defaultBorderSize * 2) + (spriteScale / 2)
-        val optionHeight = spriteScale + defaultBorderSize
+        // Options Menu - starts strictly below both text and icon
+        val textBottomY = textY + textTotalHeight
+        val iconBottomY = iconY + iconSize
+        val optionsStartY = math.max(textBottomY, iconBottomY) + optionsGap
 
         val optionElements = interactionState.options.zipWithIndex.flatMap {
           case ((optionText, action), index) =>
             val optionY = optionsStartY + (index * optionHeight)
             val isSelected = index == interactionState.selectedOption
 
-            // Highlight background for selected option
             val highlight = if (isSelected) {
               Some(
                 BlockBar.getBlockBar(
                   Rectangle(
-                    Point(windowX, optionY - (defaultBorderSize / 2)),
-                    Size(windowWidth, optionHeight)
+                    Point(windowX + defaultBorderSize, optionY - 2),
+                    Size(windowWidth - (defaultBorderSize * 2), optionHeight - 2)
                   ),
                   RGBA.Orange.withAlpha(0.5)
                 )
               )
             } else None
 
-            // Option text centered
             val displayText =
               if (isSelected) s"> $optionText <" else s"  $optionText  "
             val textX = windowX + (windowWidth - (displayText.length * 8)) / 2
 
-            highlight.toSeq :+ UIUtils.text(displayText, textX, optionY)
+            highlight.toSeq :+ UIUtils.text(displayText, textX, optionY + 2)
         }
 
         Batch(
