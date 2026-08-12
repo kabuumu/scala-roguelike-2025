@@ -46,13 +46,13 @@ object Enemies {
       position,
       Sprites.ratSprite,
       EntityType.Enemy,
-      hp = Some(25),
+      hp = Some(12),
       initiative = Some(6),
       inventory = Some(Inventory(Nil)),
       extraComponents = Seq(
         EnemyTypeComponent(EnemyReference.Rat),
         Equipment(weapon =
-          Some(EquippedItem(s"$id-weapon", Equippable.weapon(8, "Rat Claws")))
+          Some(EquippedItem(s"$id-weapon", Equippable.weapon(3, "Rat Claws")))
         ),
         EventMemory(),
         DeathEvents(
@@ -71,13 +71,13 @@ object Enemies {
       position,
       Sprites.snakeSprite,
       EntityType.Enemy,
-      hp = Some(18),
-      initiative = Some(12),
+      hp = Some(15),
+      initiative = Some(10),
       inventory = Some(Inventory(Seq(spitAbilityId))),
       extraComponents = Seq(
         EnemyTypeComponent(EnemyReference.Snake),
         Equipment(weapon =
-          Some(EquippedItem(s"$id-weapon", Equippable.weapon(6, "Snake Fangs")))
+          Some(EquippedItem(s"$id-weapon", Equippable.weapon(4, "Snake Fangs")))
         ),
         EventMemory(),
         DeathEvents(
@@ -96,13 +96,13 @@ object Enemies {
       position,
       Sprites.slimeSprite,
       EntityType.Enemy,
-      hp = Some(20),
+      hp = Some(16),
       initiative = Some(8),
       inventory = Some(Inventory(Nil)),
       extraComponents = Seq(
         EnemyTypeComponent(EnemyReference.Slime),
         Equipment(weapon =
-          Some(EquippedItem(s"$id-weapon", Equippable.weapon(6, "Slime Acid")))
+          Some(EquippedItem(s"$id-weapon", Equippable.weapon(3, "Slime Acid")))
         ),
         EventMemory(),
         DeathEvents(
@@ -123,8 +123,8 @@ object Enemies {
       position,
       Sprites.slimeletSprite,
       EntityType.Enemy,
-      hp = Some(10),
-      initiative = Some(4),
+      hp = Some(8),
+      initiative = Some(5),
       inventory = Some(Inventory(Nil)),
       extraComponents = Seq(
         EnemyTypeComponent(EnemyReference.Slimelet),
